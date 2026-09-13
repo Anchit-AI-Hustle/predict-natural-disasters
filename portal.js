@@ -1,16 +1,7 @@
 const PND={
   timezone:localStorage.getItem('pnd_timezone')||'Asia/Kolkata',
   async getEvents(){
-    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');const data=await r.json();this.maybeEnrich(data);return data;
-  },
-  maybeEnrich(data){
-    if(!/\/(event|alert|forecast|calamity)-detail/.test(location.pathname))return;
-    const id=this.qs('id');let e=(data.events||[]).find(x=>x.id===id);if(!e&&location.pathname.includes('forecast-detail'))e=(data.events||[]).find(x=>x.forecast);if(!e)return;
-    let mount=document.getElementById('eventEnrichment');if(!mount){mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';const main=document.querySelector('main');if(main)main.appendChild(mount);else document.body.appendChild(mount)}
-    const run=()=>window.PNDEventEnrichment&&window.PNDEventEnrichment.load(e);
-    if(window.PNDEventEnrichment){run();return}
-    if(document.getElementById('pndEventEnrichmentScript'))return;
-    const s=document.createElement('script');s.id='pndEventEnrichmentScript';s.src='/event-enrichment.js';s.onload=run;document.body.appendChild(s);
+    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');return r.json();
   },
   autoRefresh(fn,ms=60000){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await fn()}finally{busy=false}};run();return setInterval(run,Math.min(ms,60000))},
   esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
@@ -41,3 +32,29 @@ const PND={
 };
 window.PND=PND;
 const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms,...args)=>__pndSetInterval(fn,Math.min(Number(ms)||60000,60000),...args);
+
+(function(){
+  const detailPaths=['/event-detail','/alert-detail','/calamity-detail'];
+  function makeRowsObvious(root=document){
+    root.querySelectorAll('tr[data-href]').forEach(row=>{
+      row.style.cursor='pointer';row.title='Open full detail page';
+      const last=row.lastElementChild;if(last&&!last.querySelector('.pnd-detail-link')){
+        const a=document.createElement('a');a.className='pnd-detail-link';a.href=row.dataset.href;a.textContent='View details →';a.style.cssText='margin-left:8px;color:#65e7b6;font-weight:800;font-size:10px;white-space:nowrap;text-decoration:none';
+        a.onclick=e=>e.stopPropagation();last.appendChild(a);
+      }
+    });
+    root.querySelectorAll('.riskitem,[data-event-id],article[onclick]').forEach(el=>{if(!el.title)el.title='Open full detail page';});
+  }
+  async function attachEnrichment(){
+    if(!detailPaths.includes(location.pathname))return;
+    const id=PND.qs('id');if(!id)return;
+    let main=document.querySelector('main');if(!main)return;
+    if(!document.getElementById('eventEnrichment')){const mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';main.insertAdjacentElement('afterend',mount);}
+    try{
+      const d=await PND.getEvents();const e=d.events.find(x=>String(x.id)===String(id));if(!e)return;
+      const s=document.createElement('script');s.src='/event-enrichment.js?v=2';s.onload=()=>window.PNDEventEnrichment&&window.PNDEventEnrichment.load(e);document.body.appendChild(s);
+    }catch(e){}
+  }
+  function init(){makeRowsObvious();const mo=new MutationObserver(()=>makeRowsObvious());mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
