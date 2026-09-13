@@ -1,10 +1,15 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/dashboard.html" },
-    { "source": "/live-map", "destination": "/dashboard.html" },
-    { "source": "/forecasts", "destination": "/dashboard.html" },
-    { "source": "/alerts", "destination": "/dashboard.html" },
-    { "source": "/regions/:path*", "destination": "/dashboard.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/live-map", "destination": "/live-map.html" },
+    { "source": "/forecasts", "destination": "/forecasts.html" },
+    { "source": "/alerts", "destination": "/alerts.html" },
+    { "source": "/regions", "destination": "/regions.html" },
+    { "source": "/verification", "destination": "/verification.html" },
+    { "source": "/methodology", "destination": "/methodology.html" },
+    { "source": "/insights", "destination": "/insights.html" },
+    { "source": "/about", "destination": "/about.html" }
   ]
 }
