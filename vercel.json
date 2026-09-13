@@ -1,15 +1,26 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/dashboard", "destination": "/index.html" },
-    { "source": "/live-map", "destination": "/live-map.html" },
-    { "source": "/forecasts", "destination": "/forecasts.html" },
-    { "source": "/alerts", "destination": "/alerts.html" },
-    { "source": "/regions", "destination": "/regions.html" },
-    { "source": "/verification", "destination": "/verification.html" },
-    { "source": "/methodology", "destination": "/methodology.html" },
-    { "source": "/insights", "destination": "/insights.html" },
-    { "source": "/about", "destination": "/about.html" }
+    {"source":"/","destination":"/home.html"},
+    {"source":"/dashboard","destination":"/home.html"},
+    {"source":"/event-detail","destination":"/event-detail.html"},
+    {"source":"/events","destination":"/directory.html"},
+    {"source":"/recent-events","destination":"/directory.html"},
+    {"source":"/official-warnings","destination":"/directory.html"},
+    {"source":"/hazard-types","destination":"/directory.html"},
+    {"source":"/forecast-list","destination":"/directory.html"},
+    {"source":"/forecast-calendar","destination":"/directory.html"},
+    {"source":"/historical-events","destination":"/directory.html"},
+    {"source":"/alerts-notifications","destination":"/directory.html"},
+    {"source":"/compare-locations","destination":"/directory.html"},
+    {"source":"/resources","destination":"/directory.html"},
+    {"source":"/live-map","destination":"/live-map.html"},
+    {"source":"/forecasts","destination":"/forecasts.html"},
+    {"source":"/alerts","destination":"/alerts.html"},
+    {"source":"/regions","destination":"/regions.html"},
+    {"source":"/verification","destination":"/verification.html"},
+    {"source":"/methodology","destination":"/methodology.html"},
+    {"source":"/insights","destination":"/insights.html"},
+    {"source":"/about","destination":"/about.html"}
   ]
 }
