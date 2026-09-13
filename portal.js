@@ -1,10 +1,19 @@
 const PND={
   timezone:localStorage.getItem('pnd_timezone')||'Asia/Kolkata',
   async getEvents(){
-    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');return r.json();
+    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');const data=await r.json();this.maybeEnrich(data);return data;
+  },
+  maybeEnrich(data){
+    if(!/\/(event|alert|forecast|calamity)-detail/.test(location.pathname))return;
+    const id=this.qs('id');let e=(data.events||[]).find(x=>x.id===id);if(!e&&location.pathname.includes('forecast-detail'))e=(data.events||[]).find(x=>x.forecast);if(!e)return;
+    let mount=document.getElementById('eventEnrichment');if(!mount){mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';const main=document.querySelector('main');if(main)main.appendChild(mount);else document.body.appendChild(mount)}
+    const run=()=>window.PNDEventEnrichment&&window.PNDEventEnrichment.load(e);
+    if(window.PNDEventEnrichment){run();return}
+    if(document.getElementById('pndEventEnrichmentScript'))return;
+    const s=document.createElement('script');s.id='pndEventEnrichmentScript';s.src='/event-enrichment.js';s.onload=run;document.body.appendChild(s);
   },
   autoRefresh(fn,ms=60000){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await fn()}finally{busy=false}};run();return setInterval(run,Math.min(ms,60000))},
-  esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));},
+  esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
   qs(k){return new URLSearchParams(location.search).get(k)||'';},
   getTZ(){return this.timezone;},
   tzLabel(tz=this.timezone){const aliases={'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'};return aliases[tz]||tz;},
