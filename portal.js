@@ -36,15 +36,18 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
 (function(){
   const detailPaths=['/event-detail','/alert-detail','/calamity-detail'];
   function makeRowsObvious(root=document){
-    root.querySelectorAll('tr[data-href]').forEach(row=>{
-      row.style.cursor='pointer';row.title='Open full detail page';
-      const last=row.lastElementChild;if(last&&!last.querySelector('.pnd-detail-link')){
-        const a=document.createElement('a');a.className='pnd-detail-link';a.href=row.dataset.href;a.textContent='View details →';a.style.cssText='margin-left:8px;color:#65e7b6;font-weight:800;font-size:10px;white-space:nowrap;text-decoration:none';
-        a.onclick=e=>e.stopPropagation();last.appendChild(a);
-      }
+    root.querySelectorAll('tr[data-href],[data-href]').forEach(row=>{
+      row.style.cursor='pointer';row.style.pointerEvents='auto';row.title='Open full detail page';row.setAttribute('role','link');row.setAttribute('tabindex','0');
+      if(row.matches('tr[data-href]')){const last=row.lastElementChild;if(last&&!last.querySelector('.pnd-detail-link')){const a=document.createElement('a');a.className='pnd-detail-link';a.href=row.dataset.href;a.textContent='View details →';a.style.cssText='margin-left:8px;color:#65e7b6;font-weight:800;font-size:10px;white-space:nowrap;text-decoration:none';a.onclick=e=>e.stopPropagation();last.appendChild(a);}}
     });
-    root.querySelectorAll('.riskitem,[data-event-id],article[onclick]').forEach(el=>{if(!el.title)el.title='Open full detail page';});
+    root.querySelectorAll('.riskitem,article[onclick]').forEach(el=>{
+      const raw=el.getAttribute('onclick')||'';const m=raw.match(/location\.href\s*=\s*['\"]([^'\"]+)/);if(m&&!el.dataset.href)el.dataset.href=m[1];
+      if(el.dataset.href){el.style.cursor='pointer';el.style.pointerEvents='auto';el.setAttribute('role','link');el.setAttribute('tabindex','0');el.title='Open full detail page';}
+    });
   }
+  function navigateFrom(el){const href=el&&el.dataset&&el.dataset.href;if(href)window.location.assign(href);}
+  document.addEventListener('click',e=>{if(e.defaultPrevented||e.button!==0)return;if(e.target.closest('a,button,input,select,textarea'))return;const el=e.target.closest('[data-href]');if(el){e.preventDefault();navigateFrom(el);}},true);
+  document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const el=e.target.closest&&e.target.closest('[data-href]');if(el){e.preventDefault();navigateFrom(el);}},true);
   async function attachEnrichment(){
     if(!detailPaths.includes(location.pathname))return;
     const id=PND.qs('id');if(!id)return;
@@ -52,7 +55,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
     if(!document.getElementById('eventEnrichment')){const mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';main.insertAdjacentElement('afterend',mount);}
     try{
       const d=await PND.getEvents();const e=d.events.find(x=>String(x.id)===String(id));if(!e)return;
-      const s=document.createElement('script');s.src='/event-enrichment.js?v=2';s.onload=()=>window.PNDEventEnrichment&&window.PNDEventEnrichment.load(e);document.body.appendChild(s);
+      const s=document.createElement('script');s.src='/event-enrichment.js?v=3';s.onload=()=>window.PNDEventEnrichment&&window.PNDEventEnrichment.load(e);document.body.appendChild(s);
     }catch(e){}
   }
   function init(){makeRowsObvious();const mo=new MutationObserver(()=>makeRowsObvious());mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
