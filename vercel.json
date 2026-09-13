@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/dashboard.html" },
+    { "source": "/live-map", "destination": "/dashboard.html" },
+    { "source": "/forecasts", "destination": "/dashboard.html" },
+    { "source": "/alerts", "destination": "/dashboard.html" },
+    { "source": "/regions/:path*", "destination": "/dashboard.html" }
+  ]
+}
