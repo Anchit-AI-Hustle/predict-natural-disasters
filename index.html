@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Predict Natural Disasters</title>
+<meta name="description" content="Experimental natural-disaster forecasting dashboard with frozen predictions and verification logs.">
+<style>
+:root{
+  --bg:#07120f; --panel:#0d1d18; --panel2:#11261f; --text:#eef7f2; --muted:#9fb8ad;
+  --line:#24453a; --accent:#d7a64a; --good:#73d7a6; --warn:#f2c66d; --bad:#ff8b7f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#07120f 0%,#0b1713 100%);color:var(--text);
+font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:28px 18px 64px}
+.top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+.brand h1{font-size:clamp(28px,4vw,48px);line-height:1.02;margin:0 0 8px;letter-spacing:-.03em}
+.brand p{margin:0;color:var(--muted);max-width:760px}
+.badge{border:1px solid var(--line);background:#0b1b16;padding:9px 12px;border-radius:999px;color:var(--good);font-weight:700;white-space:nowrap}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 16px 40px rgba(0,0,0,.18)}
+.card h2{font-size:18px;margin:0 0 14px}
+.hero{padding:24px}
+.kicker{color:var(--accent);text-transform:uppercase;font-weight:800;letter-spacing:.12em;font-size:12px}
+.prediction{font-size:30px;line-height:1.15;font-weight:850;margin:8px 0 12px;letter-spacing:-.02em}
+.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
+.stat{background:#0a1814;border:1px solid var(--line);padding:13px;border-radius:14px}
+.stat b{display:block;font-size:18px}.stat span{color:var(--muted);font-size:12px}
+.row{display:grid;grid-template-columns:160px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row .label{color:var(--muted)}
+.timeline{display:grid;gap:10px}
+.day{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.day:first-child{border-top:0}.stars{letter-spacing:2px;color:var(--accent)}
+.status{padding:6px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:800}
+.pending{color:var(--warn)}
+.criteria{margin:0;padding-left:20px}.criteria li{margin:8px 0}
+.footer{margin-top:22px;color:var(--muted);font-size:12px}
+.alert{display:flex;gap:10px;align-items:flex-start;background:#0a1814;border:1px solid var(--line);padding:14px;border-radius:14px;margin-top:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--good);margin-top:6px;box-shadow:0 0 18px var(--good)}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr 1fr}.top{display:block}.badge{display:inline-block;margin-top:14px}}
+@media(max-width:520px){.meta{grid-template-columns:1fr}.row{grid-template-columns:1fr}.day{grid-template-columns:1fr}.prediction{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="kicker">Experimental Forecasting Dashboard</div>
+      <h1>Predict Natural Disasters</h1>
+      <p>Frozen, falsifiable natural-hazard predictions with explicit timing, geography, mechanism, severity criteria, and post-event verification. Forecasts are experimental and must not be used as emergency guidance.</p>
+    </div>
+    <div class="badge">ND-001 · ACTIVE</div>
+  </div>
+
+  <div class="grid">
+    <section class="card hero">
+      <div class="kicker">Current highest-conviction forecast</div>
+      <div class="prediction">Flash flooding + landslides in Central Vietnam</div>
+      <p>Primary focus: <b>Huế–Đà Nẵng corridor</b>, with the highest-risk focal area around greater Đà Nẵng, inland/mountain-facing districts, river catchments and low-lying urban zones.</p>
+      <div class="meta">
+        <div class="stat"><b>14 Sep 2026</b><span>Central target date</span></div>
+        <div class="stat"><b>13–16 Sep</b><span>Frozen tolerance window</span></div>
+        <div class="stat"><b>Đà Nẵng</b><span>Primary geographic pin</span></div>
+        <div class="stat"><b>Flood → Landslide</b><span>Expected disaster chain</span></div>
+      </div>
+      <div class="alert"><span class="dot"></span><div><b>Verification alerts are scheduled.</b><br><span style="color:var(--muted)">Checks run on 14, 15, 16 and 17 September 2026. The final check grades the frozen forecast after the full tolerance window closes.</span></div></div>
+    </section>
+
+    <aside class="card">
+      <h2>Forecast anatomy</h2>
+      <div class="row"><div class="label">Primary disaster</div><div><b>Flash / river flooding</b></div></div>
+      <div class="row"><div class="label">Secondary disaster</div><div><b>Rain-induced landslides / slope failures</b></div></div>
+      <div class="row"><div class="label">Trigger</div><div>Tropical depression + convergence + extreme accumulated rainfall</div></div>
+      <div class="row"><div class="label">Extended zone</div><div>Hà Tĩnh → Quảng Trị → Huế → Đà Nẵng → Quảng Ngãi</div></div>
+      <div class="row"><div class="label">Expected impacts</div><div>Urban inundation, transport disruption, isolated communities, rescues/evacuations, localized infrastructure damage</div></div>
+      <div class="row"><div class="label">Not predicted</div><div>Catastrophic wind destruction as the principal mechanism</div></div>
+    </aside>
+
+    <section class="card">
+      <h2>Peak-risk timeline</h2>
+      <div class="timeline">
+        <div class="day"><b>13 Sep · night</b><span class="stars">★★★★☆</span><span class="status pending">WATCH</span></div>
+        <div class="day"><b>14 Sep</b><span class="stars">★★★★★</span><span class="status pending">PEAK</span></div>
+        <div class="day"><b>15 Sep</b><span class="stars">★★★★☆</span><span class="status pending">HIGH</span></div>
+        <div class="day"><b>16 Sep</b><span class="stars">★★★☆☆</span><span class="status pending">TAIL</span></div>
+        <div class="day"><b>17 Sep</b><span>Final retrospective scoring</span><span class="status pending">VERIFY</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>How ND-001 will be scored</h2>
+      <ul class="criteria">
+        <li><b>HIT:</b> geography + timing + predicted mechanism + meaningful impacts match.</li>
+        <li><b>PARTIAL HIT:</b> significant rain/flooding occurs, but impacts are minor, slightly displaced, or only part of the forecast chain materializes.</li>
+        <li><b>MISS:</b> no meaningful flood/landslide disaster develops by the end of 16 September, or the significant event occurs outside the frozen zone.</li>
+      </ul>
+      <p style="color:var(--muted)">Ordinary seasonal rainfall does not count as a successful prediction.</p>
+    </section>
+
+    <section class="card" style="grid-column:1/-1">
+      <h2>Frozen prediction record</h2>
+      <div class="row"><div class="label">Prediction ID</div><div><b>ND-001</b></div></div>
+      <div class="row"><div class="label">Issued</div><div>13 September 2026</div></div>
+      <div class="row"><div class="label">Primary pin</div><div>Greater Đà Nẵng, Vietnam</div></div>
+      <div class="row"><div class="label">Secondary focus</div><div>Huế and surrounding mountainous / river catchments</div></div>
+      <div class="row"><div class="label">Target date</div><div>14 September 2026</div></div>
+      <div class="row"><div class="label">Tolerance</div><div>13–16 September 2026</div></div>
+      <div class="row"><div class="label">Disaster sequence</div><div>Tropical depression → extreme rainfall → rapidly rising rivers → urban / flash flooding → saturated slopes → landslides</div></div>
+      <div class="row"><div class="label">Expected severity</div><div>Local-to-regional serious event. Major international-catastrophe scale is not the base-case forecast.</div></div>
+    </section>
+  </div>
+
+  <div class="footer">
+    This site is an experimental forecasting and verification project. It is not an official warning service. For life-safety decisions, rely on local authorities, meteorological agencies, geological surveys and emergency-management bodies.
+  </div>
+</div>
+</body>
+</html>
