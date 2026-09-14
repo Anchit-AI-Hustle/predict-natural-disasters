@@ -89,8 +89,18 @@ const FIXTURES = {
       },
       {
         id: 'urn:oid:2.49.0.1.840.0.bbb',
-        properties: { id: 'urn:oid:2.49.0.1.840.0.bbb', event: 'Excessive Heat Warning', severity: 'Extreme', areaDesc: 'Maricopa, AZ', headline: 'Dangerous heat', sent: isoNow, expires: '2026-09-16T00:00:00Z', senderName: 'NWS Phoenix AZ' },
-        geometry: null // zone-only: intentionally has no mappable geometry
+        properties: {
+          id: 'urn:oid:2.49.0.1.840.0.bbb', event: 'Excessive Heat Warning', severity: 'Extreme',
+          areaDesc: 'Maricopa, AZ', headline: 'Dangerous heat', sent: isoNow, expires: '2026-09-16T00:00:00Z',
+          senderName: 'NWS Phoenix AZ',
+          affectedZones: ['https://api.weather.gov/zones/forecast/AZZ553']
+        },
+        geometry: null // zone-based: the alert itself carries no polygon
+      },
+      {
+        id: 'urn:oid:2.49.0.1.840.0.ccc',
+        properties: { id: 'urn:oid:2.49.0.1.840.0.ccc', event: 'High Wind Warning', severity: 'Severe', areaDesc: 'Unknown', headline: 'Wind', sent: isoNow, senderName: 'NWS' },
+        geometry: null // no polygon and no zone: genuinely unplaceable
       }
     ]
   },
@@ -124,6 +134,12 @@ const FIXTURES = {
         fields: { name: 'Past disaster record', status: 'past', url: 'https://reliefweb.int/disaster/x', type: [{ name: 'Flood' }], primary_country: { name: 'Chad', location: { lat: 12, lon: 15 } }, date: { created: '2020-01-01T00:00:00+00:00' } }
       }
     ]
+  },
+
+  nwsZone: {
+    id: 'https://api.weather.gov/zones/forecast/AZZ553',
+    properties: { id: 'AZZ553', name: 'Greater Phoenix Area' },
+    geometry: { type: 'Polygon', coordinates: [[[-112.4, 33.2], [-111.8, 33.2], [-111.8, 33.7], [-112.4, 33.7], [-112.4, 33.2]]] }
   },
 
   usgsVolcano: [
@@ -218,6 +234,7 @@ function makeFetch(opts) {
     if (u.includes('earthquake.usgs.gov')) return route('usgs', FIXTURES.usgs);
     if (u.includes('eonet.gsfc.nasa.gov')) return route('eonet', FIXTURES.eonet);
     if (u.includes('nhc.noaa.gov/CurrentStorms')) return route('nhc', FIXTURES.nhc);
+    if (u.includes('api.weather.gov/zones/')) return route('nws', FIXTURES.nwsZone);
     if (u.includes('api.weather.gov/alerts')) {
       // Reproduce production's HTTP 400: the API rejects one query parameter.
       if (o.nwsRejects && o.nwsRejects.some(p => u.includes(p))) {

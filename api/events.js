@@ -325,12 +325,31 @@ async function handler(req, res) {
           'https://api.weather.gov/alerts/active' + (query ? '?' + query : ''),
           { headers: { accept: 'application/geo+json' } }
         );
-        let n = 0, skipped = 0;
-        for (const f of j.features || []) {
+        // Most Extreme/Severe alerts are issued against forecast zones and carry
+        // no polygon of their own. Resolve a bounded number of those zones so
+        // they can be mapped, rather than dropping them.
+        const features = (j.features || []).filter(f => {
           const p = f.properties || {};
-          if (query === '' && !['Extreme', 'Severe'].includes(p.severity)) continue;
-          const c = centroid(f.geometry);
-          if (!c) { skipped++; continue; } // zone-only alerts carry no mappable geometry
+          return query !== '' || ['Extreme', 'Severe'].includes(p.severity);
+        });
+        const zoneless = features.filter(f => !centroid(f.geometry)).slice(0, 12);
+        const zoneCentroids = new Map();
+        await Promise.allSettled(zoneless.map(async f => {
+          const zone = ((f.properties || {}).affectedZones || [])[0];
+          if (!zone) return;
+          try {
+            const z = await timedFetch(zone, { timeout: 2500, headers: { accept: 'application/geo+json' } });
+            const c = centroid(z.geometry);
+            if (c) zoneCentroids.set(f, c);
+          } catch (e) { /* leave this alert unplaced */ }
+        }));
+
+        let n = 0, skipped = 0, viaZone = 0;
+        for (const f of features) {
+          const p = f.properties || {};
+          let c = centroid(f.geometry);
+          if (!c && zoneCentroids.has(f)) { c = zoneCentroids.get(f); viaZone++; }
+          if (!c) { skipped++; continue; }
           push({
             id: 'nws-' + (p.id || f.id),
             source: 'NOAA / National Weather Service', sourceType: 'official',
@@ -349,7 +368,10 @@ async function handler(req, res) {
           });
           n++;
         }
-        mark('nws', true, { records: n, zoneOnlySkipped: skipped, query: query || '(no filters)' });
+        mark('nws', true, {
+          records: n, placedViaZoneLookup: viaZone, unplaceable: skipped,
+          query: query || '(no filters)'
+        });
         return;
       } catch (e) {
         lastError = String(e.message || e);
@@ -414,8 +436,11 @@ async function handler(req, res) {
       let n = 0;
       for (const raw of arr) {
         const v = raw.properties || raw;
-        const lat = num(v.latitude != null ? v.latitude : (v.lat != null ? v.lat : v.vlat));
-        const lon = num(v.longitude != null ? v.longitude : (v.lon != null ? v.lon : (v.lng != null ? v.lng : v.vlon)));
+        let nd = v.notice_data;
+        if (typeof nd === 'string') { try { nd = JSON.parse(nd); } catch (e) { nd = null; } }
+        const src = Object.assign({}, nd && typeof nd === 'object' ? nd : {}, v);
+        const lat = num(src.latitude != null ? src.latitude : (src.lat != null ? src.lat : src.vlat));
+        const lon = num(src.longitude != null ? src.longitude : (src.lon != null ? src.lon : (src.lng != null ? src.lng : src.vlon)));
         if (lat === null || lon === null) continue;
         const name = v.volcano_name || v.volcanoName || v.name || 'Volcano';
         const level = String(v.alert_level || v.alertLevel || v.alert || '').toUpperCase();
@@ -440,7 +465,8 @@ async function handler(req, res) {
         ? {
             payload: Array.isArray(j) ? 'array' : typeof j,
             entries: Array.isArray(arr) ? arr.length : 0,
-            firstKeys: (arr && arr[0]) ? Object.keys(arr[0].properties || arr[0]).slice(0, 12) : []
+            firstKeys: (arr && arr[0]) ? Object.keys(arr[0].properties || arr[0]).slice(0, 20) : [],
+            firstEntry: (arr && arr[0]) ? JSON.stringify(arr[0].properties || arr[0]).slice(0, 700) : ''
           }
         : null;
       mark('usgs_volcano', true, shape ? { records: n, shape } : { records: n });

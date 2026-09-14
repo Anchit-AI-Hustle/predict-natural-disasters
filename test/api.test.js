@@ -136,7 +136,8 @@ test('a rejected NWS parameter falls back instead of losing the provider', async
   const nws = res.body.meta.sources.nws;
   assert.equal(nws.ok, true);
   assert.ok(nws.query, 'the query that answered should be recorded');
-  assert.equal(nws.zoneOnlySkipped, 1, 'the geometry-less alert should be counted as skipped');
+  assert.equal(nws.placedViaZoneLookup, 1, 'the zone-based alert should be placed from its zone');
+  assert.equal(nws.unplaceable, 1, 'the alert with neither polygon nor zone stays unplaced');
 });
 
 test('NWS keeps working when the API rejects a query parameter', async () => {
@@ -171,13 +172,20 @@ test('feed degrades safely when every upstream is down', async () => {
   assert.ok(res.body.meta.forecastNote.length > 10);
 });
 
-test('zone-only NWS alerts without geometry are skipped, mapped ones are kept', async () => {
+test('NWS alerts are placed by polygon or zone, and never invented', async () => {
   const res = await runEvents();
   const nws = res.body.events.filter(e => e.sourceType === 'official' && e.source.includes('National Weather Service'));
-  assert.equal(nws.length, 1);
-  assert.match(nws[0].title, /Flash Flood Warning/);
-  assert.equal(nws[0].type, 'Flood');
-  assert.ok(nws[0].expiresAt, 'NWS alerts should carry an expiry');
+  // Polygon alert + zone-resolved alert are kept; the one with neither is not.
+  assert.equal(nws.length, 2);
+  const flood = nws.find(e => /Flash Flood Warning/.test(e.title));
+  assert.ok(flood, 'polygon-backed alert missing');
+  assert.equal(flood.type, 'Flood');
+  assert.ok(flood.expiresAt, 'NWS alerts should carry an expiry');
+  const heat = nws.find(e => /Excessive Heat/.test(e.title));
+  assert.ok(heat, 'zone-based alert was dropped instead of resolved');
+  assert.ok(Math.abs(heat.lat - 33.45) < 0.1 && Math.abs(heat.lon + 112.1) < 0.1,
+    'zone-resolved alert should sit inside its zone');
+  assert.ok(!nws.some(e => /High Wind/.test(e.title)), 'unplaceable alert must not be invented a position');
 });
 
 test('hazard types from every provider are normalised to one vocabulary', async () => {
@@ -385,4 +393,11 @@ test('an unparsable video page is reported rather than shown as empty', async ()
   const yt = d.sources.find(s => s.name === 'YouTube');
   assert.equal(yt.items, 0);
   assert.match(yt.note, /no parsable results/i);
+});
+
+test('volcano notices are placed from notice_data when the record has no coordinates', async () => {
+  const res = await runEvents();
+  const volc = res.body.events.filter(e => e.source.includes('Volcano Hazards'));
+  assert.ok(volc.length >= 1, 'elevated volcanoes should be mapped');
+  assert.ok(volc.every(e => Number.isFinite(e.lat) && Number.isFinite(e.lon)));
 });
