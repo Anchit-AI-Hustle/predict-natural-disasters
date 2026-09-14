@@ -131,6 +131,103 @@ test('the browser default link colours would fail — which is why the rule is r
   }
 });
 
+/* --------------------------------------------- anchors that are not links */
+
+/* A whole card can be an <a> (collection.js wraps each result in
+   a.event-card). Unless that anchor sets its own colour and text-decoration it
+   takes the browser's link treatment, so the entire card renders blue and
+   underlined -- and purple after the reader clicks through, which is how it
+   looked in production. */
+const CARD_ANCHORS = ['a.event-card', 'a.card', 'a.item', 'a.intelcard'];
+
+test('anchors used as cards carry their own colour and lose the underline', () => {
+  for (const file of SHEETS) {
+    const { rules } = rulesOf(file);
+    for (const selector of CARD_ANCHORS) {
+      const rule = rules.find(r => r.selectors.includes(selector));
+      assert.ok(rule, file + ' does not style ' + selector);
+      assert.match(rule.body, /text-decoration:\s*none/, file + ' ' + selector + ' keeps the underline');
+      const colour = colourFor(file, selector);
+      assert.ok(colour, file + ' ' + selector + ' has no colour of its own');
+      const worst = worstSurface(colour);
+      assert.ok(worst.ratio >= AA,
+        `${file} ${selector} ${colour} → ${worst.ratio.toFixed(2)}:1 on ${worst.name}`);
+    }
+  }
+});
+
+test('every anchor class in the codebase is styled, so none inherits the default', () => {
+  const fs2 = require('node:fs');
+  const used = new Set();
+  for (const f of fs2.readdirSync(ROOT).filter(n => /\.(html|js)$/.test(n))) {
+    for (const m of fs2.readFileSync(path.join(ROOT, f), 'utf8')
+      .matchAll(/<a\s[^>]*class="([^"$]*)"/g)) {
+      for (const c of m[1].split(/\s+/)) if (c) used.add(c);
+    }
+  }
+  const css = SHEETS.map(read).join('\n');
+  // `.active` is only ever used inside .nav, which already styles its anchors.
+  used.delete('active');
+  const unstyled = [...used].filter(c =>
+    !new RegExp('a\\.' + c + '(?![\\w-])').test(css) && !new RegExp('\\.' + c + '(?![\\w-])\\s*[,{]').test(css));
+  assert.deepEqual(unstyled, [], 'anchor classes with no rule: ' + unstyled.join(', '));
+});
+
+/* ------------------------------------------------- third-party map chrome */
+
+/* Leaflet renders its own controls and popups inside the map, on surfaces this
+   palette does not own. `.leaflet-container a` is (0,1,1), the same specificity
+   as a bare `a:visited` / `a:hover`, so whichever stylesheet loads last wins —
+   and on index.html and dashboard.html the inline styles load after Leaflet.
+   The attribution pill is near-white and the popups are painted dark by this
+   app, so the two need opposite treatment. */
+const LEAFLET_ATTRIBUTION_BG = '#ffffff';       // rgba(255,255,255,.8) over the map
+const LEAFLET_BLUE = '#0078a8';                 // Leaflet's own link colour
+const POPUP_BG = { 'index.html': '#09241c', 'dashboard.html': '#0b1814', shared: '#09241c' };
+
+test('Leaflet control links keep a colour that reads on its light chrome', () => {
+  const bad = [];
+  for (const file of ALL) {
+    for (const selector of ['.leaflet-container .leaflet-control-attribution a',
+      '.leaflet-container .leaflet-control-attribution a:visited',
+      '.leaflet-container .leaflet-control-attribution a:hover']) {
+      const colour = colourFor(file, selector);
+      assert.ok(colour, file + ' does not scope ' + selector);
+      const r = contrast(colour, LEAFLET_ATTRIBUTION_BG);
+      if (r < AA) bad.push(`${file} ${selector} ${colour} → ${r.toFixed(2)}:1 on the attribution pill`);
+    }
+  }
+  assert.deepEqual(bad, [], 'unreadable attribution links:\n' + bad.join('\n'));
+});
+
+test('the site link colours would be unreadable on that pill — which is why it is scoped', () => {
+  for (const file of ALL) {
+    for (const selector of ['a:visited', 'a:hover']) {
+      assert.ok(contrast(colourFor(file, selector), LEAFLET_ATTRIBUTION_BG) < 2,
+        file + ': ' + selector + ' unexpectedly readable on white');
+    }
+  }
+});
+
+test('map popup links read against the dark popup this app paints', () => {
+  // Leaflet's own blue is only 3.3:1 there, so the popups take the site colour.
+  const bad = [];
+  for (const file of ALL) {
+    const bg = POPUP_BG[file] || POPUP_BG.shared;
+    for (const selector of ['.leaflet-container .leaflet-popup-content a',
+      '.leaflet-container .leaflet-popup-content a:visited',
+      '.leaflet-container .leaflet-popup-content a:hover']) {
+      const colour = colourFor(file, selector);
+      assert.ok(colour, file + ' does not scope ' + selector);
+      const r = contrast(colour, bg);
+      if (r < AA) bad.push(`${file} ${selector} ${colour} → ${r.toFixed(2)}:1 on ${bg}`);
+    }
+  }
+  assert.deepEqual(bad, [], 'unreadable popup links:\n' + bad.join('\n'));
+  assert.ok(contrast(LEAFLET_BLUE, POPUP_BG.shared) < AA,
+    "Leaflet's blue now passes on the dark popup — the override is redundant");
+});
+
 /* ------------------------------------------------------------------ badges */
 
 /** Severity badges are 9px bold, so they need the full 4.5:1, not the large-text 3:1. */

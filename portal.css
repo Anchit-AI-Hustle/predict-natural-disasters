@@ -12,3 +12,22 @@ a:focus-visible{color:var(--link-hover);outline:2px solid var(--link);outline-of
 /* Amber and orange badges are too light for white text (3.1:1 and 2.7:1);
    dark ink on the same background reads at 6:1 and keeps the colour coding. */
 .badge.high,.badge.moderate,.risk.high,.risk.moderate{color:var(--ink)}
+/* Leaflet paints its own chrome inside the map, on its own surfaces. Its
+   attribution pill is near-white, where the link colours above are 1.7:1 and
+   1.2:1, so that chrome keeps Leaflet's blue (4.9:1 there). The popups are
+   painted dark by this app, where that same blue is only 3.3:1, so those take
+   the site link colour instead. Both outrank `.leaflet-container a` whichever
+   stylesheet the page happens to load first. */
+.leaflet-container .leaflet-control-attribution a,.leaflet-container .leaflet-control-attribution a:visited,.leaflet-container .leaflet-control-attribution a:hover,
+.leaflet-container .leaflet-control-layers a,.leaflet-container .leaflet-control-layers a:visited,.leaflet-container .leaflet-control-layers a:hover{color:#0078a8}
+.leaflet-container .leaflet-popup-content a,.leaflet-container .leaflet-popup-content a:visited{color:var(--link)}
+.leaflet-container .leaflet-popup-content a:hover{color:var(--link-hover)}
+/* Anchors used as cards, chips and phone numbers are not inline links. With no
+   colour or text-decoration of their own they take the browser's link treatment,
+   which rendered whole cards blue and underlined -- and purple once visited, which
+   is what a reader saw after clicking through. The `a.` prefix confines these to
+   the anchor itself, leaving the text inside it alone. */
+a.event-card,a.card,a.item,a.intelcard{color:var(--text);text-decoration:none}
+a.event-card:hover h3,a.card:hover h3,a.item:hover h3,a.intelcard:hover h3{color:var(--link)}
+a.intelphone{color:var(--link);text-decoration:none;font-weight:800}
+a.btn,a.viewall,a.live,a.logo,a.action,a.countryLink,a.onward{text-decoration:none}

@@ -44,6 +44,20 @@ function outletFromTitle(t) {
 function hostOf(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
 }
+/**
+ * Newest first. Items whose date is missing or unparseable sink to the bottom
+ * rather than being treated as epoch-old, and keep their relative order there
+ * (Array#sort is stable), so an undated report never displaces a dated one.
+ */
+function byNewest(a, b) {
+  const at = t => { const n = Date.parse(t || ''); return Number.isFinite(n) ? n : null; };
+  const x = at(a && a.publishedAt), y = at(b && b.publishedAt);
+  if (x === null && y === null) return 0;
+  if (x === null) return 1;
+  if (y === null) return -1;
+  return y - x;
+}
+
 function dedupe(arr, keyFn) {
   const seen = new Set();
   return arr.filter(x => {
@@ -444,9 +458,9 @@ async function handler(req, res) {
   ).map(x => Object.assign({}, x, {
     outlet: x.outlet || hostOf(x.link) || 'News source',
     established: isEstablished(x.link, x.outlet)
-  })).slice(0, 24);
+  })).sort(byNewest).slice(0, 24);
 
-  const situationReports = rwItems.slice(0, 12).map(x => Object.assign({}, x, { established: true }));
+  const situationReports = rwItems.slice().sort(byNewest).slice(0, 12).map(x => Object.assign({}, x, { established: true }));
 
   const support = supportFor(country, region);
   const play = hazardPlaybook(type);
