@@ -36,208 +36,103 @@
           "value": "*"
         }
       ]
+    },
+    {
+      "source": "/(disasters|alerts|forecasts|calamities|regions|locations|hazards|history|sources)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/404.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)-detail",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/index.html"
-    },
-    {
       "source": "/disasters/:id",
-      "destination": "/event-detail.html?id=:id"
+      "destination": "/event-detail?id=:id"
     },
     {
       "source": "/calamities/:id",
-      "destination": "/calamity-detail.html?id=:id"
+      "destination": "/calamity-detail?id=:id"
     },
     {
       "source": "/alerts/:id",
-      "destination": "/alert-detail.html?id=:id"
+      "destination": "/alert-detail?id=:id"
     },
     {
       "source": "/forecasts/:id",
-      "destination": "/forecast-detail.html?id=:id"
+      "destination": "/forecast-detail?id=:id"
     },
     {
       "source": "/regions/:region",
-      "destination": "/region-detail.html?region=:region"
+      "destination": "/region-detail?region=:region"
     },
     {
       "source": "/locations/:location",
-      "destination": "/location-detail.html?location=:location"
+      "destination": "/location-detail?location=:location"
     },
     {
       "source": "/hazards/:type",
-      "destination": "/hazard-detail.html?type=:type"
+      "destination": "/hazard-detail?type=:type"
     },
     {
       "source": "/history/:id",
-      "destination": "/historical-event-detail.html?id=:id"
+      "destination": "/historical-event-detail?id=:id"
     },
     {
       "source": "/sources/:source",
-      "destination": "/source-detail.html?source=:source"
-    },
-    {
-      "source": "/calamities",
-      "destination": "/calamities.html"
-    },
-    {
-      "source": "/event-detail",
-      "destination": "/event-detail.html"
-    },
-    {
-      "source": "/calamity-detail",
-      "destination": "/calamity-detail.html"
-    },
-    {
-      "source": "/forecast-detail",
-      "destination": "/forecast-detail.html"
-    },
-    {
-      "source": "/alert-detail",
-      "destination": "/alert-detail.html"
-    },
-    {
-      "source": "/region-detail",
-      "destination": "/region-detail.html"
-    },
-    {
-      "source": "/location-detail",
-      "destination": "/location-detail.html"
-    },
-    {
-      "source": "/hazard-detail",
-      "destination": "/hazard-detail.html"
-    },
-    {
-      "source": "/historical-event-detail",
-      "destination": "/historical-event-detail.html"
-    },
-    {
-      "source": "/source-detail",
-      "destination": "/source-detail.html"
+      "destination": "/source-detail?source=:source"
     },
     {
       "source": "/insight-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/methodology-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/metric-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/resource-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/about-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/calendar-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/comparison-detail",
-      "destination": "/entity-detail.html"
+      "destination": "/entity-detail"
     },
     {
       "source": "/notification-detail",
-      "destination": "/entity-detail.html"
-    },
-    {
-      "source": "/entity-detail",
-      "destination": "/entity-detail.html"
-    },
-    {
-      "source": "/verification-detail",
-      "destination": "/verification-detail.html"
-    },
-    {
-      "source": "/directory",
-      "destination": "/directory.html"
-    },
-    {
-      "source": "/events",
-      "destination": "/events.html"
-    },
-    {
-      "source": "/recent-events",
-      "destination": "/recent-events.html"
-    },
-    {
-      "source": "/official-warnings",
-      "destination": "/official-warnings.html"
-    },
-    {
-      "source": "/hazard-types",
-      "destination": "/hazard-types.html"
-    },
-    {
-      "source": "/forecast-list",
-      "destination": "/forecast-list.html"
-    },
-    {
-      "source": "/forecast-calendar",
-      "destination": "/forecast-calendar.html"
-    },
-    {
-      "source": "/historical-events",
-      "destination": "/historical-events.html"
-    },
-    {
-      "source": "/alerts-notifications",
-      "destination": "/alerts-notifications.html"
-    },
-    {
-      "source": "/compare-locations",
-      "destination": "/compare-locations.html"
-    },
-    {
-      "source": "/resources",
-      "destination": "/resources.html"
-    },
-    {
-      "source": "/live-map",
-      "destination": "/live-map.html"
-    },
-    {
-      "source": "/forecasts",
-      "destination": "/forecasts.html"
-    },
-    {
-      "source": "/alerts",
-      "destination": "/alerts.html"
-    },
-    {
-      "source": "/regions",
-      "destination": "/regions.html"
-    },
-    {
-      "source": "/verification",
-      "destination": "/verification.html"
-    },
-    {
-      "source": "/methodology",
-      "destination": "/methodology.html"
-    },
-    {
-      "source": "/insights",
-      "destination": "/insights.html"
-    },
-    {
-      "source": "/about",
-      "destination": "/about.html"
+      "destination": "/entity-detail"
     }
   ]
 }

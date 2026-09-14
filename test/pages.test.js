@@ -66,14 +66,9 @@ test('every page in the site renders with no uncaught JavaScript error', async (
   assert.deepEqual(failures, [], 'pages with JavaScript errors:\n' + failures.join('\n'));
 });
 
-test('every detail page is reachable through a configured route', () => {
-  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  const destinations = cfg.rewrites.map(r => r.destination.split('?')[0].replace(/^\//, ''));
-  const detailPages = PAGES.filter(p => p.endsWith('-detail.html'));
-  for (const p of detailPages) {
-    assert.ok(destinations.includes(p), p + ' has no rewrite destination in vercel.json');
-  }
-});
+// Route coverage moved to routes.test.js: this test asserted that every detail
+// page is named as a rewrite destination, which is what was wrong — cleanUrls
+// serves them directly, and the rewrites that named them were dead in production.
 
 /* ------------------------------------------------------- incident detail */
 
@@ -309,8 +304,9 @@ test('no element id is shadowed by a built-in Window property', async () => {
 
 /* ------------------------------------------------------------------ sorting */
 
-// Pages that are static prose with no list of records to order.
-const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html']);
+// Pages that are static prose with no list of records to order. 404.html belongs
+// here too: its only list is a fixed set of six places to go next.
+const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html', '404.html']);
 
 test('every page that lists records offers a sort control', async () => {
   const missing = [];

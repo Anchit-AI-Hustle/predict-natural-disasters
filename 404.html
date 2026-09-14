@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Record not found · Predict Natural Disasters</title><link rel="stylesheet" href="/portal.css">
+<style>.nf{max-width:860px;margin:0 auto;padding:26px 16px}
+.nf .paths{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+.nf .paths a{display:block;border:1px solid #285c49;background:#09231b;border-radius:9px;padding:12px;color:#eaf7f1;text-decoration:none}
+.nf .paths a:hover{border-color:#35d79a}
+.nf code{background:#08251c;border:1px solid #1d654c;border-radius:6px;padding:2px 6px;font-size:12px;word-break:break-all}
+.nf .onward{display:inline-block;margin-top:10px;background:#35d79a;color:#04211a;font-weight:700;border-radius:9px;padding:11px 18px;text-decoration:none}
+@media(max-width:760px){.nf .paths{grid-template-columns:1fr}}</style></head>
+<body><div id="nav"></div>
+<section class="hero"><div class="muted">RECORD NOT FOUND</div><h1 id="headline">Looking for this record…</h1>
+<p id="sub">Checking the live feed for a matching disaster, alert or outlook.</p></section>
+<main class="wrap"><div class="nf">
+  <section class="panel"><div class="ph"><h2>What happened</h2><span id="state" class="statusbar">Resolving…</span></div>
+    <div class="detail">
+      <p>The address <code id="attempted">—</code> did not resolve to a page.</p>
+      <p class="muted" id="explain">Live records rotate out of the source feeds as events close, and a page opened from an
+        older link may no longer exist. If the record is still in the feed this page forwards you to it automatically.</p>
+      <a id="onward" class="onward" href="/events" data-keep-href hidden>Continue</a>
+    </div></section>
+  <section class="panel"><div class="ph"><h2>Go to</h2></div>
+    <div class="paths">
+      <a href="/">Home — global live map</a>
+      <a href="/events">All live events</a>
+      <a href="/official-warnings">Official warnings</a>
+      <a href="/forecast-list">Experimental outlooks</a>
+      <a href="/calamities">Current calamities</a>
+      <a href="/regions">Regions</a>
+    </div></section>
+</div></main>
+<script src="/portal.js"></script>
+<script>
+nav.innerHTML = PND.nav('');
+const path = location.pathname;
+attempted.textContent = path + location.search;
+
+// Pretty detail routes carry the record id in the second segment.
+const seg = path.split('/').filter(Boolean);
+// Record routes: the id has to be checked against the live feed before forwarding.
+const KIND = { disasters: 'event-detail', alerts: 'alert-detail', calamities: 'calamity-detail', forecasts: 'forecast-detail' };
+// Catalog routes: the destination renders whatever name it is given, so forward at once.
+const DIRECT = { regions: 'region-detail', locations: 'location-detail', hazards: 'hazard-detail',
+                 history: 'historical-event-detail', sources: 'source-detail' };
+const PARAM = { regions: 'region', locations: 'location', hazards: 'type', history: 'id', sources: 'source' };
+
+let raw = seg.length >= 2 ? seg.slice(1).join('/') : '';
+try { raw = decodeURIComponent(raw); } catch (e) { /* keep as-is */ }
+
+/* Forward to the query form of the route, never back to the pretty URL this
+   page was reached through: that address is the one that just failed, so
+   sending the reader to it again only bounces them straight back here.
+   The link is shown first so they still get there if the automatic redirect
+   is blocked. */
+function forward(page, params, label) {
+  // Carry the query the visitor arrived with, so /hazards/Flood?region=Nepal
+  // recovers as Nepal-specific rather than silently widening to the world.
+  // The value read from the path wins over any copy of it in the query.
+  const carried = new URLSearchParams(location.search);
+  Object.keys(params).forEach(k => carried.delete(k));
+  const pairs = Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k]))
+    .concat([...carried].map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)));
+  const dest = '/' + page + '?' + pairs.join('&');
+  onward.href = dest;
+  onward.textContent = label;
+  onward.hidden = false;
+  state.textContent = 'Found it — forwarding';
+  location.replace(dest);
+}
+
+async function resolve() {
+  if (seg.length >= 2 && DIRECT[seg[0]] && raw) {
+    headline.textContent = 'Taking you to ' + raw;
+    sub.textContent = 'That page is built from the live feed under a different address.';
+    forward(DIRECT[seg[0]], { [PARAM[seg[0]]]: raw }, 'Continue to ' + raw);
+    return;
+  }
+  if (seg.length >= 2 && KIND[seg[0]] && raw) {
+    state.textContent = 'Searching the live feed…';
+    try {
+      const d = await PND.getEvents();
+      const e = PND.findEvent(d.events, raw);
+      if (e) {
+        headline.textContent = 'Taking you to ' + e.title;
+        sub.textContent = 'The record is live — opening its detail page.';
+        forward(KIND[seg[0]], { id: e.id }, 'Continue to ' + e.title);
+        return;
+      }
+      headline.textContent = 'That record is no longer in the live feed';
+      sub.textContent = 'It was found neither by id nor by title in the current source window.';
+      explain.textContent = 'Source feeds keep a rolling window, so a closed or superseded event drops out. '
+        + 'The lists below carry everything currently reported.';
+    } catch (err) {
+      headline.textContent = 'Could not reach the live feed';
+      sub.textContent = 'The record may still exist — the feed did not answer just now.';
+    }
+  } else {
+    headline.textContent = 'Page not found';
+    sub.textContent = 'That address does not match any page on this site.';
+  }
+  state.textContent = 'Resolved';
+}
+resolve();
+</script></body></html>

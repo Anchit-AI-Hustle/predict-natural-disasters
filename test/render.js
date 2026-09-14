@@ -83,7 +83,9 @@ async function callApi(handler, urlString, mockOpts) {
 
 /**
  * @param {string} page  file name, e.g. 'event-detail.html'
- * @param {object} opts  { search, mock, waitFor, timeoutMs }
+ * @param {object} opts  { search, url, mock, waitFor, timeoutMs }
+ *   url  serve this file at a different address — how 404.html is reached in
+ *        production, where the path is the route the visitor actually asked for.
  */
 async function renderPage(page, opts) {
   const o = opts || {};
@@ -95,7 +97,7 @@ async function renderPage(page, opts) {
 
   const apiCalls = [];
   const dom = new JSDOM(html, {
-    url: ORIGIN + '/' + page + (o.search || ''),
+    url: o.url ? ORIGIN + o.url : ORIGIN + '/' + page + (o.search || ''),
     runScripts: 'dangerously',
     resources: new RepoLoader(),
     virtualConsole,
