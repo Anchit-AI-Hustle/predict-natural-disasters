@@ -8,10 +8,6 @@ const eventsHandler = require(path.join(__dirname, '..', 'api', 'events.js'));
 const enrichHandler = require(path.join(__dirname, '..', 'api', 'event-enrichment.js'));
 const support = require(path.join(__dirname, '..', 'api', 'verified-support.js'));
 
-// ReliefWeb v2 requires a pre-approved appname; exercise the configured path
-// here and the unconfigured path in its own test below.
-process.env.RELIEFWEB_APPNAME = 'pnd-test-appname';
-
 const realFetch = global.fetch;
 function withFetch(mock, fn) {
   global.fetch = mock;
@@ -117,18 +113,49 @@ test('outlooks still appear when GDACS is down', async () => {
     'a GDACS outage must not collapse the outlook set, got ' + forecasts.length);
 });
 
-test('ReliefWeb is reported as unconfigured rather than failing silently', async () => {
-  const saved = process.env.RELIEFWEB_APPNAME;
-  delete process.env.RELIEFWEB_APPNAME;
-  try {
-    const res = await runEvents();
-    const rw = res.body.meta.sources.reliefweb;
-    assert.equal(rw.ok, false);
-    assert.match(rw.error, /RELIEFWEB_APPNAME/);
-    assert.match(rw.hint, /reliefweb\.int\/help\/api/);
-    // The other seven providers carry on.
-    assert.ok(res.body.meta.sourceCount >= 7);
-  } finally { process.env.RELIEFWEB_APPNAME = saved; }
+test('ReliefWeb disasters come from the public feed with no credential', async () => {
+  const res = await runEvents();
+  const rw = res.body.meta.sources.reliefweb;
+  assert.equal(rw.ok, true, 'the public feed needs no appname');
+  assert.equal(rw.endpoint, 'public disasters RSS');
+  assert.equal(rw.records, 2, 'two of the feed items are placeable');
+
+  const recs = res.body.events.filter(e => e.sourceType === 'official' && e.source.includes('ReliefWeb'));
+  assert.equal(recs.length, 2);
+  const nepal = recs.find(e => /Nepal/.test(e.title));
+  assert.ok(nepal, 'Nepal disaster missing');
+  assert.equal(nepal.country, 'Nepal');
+  assert.equal(nepal.type, 'Flood', 'hazard type should come from the title');
+  assert.ok(Math.abs(nepal.lat - 28.16667) < 0.01 && Math.abs(nepal.lon - 84.25) < 0.01,
+    'country coordinates were not applied');
+  assert.equal(nepal.precision, 'country', 'country-level placement must be flagged');
+  assert.match(nepal.details, /country level, not at an incident location/);
+  assert.equal(nepal.sourceUrl, 'https://reliefweb.int/disaster/fl-2026-000167-npl');
+
+  const ph = recs.find(e => /Philippines/.test(e.title));
+  assert.equal(ph.type, 'Tropical Cyclone');
+});
+
+test('a ReliefWeb record whose country cannot be located is left out', async () => {
+  const res = await runEvents();
+  assert.equal(res.body.meta.sources.reliefweb.unplacedCountries, 1);
+  assert.ok(!res.body.events.some(e => /Atlantis/.test(e.title)),
+    'an unlocatable country must not be placed somewhere plausible');
+});
+
+test('ReliefWeb degrades to offline when its feed is unreachable', async () => {
+  const res = await runEvents({ down: ['reliefweb'] });
+  assert.equal(res.body.meta.sources.reliefweb.ok, false);
+  assert.match(res.body.meta.sources.reliefweb.error, /HTTP 503/);
+  assert.ok(res.body.meta.sourceCount >= 7, 'the other providers carry on');
+});
+
+test('ReliefWeb records still resolve when the geocoder is down', async () => {
+  const res = await runEvents({ down: ['geocode'] });
+  const rw = res.body.meta.sources.reliefweb;
+  assert.equal(rw.ok, true, 'the feed itself still parsed');
+  assert.equal(rw.records, 0);
+  assert.equal(rw.unplacedCountries, 3, 'nothing is placed without coordinates');
 });
 
 test('a rejected NWS parameter falls back instead of losing the provider', async () => {
@@ -346,24 +373,16 @@ test('every stored contact and link is well formed', () => {
   }
 });
 
-test('situation reports fall back to the public ReliefWeb feed without an appname', async () => {
-  const saved = process.env.RELIEFWEB_APPNAME;
-  delete process.env.RELIEFWEB_APPNAME;
-  try {
-    const d = (await runEnrichment(NEPAL)).body;
-    assert.ok(d.situationReports.length >= 2, 'the public RSS feed should still supply reports');
-    assert.ok(d.situationReports.every(x => x.link.includes('reliefweb.int')));
-    assert.equal(d.situationReports[0].via, 'ReliefWeb (UN OCHA)');
-  } finally { process.env.RELIEFWEB_APPNAME = saved; }
-});
-
-test('the API-backed path is used when an appname is configured', async () => {
+test('situation reports come from the public ReliefWeb feed', async () => {
   const d = (await runEnrichment(NEPAL)).body;
-  assert.ok(d.situationReports.length >= 2);
-  assert.ok(d.situationReports.some(x => /Situation Report/i.test(x.title)));
+  assert.ok(d.situationReports.length >= 2, 'the public RSS feed should supply reports');
+  assert.ok(d.situationReports.every(x => x.link.includes('reliefweb.int')));
+  assert.equal(d.situationReports[0].via, 'ReliefWeb (UN OCHA)');
+  assert.equal(d.situationReports[0].outlet, 'OCHA');
+  assert.ok(d.situationReports.every(x => x.established), 'ReliefWeb items are authoritative');
 });
 
-/* ---------------------------------------------- video extraction shapes */
+/* ------------------------------- restored: video shapes & volcano placement */
 
 test('videos are extracted from every YouTube result shape', async () => {
   const cases = [

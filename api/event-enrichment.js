@@ -136,36 +136,11 @@ async function bingNews(query) {
 /**
  * UN OCHA ReliefWeb: authoritative situation reports, assessments and appeals.
  *
- * API v1 is decommissioned and v2 needs an appname approved by ReliefWeb, so
- * fall back to ReliefWeb's public search RSS feed, which needs no credential.
+ * The v2 API needs an appname approved by ReliefWeb, so this reads the public
+ * search feed instead — same reports, no credential to configure.
  */
-function mapReliefwebApi(j) {
-  return (j.data || []).map(d => {
-    const f = d.fields || {};
-    return {
-      title: f.title || 'ReliefWeb report',
-      link: f.url || ('https://reliefweb.int/node/' + d.id),
-      outlet: (f.source && f.source[0] && (f.source[0].shortname || f.source[0].name)) || 'ReliefWeb',
-      publishedAt: (f.date && (f.date.created || f.date.original)) || '',
-      summary: strip(f.body || '').slice(0, 320),
-      via: 'ReliefWeb (UN OCHA)'
-    };
-  }).filter(x => x.title && x.link);
-}
-
 async function reliefwebReports(query, country) {
   const search = [query, country].filter(Boolean).join(' ').slice(0, 240);
-  const appname = process.env.RELIEFWEB_APPNAME || '';
-
-  if (appname) {
-    const params = new URLSearchParams({
-      appname, profile: 'list', limit: '12', 'query[value]': search, 'sort[]': 'date:desc'
-    });
-    try {
-      return mapReliefwebApi(await getJson('https://api.reliefweb.int/v2/reports?' + params.toString()));
-    } catch (e) { /* fall through to the public feed */ }
-  }
-
   try {
     const url = 'https://reliefweb.int/updates/rss.xml?search=' + encodeURIComponent(search);
     return parseRss(await getText(url), 12).map(x => Object.assign(x, {
