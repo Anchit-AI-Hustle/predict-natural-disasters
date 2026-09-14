@@ -37,7 +37,9 @@ const PND={
   rankOf(e){return this.RISK_RANK[String(e&&e.alert||'').toLowerCase()]||0},
   timeOf(e){const t=Date.parse((e&&(e.updated||e.targetStart||e.startedAt))||'');return Number.isFinite(t)?t:0},
   numOf(v){const n=Number(v);return Number.isFinite(n)?n:0},
-  textOf(e,...keys){for(const k of keys){const v=e&&e[k];if(v)return String(v).toLowerCase()}return '￿'},
+  /* Sort on the displayed text. Titles are rendered with acronyms written out,
+     so sorting the raw feed value put the list out of A-Z order on screen. */
+  textOf(e,...keys){for(const k of keys){let v=e&&e[k];if(v){v=String(v);const g=typeof window!=='undefined'&&window.__pndGlossary;if(g&&g.expandAlways)v=g.expandAlways(v);return v.toLowerCase()}}return '￿'},
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
     newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},

@@ -65,20 +65,19 @@
   };
   var MAGNITUDES = { mw: 'moment magnitude', mb: 'body-wave magnitude',
                      ml: 'local magnitude', ms: 'surface-wave magnitude' };
+  /* Only codes that are not also ISO country codes. On a global hazard site
+     "Berlin, DE", "New Delhi, IN" and "Toronto, CA" are countries, and rendering
+     them as Delaware, Indiana and California is worse than leaving them short.
+     Excluded for that reason: AL AR AZ CA CO DE GA ID IL IN KY LA MA MD ME MN MO
+     MS MT NC NE PA PR SC SD TN VA VI. */
   var STATES = {
-    AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
-    CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
-    HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
-    KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
-    MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi',
-    MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire',
-    NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina',
-    ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania',
-    RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee',
-    TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
-    WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming', DC: 'District of Columbia',
-    PR: 'Puerto Rico'
-  };
+    AK: 'Alaska', CT: 'Connecticut', DC: 'District of Columbia', FL: 'Florida',
+    HI: 'Hawaii', IA: 'Iowa', KS: 'Kansas', MI: 'Michigan', NH: 'New Hampshire',
+    NJ: 'New Jersey', NM: 'New Mexico', NV: 'Nevada', NY: 'New York', OH: 'Ohio',
+    OK: 'Oklahoma', OR: 'Oregon', RI: 'Rhode Island', TX: 'Texas', UT: 'Utah',
+    VT: 'Vermont', WA: 'Washington', WI: 'Wisconsin', WV: 'West Virginia',
+    WY: 'Wyoming'
+  };;
 
   var spelled = {};                                   // terms currently written out on the page
   var onceRe = new RegExp('\\b(' + ONCE.map(function (p) { return p[0]; }).join('|') + ')\\b', 'g');
@@ -89,8 +88,11 @@
   var scales = Object.keys(MAGNITUDES).join('|');
   // "Magnitude 6.5 mw" must not become "Magnitude 6.5 moment magnitude"; the
   // scale name replaces the generic word rather than trailing after it.
+  /* Only expand a scale code that follows the word "magnitude". A bare
+     "948 mb" is millibars of pressure, "30 ms" is milliseconds and "500 ml" is
+     millilitres -- this feed publishes cyclone pressure in exactly that form,
+     and the unanchored rule turned it into "94body-wave magnitude 8". */
   var magNamedRe = new RegExp('\\bMagnitude\\s+(\\d(?:\\.\\d+)?)\\s+(' + scales + ')\\b', 'g');
-  var magRe = new RegExp('(\\d(?:\\.\\d+)?)\\s+(' + scales + ')\\b', 'g');
   // United States Geological Survey and EMSC titles lead with "M 6.5 - ...".
   var magPrefixRe = /\bM\s+(\d(?:\.\d+)?)/g;
   var capitalise = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
@@ -102,9 +104,9 @@
   function expandAlways(text) {
     return String(text)
       .replace(bearingRe, function (m, b) { return BEARINGS[b] + ' of'; })
-      .replace(magNamedRe, function (m, n, u) { return capitalise(MAGNITUDES[u]) + ' ' + n; })
-      .replace(magRe, function (m, n, u) { return MAGNITUDES[u] + ' ' + n; })
+      // "M 6.5 mw" becomes "Magnitude 6.5 mw" first, so the named rule then sees it.
       .replace(magPrefixRe, function (m, n) { return 'Magnitude ' + n; })
+      .replace(magNamedRe, function (m, n, u) { return capitalise(MAGNITUDES[u]) + ' ' + n; })
       .replace(stateRe, function (m, s) { return ', ' + STATES[s]; });
   }
 
@@ -151,7 +153,14 @@
     var text = document.body ? document.body.textContent : '';
     spelled = {};
     for (var i = 0; i < ONCE.length; i++) {
-      if (text.indexOf(ONCE[i][1]) !== -1) spelled[ONCE[i][0]] = true;
+      var acronym = ONCE[i][0], full = ONCE[i][1];
+      var atFull = text.indexOf(full);
+      if (atFull === -1) continue;
+      // The full form has to come first. A card headed "WMO" above a paragraph
+      // that happens to spell it out still shows the reader an acronym before
+      // its definition, so that heading is expanded rather than left short.
+      var atAcronym = text.search(new RegExp('\\b' + acronym + '\\b'));
+      if (atAcronym === -1 || atFull <= atAcronym) spelled[acronym] = true;
     }
   }
 
@@ -160,10 +169,26 @@
     walk(document.body);
   }
 
+  /** Does this mutation carry any text worth looking at? */
+  function carriesText(nodes) {
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if ((n.nodeType === 1 || n.nodeType === 3) && /[A-Za-z]/.test(n.textContent || '')) return true;
+    }
+    return false;
+  }
+
   function start() {
     pass();
-    // Mutations arrive in batches, so one pass per batch rather than per node.
-    var mo = new MutationObserver(function () { pass(); });
+    /* Mutations arrive in batches, so one pass per batch rather than per node --
+       but a full pass reads the whole document, and Leaflet adds and removes
+       tile <img> elements continuously while the map is panned. Those carry no
+       text, so skipping them keeps the map's animation off this path. */
+    var mo = new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        if (carriesText(muts[i].addedNodes)) { pass(); return; }
+      }
+    });
     mo.observe(document.body, { childList: true, subtree: true });
   }
 

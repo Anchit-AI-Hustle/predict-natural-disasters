@@ -71,8 +71,33 @@ test('a window is stated as a start and a duration, never a date range', () => {
       ranges.push(f + ': "' + m[0] + '"');
     }
     if (/Window ends/.test(src)) ranges.push(f + ': still says "Window ends"');
+    // The first pass only looked for "13-16 Sep" and missed three pages joining
+    // two formatted dates with an arrow.
+    if (/targetStart[^;]{0,120}(→|&rarr;)[^;]{0,120}targetEnd/.test(src)) {
+      ranges.push(f + ': joins targetStart and targetEnd with an arrow');
+    }
   }
   assert.deepEqual(ranges, [], 'date ranges still rendered:\n' + ranges.join('\n'));
+});
+
+test('a stated duration matches what the helper computes for the same window', () => {
+  // The benchmark window is 13 Sep 00:00 to 16 Sep 23:59, which is four
+  // calendar days; every hard-coded copy said three, so the page contradicted
+  // its own computed value.
+  const src = read('portal.js');
+  const body = src.match(/duration\(fromISO,toISO\)\{[\s\S]*?\n {2}\},/)[0]
+    .replace(/^duration\(fromISO,toISO\)\{/, '').replace(/\},$/, '');
+  const duration = new Function('fromISO', 'toISO', body);
+  const computed = duration('2026-09-13T00:00:00Z', '2026-09-16T23:59:59Z');
+
+  const stated = [];
+  for (const f of fs.readdirSync(ROOT).filter(n => /\.(html|js)$/.test(n)).concat(['api/events.js'])) {
+    const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const m of text.matchAll(/expected duration (\d+ \w+)/g)) stated.push(f + ': ' + m[1]);
+  }
+  assert.ok(stated.length > 0, 'no stated duration found to check');
+  const wrong = stated.filter(x => !x.endsWith(': ' + computed));
+  assert.deepEqual(wrong, [], 'stated durations that disagree with ' + computed + ':\n' + wrong.join('\n'));
 });
 
 test('the duration helper reads in the units a reader expects', () => {

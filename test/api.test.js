@@ -297,6 +297,41 @@ test('enrichment merges news across providers, dedupes and flags outlets', async
     'the unvetted fixture outlet is still being shown');
 });
 
+test('a recognised outlet is admitted even when the link is a Google News redirect', async () => {
+  // Google News <link> values are news.google.com/rss/... redirects, so the
+  // domain allowlist cannot match them. Admission has to recognise the outlet
+  // name carried in the feed's own <source> element, or nearly every Google
+  // result is rejected on its host alone.
+  const src = fs.readFileSync(path.join(__dirname, '..', 'api', 'event-enrichment.js'), 'utf8');
+  const allow = src.match(/const ESTABLISHED_OUTLETS = \[[\s\S]*?\];/)[0];
+  const fnSrc = src.match(/const OUTLET_KEYS[\s\S]*?\n\}/)[0];
+  const isEstablished = new Function('hostOf', allow + '\n' + fnSrc + '\nreturn isEstablished;')(
+    u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } });
+
+  const via = 'https://news.google.com/rss/articles/CBMiXyZ';
+  for (const outlet of ['The Hindu', 'CNN', 'Bangkok Post', 'Rappler', 'Kyodo News', 'Reuters']) {
+    assert.equal(isEstablished(via, outlet), true, outlet + ' was rejected');
+  }
+  for (const outlet of ['Random Blog', 'Local News Daily', '']) {
+    assert.equal(isEstablished(via, outlet), false, outlet + ' was admitted');
+  }
+});
+
+test('rejecting an outlet does not delete the admitted copy of the same story', async () => {
+  // Deduping before filtering let a rejected copy take the title key and remove
+  // the admitted copy that linked straight to the outlet.
+  const src = fs.readFileSync(path.join(__dirname, '..', 'api', 'event-enrichment.js'), 'utf8');
+  const filterAt = src.indexOf('.filter(x => x.established)');
+  const dedupeAt = src.indexOf('dedupe(', src.indexOf('const news ='));
+  const keyAt = src.indexOf("x => (x.title || '').toLowerCase()");
+  assert.ok(filterAt > dedupeAt && filterAt < keyAt,
+    'the admission filter must run inside dedupe\'s argument, before the key function');
+
+  const d = (await runEnrichment(NEPAL)).body;
+  const titles = d.news.map(x => x.title);
+  assert.equal(new Set(titles).size, titles.length, 'duplicate stories survived');
+});
+
 test('the unvetted outlet really is in the feed, so the filter is doing work', async () => {
   // Guards the premise of the test above: if the fixture stopped serving an
   // unrecognised outlet, that assertion would pass without proving anything.
