@@ -113,13 +113,29 @@ const ESTABLISHED_OUTLETS = [
   'bom.gov.au', 'jma.go.jp', 'pagasa.dost.gov.ph', 'bmkg.go.id', 'imd.gov.in', 'mausam.imd.gov.in'
 ];
 
+/**
+ * Recognise an outlet by domain or by name.
+ *
+ * The name check is not a nicety: Google News links are `news.google.com/rss/...`
+ * redirects, so the domain list never matches them and every Google result would
+ * be rejected on the host alone. The outlet name is carried separately in the
+ * feed's own <source> element, and matching it against the same domain list --
+ * "The Hindu" against thehindu.com -- is what admits them.
+ */
+const OUTLET_KEYS = new Set(ESTABLISHED_OUTLETS.map(d => d.split('.')[0]));
+const NAMED_OUTLETS = ['reuters', 'associated press', 'ap news', 'agence france presse',
+  'al jazeera', 'the guardian', 'reliefweb', 'united nations', 'unicef', 'ifrc',
+  'red cross', 'red crescent', 'noaa', 'national weather service', 'usgs', 'nasa',
+  'world health organization', 'world meteorological'];
+
 function isEstablished(url, outlet) {
   const host = hostOf(url);
   if (host && ESTABLISHED_OUTLETS.some(d => host === d || host.endsWith('.' + d))) return true;
-  const o = String(outlet || '').toLowerCase();
-  return ['reuters', 'associated press', 'ap news', 'bbc', 'afp', 'al jazeera', 'the guardian',
-    'reliefweb', 'united nations', 'unicef', 'ifrc', 'red cross', 'noaa', 'usgs', 'nasa']
-    .some(x => o.includes(x));
+  const raw = String(outlet || '').toLowerCase();
+  if (NAMED_OUTLETS.some(x => raw.includes(x))) return true;
+  // "The Hindu" -> "thehindu", which is the root of thehindu.com.
+  const key = raw.replace(/[^a-z0-9]/g, '');
+  return key.length >= 3 && OUTLET_KEYS.has(key);
 }
 
 function parseRss(xml, max) {
@@ -458,12 +474,16 @@ async function handler(req, res) {
   // the slice, so the cap is 24 admitted items rather than 24 candidates of
   // which some are then dropped.
   const news = dedupe(
-    [].concat(googleItems, bingItems),
+    [].concat(googleItems, bingItems)
+      .map(x => Object.assign({}, x, {
+        outlet: x.outlet || hostOf(x.link) || 'News source',
+        established: isEstablished(x.link, x.outlet)
+      }))
+      // Reject before deduping. A rejected copy of a story would otherwise take
+      // the title key and delete the admitted copy of the same story.
+      .filter(x => x.established),
     x => (x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 90)
-  ).map(x => Object.assign({}, x, {
-    outlet: x.outlet || hostOf(x.link) || 'News source',
-    established: isEstablished(x.link, x.outlet)
-  })).filter(x => x.established).sort(byNewest).slice(0, 24);
+  ).sort(byNewest).slice(0, 24);
 
   const situationReports = rwItems.slice().sort(byNewest).slice(0, 12).map(x => Object.assign({}, x, { established: true }));
 

@@ -43,6 +43,28 @@ test('a bearing is only expanded where it is really a bearing', () => {
   assert.equal(glossary.expandAlways('Cyclone S of the coast'), 'Cyclone south of the coast');
 });
 
+test('a unit that only looks like a magnitude scale is left alone', () => {
+  // This feed publishes cyclone pressure as "948 mb"; an unanchored rule turned
+  // that into "94body-wave magnitude 8". Milliseconds and millilitres likewise.
+  for (const s of ['Cyclone · minimum pressure 948 mb · winds 105 km/h',
+    'Ends in 30 ms latency', 'Reported 500 ml of rain']) {
+    assert.equal(glossary.expandAlways(s), s, 'corrupted: ' + s);
+  }
+  // The real thing still expands, because the word "magnitude" precedes it.
+  assert.equal(glossary.expandAlways('Magnitude 6.5 mw · depth 369.2 km'),
+    'Moment magnitude 6.5 · depth 369.2 km');
+  assert.equal(glossary.expandAlways('M 6.5 mw'), 'Moment magnitude 6.5');
+});
+
+test('a country code is never read as a US state', () => {
+  // On a global hazard site "Berlin, DE" is Germany, not Delaware.
+  assert.equal(glossary.expandAlways('Berlin, DE and New Delhi, IN and Toronto, CA'),
+    'Berlin, DE and New Delhi, IN and Toronto, CA');
+  // Codes that are unambiguous still expand.
+  assert.equal(glossary.expandAlways('Dallas, TX'), 'Dallas, Texas');
+  assert.equal(glossary.expandAlways('Citrus, FL'), 'Citrus, Florida');
+});
+
 test('a state code is only expanded after a place name', () => {
   assert.equal(glossary.expandAlways('IN the area'), 'IN the area');
   assert.equal(glossary.expandAlways('Tampa, FL'), 'Tampa, Florida');

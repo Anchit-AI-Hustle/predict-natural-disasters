@@ -86,7 +86,7 @@
     row('When it was reported', esc(fmt(when.reportedAt || e.updated)) +
       (age(when.reportedAt || e.updated) ? ' <span class="muted">· ' + esc(age(when.reportedAt || e.updated)) + '</span>' : ''));
     if (e.startedAt) row('When it started', esc(fmt(e.startedAt)));
-    if (e.forecast && e.targetStart) row('Outlook window', esc(fmt(e.targetStart)) + ' → ' + esc(fmt(e.targetEnd)));
+    if (e.forecast && e.targetStart) row('Outlook window', esc(window.PND && PND.windowText ? PND.windowText(e) : fmt(e.targetStart)));
     if (e.expiresAt) row('Official warning expires', esc(fmt(e.expiresAt)));
     row('Where it originated', esc(w.originArea || e.region || e.country || 'Not supplied by the upstream source'));
     if (place) {
@@ -139,7 +139,7 @@
         '<p class="muted">News indexes can lag a newly reported event. Use the source directories below and retry — this panel refreshes automatically.</p>',
         d.searches && d.searches.googleNews
           ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(d.searches.googleNews) + '">Search news ↗</a>' : ''));
-    setMeta('news', items.length + ' items · ' + items.filter(x => x.established).length + ' from established newsrooms');
+    setMeta('news', items.length + ' item' + (items.length === 1 ? '' : 's') + ' · recognised newsrooms and official agencies only');
   }
 
   function renderReports(d) {
