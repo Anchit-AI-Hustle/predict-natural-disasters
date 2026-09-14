@@ -4,7 +4,7 @@ const PND={
     const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');return r.json();
   },
   autoRefresh(fn,ms=60000){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await fn()}finally{busy=false}};run();return setInterval(run,Math.min(ms,60000))},
-  esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));},
+  esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
   qs(k){return new URLSearchParams(location.search).get(k)||'';},
   getTZ(){return this.timezone;},
   tzLabel(tz=this.timezone){const aliases={'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'};return aliases[tz]||tz;},
@@ -17,17 +17,18 @@ const PND={
   calamityUrl(e){return '/calamity-detail?id='+encodeURIComponent(e&&e.id||'');},
   historicalUrl(e){return '/historical-event-detail?id='+encodeURIComponent(this.slug(e&&e.name||e&&e.title||''));},
   regionUrl(name){return '/region-detail?region='+encodeURIComponent(name||'World');},
-  locationUrl(name){return '/location-detail?location='+encodeURIComponent(name||'World');},
+  locationUrl(name){return '/region-detail?region='+encodeURIComponent(name||'World');},
   hazardUrl(type,region=''){return '/hazard-detail?type='+encodeURIComponent(type||'Flood')+(region?'&region='+encodeURIComponent(region):'');},
   sourceDetailUrl(source){return '/source-detail?source='+encodeURIComponent(source||'GDACS');},
   entityDetailUrl(kind,id){return '/'+encodeURIComponent(kind)+'-detail?'+({insight:'topic',methodology:'section',metric:'metric',resource:'id',about:'section',calendar:'id',comparison:'id',notification:'id'}[kind]||'id')+'='+encodeURIComponent(id||'overview');},
   detailUrl(kind,obj){if(kind==='calamity')return this.calamityUrl(obj);if(kind==='historical')return this.historicalUrl(obj);if(kind==='event')return this.eventUrl(obj);if(kind==='forecast')return '/forecast-detail?id='+encodeURIComponent(obj&&obj.id||'');if(kind==='alert')return '/alert-detail?id='+encodeURIComponent(obj&&obj.id||'');if(kind==='region')return this.regionUrl(obj&&obj.name||obj);if(kind==='location')return this.locationUrl(obj&&obj.name||obj);if(kind==='hazard')return this.hazardUrl(obj&&obj.type||obj);if(kind==='source')return this.sourceDetailUrl(obj&&obj.source||obj);return this.entityDetailUrl(kind,obj&&obj.id||obj&&obj.name||obj);},
   collectionRoutes:{
-    events:'/events',calamities:'/calamities',forecasts:'/forecast-list',alerts:'/official-warnings',regions:'/regions',historical:'/historical-events',hazards:'/hazard-types',sources:'/sources',verification:'/verification',calendar:'/forecast-calendar',compare:'/compare-locations',notifications:'/alerts-notifications'
+    events:'/events',calamities:'/calamities',forecasts:'/forecast-list',alerts:'/official-warnings',regions:'/regions',historical:'/historical-events',hazards:'/hazard-types',sources:'/directory',verification:'/verification',calendar:'/forecast-calendar',compare:'/compare-locations',notifications:'/alerts-notifications',map:'/live-map'
   },
   collectionUrl(kind){return this.collectionRoutes[kind]||'/events';},
   inferCollection(text=''){
     const t=String(text).toLowerCase();
+    if(/map/.test(t))return 'map';
     if(/calamit/.test(t))return 'calamities';
     if(/forecast|prediction|outlook/.test(t))return 'forecasts';
     if(/warning|alert/.test(t))return 'alerts';
@@ -69,7 +70,7 @@ window.PND=PND;
 const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms,...args)=>__pndSetInterval(fn,Math.min(Number(ms)||60000,60000),...args);
 
 (function(){
-  const detailPaths=['/event-detail','/alert-detail','/calamity-detail','/forecast-detail','/historical-event-detail','/region-detail','/location-detail','/hazard-detail','/source-detail'];
+  const detailPaths=['/event-detail','/alert-detail','/calamity-detail','/forecast-detail','/historical-event-detail','/region-detail','/hazard-detail','/source-detail'];
   const clickableSelectors='tr[data-href],[data-href],[data-event-id],[data-calamity-id],[data-forecast-id],[data-alert-id],[data-historical-id],[data-region],[data-location],[data-hazard],[data-source],[data-kind][data-id]';
 
   function nearestHeading(el){
@@ -81,10 +82,12 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
 
   function normalizeViewAll(root=document){
     root.querySelectorAll('.viewall,a[data-view-all],button[data-view-all]').forEach(el=>{
+      const explicit=el.getAttribute('href');
+      if(el.tagName==='A'&&explicit&&explicit!=='#'&&!/^javascript:/i.test(explicit))return;
       const label=(el.dataset.viewAll||nearestHeading(el)||el.textContent||'').trim();
-      const href=PND.collectionUrl(PND.inferCollection(label));
+      const kind=PND.inferCollection(label);const href=PND.collectionUrl(kind);
       if(el.tagName==='A')el.setAttribute('href',href);else{el.dataset.href=href;el.setAttribute('role','link');el.setAttribute('tabindex','0');}
-      el.title='Open full '+PND.inferCollection(label)+' directory';
+      el.title='Open full '+kind+' directory';
     });
   }
 
@@ -98,10 +101,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
     });
 
     root.querySelectorAll('.event,.riskitem,.calamity-card,.forecast-card,.alert-card,.region-card,.hazard-card,.historical-card').forEach(el=>{
-      if(!el.dataset.href){
-        const href=PND.routeFromDataset(el);
-        if(href)el.dataset.href=href;
-      }
+      if(!el.dataset.href){const href=PND.routeFromDataset(el);if(href)el.dataset.href=href;}
       if(el.dataset.href){el.style.cursor='pointer';el.style.pointerEvents='auto';el.setAttribute('role','link');el.setAttribute('tabindex','0');el.title='Open full detail page';}
     });
   }
