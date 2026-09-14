@@ -664,7 +664,7 @@ async function handler(req, res) {
     alert: 'High', lat: 16.2, lon: 107.8,
     updated: '2026-09-13T00:00:00Z', issuedAt: '2026-09-13T00:00:00Z',
     targetStart: '2026-09-13T00:00:00Z', targetEnd: '2026-09-16T23:59:59Z',
-    details: 'Target 14 Sep 2026; verification window 13–16 Sep 2026. Frozen before the window opened and graded afterwards against observed impact, not against rainfall or a warning alone.',
+    details: 'Starts 13 Sep 2026; expected duration 3 days. Frozen before the window opened and graded afterwards against observed impact, not against rainfall or a warning alone.',
     forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen',
     evidence: 'Issued and frozen ahead of the target window as the platform’s first graded benchmark forecast.',
     verificationRule: 'Counts as correct only if meaningful flood or landslide impact is independently observed inside the frozen geography and window.',
