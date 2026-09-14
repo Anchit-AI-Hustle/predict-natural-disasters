@@ -160,11 +160,20 @@ const FIXTURES = {
     }
   ],
 
-  // Coordinates live one fetch away, nested inside the notice body.
+  // Coordinates live one fetch away, nested inside the notice body — and an
+  // observatory notice can reference more than one volcano, which is what put
+  // Great Sitkin at Shishaldin's coordinates in production.
   usgsVolcanoNotice: {
     notice: {
       notice_identifier: 'DOI-USGS-AVO-2026-09-13T18:54:33+00:00',
-      volcano: { volcano_name: 'Great Sitkin', vnum: '311120', latitude: 52.076, longitude: -176.13 }
+      observatory: { obs_abbr: 'avo', name: 'Alaska Volcano Observatory' },
+      volcanoes: [
+        // Order matters: a depth-first walk reaches Shishaldin's pair first, so
+        // "take the first coordinates found" mislabels Great Sitkin — exactly
+        // what production showed.
+        { volcano_name: 'Great Sitkin', vnum: '311120', latitude: 52.076, longitude: -176.13 },
+        { volcano_name: 'Shishaldin', vnum: '311360', latitude: 54.755, longitude: -163.971 }
+      ]
     }
   },
 
@@ -239,6 +248,7 @@ function failure(status) {
  *   down: array of source keys that should fail (or 'all')
  *   nwsRejects: query fragments api.weather.gov should answer with HTTP 400
  *   youtubeVariant: which youtubeHtml* fixture the search page should return
+ *   volcanoNoticeMismatch: notice describes volcanoes other than the one asked for
  */
 function makeFetch(opts) {
   const o = opts || {};
@@ -266,7 +276,17 @@ function makeFetch(opts) {
     if (u.includes('api.reliefweb.int') && u.includes('/disasters')) return route('reliefweb', FIXTURES.reliefwebDisasters);
     if (u.includes('api.reliefweb.int') && u.includes('/reports')) return route('reliefweb_reports', FIXTURES.reliefwebReports);
     if (u.includes('reliefweb.int/updates/rss.xml')) return route('reliefweb_rss', FIXTURES.reliefwebRss);
-    if (u.includes('volcanoes.usgs.gov/hans-public/api/notice/')) return route('usgs_volcano_notice', FIXTURES.usgsVolcanoNotice);
+    if (u.includes('volcanoes.usgs.gov/hans-public/api/notice/')) {
+      if (o.volcanoNoticeMismatch) {
+        return route('usgs_volcano_notice', {
+          notice: { volcanoes: [
+            { volcano_name: 'Pavlof', vnum: '312030', latitude: 55.42, longitude: -161.89 },
+            { volcano_name: 'Veniaminof', vnum: '312070', latitude: 56.17, longitude: -159.38 }
+          ] }
+        });
+      }
+      return route('usgs_volcano_notice', FIXTURES.usgsVolcanoNotice);
+    }
     if (u.includes('volcanoes.usgs.gov')) return route('usgs_volcano', FIXTURES.usgsVolcano);
     if (u.includes('seismicportal.eu')) return route('emsc', FIXTURES.emsc);
     if (u.includes('news.google.com/rss')) return route('google_news', FIXTURES.googleNewsRss);
