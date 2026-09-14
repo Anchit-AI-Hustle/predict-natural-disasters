@@ -32,10 +32,30 @@ const LEAFLET_STUB = `
     setView:function(){return o}, clearLayers:function(){return o}, getLayers:function(){return []},
     fitBounds:function(){return o}, getBounds:function(){return {pad:function(){return {}}}},
     remove:function(){return o}, on:function(){return o}, addLayer:function(){return o},
-    setLatLng:function(){return o}, setStyle:function(){return o}
+    setLatLng:function(){return o}, setStyle:function(){return o}, flyTo:function(){return o},
+    getZoom:function(){return 3}
   }; return o; }
+  /* The map stub models the pieces map-scroll.js drives: an event bus, a
+     container, and a scrollWheelZoom handler whose state the tests inspect. */
+  function mapStub(el, opts){
+    var handlers = {};
+    var wheel = !opts || opts.scrollWheelZoom !== false;
+    var node = typeof el === 'string' ? document.getElementById(el) : el;
+    var m = chain();
+    m.options = opts || {};
+    m.scrollWheelZoom = {
+      enable:function(){ wheel = true; }, disable:function(){ wheel = false; },
+      enabled:function(){ return wheel; }
+    };
+    m.getContainer = function(){ return node; };
+    m.on = function(name, fn){ (handlers[name] = handlers[name] || []).push(fn); return m; };
+    m.fire = function(name){ (handlers[name]||[]).forEach(function(fn){ fn({type:name}); }); return m; };
+    window.__pndMaps = window.__pndMaps || [];
+    window.__pndMaps.push(m);
+    return m;
+  }
   window.L = {
-    map: chain, tileLayer: chain, layerGroup: chain, circleMarker: chain,
+    map: mapStub, tileLayer: chain, layerGroup: chain, circleMarker: chain,
     circle: chain, marker: chain, featureGroup: chain, polygon: chain,
     geoJSON: chain, divIcon: chain, icon: chain, control: {layers: chain, scale: chain}
   };
