@@ -20,6 +20,7 @@ const pages = new Set(fs.readdirSync(ROOT).filter(f => f.endsWith('.html')));
 function resolveRoute(url) {
   const p = url.split('?')[0];
   const clean = p.replace(/^\//, '');
+  if (p === '/') return 'index';           // index.html is the directory index
   if (pages.has(clean)) return 'file';
   if (cfg.cleanUrls && pages.has(clean + '.html')) return 'cleanUrl';
   for (const r of cfg.rewrites) {
@@ -65,10 +66,39 @@ test('every URL the app can build resolves to a route', () => {
   assert.deepEqual(missing, [], 'unroutable URLs:\n' + missing.join('\n'));
 });
 
-test('every detail page is reachable as a rewrite destination', () => {
+test('every detail page is reachable', () => {
   const orphans = [...pages].filter(f => f.endsWith('-detail.html'))
-    .filter(f => !cfg.rewrites.some(r => r.destination.split('?')[0] === '/' + f));
+    .filter(f => !resolveRoute('/' + f.replace(/\.html$/, '')));
   assert.deepEqual(orphans, [], 'detail pages with no route: ' + orphans.join(', '));
+});
+
+/* The routing table below is what the deployment actually runs, and a table that
+   passes review can still be dead in production. Every /alerts/<id> URL returned
+   NOT_FOUND while the same suite reported full coverage, because cleanUrls strips
+   .html from the build output: a rewrite pointing at /alert-detail.html aimed at a
+   path the deployment no longer serves, so the rewrite resolved to nothing. */
+
+test('no rewrite destination carries a .html extension while cleanUrls is on', () => {
+  assert.equal(cfg.cleanUrls, true, 'these rules assume cleanUrls');
+  const stale = cfg.rewrites.filter(r => /\.html($|\?)/.test(r.destination))
+    .map(r => r.source + ' -> ' + r.destination);
+  assert.deepEqual(stale, [], 'destinations the deployment does not serve:\n' + stale.join('\n'));
+});
+
+test('every rewrite destination resolves to a page the deployment serves', () => {
+  const dangling = cfg.rewrites
+    .filter(r => !resolveRoute(r.destination.split('?')[0]))
+    .map(r => r.source + ' -> ' + r.destination);
+  assert.deepEqual(dangling, [], 'rewrites pointing nowhere:\n' + dangling.join('\n'));
+});
+
+test('no rewrite shadows a file that cleanUrls already serves', () => {
+  // Vercel checks the filesystem before rewrites, so such a rule never fires —
+  // and once the .html is stripped from its destination it rewrites to itself.
+  const inert = cfg.rewrites
+    .filter(r => pages.has(r.source.replace(/^\//, '') + '.html'))
+    .map(r => r.source + ' -> ' + r.destination);
+  assert.deepEqual(inert, [], 'rewrites the filesystem already answers:\n' + inert.join('\n'));
 });
 
 test('ids containing hyphens, digits and underscores route the same as simple ids', () => {
