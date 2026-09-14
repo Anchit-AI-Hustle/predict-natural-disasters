@@ -437,29 +437,64 @@ async function handler(req, res) {
       const j = await timedFetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes');
       const arr = Array.isArray(j) ? j : (j.data || j.volcanoes || j.results || j.features || []);
 
-      // Walk an arbitrarily nested object for a latitude/longitude pair.
-      const findCoords = node => {
-        const stack = [node];
+      // Collect every latitude/longitude pair in an arbitrarily nested object,
+      // together with whatever identifies the volcano it sits on. An AVO notice
+      // can reference more than one volcano, so taking the first pair found put
+      // Great Sitkin at Shishaldin's coordinates in production.
+      const collectCoords = node => {
+        const found = [];
+        const stack = [{ node, vnum: '', name: '' }];
+        const seen = new Set();
         while (stack.length) {
-          const cur = stack.pop();
-          if (!cur || typeof cur !== 'object') continue;
+          const { node: cur, vnum, name } = stack.pop();
+          if (!cur || typeof cur !== 'object' || seen.has(cur)) continue;
+          seen.add(cur);
           let lat = null, lon = null;
+          let ownVnum = vnum, ownName = name;
+          const children = [];
           for (const [k, v] of Object.entries(cur)) {
-            if (v && typeof v === 'object') { stack.push(v); continue; }
             const key = k.toLowerCase();
+            if (v && typeof v === 'object') { children.push(v); continue; }
             if (lat === null && /^(v?lat|latitude)$/.test(key)) lat = num(v);
             if (lon === null && /^(v?lon|v?lng|longitude)$/.test(key)) lon = num(v);
+            if (/^(vnum|volcano_?number|volcano_?id)$/.test(key) && v) ownVnum = String(v);
+            if (/^(volcano_?name|name)$/.test(key) && v) ownName = String(v);
           }
+          for (const child of children) stack.push({ node: child, vnum: ownVnum, name: ownName });
           if (lat !== null && lon !== null && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
-            return { lat, lon };
+            found.push({ lat, lon, vnum: ownVnum, name: ownName });
           }
         }
-        return null;
+        return found;
+      };
+
+      /**
+       * Pick the pair that belongs to this volcano. Identity wins; a single
+       * unambiguous pair is accepted; anything else is left unplaced, because a
+       * volcano alert shown at the wrong place is worse than one not shown.
+       */
+      const coordsFor = (candidates, vnum, name) => {
+        if (!candidates.length) return null;
+        const wantNum = String(vnum || '').trim();
+        const wantName = String(name || '').trim().toLowerCase();
+        if (wantNum) {
+          const hit = candidates.find(c => String(c.vnum || '').trim() === wantNum);
+          if (hit) return hit;
+        }
+        if (wantName) {
+          const hit = candidates.find(c => String(c.name || '').trim().toLowerCase() === wantName);
+          if (hit) return hit;
+        }
+        const distinct = [];
+        for (const c of candidates) {
+          if (!distinct.some(d => d.lat === c.lat && d.lon === c.lon)) distinct.push(c);
+        }
+        return distinct.length === 1 ? distinct[0] : null;
       };
 
       const entries = (Array.isArray(arr) ? arr : []).map(raw => {
         const v = raw.properties || raw;
-        return { v, coords: findCoords(v) };
+        return { v, coords: coordsFor(collectCoords(v), v.vnum, v.volcano_name || v.volcanoName || v.name) };
       });
 
       // Only a handful of volcanoes are ever elevated, so this stays cheap.
@@ -467,12 +502,13 @@ async function handler(req, res) {
       await Promise.allSettled(needsNotice.map(async e => {
         try {
           const notice = await timedFetch(e.v.notice_data, { timeout: 2500 });
-          e.coords = findCoords(notice);
+          e.coords = coordsFor(collectCoords(notice), e.v.vnum, e.v.volcano_name || e.v.volcanoName || e.v.name);
           if (e.coords) e.viaNotice = true;
         } catch (err) { /* leave this volcano unplaced */ }
       }));
 
       let n = 0, viaNotice = 0;
+      const unplaced = entries.filter(e => !e.coords).length;
       for (const { v, coords, viaNotice: fromNotice } of entries) {
         if (!coords) continue;
         if (fromNotice) viaNotice++;
@@ -503,8 +539,8 @@ async function handler(req, res) {
           }
         : null;
       mark('usgs_volcano', true, shape
-        ? { records: n, placedViaNotice: viaNotice, shape }
-        : { records: n, placedViaNotice: viaNotice });
+        ? { records: n, placedViaNotice: viaNotice, unplaced, shape }
+        : { records: n, placedViaNotice: viaNotice, unplaced });
     } catch (e) { mark('usgs_volcano', false, { error: String(e.message || e) }); }
   })());
 
