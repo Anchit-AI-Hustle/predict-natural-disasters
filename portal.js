@@ -30,6 +30,63 @@ const PND={
     const bySuffix=events.find(e=>norm(e.id).endsWith(n)||n.endsWith(norm(e.id)));
     return bySuffix||null;
   },
+  /* ---------------------------------------------------------------- sorting
+     One sort vocabulary shared by every page that lists records, so the
+     control behaves and is remembered the same way everywhere. */
+  RISK_RANK:{red:5,critical:5,orange:4,high:4,veryhigh:4,moderate:3,watch:2,green:1,low:1},
+  rankOf(e){return this.RISK_RANK[String(e&&e.alert||'').toLowerCase()]||0},
+  timeOf(e){const t=Date.parse((e&&(e.updated||e.targetStart||e.startedAt))||'');return Number.isFinite(t)?t:0},
+  numOf(v){const n=Number(v);return Number.isFinite(n)?n:0},
+  textOf(e,...keys){for(const k of keys){const v=e&&e[k];if(v)return String(v).toLowerCase()}return '￿'},
+  SORT_DEFS:{
+    severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
+    newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},
+    oldest:{label:'Updated — oldest first',cmp(a,b){return PND.timeOf(a)-PND.timeOf(b)}},
+    deaths:{label:'Reported deaths — highest',cmp(a,b){return PND.numOf(b.deaths)-PND.numOf(a.deaths)||PND.timeOf(b)-PND.timeOf(a)}},
+    affected:{label:'People affected — highest',cmp(a,b){return PND.numOf(b.affected)-PND.numOf(a.affected)||PND.numOf(b.displaced)-PND.numOf(a.displaced)||PND.timeOf(b)-PND.timeOf(a)}},
+    country:{label:'Country / region — A to Z',cmp(a,b){return PND.textOf(a,'country','region').localeCompare(PND.textOf(b,'country','region'))||PND.timeOf(b)-PND.timeOf(a)}},
+    type:{label:'Hazard type — A to Z',cmp(a,b){return PND.textOf(a,'type').localeCompare(PND.textOf(b,'type'))||PND.rankOf(b)-PND.rankOf(a)}},
+    source:{label:'Source — A to Z',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
+    title:{label:'Title — A to Z',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
+    distance:{label:'Distance — nearest first',cmp(a,b){return (Number.isFinite(a._d)?a._d:Infinity)-(Number.isFinite(b._d)?b._d:Infinity)}},
+    windowEnd:{label:'Window ends — soonest first',cmp(a,b){const x=Date.parse(a.targetEnd||'')||Infinity,y=Date.parse(b.targetEnd||'')||Infinity;return x-y}},
+    yearNew:{label:'Date — most recent first',cmp(a,b){return PND.numOf(b.sort)-PND.numOf(a.sort)}},
+    yearOld:{label:'Date — earliest first',cmp(a,b){return PND.numOf(a.sort)-PND.numOf(b.sort)}},
+    name:{label:'Name — A to Z',cmp(a,b){return PND.textOf(a,'name','title').localeCompare(PND.textOf(b,'name','title'))}},
+    countDesc:{label:'Active records — most first',cmp(a,b){return PND.numOf(b.count)-PND.numOf(a.count)}},
+    countAsc:{label:'Active records — fewest first',cmp(a,b){return PND.numOf(a.count)-PND.numOf(b.count)}}
+  },
+  /** Default option set for a list of live hazard records. */
+  EVENT_SORTS:['severity','newest','oldest','deaths','affected','country','type','source','title'],
+  sortStoreKey(id){return 'pnd_sort_'+location.pathname+'_'+id},
+  /** Populate a <select>, restore the remembered choice and wire onChange. Returns the active key. */
+  initSort(id,keys,onChange){
+    const list=(keys&&keys.length?keys:this.EVENT_SORTS);
+    const el=document.getElementById(id);
+    if(!el)return list[0];
+    let cur='';try{cur=localStorage.getItem(this.sortStoreKey(id))||''}catch(e){}
+    if(list.indexOf(cur)<0)cur=list[0];
+    el.innerHTML=list.map(k=>`<option value="${this.esc(k)}">${this.esc((this.SORT_DEFS[k]||{}).label||k)}</option>`).join('');
+    el.value=cur;
+    if(!el.dataset.pndSortWired){
+      el.dataset.pndSortWired='1';
+      el.setAttribute('aria-label','Sort results');
+      el.addEventListener('change',()=>{
+        try{localStorage.setItem(this.sortStoreKey(id),el.value)}catch(e){}
+        if(typeof onChange==='function')onChange(el.value);
+      });
+    }
+    return cur;
+  },
+  sortValue(id,keys){const el=document.getElementById(id);const list=(keys&&keys.length?keys:this.EVENT_SORTS);return el&&el.value?el.value:list[0]},
+  /** Return a sorted copy; unknown keys leave the order untouched. */
+  applySort(list,key){
+    if(!Array.isArray(list))return list;
+    const def=this.SORT_DEFS[key];
+    return def?list.slice().sort(def.cmp):list.slice();
+  },
+  /** Sort by the current value of a page's sort control in one step. */
+  sortBy(id,list,keys){return this.applySort(list,this.sortValue(id,keys))},
   calamityUrl(e){return '/calamities/'+this.enc(e&&e.id||'');},
   historicalUrl(e){return '/history/'+this.enc(this.slug(e&&e.name||e&&e.title||''));},
   regionUrl(name){return '/regions/'+this.enc(name||'World');},

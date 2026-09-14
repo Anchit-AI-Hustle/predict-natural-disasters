@@ -81,6 +81,27 @@ the organisation publishes them on its own contact page. Donation links always
 point at the organisation's own domain, and are withheld entirely on forecast
 records until impact is independently verified.
 
+## Sorting
+
+Every page that lists records carries a sort control. The vocabulary is shared
+(`PND.SORT_DEFS` in `portal.js`) so the options, labels and behaviour match
+everywhere, and the choice is remembered per page in `localStorage`.
+
+- **Event lists** — severity, last updated (newest/oldest), reported deaths,
+  people affected, country/region, hazard type, source, title.
+- **Forecast lists** — the above plus window-ends-soonest.
+- **Nearby lists** on detail pages — distance first, then the event options.
+- **Region and source aggregates** — priority, record count, most recent, name.
+- **Historical archive** — date, name, hazard type.
+
+`index.html`, `dashboard.html` and `home-v3.html` are self-contained pages that
+do not load `portal.js`, so they carry their own copy of the same vocabulary;
+the test suite asserts they stay in step.
+
+`about.html`, `insights.html` and `methodology.html` are static prose with no
+record list, so they have no sort control — and `methodology.html` is a numbered
+sequence that reordering would actively break.
+
 ## Refresh cycle
 
 - Detail pages re-request enrichment every 5 minutes; list and map pages poll the

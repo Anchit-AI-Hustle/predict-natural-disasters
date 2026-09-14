@@ -306,3 +306,136 @@ test('no element id is shadowed by a built-in Window property', async () => {
   }
   assert.deepEqual(offenders, [], 'element ids shadowed by Window properties:\n' + offenders.join('\n'));
 });
+
+/* ------------------------------------------------------------------ sorting */
+
+// Pages that are static prose with no list of records to order.
+const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html']);
+
+test('every page that lists records offers a sort control', async () => {
+  const missing = [];
+  for (const page of PAGES) {
+    if (NO_LIST_PAGES.has(page)) continue;
+    const html = fs.readFileSync(path.join(ROOT, page), 'utf8');
+    if (!/id="sortBy"/.test(html)) missing.push(page);
+  }
+  assert.deepEqual(missing, [], 'pages with a record list but no sort control:\n' + missing.join('\n'));
+});
+
+test('the sort control is populated with labelled options on every page', async () => {
+  const empty = [];
+  for (const page of PAGES) {
+    if (NO_LIST_PAGES.has(page)) continue;
+    const r = await renderPage(page, {
+      search: await searchFor(page), timeoutMs: 4000,
+      waitFor: doc => {
+        const el = doc.getElementById('sortBy');
+        return el && el.options && el.options.length > 1;
+      }
+    });
+    const el = r.document.getElementById('sortBy');
+    if (!el || !el.options || el.options.length < 2 || !el.options[0].textContent.trim()) {
+      empty.push(page + ' (' + (el ? el.options.length + ' options' : 'control missing') + ')');
+    } else {
+      assert.ok(el.value, page + ': sort control has no selected value');
+      assert.equal(r.errors.length, 0, page + ': ' + r.errors.map(String).join('|'));
+    }
+    r.close();
+  }
+  assert.deepEqual(empty, [], 'sort controls that never populated:\n' + empty.join('\n'));
+});
+
+/** Read the visible ordering of a rendered list container. */
+const orderOf = (doc, id) =>
+  [...doc.getElementById(id).querySelectorAll('h3, .event-title, td:nth-child(2)')]
+    .map(n => n.textContent.trim()).filter(Boolean);
+
+test('changing the sort reorders the list on a collection page', async () => {
+  const r = await renderPage('events.html', {
+    waitFor: doc => doc.getElementById('cards').children.length > 2 &&
+      doc.getElementById('sortBy').options.length > 1
+  });
+  const doc = r.document, win = r.window;
+  const bySeverity = orderOf(doc, 'cards');
+  assert.ok(bySeverity.length > 2, 'not enough cards to compare orderings');
+
+  const sel = doc.getElementById('sortBy');
+  sel.value = 'title';
+  sel.dispatchEvent(new win.Event('change'));
+  const byTitle = orderOf(doc, 'cards');
+
+  assert.equal(byTitle.length, bySeverity.length, 'sorting changed how many records are shown');
+  assert.deepEqual([...byTitle].sort(), [...bySeverity].sort(), 'sorting changed which records are shown');
+  const alphabetical = [...byTitle].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  assert.deepEqual(byTitle, alphabetical, 'title sort did not produce A-Z order');
+  assert.notDeepEqual(byTitle, bySeverity, 'the ordering did not actually change');
+  r.close();
+});
+
+test('the chosen sort is remembered for next time', async () => {
+  const r = await renderPage('events.html', {
+    waitFor: doc => doc.getElementById('sortBy').options.length > 1
+  });
+  const sel = r.document.getElementById('sortBy');
+  sel.value = 'newest';
+  sel.dispatchEvent(new r.window.Event('change'));
+  assert.equal(r.window.localStorage.getItem('pnd_sort_/events.html_sortBy'), 'newest');
+  r.close();
+});
+
+test('a detail page can reorder its nearby-events list', async () => {
+  const official = pick(await events(), e => e.sourceType === 'official' && e.alert === 'Red');
+  const r = await renderPage('event-detail.html', {
+    search: q(official.id),
+    waitFor: doc => doc.getElementById('related').children.length > 1 &&
+      doc.getElementById('sortBy').options.length > 1
+  });
+  const doc = r.document;
+  const sel = doc.getElementById('sortBy');
+  // Distance is the sensible default for a "nearby" list.
+  assert.equal(sel.options[0].value, 'distance');
+  const byDistance = orderOf(doc, 'related');
+  sel.value = 'title';
+  sel.dispatchEvent(new r.window.Event('change'));
+
+  // This page re-runs its async load() on a sort change; let that settle before
+  // reading the DOM, and before closing the window out from under it.
+  const deadline = Date.now() + 5000;
+  let byTitle = orderOf(doc, 'related');
+  while (Date.now() < deadline) {
+    await new Promise(res => setTimeout(res, 80));
+    byTitle = orderOf(doc, 'related');
+    const alpha = [...byTitle].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    if (byTitle.length && byTitle.join('|') === alpha.join('|')) break;
+  }
+  await new Promise(res => setTimeout(res, 150));
+
+  assert.deepEqual([...byTitle].sort(), [...byDistance].sort(), 'reordering changed the record set');
+  const alphabetical = [...byTitle].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  assert.deepEqual(byTitle, alphabetical, 'nearby list did not reorder A-Z');
+  r.close();
+});
+
+test('the homepage sorts without portal.js', async () => {
+  // index.html is self-contained and carries its own sort implementation.
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  assert.ok(!/src="\/portal\.js/.test(html), 'index.html now loads portal.js — use the shared helper instead');
+  const r = await renderPage('index.html', {
+    waitFor: doc => doc.getElementById('sortBy').options.length > 1 &&
+      doc.getElementById('topEvents').children.length > 1
+  });
+  const doc = r.document, sel = doc.getElementById('sortBy');
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  assert.ok(sel.options.length >= 8, 'homepage sort should offer the full option set');
+  const before = orderOf(doc, 'topEvents');
+  sel.value = 'title';
+  sel.dispatchEvent(new r.window.Event('change'));
+  const after = orderOf(doc, 'topEvents');
+  // This panel shows the top N, so re-sorting legitimately changes which rows
+  // appear — what must hold is that the rows shown are in the chosen order.
+  assert.equal(after.length, before.length, 'row count changed');
+  const alphabetical = [...after].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  assert.deepEqual(after, alphabetical, 'homepage title sort is not A-Z');
+  assert.notDeepEqual(after, before, 'homepage ordering did not change');
+  r.close();
+});
