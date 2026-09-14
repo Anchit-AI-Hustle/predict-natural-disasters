@@ -233,6 +233,7 @@ function failure(status) {
  *   nwsRejects: query fragments api.weather.gov should answer with HTTP 400
  *   youtubeVariant: which youtubeHtml* fixture the search page should return
  *   volcanoNoticeMismatch: notice describes volcanoes other than the one asked for
+ *   reliefwebEmptyUntil: only the candidate feed URL containing this returns items
  */
 function makeFetch(opts) {
   const o = opts || {};
@@ -257,7 +258,13 @@ function makeFetch(opts) {
       }
       return route('nws', FIXTURES.nws);
     }
-    if (u.includes('reliefweb.int/disasters/rss.xml')) return route('reliefweb', FIXTURES.reliefwebDisastersRss);
+    if (u.includes('reliefweb.int/disasters')) {
+      // Mimic a Drupal miss: 200 with an HTML page and no <item> elements.
+      if (o.reliefwebEmptyUntil && !u.includes(o.reliefwebEmptyUntil)) {
+        return jsonResponse('<html><body>Page not found</body></html>');
+      }
+      return route('reliefweb', FIXTURES.reliefwebDisastersRss);
+    }
     if (u.includes('reliefweb.int/updates/rss.xml')) return route('reliefweb_rss', FIXTURES.reliefwebRss);
     if (u.includes('geocoding-api.open-meteo.com')) {
       const name = decodeURIComponent((u.match(/[?&]name=([^&]*)/) || [])[1] || '');

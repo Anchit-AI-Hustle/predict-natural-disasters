@@ -31,6 +31,11 @@ ReliefWeb's v2 API requires an appname that ReliefWeb approves by hand, so both
 the disaster list and the per-event situation reports read its **public RSS
 feeds** instead. Nothing to register, no environment variable, no key.
 
+The disasters feed path is not documented, so the handler tries a short list of
+candidate URLs and accepts one only if it parses into feed items — a Drupal miss
+can answer 200 with an HTML page, which would otherwise look like "online, no
+disasters". `meta.sources.reliefweb.endpoint` records which URL answered.
+
 The disasters feed carries no coordinates, so each record is placed at its
 country's location (resolved through Open-Meteo's key-less geocoder) and
 flagged `precision: "country"`. These are country-level humanitarian records,

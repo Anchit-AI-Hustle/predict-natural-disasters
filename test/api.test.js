@@ -117,7 +117,7 @@ test('ReliefWeb disasters come from the public feed with no credential', async (
   const res = await runEvents();
   const rw = res.body.meta.sources.reliefweb;
   assert.equal(rw.ok, true, 'the public feed needs no appname');
-  assert.equal(rw.endpoint, 'public disasters RSS');
+  assert.match(rw.endpoint, /reliefweb\.int\/disasters/, 'the answering feed URL should be recorded');
   assert.equal(rw.records, 2, 'two of the feed items are placeable');
 
   const recs = res.body.events.filter(e => e.sourceType === 'official' && e.source.includes('ReliefWeb'));
@@ -141,6 +141,24 @@ test('a ReliefWeb record whose country cannot be located is left out', async () 
   assert.equal(res.body.meta.sources.reliefweb.unplacedCountries, 1);
   assert.ok(!res.body.events.some(e => /Atlantis/.test(e.title)),
     'an unlocatable country must not be placed somewhere plausible');
+});
+
+test('a feed URL that answers without items falls through to the next candidate', async () => {
+  // A Drupal miss returns 200 with an HTML page; that must not be accepted as
+  // an empty feed, which would look like "online, no disasters".
+  const res = await runEvents({ reliefwebEmptyUntil: '/disasters/feed' });
+  const rw = res.body.meta.sources.reliefweb;
+  assert.equal(rw.ok, true);
+  assert.equal(rw.endpoint, 'https://reliefweb.int/disasters/feed');
+  assert.equal(rw.records, 2);
+});
+
+test('ReliefWeb is offline when no candidate feed yields items', async () => {
+  const res = await runEvents({ reliefwebEmptyUntil: '/nothing-matches' });
+  const rw = res.body.meta.sources.reliefweb;
+  assert.equal(rw.ok, false);
+  assert.match(rw.error, /no <item> elements/);
+  assert.equal(rw.tried, 3);
 });
 
 test('ReliefWeb degrades to offline when its feed is unreachable', async () => {

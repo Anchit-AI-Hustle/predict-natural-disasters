@@ -390,11 +390,29 @@ async function handler(req, res) {
   //    an incident position, and the UI says so. A record whose country cannot
   //    be resolved is left out rather than placed somewhere plausible.
   jobs.push((async () => {
-    try {
-      const xml = await timedFetch('https://reliefweb.int/disasters/rss.xml', {
-        text: true, headers: { accept: 'application/rss+xml, application/xml' }
-      });
+    // The exact feed path is not documented, and a Drupal miss can answer 200
+    // with an HTML page, so try each candidate and require it to parse into
+    // items before accepting it. `endpoint` records which one answered.
+    const feeds = [
+      'https://reliefweb.int/disasters/rss.xml?view=ongoing',
+      'https://reliefweb.int/disasters/rss.xml',
+      'https://reliefweb.int/disasters/feed'
+    ];
+    let xml = '', endpoint = '', lastError = 'no candidate feed returned items';
+    for (const url of feeds) {
+      try {
+        const body = await timedFetch(url, {
+          text: true, headers: { accept: 'application/rss+xml, application/xml' }
+        });
+        if (/<item[\s>]/i.test(body)) { xml = body; endpoint = url; break; }
+        lastError = 'no <item> elements at ' + url;
+      } catch (e) {
+        lastError = String(e.message || e);
+      }
+    }
+    if (!xml) { mark('reliefweb', false, { error: lastError, tried: feeds.length }); return; }
 
+    try {
       const items = [];
       for (const m of String(xml).matchAll(/<item[\s>]([\s\S]*?)<\/item>/gi)) {
         const b = m[1];
@@ -452,7 +470,7 @@ async function handler(req, res) {
         });
         n++;
       }
-      mark('reliefweb', true, { records: n, unplacedCountries: unplaced, endpoint: 'public disasters RSS' });
+      mark('reliefweb', true, { records: n, unplacedCountries: unplaced, endpoint });
     } catch (e) {
       mark('reliefweb', false, { error: String(e.message || e) });
     }
