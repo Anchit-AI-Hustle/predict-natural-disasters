@@ -101,3 +101,25 @@ test('the newest items survive the cut, not the first ones merged', () => {
   assert.match(src, /\.sort\(byNewest\)\.slice\(0, 24\)/, 'news is sliced before it is sorted');
   assert.match(src, /\.sort\(byNewest\)\.slice\(0, 12\)/, 'situation reports are sliced before sorted');
 });
+
+/* ------------------------------------------------------- reported counts */
+
+test('the source-health line counts against the real number of providers', async () => {
+  // It read "7/3 sources online" in production: the denominator was hard-coded
+  // to 3 while the feed grew to eight providers.
+  const portal = fs.readFileSync(path.join(ROOT, 'portal.js'), 'utf8');
+  assert.ok(!/\$\{n\}\/3 sources online/.test(portal), 'the denominator is still hard-coded');
+
+  const r = await renderPage('events.html', {
+    waitFor: doc => /sources online|outage/.test(doc.getElementById('statusLine').textContent)
+  });
+  const line = r.document.getElementById('statusLine').textContent;
+  r.close();
+
+  const m = line.match(/(\d+)\/(\d+) sources online/);
+  if (m) {
+    const [, online, total] = m.map(Number);
+    assert.ok(online <= total, 'reported ' + line.trim() + ' — more online than exist');
+    assert.ok(total >= 3, 'implausible provider total in: ' + line.trim());
+  }
+});
