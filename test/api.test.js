@@ -616,3 +616,29 @@ test('the feed stays in the order it was sorted into after merging', async () =>
     }
   }
 });
+
+test('the feed can report its counts without shipping every record', async () => {
+  const full = await runEvents();
+  const res = mockRes();
+  await withFetch(makeFetch({}), () =>
+    eventsHandler({ query: { summary: '1' }, url: '/api/events?summary=1' }, res));
+
+  assert.equal(res.statusCode, 200);
+  assert.ok(!('events' in res.body), 'the summary should carry no records');
+  assert.equal(res.body.meta.eventCount, full.body.events.length);
+  assert.equal(res.body.meta.mergedSeismicReports, full.body.meta.mergedSeismicReports);
+  assert.ok(res.body.generatedAt, 'the summary should say when it was built');
+
+  // The parameter is also read straight off the url, since not every runtime
+  // hands the handler a parsed query.
+  const fromUrl = mockRes();
+  await withFetch(makeFetch({}), () =>
+    eventsHandler({ url: '/api/events?summary=1' }, fromUrl));
+  assert.ok(!('events' in fromUrl.body));
+
+  // Anything else still returns the whole feed.
+  const plain = mockRes();
+  await withFetch(makeFetch({}), () =>
+    eventsHandler({ query: { summary: '0' }, url: '/api/events?summary=0' }, plain));
+  assert.ok(Array.isArray(plain.body.events) && plain.body.events.length > 0);
+});

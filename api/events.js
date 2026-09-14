@@ -164,6 +164,13 @@ function mergeSeismicReports(events) {
   return events.filter(e => { const g = groupOf.get(e); return !g || g.lead === e; });
 }
 
+/** ?summary=1 asks for the meta block alone. */
+function wantsSummary(req) {
+  const v = (req && req.query && req.query.summary) ||
+    (req && req.url && new URL(req.url, 'http://x').searchParams.get('summary'));
+  return v === '1' || v === 'true';
+}
+
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
@@ -855,6 +862,13 @@ async function handler(req, res) {
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
   out.meta.forecastCount = out.events.filter(e => e.forecast).length;
+
+  // The counts without the records, so the deployed feed can be checked
+  // without transferring every event to do it.
+  if (wantsSummary(req)) {
+    res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
+    return;
+  }
 
   res.status(200).json(out);
 }
