@@ -429,47 +429,82 @@ async function handler(req, res) {
   })());
 
   // 7. USGS Volcano Hazards Program — volcanoes at elevated alert level.
+  //    The elevated-volcanoes payload is a list of notices: no coordinates, and
+  //    `notice_data` is a URL to the full notice rather than the data itself.
+  //    Fetch those few notices to place each volcano.
   jobs.push((async () => {
     try {
       const j = await timedFetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes');
       const arr = Array.isArray(j) ? j : (j.data || j.volcanoes || j.results || j.features || []);
-      let n = 0;
-      for (const raw of arr) {
+
+      // Walk an arbitrarily nested object for a latitude/longitude pair.
+      const findCoords = node => {
+        const stack = [node];
+        while (stack.length) {
+          const cur = stack.pop();
+          if (!cur || typeof cur !== 'object') continue;
+          let lat = null, lon = null;
+          for (const [k, v] of Object.entries(cur)) {
+            if (v && typeof v === 'object') { stack.push(v); continue; }
+            const key = k.toLowerCase();
+            if (lat === null && /^(v?lat|latitude)$/.test(key)) lat = num(v);
+            if (lon === null && /^(v?lon|v?lng|longitude)$/.test(key)) lon = num(v);
+          }
+          if (lat !== null && lon !== null && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+            return { lat, lon };
+          }
+        }
+        return null;
+      };
+
+      const entries = (Array.isArray(arr) ? arr : []).map(raw => {
         const v = raw.properties || raw;
-        let nd = v.notice_data;
-        if (typeof nd === 'string') { try { nd = JSON.parse(nd); } catch (e) { nd = null; } }
-        const src = Object.assign({}, nd && typeof nd === 'object' ? nd : {}, v);
-        const lat = num(src.latitude != null ? src.latitude : (src.lat != null ? src.lat : src.vlat));
-        const lon = num(src.longitude != null ? src.longitude : (src.lon != null ? src.lon : (src.lng != null ? src.lng : src.vlon)));
-        if (lat === null || lon === null) continue;
+        return { v, coords: findCoords(v) };
+      });
+
+      // Only a handful of volcanoes are ever elevated, so this stays cheap.
+      const needsNotice = entries.filter(e => !e.coords && typeof e.v.notice_data === 'string').slice(0, 8);
+      await Promise.allSettled(needsNotice.map(async e => {
+        try {
+          const notice = await timedFetch(e.v.notice_data, { timeout: 2500 });
+          e.coords = findCoords(notice);
+          if (e.coords) e.viaNotice = true;
+        } catch (err) { /* leave this volcano unplaced */ }
+      }));
+
+      let n = 0, viaNotice = 0;
+      for (const { v, coords, viaNotice: fromNotice } of entries) {
+        if (!coords) continue;
+        if (fromNotice) viaNotice++;
         const name = v.volcano_name || v.volcanoName || v.name || 'Volcano';
         const level = String(v.alert_level || v.alertLevel || v.alert || '').toUpperCase();
-        const colour = v.color_code || v.colorCode || v.cc || '';
+        const colour = v.color_code || v.colorCode || '';
         push({
           id: 'usgs-volcano-' + (v.vnum || v.volcanoId || name),
           source: 'USGS Volcano Hazards Program', sourceType: 'official', type: 'Volcano',
           title: name + ' — ' + (level || 'elevated') + ' alert level',
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
-          lat, lon,
-          updated: v.sent_utc || v.sent || v.updated || now.toISOString(),
+          lat: coords.lat, lon: coords.lon,
+          updated: v.sent_utc ? String(v.sent_utc).replace(' ', 'T') + 'Z' : (v.sent || now.toISOString()),
           details: 'Volcano alert level ' + (level || 'elevated') +
             (colour ? ' · aviation colour code ' + colour : '') + '.',
-          sourceUrl: 'https://www.usgs.gov/programs/VHP'
+          sourceUrl: v.notice_url || 'https://www.usgs.gov/programs/VHP'
         });
         n++;
       }
-      // Zero records with a 200 means the payload shape changed; capture enough
-      // to tell that apart from "no US volcano is currently elevated".
-      const shape = n === 0
+
+      const shape = n === 0 && entries.length
         ? {
             payload: Array.isArray(j) ? 'array' : typeof j,
-            entries: Array.isArray(arr) ? arr.length : 0,
-            firstKeys: (arr && arr[0]) ? Object.keys(arr[0].properties || arr[0]).slice(0, 20) : [],
-            firstEntry: (arr && arr[0]) ? JSON.stringify(arr[0].properties || arr[0]).slice(0, 700) : ''
+            entries: entries.length,
+            firstKeys: Object.keys(entries[0].v).slice(0, 20),
+            firstEntry: JSON.stringify(entries[0].v).slice(0, 700)
           }
         : null;
-      mark('usgs_volcano', true, shape ? { records: n, shape } : { records: n });
+      mark('usgs_volcano', true, shape
+        ? { records: n, placedViaNotice: viaNotice, shape }
+        : { records: n, placedViaNotice: viaNotice });
     } catch (e) { mark('usgs_volcano', false, { error: String(e.message || e) }); }
   })());
 
