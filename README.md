@@ -19,23 +19,28 @@ provider outage degrades coverage instead of emptying the feed:
 | NASA EONET | Satellite-observed open natural events |
 | NOAA National Hurricane Center | Active tropical cyclones |
 | NOAA / National Weather Service | Active Extreme and Severe US warnings with mapped geometry |
-| ReliefWeb (UN OCHA) | Alert and ongoing humanitarian disaster records — needs `RELIEFWEB_APPNAME` (see below) |
+| ReliefWeb (UN OCHA) | Listed humanitarian disasters, from the public RSS feed |
 | USGS Volcano Hazards Program | Volcanoes at elevated alert level |
 
 Per-source status, record counts and failure reasons (including the upstream's
 own error body) are returned in `meta.sources`.
 
-### ReliefWeb configuration
+### ReliefWeb
 
-ReliefWeb decommissioned API v1 and, since 1 November 2025, v2 requires an
-**appname approved by ReliefWeb**. Register one at
-<https://reliefweb.int/help/api> and set it as the `RELIEFWEB_APPNAME`
-environment variable in the Vercel project.
+ReliefWeb's v2 API requires an appname that ReliefWeb approves by hand, so both
+the disaster list and the per-event situation reports read its **public RSS
+feeds** instead. Nothing to register, no environment variable, no key.
 
-Until it is set, `/api/events` reports ReliefWeb as unconfigured (with that
-hint) and carries on with the other seven providers. Detail pages are not
-affected: situation reports fall back to ReliefWeb's public search RSS feed,
-which needs no credential.
+The disasters feed path is not documented, so the handler tries a short list of
+candidate URLs and accepts one only if it parses into feed items — a Drupal miss
+can answer 200 with an HTML page, which would otherwise look like "online, no
+disasters". `meta.sources.reliefweb.endpoint` records which URL answered.
+
+The disasters feed carries no coordinates, so each record is placed at its
+country's location (resolved through Open-Meteo's key-less geocoder) and
+flagged `precision: "country"`. These are country-level humanitarian records,
+not incident positions, and the detail page says so. A record whose country
+cannot be resolved is left off the map rather than placed somewhere plausible.
 
 ## Experimental outlooks
 

@@ -105,35 +105,19 @@ const FIXTURES = {
     ]
   },
 
-  reliefwebDisasters: {
-    data: [
-      {
-        id: 55501,
-        fields: {
-          name: 'Nepal: Floods and Landslides - Sep 2026', status: 'ongoing',
-          url: 'https://reliefweb.int/disaster/fl-2026-000167-npl',
-          type: [{ name: 'Flood' }],
-          primary_country: { name: 'Nepal', iso3: 'npl', location: { lat: 28.2, lon: 84.0 } },
-          country: [{ name: 'Nepal' }, { name: 'India' }],
-          date: { created: '2026-09-01T00:00:00+00:00', changed: isoNow, event: '2026-08-26T00:00:00+00:00' }
-        }
-      },
-      {
-        id: 55502,
-        fields: {
-          name: 'Philippines: Tropical Cyclone - Sep 2026', status: 'alert',
-          url: 'https://reliefweb.int/disaster/tc-2026-000200-phl',
-          type: [{ name: 'Tropical Cyclone' }],
-          primary_country: { name: 'Philippines', iso3: 'phl', location: { lat: 12.8, lon: 121.8 } },
-          country: [{ name: 'Philippines' }],
-          date: { created: '2026-09-12T00:00:00+00:00', changed: isoNow }
-        }
-      },
-      {
-        id: 55503,
-        fields: { name: 'Past disaster record', status: 'past', url: 'https://reliefweb.int/disaster/x', type: [{ name: 'Flood' }], primary_country: { name: 'Chad', location: { lat: 12, lon: 15 } }, date: { created: '2020-01-01T00:00:00+00:00' } }
-      }
-    ]
+  // ReliefWeb's public disasters feed: no coordinates, country in the title.
+  reliefwebDisastersRss: `<?xml version="1.0"?><rss version="2.0"><channel>
+    <item><title>Nepal: Floods and Landslides - Sep 2026</title><link>https://reliefweb.int/disaster/fl-2026-000167-npl</link><pubDate>Mon, 01 Sep 2026 00:00:00 GMT</pubDate><description>Heavy monsoon rainfall has caused widespread flooding.</description></item>
+    <item><title>Philippines: Tropical Cyclone - Sep 2026</title><link>https://reliefweb.int/disaster/tc-2026-000200-phl</link><pubDate>Fri, 12 Sep 2026 00:00:00 GMT</pubDate><description>An active tropical cyclone is approaching.</description></item>
+    <item><title>Atlantis: Mystery Event - Sep 2026</title><link>https://reliefweb.int/disaster/xx-2026-999</link><pubDate>Sat, 13 Sep 2026 00:00:00 GMT</pubDate><description>A country the geocoder cannot resolve.</description></item>
+    <item><link>https://reliefweb.int/disaster/no-title</link><description>Item with no title at all.</description></item>
+  </channel></rss>`,
+
+  // Open-Meteo forward geocoding, keyed by the country asked for.
+  geocode: {
+    Nepal: { results: [{ name: 'Nepal', latitude: 28.16667, longitude: 84.25, country_code: 'NP' }] },
+    Philippines: { results: [{ name: 'Philippines', latitude: 12.75, longitude: 122.73333, country_code: 'PH' }] },
+    Atlantis: { results: [] }
   },
 
   nwsZone: {
@@ -249,6 +233,7 @@ function failure(status) {
  *   nwsRejects: query fragments api.weather.gov should answer with HTTP 400
  *   youtubeVariant: which youtubeHtml* fixture the search page should return
  *   volcanoNoticeMismatch: notice describes volcanoes other than the one asked for
+ *   reliefwebEmptyUntil: only the candidate feed URL containing this returns items
  */
 function makeFetch(opts) {
   const o = opts || {};
@@ -273,9 +258,18 @@ function makeFetch(opts) {
       }
       return route('nws', FIXTURES.nws);
     }
-    if (u.includes('api.reliefweb.int') && u.includes('/disasters')) return route('reliefweb', FIXTURES.reliefwebDisasters);
-    if (u.includes('api.reliefweb.int') && u.includes('/reports')) return route('reliefweb_reports', FIXTURES.reliefwebReports);
+    if (u.includes('reliefweb.int/disasters')) {
+      // Mimic a Drupal miss: 200 with an HTML page and no <item> elements.
+      if (o.reliefwebEmptyUntil && !u.includes(o.reliefwebEmptyUntil)) {
+        return jsonResponse('<html><body>Page not found</body></html>');
+      }
+      return route('reliefweb', FIXTURES.reliefwebDisastersRss);
+    }
     if (u.includes('reliefweb.int/updates/rss.xml')) return route('reliefweb_rss', FIXTURES.reliefwebRss);
+    if (u.includes('geocoding-api.open-meteo.com')) {
+      const name = decodeURIComponent((u.match(/[?&]name=([^&]*)/) || [])[1] || '');
+      return route('geocode', FIXTURES.geocode[name] || { results: [] });
+    }
     if (u.includes('volcanoes.usgs.gov/hans-public/api/notice/')) {
       if (o.volcanoNoticeMismatch) {
         return route('usgs_volcano_notice', {

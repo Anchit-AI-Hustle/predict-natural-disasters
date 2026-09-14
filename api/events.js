@@ -380,49 +380,97 @@ async function handler(req, res) {
     mark('nws', false, { error: lastError });
   })());
 
-  // 6. ReliefWeb (UN OCHA) — currently alert/ongoing humanitarian disasters.
-  //    API v1 is decommissioned (HTTP 410). v2 is compatible but requires an
-  //    appname approved by ReliefWeb; set RELIEFWEB_APPNAME to enable it.
+  // 6. ReliefWeb (UN OCHA) — currently listed humanitarian disasters.
+  //    The v2 API needs an appname approved by ReliefWeb, so read the public
+  //    disasters feed instead: no credential, no setup.
+  //
+  //    The feed carries no coordinates, so each record is placed at its
+  //    country's location via Open-Meteo's key-less geocoder and flagged
+  //    precision:'country' — this is a country-level humanitarian record, not
+  //    an incident position, and the UI says so. A record whose country cannot
+  //    be resolved is left out rather than placed somewhere plausible.
   jobs.push((async () => {
-    const appname = process.env.RELIEFWEB_APPNAME || '';
-    if (!appname) {
-      mark('reliefweb', false, {
-        error: 'RELIEFWEB_APPNAME is not set',
-        hint: 'ReliefWeb requires a pre-approved appname since 1 Nov 2025. Register one at https://reliefweb.int/help/api and set RELIEFWEB_APPNAME.'
-      });
-      return;
+    // The exact feed path is not documented, and a Drupal miss can answer 200
+    // with an HTML page, so try each candidate and require it to parse into
+    // items before accepting it. `endpoint` records which one answered.
+    const feeds = [
+      'https://reliefweb.int/disasters/rss.xml?view=ongoing',
+      'https://reliefweb.int/disasters/rss.xml',
+      'https://reliefweb.int/disasters/feed'
+    ];
+    let xml = '', endpoint = '', lastError = 'no candidate feed returned items';
+    for (const url of feeds) {
+      try {
+        const body = await timedFetch(url, {
+          text: true, headers: { accept: 'application/rss+xml, application/xml' }
+        });
+        if (/<item[\s>]/i.test(body)) { xml = body; endpoint = url; break; }
+        lastError = 'no <item> elements at ' + url;
+      } catch (e) {
+        lastError = String(e.message || e);
+      }
     }
-    const params = new URLSearchParams({ appname, profile: 'full', limit: '50', preset: 'latest' });
+    if (!xml) { mark('reliefweb', false, { error: lastError, tried: feeds.length }); return; }
+
     try {
-      const j = await timedFetch('https://api.reliefweb.int/v2/disasters?' + params.toString());
-      let n = 0;
-      for (const d of j.data || []) {
-        const f = d.fields || {};
-        const status = String(f.status || '').toLowerCase();
-        if (status && status !== 'alert' && status !== 'ongoing' && status !== 'current') continue;
-        const loc = (f.primary_country && f.primary_country.location) || {};
-        const lat = num(loc.lat), lon = num(loc.lon);
-        if (lat === null || lon === null) continue;
-        const typeName = (f.type && f.type[0] && f.type[0].name) || 'Disaster';
+      const items = [];
+      for (const m of String(xml).matchAll(/<item[\s>]([\s\S]*?)<\/item>/gi)) {
+        const b = m[1];
+        const title = tag('title', b);
+        const link = tag('link', b) || tag('guid', b);
+        if (!title || !link) continue;
+        // "Nepal: Floods and Landslides - Sep 2026"
+        const split = title.indexOf(':');
+        const country = split > 0 ? title.slice(0, split).trim() : '';
+        const rest = split > 0 ? title.slice(split + 1) : title;
+        if (!country) continue;
+        items.push({
+          title, link, country,
+          hazard: rest.replace(/\s*-\s*[A-Za-z]{3}\s*\d{4}\s*$/, '').trim(),
+          published: tag('pubDate', b) || '',
+          summary: tag('description', b).slice(0, 400)
+        });
+        if (items.length >= 40) break;
+      }
+
+      // One geocode per distinct country, capped and run in parallel.
+      const countries = [...new Set(items.map(i => i.country))].slice(0, 12);
+      const located = new Map();
+      await Promise.allSettled(countries.map(async name => {
+        try {
+          const g = await timedFetch(
+            'https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=' +
+            encodeURIComponent(name), { timeout: 2500 });
+          const hit = (g.results || [])[0];
+          const lat = num(hit && hit.latitude), lon = num(hit && hit.longitude);
+          if (lat !== null && lon !== null) located.set(name, { lat, lon });
+        } catch (e) { /* leave this country unplaced */ }
+      }));
+
+      let n = 0, unplaced = 0;
+      for (const it of items) {
+        const at = located.get(it.country);
+        if (!at) { unplaced++; continue; }
         push({
-          id: 'reliefweb-' + d.id,
+          id: 'reliefweb-' + String(it.link).replace(/[^a-z0-9]+/gi, '-').slice(-48),
           source: 'ReliefWeb (UN OCHA)', sourceType: 'official',
-          type: normalizeType(typeName, f.name),
-          title: f.name || 'Humanitarian disaster record',
-          country: (f.primary_country && f.primary_country.name) || '',
-          region: (f.country || []).map(c => c.name).filter(Boolean).slice(0, 4).join(', '),
-          alert: status === 'alert' ? 'Orange' : 'Green',
-          lat, lon,
-          startedAt: (f.date && (f.date.event || f.date.created)) || null,
-          updated: (f.date && (f.date.changed || f.date.created)) || now.toISOString(),
-          details: 'UN OCHA ReliefWeb disaster record · status ' + (f.status || 'current') +
-            '. Situation reports, appeals and response updates are published on the linked page.',
-          sourceUrl: f.url || ('https://reliefweb.int/disaster/' + d.id),
+          type: normalizeType(it.hazard, it.title),
+          title: it.title,
+          country: it.country, region: it.country,
+          alert: 'Green',
+          lat: at.lat, lon: at.lon,
+          precision: 'country',
+          updated: it.published ? new Date(it.published).toISOString() : now.toISOString(),
+          details: 'UN OCHA ReliefWeb humanitarian disaster record. ' +
+            (it.summary ? it.summary + ' ' : '') +
+            'Mapped at country level, not at an incident location — open the source record for the affected areas, ' +
+            'situation reports, appeals and response updates.',
+          sourceUrl: it.link,
           humanitarian: true
         });
         n++;
       }
-      mark('reliefweb', true, { records: n, endpoint: 'v2' });
+      mark('reliefweb', true, { records: n, unplacedCountries: unplaced, endpoint });
     } catch (e) {
       mark('reliefweb', false, { error: String(e.message || e) });
     }
