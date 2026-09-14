@@ -412,6 +412,32 @@ test('a detail page can reorder its nearby-events list', async () => {
   r.close();
 });
 
+test('the homepage lists every outlook, not a hardcoded one', async () => {
+  // The panel shipped with a single static ND-001 row and a KPI hardcoded to "1",
+  // so the homepage claimed one upcoming forecast however many the feed carried.
+  const forecasts = (await events()).filter(e => e.forecast);
+  assert.ok(forecasts.length > 1, 'fixture feed needs several outlooks to make this meaningful');
+
+  const r = await renderPage('index.html', {
+    waitFor: doc => doc.getElementById('forecastRows').children.length > 0
+  });
+  const doc = r.document;
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+
+  assert.equal(doc.getElementById('kForecasts').textContent, String(forecasts.length),
+    'the KPI does not match the number of outlooks in the feed');
+
+  const rows = [...doc.getElementById('forecastRows').querySelectorAll('tr')];
+  assert.ok(rows.length > 1, 'only ' + rows.length + ' forecast row rendered');
+  assert.equal(rows.length, Math.min(6, forecasts.length));
+  // Each row must open its own outlook, not a fixed record.
+  const targets = rows.map(tr => (tr.getAttribute('onclick') || '').match(/GO\('([^']+)'\)/)?.[1]);
+  assert.ok(targets.every(Boolean), 'a forecast row has no destination');
+  assert.equal(new Set(targets).size, targets.length, 'forecast rows point at the same record');
+  assert.ok(targets.every(t => t.startsWith('/forecasts/')), 'a row does not open an outlook page');
+  r.close();
+});
+
 test('the homepage sorts without portal.js', async () => {
   // index.html is self-contained and carries its own sort implementation.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
