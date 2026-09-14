@@ -1,5 +1,8 @@
 name: Refresh disaster intelligence
 
+# Every 5 minutes: re-pull the live feed and pre-warm the per-event enrichment
+# cache so each detail page serves fresh news, situation reports, videos,
+# helplines and relief links straight from the edge.
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -15,35 +18,86 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Refresh live feeds and event enrichment
+      - name: Refresh live feed and warm every event's enrichment record
         env:
           BASE_URL: https://predict-natural-disasters.anchit-tandon.com
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --max-time 45 "$BASE_URL/api/events?cron=$(date +%s)" -o /tmp/events.json
+          curl --fail --silent --show-error --retry 2 --retry-delay 3 --max-time 60 \
+            "$BASE_URL/api/events?cron=$(date +%s)" -o /tmp/events.json
           python3 - <<'PY'
-          import json, os, urllib.parse, urllib.request, concurrent.futures
-          base=os.environ['BASE_URL']
-          data=json.load(open('/tmp/events.json'))
-          events=data.get('events',[])
-          def refresh(e):
-              q=urllib.parse.urlencode({
-                  'title':e.get('title',''),
-                  'country':e.get('country',''),
-                  'region':e.get('region',''),
-                  'type':e.get('type','')
-              })
-              url=f"{base}/api/event-enrichment?{q}&cron=1"
+          import json, os, sys, urllib.parse, urllib.request, concurrent.futures
+
+          base = os.environ['BASE_URL']
+          with open('/tmp/events.json') as fh:
+              data = json.load(fh)
+
+          events = data.get('events', [])
+          meta = data.get('meta', {})
+          sources = meta.get('sources', {})
+
+          # Shape checks: a 200 that returns a broken document is still a failure.
+          if not isinstance(events, list) or not events:
+              sys.exit('FAIL: /api/events returned no events')
+          required = ('id', 'title', 'type', 'source', 'lat', 'lon', 'updated')
+          bad = [e.get('id', '?') for e in events if any(e.get(k) in (None, '') for k in required)]
+          if bad:
+              sys.exit('FAIL: %d events are missing required fields: %s' % (len(bad), bad[:5]))
+
+          online = sorted(k for k, v in sources.items() if v.get('ok'))
+          offline = sorted(k for k, v in sources.items() if not v.get('ok'))
+          forecasts = [e for e in events if e.get('forecast')]
+          print('feed: %d events · %d forecasts · sources online: %s'
+                % (len(events), len(forecasts), ', '.join(online) or 'none'))
+          if offline:
+              print('::warning::upstream sources offline: %s' % ', '.join(offline))
+          if not online:
+              sys.exit('FAIL: every upstream source is offline')
+          if len(forecasts) < 2:
+              print('::warning::only %d forecast record(s) available this cycle' % len(forecasts))
+
+          def jsnum(v):
+              # JavaScript's String(Number) drops a trailing ".0"; Python's repr
+              # keeps it, and a mismatch warms the wrong cache entry.
+              f = float(v)
+              return str(int(f)) if f.is_integer() else repr(f)
+
+          def enrichment_url(e):
+              # Must match the query the browser sends, or a different cache
+              # entry gets warmed and visitors still pay the cold-start cost.
+              parts = [
+                  ('title', e.get('title', '')),
+                  ('country', e.get('country', '')),
+                  ('region', e.get('region', '')),
+                  ('type', e.get('type', '')),
+                  ('updated', e.get('updated', '')),
+                  ('forecast', 'true' if e.get('forecast') else 'false'),
+              ]
+              if isinstance(e.get('lat'), (int, float)) and isinstance(e.get('lon'), (int, float)):
+                  parts += [('lat', jsnum(e['lat'])), ('lon', jsnum(e['lon']))]
+              return '%s/api/event-enrichment?%s' % (base, urllib.parse.urlencode(parts))
+
+          def warm(e):
               try:
-                  with urllib.request.urlopen(url, timeout=35) as r:
-                      r.read(512)
+                  req = urllib.request.Request(enrichment_url(e), headers={'user-agent': 'pnd-refresh-cron/1.0'})
+                  with urllib.request.urlopen(req, timeout=45) as r:
+                      if r.status != 200:
+                          raise RuntimeError('HTTP %s' % r.status)
+                      r.read(2048)
                   return True
               except Exception as ex:
-                  print('enrichment warning:', e.get('id'), ex)
+                  print('::warning::enrichment warm failed for %s: %s' % (e.get('id'), ex))
                   return False
+
           with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-              results=list(pool.map(refresh, events))
-          print(f"refreshed live feed + {sum(results)}/{len(events)} event enrichment records")
+              results = list(pool.map(warm, events))
+
+          warmed = sum(results)
+          print('warmed %d/%d event enrichment records' % (warmed, len(events)))
+          if warmed == 0:
+              sys.exit('FAIL: /api/event-enrichment did not answer for any event')
+          if warmed < len(events) * 0.5:
+              sys.exit('FAIL: enrichment warmed for only %d of %d events' % (warmed, len(events)))
           PY
