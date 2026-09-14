@@ -1,0 +1,49 @@
+name: Refresh disaster intelligence
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: disaster-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Refresh live feeds and event enrichment
+        env:
+          BASE_URL: https://predict-natural-disasters.anchit-tandon.com
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 45 "$BASE_URL/api/events?cron=$(date +%s)" -o /tmp/events.json
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request, concurrent.futures
+          base=os.environ['BASE_URL']
+          data=json.load(open('/tmp/events.json'))
+          events=data.get('events',[])
+          def refresh(e):
+              q=urllib.parse.urlencode({
+                  'title':e.get('title',''),
+                  'country':e.get('country',''),
+                  'region':e.get('region',''),
+                  'type':e.get('type','')
+              })
+              url=f"{base}/api/event-enrichment?{q}&cron=1"
+              try:
+                  with urllib.request.urlopen(url, timeout=35) as r:
+                      r.read(512)
+                  return True
+              except Exception as ex:
+                  print('enrichment warning:', e.get('id'), ex)
+                  return False
+          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+              results=list(pool.map(refresh, events))
+          print(f"refreshed live feed + {sum(results)}/{len(events)} event enrichment records")
+          PY
