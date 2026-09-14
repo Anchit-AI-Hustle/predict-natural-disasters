@@ -125,9 +125,12 @@ function kmBetween(a, b) {
   return 6371 * 2 * Math.asin(Math.sqrt(h));
 }
 
+/** The agency behind a record, so two of its own records are never merged. */
+function agencyOf(e) { return String(e.source || '').split(' ')[0]; }
+
 /** How much a record actually carries, so the fullest one survives the merge. */
 function reportRank(e) {
-  const priority = SEISMIC_PRIORITY.indexOf(String(e.source).split(' ')[0]);
+  const priority = SEISMIC_PRIORITY.indexOf(agencyOf(e));
   return [
     (e.deaths ? 4 : 0) + (e.affected ? 2 : 0) + (e.displaced ? 2 : 0) +
       (e.sourceUrl ? 1 : 0) + (e.country ? 1 : 0),
@@ -143,10 +146,15 @@ function mergeSeismicReports(events) {
       Number.isFinite(e.magnitude) && Number.isFinite(t) &&
       Number.isFinite(e.lat) && Number.isFinite(e.lon);
     if (!seismic) continue;
+    // Only ever merge across agencies. A catalogue already deduplicates
+    // itself, so two records from one agency are two earthquakes by that
+    // agency's own determination -- the live feed carries doublets 21 and 44
+    // seconds apart that are genuinely separate events.
     const hit = groups.find(g =>
       Math.abs(g.t - t) <= ORIGIN_MS &&
       Math.abs(g.members[0].magnitude - e.magnitude) <= SAME_MAG &&
-      kmBetween(g.members[0], e) <= SAME_KM);
+      kmBetween(g.members[0], e) <= SAME_KM &&
+      !g.members.some(m => agencyOf(m) === agencyOf(e)));
     if (hit) { hit.members.push(e); groupOf.set(e, hit); }
     else { const g = { t, members: [e] }; groups.push(g); groupOf.set(e, g); }
   }

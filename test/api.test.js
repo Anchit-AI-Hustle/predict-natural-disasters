@@ -642,3 +642,44 @@ test('the feed can report its counts without shipping every record', async () =>
     eventsHandler({ query: { summary: '0' }, url: '/api/events?summary=0' }, plain));
   assert.ok(Array.isArray(plain.body.events) && plain.body.events.length > 0);
 });
+
+test('two earthquakes from the same agency are never merged into one', () => {
+  // Found against the live feed: three same-agency pairs were being collapsed.
+  // A catalogue already deduplicates itself, so two records from one agency
+  // are two earthquakes by that agency's own determination.
+  const doublets = {
+    // Petrolia, California: 44 seconds apart, same spot, both from USGS.
+    'a doublet 44 seconds apart': [
+      quake({ id: 'p1', title: 'M 3.6 - 21 km W of Petrolia, CA', magnitude: 3.63, lat: 40.29, lon: -124.53, startedAt: '2026-09-10T01:24:48.040Z' }),
+      quake({ id: 'p2', title: 'M 3.8 - 20 km WSW of Petrolia, CA', magnitude: 3.79, lat: 40.29, lon: -124.52, startedAt: '2026-09-10T01:24:04.400Z' })
+    ],
+    // Cobb, California: 21 seconds apart, a swarm, both from USGS.
+    'a swarm pair 21 seconds apart': [
+      quake({ id: 'c1', title: 'M 3.2 - 10 km WNW of Cobb, CA', magnitude: 3.15, lat: 38.86, lon: -122.83, startedAt: '2026-09-10T20:36:38.680Z' }),
+      quake({ id: 'c2', title: 'M 3.0 - 10 km WNW of Cobb, CA', magnitude: 2.97, lat: 38.85, lon: -122.83, startedAt: '2026-09-10T20:36:17.230Z' })
+    ]
+  };
+  for (const [name, pair] of Object.entries(doublets)) {
+    const out = mergeSeismicReports(pair);
+    assert.equal(out.length, 2, name + ' was merged into one record');
+    assert.ok(out.every(e => !e.corroboratedBy), name + ' was credited as corroboration');
+  }
+
+  // A third agency still joins a pair that already holds two others.
+  const three = mergeSeismicReports([
+    quake({ id: 'u', source: 'USGS' }),
+    quake({ id: 'e', source: 'EMSC', lat: -6.1, lon: 106.9, startedAt: '2026-09-11T04:12:23Z' }),
+    quake({ id: 'g', source: 'GDACS', lat: -6.0, lon: 106.7, startedAt: '2026-09-11T04:12:10Z' })
+  ]);
+  assert.equal(three.length, 1, 'three agencies reporting one quake should be one record');
+  assert.deepEqual(three[0].corroboratedBy.slice().sort(), ['EMSC', 'GDACS']);
+
+  // A same-agency neighbour must not block a genuine cross-agency merge.
+  const mixed = mergeSeismicReports([
+    quake({ id: 'u1', source: 'USGS' }),
+    quake({ id: 'u2', source: 'USGS', lat: 40.29, lon: -124.53 }),
+    quake({ id: 'e1', source: 'EMSC', lat: -6.1, lon: 106.9, startedAt: '2026-09-11T04:12:23Z' })
+  ]);
+  assert.equal(mixed.length, 2, 'expected the two USGS records to stay and the EMSC one to merge');
+  assert.equal(mixed.filter(e => e.corroboratedBy).length, 1);
+});
