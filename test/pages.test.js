@@ -388,8 +388,12 @@ test('a detail page can reorder its nearby-events list', async () => {
   });
   const doc = r.document;
   const sel = doc.getElementById('sortBy');
-  // Distance is the sensible default for a "nearby" list.
-  assert.equal(sel.options[0].value, 'distance');
+  // Every list opens on the newest record; distance stays available here.
+  assert.equal(sel.options[0].value, 'newest');
+  assert.ok([...sel.options].some(o => o.value === 'distance'), 'distance is no longer offered');
+  sel.value = 'distance';
+  sel.dispatchEvent(new r.window.Event('change'));
+  await new Promise(res => setTimeout(res, 300));
   const byDistance = orderOf(doc, 'related');
   sel.value = 'title';
   sel.dispatchEvent(new r.window.Event('change'));

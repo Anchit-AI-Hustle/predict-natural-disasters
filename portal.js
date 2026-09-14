@@ -57,7 +57,7 @@ const PND={
     countAsc:{label:'Active records — fewest first',cmp(a,b){return PND.numOf(a.count)-PND.numOf(b.count)}}
   },
   /** Default option set for a list of live hazard records. */
-  EVENT_SORTS:['severity','newest','oldest','deaths','affected','country','type','source','title'],
+  EVENT_SORTS:['newest','severity','oldest','deaths','affected','country','type','source','title'],
   sortStoreKey(id){return 'pnd_sort_'+location.pathname+'_'+id},
   /** Populate a <select>, restore the remembered choice and wire onChange. Returns the active key. */
   initSort(id,keys,onChange){
