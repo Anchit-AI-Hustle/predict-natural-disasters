@@ -2,12 +2,12 @@
   "cleanUrls": true,
   "headers": [
     {"source":"/","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
-    {"source":"/home-v2.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/home-v3.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/portal.js","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]}
   ],
   "rewrites": [
-    {"source":"/","destination":"/home-v2.html"},
-    {"source":"/dashboard","destination":"/home-v2.html"},
+    {"source":"/","destination":"/home-v3.html"},
+    {"source":"/dashboard","destination":"/home-v3.html"},
 
     {"source":"/disasters/:id","destination":"/event-detail.html?id=:id"},
     {"source":"/calamities/:id","destination":"/calamity-detail.html?id=:id"},
