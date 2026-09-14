@@ -1,53 +1,603 @@
-module.exports=async function handler(req,res){
-  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
-  res.setHeader('Pragma','no-cache');
-  const now=new Date(),from=new Date(now-120*864e5),iso=d=>d.toISOString().slice(0,10);
-  const out={generatedAt:now.toISOString(),meta:{gdacs:false,usgs:false,eonet:false,live:false,sources:{},coverage:'Global terrestrial coverage; all countries/territories are supported by the UI, subject to upstream reporting.',forecasting:'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.'},events:[]};
-  const push=e=>{if(!e||!Number.isFinite(+e.lat)||!Number.isFinite(+e.lon))return;out.events.push({...e,lat:+e.lat,lon:+e.lon})};
-  const timed=async(url,opts={})=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);try{const r=await fetch(url,{...opts,cache:'no-store',signal:c.signal,headers:{accept:'application/json',...(opts.headers||{})}});if(!r.ok)throw new Error(String(r.status));return await r.json()}finally{clearTimeout(t)}};
-  const parseGdacs=j=>{const arr=Array.isArray(j)?j:(j.features||j.data||j.results||[]);for(const x of arr){const p=x.properties||x;let coords=(x.geometry&&x.geometry.coordinates)||[p.longitude||p.lon,p.latitude||p.lat];if(!Array.isArray(coords)||Array.isArray(coords[0]))continue;const et=p.eventtype||p.eventType||p.type||'Disaster',eid=p.eventid||p.eventId||p.id||Math.random();push({id:`gdacs-${et}-${eid}`,source:'GDACS',sourceType:'official',type:({FL:'Flood',EQ:'Earthquake',TC:'Tropical Cyclone',VO:'Volcano',DR:'Drought',WF:'Wildfire'})[et]||et,title:p.name||p.title||p.eventname||`${et} event`,country:p.country||p.countryname||p.iso3||'',region:p.location||p.description||'',alert:p.alertlevel||p.alertLevel||'Green',lat:coords[1],lon:coords[0],updated:p.todate||p.toDate||p.fromdate||p.fromDate||p.date||now.toISOString(),details:p.description||p.eventdescription||p.severitydata||'',deaths:+(p.death||p.deaths||0)||0,displaced:+(p.displaced||0)||0,affected:+(p.affected||p.population||0)||0,sourceUrl:`https://www.gdacs.org/report.aspx?eventid=${encodeURIComponent(eid)}&eventtype=${encodeURIComponent(et)}`,rawId:eid,rawType:et})}}
-  const gdacsSearch=`https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF&fromDate=${iso(from)}&toDate=${iso(now)}&alertlevel=Green;Orange;Red`;
-  const jobs=[
-    (async()=>{try{parseGdacs(await timed(gdacsSearch));out.meta.gdacs=true;out.meta.sources.gdacs={ok:true,checkedAt:now.toISOString()}}catch(e){try{parseGdacs(await timed('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP'));out.meta.gdacs=true;out.meta.sources.gdacs={ok:true,checkedAt:now.toISOString(),fallbackEndpoint:true}}catch(e2){out.meta.sources.gdacs={ok:false,checkedAt:now.toISOString()}}}})(),
-    (async()=>{try{const j=await timed('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson');for(const f of j.features||[]){const place=f.properties.place||'',country=place.includes(',')?place.split(',').pop().trim():'';push({id:'usgs-'+f.id,source:'USGS',sourceType:'official',type:'Earthquake',title:f.properties.title,country,region:place,alert:(f.properties.mag||0)>=6?'Red':(f.properties.mag||0)>=5?'Orange':'Green',lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0],updated:new Date(f.properties.time).toISOString(),details:`Magnitude ${f.properties.mag??'—'} · depth ${f.geometry.coordinates[2]??'—'} km${f.properties.tsunami?' · tsunami flag issued':''}`,sourceUrl:f.properties.url||'',magnitude:f.properties.mag||null,depthKm:f.geometry.coordinates[2]??null})}out.meta.usgs=true;out.meta.sources.usgs={ok:true,checkedAt:now.toISOString(),window:'7 days, M2.5+'}}catch(e){out.meta.sources.usgs={ok:false,checkedAt:now.toISOString()}}})(),
-    (async()=>{try{const j=await timed('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=300');for(const v of j.events||[]){const g=v.geometry&&v.geometry[v.geometry.length-1];if(!g||g.type!=='Point')continue;const cat=(v.categories&&v.categories[0]&&v.categories[0].title)||'Natural Event';push({id:'eonet-'+v.id,source:'NASA EONET',sourceType:'official',type:cat,title:v.title,country:'',region:'',alert:'Green',lat:g.coordinates[1],lon:g.coordinates[0],updated:g.date||now.toISOString(),details:`Open event tracked by NASA EONET · ${cat}`,sourceUrl:(v.sources&&v.sources[0]&&v.sources[0].url)||''})}out.meta.eonet=true;out.meta.sources.eonet={ok:true,checkedAt:now.toISOString()}}catch(e){out.meta.sources.eonet={ok:false,checkedAt:now.toISOString()}}})()
-  ];
-  await Promise.allSettled(jobs);
-  out.meta.live=out.meta.gdacs||out.meta.usgs||out.meta.eonet;
+'use strict';
+/**
+ * Unified live global hazard feed.
+ *
+ * Every upstream is fetched independently and failures are isolated, so a
+ * single provider outage degrades coverage instead of emptying the feed — and,
+ * critically, it never collapses the experimental outlook set down to a single
+ * record, which is what happened when outlook generation depended on GDACS
+ * alone.
+ *
+ * CommonJS on purpose (see api/verified-support.js for why).
+ */
 
-  // Frozen benchmark forecast retained for verification history.
-  push({id:'ND-001',source:'Predict Natural Disasters',sourceType:'forecast',type:'Flood / Landslide',title:'Central Vietnam flash-flood + landslide forecast',country:'Vietnam',region:'Huế–Đà Nẵng corridor',alert:'High',lat:16.2,lon:107.8,updated:'2026-09-13T00:00:00Z',issuedAt:'2026-09-13T00:00:00Z',targetStart:'2026-09-13T00:00:00Z',targetEnd:'2026-09-16T23:59:59Z',details:'Target 14 Sep 2026; verification window 13–16 Sep 2026.',forecast:true,forecastKind:'frozen-benchmark',sourceUrl:'/verification'});
+const UA = 'PredictNaturalDisasters/2.0 (+https://predict-natural-disasters.anchit-tandon.com)';
+const FETCH_TIMEOUT_MS = 6500;   // keep total wall-clock inside the function limit
+const MAX_OUTLOOKS = 24;
+const OUTLOOK_HORIZON_HOURS = 72;
+const AFTERSHOCK_HORIZON_HOURS = 168;
 
-  const hasNepal=out.events.some(e=>/nepal/i.test([e.title,e.country,e.region].join(' '))&&/flood/i.test(e.type));
-  if(!hasNepal)push({id:'gdacs-FL-1104124',source:'GDACS verified snapshot',sourceType:'official',type:'Flood',title:'Nepal flood — Bagmati / Rasuwa impact and recovery',country:'Nepal',region:'Bagmati Province · Rasuwagadhi · Bhote Koshi · Trishuli corridor',alert:'Red',lat:28.18,lon:85.39,updated:'2026-09-05T18:50:00Z',details:'GDACS FL-2026-000167-NPL. Major late-August flood with continuing response/recovery updates; retained when the rolling GDACS live list omits the event.',deaths:955,displaced:3458,sourceUrl:'https://www.gdacs.org/report.aspx?eventid=1104124&eventtype=FL',cached:true});
-  const hasIndonesia=out.events.some(e=>/indonesia|teluknaga/i.test([e.title,e.country,e.region].join(' '))&&/earthquake/i.test(e.type));
-  if(!hasIndonesia)push({id:'recent-IDN-20260911-M65',source:'USGS verified recent snapshot',sourceType:'official',type:'Earthquake',title:'M 6.5 earthquake north-northeast of Teluknaga, Indonesia',country:'Indonesia',region:'Banten / Java Sea vicinity',alert:'Red',lat:-5.9,lon:106.6,updated:'2026-09-11T00:00:00Z',details:'Recent M6.5 Indonesia earthquake retained as a verified recent-event snapshot when it falls outside or is absent from the rolling live feed. Check the linked USGS feed/search for the authoritative event record.',magnitude:6.5,sourceUrl:'https://earthquake.usgs.gov/earthquakes/search/',cached:true});
+/* ------------------------------------------------------------------ utils */
 
-  // Generate multiple experimental short-horizon outlooks from live official signals.
-  // Earthquakes are deliberately excluded from deterministic future-timing forecasts.
-  const signalCandidates=out.events.filter(e=>e.sourceType==='official'&&!e.forecast&&!/earthquake/i.test(e.type)&&Number.isFinite(+e.lat)&&Number.isFinite(+e.lon));
-  const priority={Red:4,Orange:3,High:3,Green:1};
-  signalCandidates.sort((a,b)=>(priority[b.alert]||0)-(priority[a.alert]||0)||new Date(b.updated)-new Date(a.updated));
-  const picked=[],seenArea=new Set();
-  for(const e of signalCandidates){
-    if(picked.length>=8)break;
-    const area=((e.country||e.region||e.title)+'|'+e.type).toLowerCase().replace(/\s+/g,' ').slice(0,120);
-    if(seenArea.has(area))continue;seenArea.add(area);picked.push(e);
+const iso = d => new Date(d).toISOString().slice(0, 10);
+const num = v => (Number.isFinite(+v) ? +v : null);
+
+async function timedFetch(url, opts) {
+  const o = opts || {};
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), o.timeout || FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: Object.assign({ accept: 'application/json', 'user-agent': UA }, o.headers || {})
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return o.text ? await r.text() : await r.json();
+  } finally {
+    clearTimeout(timer);
   }
-  const horizonHours=72,targetEnd=new Date(now.getTime()+horizonHours*3600e3).toISOString();
-  const mechanism=t=>/flood/i.test(t)?'continued or renewed flooding / inundation where hydrological stress persists':/cyclone|storm|hurricane|typhoon/i.test(t)?'continued wind, surge and rainfall impacts along the active storm footprint':/wildfire|fire/i.test(t)?'continued fire spread / smoke / evacuation pressure while the active fire remains uncontrolled':/volcan/i.test(t)?'continued volcanic unrest, ash or exclusion-zone impacts while official activity remains elevated':/landslide/i.test(t)?'additional slope failures where terrain remains saturated or unstable':/drought/i.test(t)?'continued water stress and agricultural impacts while drought conditions persist':'continued hazard impacts while the official signal remains active';
-  picked.forEach((e,i)=>push({
-    id:`OUT-${String(i+1).padStart(3,'0')}-${String(e.id).replace(/[^a-z0-9_-]/gi,'').slice(-36)}`,
-    source:'Predict Natural Disasters · derived from '+e.source,
-    sourceType:'forecast',
-    type:e.type,
-    title:`Short-horizon ${e.type} risk outlook — ${e.country||e.region||e.title}`,
-    country:e.country||'',region:e.region||e.title||'',alert:e.alert==='Red'?'High':e.alert==='Orange'?'Moderate':'Watch',lat:e.lat,lon:e.lon,
-    updated:now.toISOString(),issuedAt:now.toISOString(),targetStart:now.toISOString(),targetEnd,
-    details:`Experimental ${horizonHours}-hour outlook derived from an active ${e.source} signal. Outlook: ${mechanism(e.type)}. This is not a deterministic prediction and must not replace official warnings.`,
-    forecast:true,forecastKind:'signal-derived-outlook',forecastOf:e.id,sourceUrl:e.sourceUrl||'',verificationRule:'Grade only against independently observed impacts during the stated window; do not count the pre-existing source alert itself as a successful prediction.'
-  }));
+}
 
-  const seen=new Set();out.events=out.events.filter(e=>{const k=(e.source+'|'+e.title+'|'+(+e.lat).toFixed(2)+'|'+(+e.lon).toFixed(2)).toLowerCase();if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>{const risk={Red:4,Orange:3,High:3,Moderate:2,Watch:1,Green:1};return (risk[b.alert]||0)-(risk[a.alert]||0)||new Date(b.updated)-new Date(a.updated)});
+function decodeXml(s) {
+  return String(s == null ? '' : s)
+    .replace(/<!\[CDATA\[|\]\]>/g, '')
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+}
+function tag(name, block) {
+  const m = block.match(new RegExp('<' + name + '[^>]*>([\\s\\S]*?)<\\/' + name + '>', 'i'));
+  return m ? decodeXml(m[1]).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+}
+
+/** Mean of a GeoJSON geometry's coordinates — good enough to place an alert polygon. */
+function centroid(geometry) {
+  if (!geometry) return null;
+  const pts = [];
+  const walk = c => {
+    if (!Array.isArray(c)) return;
+    if (typeof c[0] === 'number' && typeof c[1] === 'number') { pts.push(c); return; }
+    c.forEach(walk);
+  };
+  walk(geometry.coordinates);
+  if (!pts.length) return null;
+  const lon = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const lat = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+}
+
+const GDACS_TYPES = { FL: 'Flood', EQ: 'Earthquake', TC: 'Tropical Cyclone', VO: 'Volcano', DR: 'Drought', WF: 'Wildfire', TS: 'Tsunami' };
+
+/** Normalise the many labels upstreams use into one hazard vocabulary. */
+function normalizeType(raw) {
+  const t = String(raw || '').toLowerCase();
+  if (!t) return 'Natural Hazard';
+  if (/flash flood|flood|inundat/.test(t)) return 'Flood';
+  if (/landslide|mudslide|debris flow/.test(t)) return 'Landslide';
+  if (/tropical cyclone|hurricane|typhoon|tropical storm|tropical depression/.test(t)) return 'Tropical Cyclone';
+  if (/tornado/.test(t)) return 'Tornado';
+  if (/severe (thunder)?storm|thunderstorm|severe weather|wind|hail|blizzard|winter storm|snow/.test(t)) return 'Severe Storm';
+  if (/wildfire|bushfire|fire weather|\bfires?\b/.test(t)) return 'Wildfire';
+  if (/volcan/.test(t)) return 'Volcano';
+  if (/earthquake|seismic/.test(t)) return 'Earthquake';
+  if (/tsunami/.test(t)) return 'Tsunami';
+  if (/drought/.test(t)) return 'Drought';
+  if (/heat/.test(t)) return 'Extreme Heat';
+  if (/cold|freeze|frost/.test(t)) return 'Extreme Cold';
+  if (/ice|iceberg|sea and lake ice/.test(t)) return 'Ice';
+  if (/dust|haboob|sand/.test(t)) return 'Dust Storm';
+  if (/epidemic|cholera|disease/.test(t)) return 'Epidemic';
+  return String(raw).replace(/\b\w/g, c => c.toUpperCase()).slice(0, 48);
+}
+
+/* ---------------------------------------------------------------- handler */
+
+async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+
+  const now = new Date();
+  const from = new Date(now.getTime() - 120 * 864e5);
+
+  const out = {
+    generatedAt: now.toISOString(),
+    meta: {
+      live: false,
+      gdacs: false, usgs: false, eonet: false,
+      sources: {},
+      sourceCount: 0,
+      coverage: 'Global terrestrial and coastal coverage; all countries and territories are supported by the UI, subject to upstream reporting.',
+      forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
+      refreshTarget: '5 minutes'
+    },
+    events: []
+  };
+
+  const push = e => {
+    if (!e) return;
+    const lat = num(e.lat), lon = num(e.lon);
+    if (lat === null || lon === null || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+    out.events.push(Object.assign({}, e, { lat, lon, type: e.type || 'Natural Hazard' }));
+  };
+
+  const mark = (key, ok, extra) => {
+    out.meta.sources[key] = Object.assign({ ok: !!ok, checkedAt: now.toISOString() }, extra || {});
+  };
+
+  /* ------------------------------------------------------------ upstreams */
+
+  const parseGdacsJson = j => {
+    const arr = Array.isArray(j) ? j : (j.features || j.data || j.results || []);
+    let n = 0;
+    for (const x of arr) {
+      const p = x.properties || x;
+      let coords = (x.geometry && x.geometry.coordinates) || [p.longitude || p.lon, p.latitude || p.lat];
+      if (!Array.isArray(coords) || Array.isArray(coords[0])) continue;
+      const et = p.eventtype || p.eventType || p.type || 'Disaster';
+      const eid = p.eventid || p.eventId || p.id;
+      if (!eid) continue;
+      push({
+        id: 'gdacs-' + et + '-' + eid,
+        source: 'GDACS', sourceType: 'official',
+        type: GDACS_TYPES[et] || normalizeType(et),
+        title: p.name || p.title || p.eventname || (et + ' event'),
+        country: p.country || p.countryname || p.iso3 || '',
+        region: p.location || p.description || '',
+        alert: p.alertlevel || p.alertLevel || 'Green',
+        lat: coords[1], lon: coords[0],
+        startedAt: p.fromdate || p.fromDate || null,
+        updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
+        details: p.description || p.eventdescription || p.severitydata || '',
+        deaths: +(p.death || p.deaths || 0) || 0,
+        displaced: +(p.displaced || 0) || 0,
+        affected: +(p.affected || p.population || 0) || 0,
+        sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=' + encodeURIComponent(eid) + '&eventtype=' + encodeURIComponent(et),
+        rawId: eid, rawType: et
+      });
+      n++;
+    }
+    return n;
+  };
+
+  const parseGdacsRss = xml => {
+    let n = 0;
+    for (const m of String(xml).matchAll(/<item[\s>]([\s\S]*?)<\/item>/gi)) {
+      const b = m[1];
+      const lat = num(tag('geo:lat', b) || tag('lat', b));
+      const lon = num(tag('geo:long', b) || tag('long', b));
+      const et = tag('gdacs:eventtype', b) || 'Disaster';
+      const eid = tag('gdacs:eventid', b) || tag('guid', b);
+      if (lat === null || lon === null || !eid) continue;
+      push({
+        id: 'gdacs-' + et + '-' + eid,
+        source: 'GDACS', sourceType: 'official',
+        type: GDACS_TYPES[et] || normalizeType(et),
+        title: tag('title', b) || (et + ' event'),
+        country: tag('gdacs:country', b) || '',
+        region: tag('gdacs:location', b) || '',
+        alert: tag('gdacs:alertlevel', b) || 'Green',
+        lat, lon,
+        startedAt: tag('gdacs:fromdate', b) || null,
+        updated: tag('gdacs:todate', b) || tag('pubDate', b) || now.toISOString(),
+        details: tag('description', b) || '',
+        sourceUrl: tag('link', b) || 'https://www.gdacs.org/',
+        rawId: eid, rawType: et
+      });
+      n++;
+    }
+    return n;
+  };
+
+  const jobs = [];
+
+  // 1. GDACS — multi-hazard global alerts (JSON, app endpoint, then RSS).
+  jobs.push((async () => {
+    const search = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF&fromDate=' +
+      iso(from) + '&toDate=' + iso(now) + '&alertlevel=Green;Orange;Red';
+    try {
+      const n = parseGdacsJson(await timedFetch(search));
+      out.meta.gdacs = true; mark('gdacs', true, { records: n, endpoint: 'search' });
+      return;
+    } catch (e) { /* fall through */ }
+    try {
+      const n = parseGdacsJson(await timedFetch('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP'));
+      out.meta.gdacs = true; mark('gdacs', true, { records: n, endpoint: 'events4app' });
+      return;
+    } catch (e) { /* fall through */ }
+    try {
+      const n = parseGdacsRss(await timedFetch('https://www.gdacs.org/xml/rss.xml', { text: true, headers: { accept: 'application/rss+xml, application/xml' } }));
+      out.meta.gdacs = true; mark('gdacs', true, { records: n, endpoint: 'rss' });
+    } catch (e) {
+      mark('gdacs', false, { error: String(e.message || e) });
+    }
+  })());
+
+  // 2. USGS — earthquakes, M2.5+ over the last 7 days.
+  jobs.push((async () => {
+    try {
+      const j = await timedFetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson');
+      let n = 0;
+      for (const f of j.features || []) {
+        const place = f.properties.place || '';
+        const country = place.includes(',') ? place.split(',').pop().trim() : '';
+        const mag = num(f.properties.mag);
+        push({
+          id: 'usgs-' + f.id,
+          source: 'USGS', sourceType: 'official', type: 'Earthquake',
+          title: f.properties.title, country, region: place,
+          alert: mag >= 6 ? 'Red' : mag >= 5 ? 'Orange' : 'Green',
+          lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+          startedAt: new Date(f.properties.time).toISOString(),
+          updated: new Date(f.properties.updated || f.properties.time).toISOString(),
+          details: 'Magnitude ' + (mag === null ? '—' : mag) + ' · depth ' +
+            (f.geometry.coordinates[2] == null ? '—' : f.geometry.coordinates[2]) + ' km' +
+            (f.properties.tsunami ? ' · tsunami flag issued' : ''),
+          sourceUrl: f.properties.url || '',
+          magnitude: mag, depthKm: num(f.geometry.coordinates[2]),
+          tsunamiFlag: !!f.properties.tsunami
+        });
+        n++;
+      }
+      out.meta.usgs = true; mark('usgs', true, { records: n, window: '7 days, M2.5+' });
+    } catch (e) { mark('usgs', false, { error: String(e.message || e) }); }
+  })());
+
+  // 3. NASA EONET — satellite-observed open natural events.
+  jobs.push((async () => {
+    try {
+      const j = await timedFetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=300');
+      let n = 0;
+      for (const v of j.events || []) {
+        const geoms = Array.isArray(v.geometry) ? v.geometry : [];
+        const g = geoms[geoms.length - 1];
+        if (!g || g.type !== 'Point') continue;
+        const cat = (v.categories && v.categories[0] && v.categories[0].title) || 'Natural Event';
+        push({
+          id: 'eonet-' + v.id,
+          source: 'NASA EONET', sourceType: 'official', type: normalizeType(cat),
+          title: v.title, country: '', region: '',
+          alert: 'Green',
+          lat: g.coordinates[1], lon: g.coordinates[0],
+          startedAt: (geoms[0] && geoms[0].date) || null,
+          updated: g.date || now.toISOString(),
+          details: 'Open event tracked by NASA EONET · ' + cat,
+          sourceUrl: (v.sources && v.sources[0] && v.sources[0].url) || ('https://eonet.gsfc.nasa.gov/api/v3/events/' + v.id)
+        });
+        n++;
+      }
+      out.meta.eonet = true; mark('eonet', true, { records: n });
+    } catch (e) { mark('eonet', false, { error: String(e.message || e) }); }
+  })());
+
+  // 4. NOAA National Hurricane Center — active tropical cyclones.
+  jobs.push((async () => {
+    try {
+      const j = await timedFetch('https://www.nhc.noaa.gov/CurrentStorms.json');
+      const storms = j.activeStorms || j.storms || [];
+      let n = 0;
+      for (const s of storms) {
+        const lat = num(s.latitudeNumeric != null ? s.latitudeNumeric : s.lat);
+        const lon = num(s.longitudeNumeric != null ? s.longitudeNumeric : s.lon);
+        if (lat === null || lon === null) continue;
+        const intensity = num(s.intensity);
+        push({
+          id: 'nhc-' + (s.id || s.binNumber || s.name),
+          source: 'NOAA National Hurricane Center', sourceType: 'official', type: 'Tropical Cyclone',
+          title: [s.classification, s.name].filter(Boolean).join(' ') || 'Active tropical cyclone',
+          country: '', region: s.basin || s.binNumber || '',
+          alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
+          lat, lon,
+          updated: s.lastUpdate || now.toISOString(),
+          details: 'Active system · maximum sustained wind ' + (intensity === null ? '—' : intensity + ' kt') +
+            (s.pressure ? ' · minimum pressure ' + s.pressure + ' mb' : '') +
+            (s.movementDir != null ? ' · moving ' + s.movementDir + '° at ' + (s.movementSpeed || '—') + ' kt' : ''),
+          sourceUrl: (s.publicAdvisory && s.publicAdvisory.url) || 'https://www.nhc.noaa.gov/',
+          windKt: intensity
+        });
+        n++;
+      }
+      mark('nhc', true, { records: n });
+    } catch (e) { mark('nhc', false, { error: String(e.message || e) }); }
+  })());
+
+  // 5. NOAA / NWS — active severe and extreme US warnings with a mapped area.
+  jobs.push((async () => {
+    try {
+      const j = await timedFetch(
+        'https://api.weather.gov/alerts/active?status=actual&message_type=alert&severity=Extreme,Severe&limit=200',
+        { headers: { accept: 'application/geo+json' } }
+      );
+      let n = 0;
+      for (const f of j.features || []) {
+        const p = f.properties || {};
+        const c = centroid(f.geometry);
+        if (!c) continue; // zone-only alerts carry no geometry to place on the map
+        push({
+          id: 'nws-' + (p.id || f.id),
+          source: 'NOAA / National Weather Service', sourceType: 'official',
+          type: normalizeType(p.event),
+          title: p.event + (p.areaDesc ? ' — ' + String(p.areaDesc).split(';')[0].trim() : ''),
+          country: 'United States', region: p.areaDesc || '',
+          alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
+          lat: c.lat, lon: c.lon,
+          startedAt: p.onset || p.effective || null,
+          updated: p.sent || p.effective || now.toISOString(),
+          expiresAt: p.expires || p.ends || null,
+          details: (p.headline || p.description || '').slice(0, 600),
+          instruction: (p.instruction || '').slice(0, 600),
+          sourceUrl: (p['@id'] || '').replace('api.weather.gov', 'api.weather.gov') || 'https://www.weather.gov/',
+          issuingAgency: p.senderName || 'NWS'
+        });
+        n++;
+      }
+      mark('nws', true, { records: n, window: 'Active Extreme/Severe alerts with mapped geometry' });
+    } catch (e) { mark('nws', false, { error: String(e.message || e) }); }
+  })());
+
+  // 6. ReliefWeb (UN OCHA) — currently alert/ongoing humanitarian disasters.
+  jobs.push((async () => {
+    try {
+      const params = new URLSearchParams({
+        appname: 'predict-natural-disasters', profile: 'full', limit: '50', preset: 'latest'
+      });
+      const j = await timedFetch('https://api.reliefweb.int/v1/disasters?' + params.toString());
+      let n = 0;
+      for (const d of j.data || []) {
+        const f = d.fields || {};
+        const status = (f.status || '').toLowerCase();
+        if (status && status !== 'alert' && status !== 'ongoing' && status !== 'current') continue;
+        const loc = (f.primary_country && f.primary_country.location) || {};
+        const lat = num(loc.lat), lon = num(loc.lon);
+        if (lat === null || lon === null) continue;
+        const typeName = (f.type && f.type[0] && f.type[0].name) || 'Disaster';
+        push({
+          id: 'reliefweb-' + d.id,
+          source: 'ReliefWeb (UN OCHA)', sourceType: 'official', type: normalizeType(typeName),
+          title: f.name || 'Humanitarian disaster record',
+          country: (f.primary_country && f.primary_country.name) || '',
+          region: (f.country || []).map(c => c.name).filter(Boolean).slice(0, 4).join(', '),
+          alert: status === 'alert' ? 'Orange' : 'Green',
+          lat, lon,
+          startedAt: (f.date && (f.date.event || f.date.created)) || null,
+          updated: (f.date && (f.date.changed || f.date.created)) || now.toISOString(),
+          details: 'UN OCHA ReliefWeb disaster record · status ' + (f.status || 'current') +
+            '. Situation reports, appeals and response updates are published on the linked page.',
+          sourceUrl: f.url || ('https://reliefweb.int/disaster/' + d.id),
+          humanitarian: true
+        });
+        n++;
+      }
+      mark('reliefweb', true, { records: n });
+    } catch (e) { mark('reliefweb', false, { error: String(e.message || e) }); }
+  })());
+
+  // 7. USGS Volcano Hazards Program — volcanoes at elevated alert level.
+  jobs.push((async () => {
+    try {
+      const j = await timedFetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes');
+      const arr = Array.isArray(j) ? j : (j.data || j.volcanoes || []);
+      let n = 0;
+      for (const v of arr) {
+        const lat = num(v.latitude != null ? v.latitude : v.lat);
+        const lon = num(v.longitude != null ? v.longitude : v.lon);
+        if (lat === null || lon === null) continue;
+        const level = String(v.alert_level || v.alertLevel || '').toUpperCase();
+        push({
+          id: 'usgs-volcano-' + (v.vnum || v.volcano_name || v.volcanoName || n),
+          source: 'USGS Volcano Hazards Program', sourceType: 'official', type: 'Volcano',
+          title: (v.volcano_name || v.volcanoName || 'Volcano') + ' — ' + (level || 'elevated') + ' alert level',
+          country: 'United States', region: v.obs_fullname || v.obs_abbr || '',
+          alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
+          lat, lon,
+          updated: v.sent_utc || v.sent || now.toISOString(),
+          details: 'Volcano alert level ' + (level || 'elevated') +
+            (v.color_code || v.colorCode ? ' · aviation colour code ' + (v.color_code || v.colorCode) : '') + '.',
+          sourceUrl: 'https://www.usgs.gov/programs/VHP'
+        });
+        n++;
+      }
+      mark('usgs_volcano', true, { records: n });
+    } catch (e) { mark('usgs_volcano', false, { error: String(e.message || e) }); }
+  })());
+
+  // 8. EMSC / seismicportal — independent seismic cross-check.
+  jobs.push((async () => {
+    try {
+      const j = await timedFetch('https://www.seismicportal.eu/fdsnws/event/1/query?limit=80&format=json&minmag=4.5');
+      let n = 0;
+      for (const f of j.features || []) {
+        const p = f.properties || {};
+        const lat = num(p.lat != null ? p.lat : (f.geometry && f.geometry.coordinates && f.geometry.coordinates[1]));
+        const lon = num(p.lon != null ? p.lon : (f.geometry && f.geometry.coordinates && f.geometry.coordinates[0]));
+        if (lat === null || lon === null) continue;
+        const mag = num(p.mag);
+        push({
+          id: 'emsc-' + (p.unid || f.id || n),
+          source: 'EMSC', sourceType: 'official', type: 'Earthquake',
+          title: 'M ' + (mag === null ? '—' : mag.toFixed(1)) + ' — ' + (p.flynn_region || 'earthquake'),
+          country: '', region: p.flynn_region || '',
+          alert: mag >= 6 ? 'Red' : mag >= 5 ? 'Orange' : 'Green',
+          lat, lon,
+          startedAt: p.time || null,
+          updated: p.lastupdate || p.time || now.toISOString(),
+          details: 'Magnitude ' + (mag === null ? '—' : mag) + ' ' + (p.magtype || '') +
+            ' · depth ' + (p.depth == null ? '—' : p.depth + ' km') + ' · reported by ' + (p.auth || 'EMSC') + '.',
+          sourceUrl: p.unid ? 'https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=' + p.unid : 'https://www.emsc-csem.org/',
+          magnitude: mag, depthKm: num(p.depth)
+        });
+        n++;
+      }
+      mark('emsc', true, { records: n, window: 'M4.5+' });
+    } catch (e) { mark('emsc', false, { error: String(e.message || e) }); }
+  })());
+
+  await Promise.allSettled(jobs);
+
+  const okSources = Object.values(out.meta.sources).filter(s => s && s.ok);
+  out.meta.sourceCount = okSources.length;
+  out.meta.sourceTotal = Object.keys(out.meta.sources).length;
+  out.meta.live = okSources.length > 0;
+
+  /* ---------------------------------------------- verified fallback records */
+
+  const hasNepal = out.events.some(e => /nepal/i.test([e.title, e.country, e.region].join(' ')) && /flood/i.test(e.type));
+  if (!hasNepal) push({
+    id: 'gdacs-FL-1104124', source: 'GDACS verified snapshot', sourceType: 'official', type: 'Flood',
+    title: 'Nepal flood — Bagmati / Rasuwa impact and recovery',
+    country: 'Nepal', region: 'Bagmati Province · Rasuwagadhi · Bhote Koshi · Trishuli corridor',
+    alert: 'Red', lat: 28.18, lon: 85.39,
+    startedAt: '2026-08-26T00:00:00Z', updated: '2026-09-05T18:50:00Z',
+    details: 'GDACS FL-2026-000167-NPL. Major late-August flood with continuing response and recovery updates; retained when the rolling GDACS live list omits the event.',
+    deaths: 955, displaced: 3458,
+    sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=1104124&eventtype=FL', cached: true
+  });
+
+  const hasIndonesia = out.events.some(e => /indonesia|teluknaga/i.test([e.title, e.country, e.region].join(' ')) && /earthquake/i.test(e.type));
+  if (!hasIndonesia) push({
+    id: 'recent-IDN-20260911-M65', source: 'USGS verified recent snapshot', sourceType: 'official', type: 'Earthquake',
+    title: 'M 6.5 earthquake north-northeast of Teluknaga, Indonesia',
+    country: 'Indonesia', region: 'Banten / Java Sea vicinity',
+    alert: 'Red', lat: -5.9, lon: 106.6,
+    startedAt: '2026-09-11T00:00:00Z', updated: '2026-09-11T00:00:00Z',
+    details: 'Recent M6.5 Indonesia earthquake retained as a verified recent-event snapshot when it falls outside or is absent from the rolling live feed. Check the linked USGS feed for the authoritative event record.',
+    magnitude: 6.5, sourceUrl: 'https://earthquake.usgs.gov/earthquakes/search/', cached: true
+  });
+
+  /* ---------------------------------------------------- frozen benchmark */
+
+  push({
+    id: 'ND-001', source: 'Predict Natural Disasters', sourceType: 'forecast', type: 'Flood / Landslide',
+    title: 'Central Vietnam flash-flood + landslide forecast',
+    country: 'Vietnam', region: 'Huế–Đà Nẵng corridor',
+    alert: 'High', lat: 16.2, lon: 107.8,
+    updated: '2026-09-13T00:00:00Z', issuedAt: '2026-09-13T00:00:00Z',
+    targetStart: '2026-09-13T00:00:00Z', targetEnd: '2026-09-16T23:59:59Z',
+    details: 'Target 14 Sep 2026; verification window 13–16 Sep 2026. Frozen before the window opened and graded afterwards against observed impact, not against rainfall or a warning alone.',
+    forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen',
+    evidence: 'Issued and frozen ahead of the target window as the platform’s first graded benchmark forecast.',
+    verificationRule: 'Counts as correct only if meaningful flood or landslide impact is independently observed inside the frozen geography and window.',
+    sourceUrl: '/verification'
+  });
+
+  /* ------------------------------------------------- experimental outlooks */
+
+  const mechanism = t => {
+    const s = String(t).toLowerCase();
+    if (/flood/.test(s)) return 'continued or renewed flooding and inundation where hydrological stress persists';
+    if (/cyclone|storm|hurricane|typhoon|tornado/.test(s)) return 'continued wind, surge and rainfall impacts along the active storm footprint';
+    if (/wildfire|fire/.test(s)) return 'continued fire spread, smoke and evacuation pressure while the fire remains uncontrolled';
+    if (/volcan/.test(s)) return 'continued volcanic unrest, ashfall or exclusion-zone impacts while official activity remains elevated';
+    if (/landslide/.test(s)) return 'additional slope failures where terrain remains saturated or unstable';
+    if (/drought/.test(s)) return 'continued water stress and agricultural impacts while drought conditions persist';
+    if (/heat/.test(s)) return 'continued heat-health impacts while the heat episode persists';
+    if (/tsunami/.test(s)) return 'continued coastal and harbour hazard while the marine advisory remains in force';
+    return 'continued hazard impacts while the official signal remains active';
+  };
+
+  const outlookId = sourceId => 'OUT-' + String(sourceId).replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(-48);
+
+  const priority = { Red: 4, Orange: 3, High: 3, Green: 1 };
+  const officialSignals = out.events.filter(e =>
+    e.sourceType === 'official' && !e.forecast && Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
+
+  // (a) Hazard-continuation outlooks from every non-seismic active official signal.
+  const continuation = officialSignals
+    .filter(e => !/earthquake/i.test(e.type))
+    .sort((a, b) => (priority[b.alert] || 0) - (priority[a.alert] || 0) || new Date(b.updated) - new Date(a.updated));
+
+  const targetEnd = new Date(now.getTime() + OUTLOOK_HORIZON_HOURS * 3600e3).toISOString();
+  const seenArea = new Set();
+  const outlooks = [];
+
+  for (const e of continuation) {
+    if (outlooks.length >= MAX_OUTLOOKS) break;
+    const area = ((e.country || e.region || e.title) + '|' + e.type).toLowerCase().replace(/\s+/g, ' ').slice(0, 120);
+    if (seenArea.has(area)) continue;
+    seenArea.add(area);
+    outlooks.push({
+      id: outlookId(e.id),
+      source: 'Predict Natural Disasters · derived from ' + e.source,
+      sourceType: 'forecast', type: e.type,
+      title: 'Short-horizon ' + e.type + ' risk outlook — ' + (e.country || e.region || e.title),
+      country: e.country || '', region: e.region || e.title || '',
+      alert: e.alert === 'Red' ? 'High' : e.alert === 'Orange' ? 'Moderate' : 'Watch',
+      lat: e.lat, lon: e.lon,
+      updated: now.toISOString(), issuedAt: now.toISOString(),
+      targetStart: now.toISOString(), targetEnd,
+      details: 'Experimental ' + OUTLOOK_HORIZON_HOURS + '-hour outlook derived from an active ' + e.source +
+        ' signal. Outlook: ' + mechanism(e.type) + '. This is not a deterministic prediction and must not replace official warnings.',
+      forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: e.id,
+      confidence: e.alert === 'Red' ? 'Elevated — driven by a red-level official signal'
+        : e.alert === 'Orange' ? 'Moderate — driven by an orange-level official signal'
+          : 'Watch — driven by an active but lower-level official signal',
+      evidence: 'Active ' + e.source + ' record “' + e.title + '” (' + (e.alert || 'active') + ') last updated ' + e.updated + '.',
+      sourceUrl: e.sourceUrl || '',
+      verificationRule: 'Grade only against independently observed impacts during the stated window; the pre-existing source alert itself does not count as a successful prediction.'
+    });
+  }
+
+  // (b) Aftershock-sequence outlooks. Aftershock probability is a recognised
+  //     forecast product; the mainshock itself is never presented as predicted.
+  const strongQuakes = officialSignals
+    .filter(e => /earthquake/i.test(e.type) && num(e.magnitude) !== null && num(e.magnitude) >= 5.5)
+    .sort((a, b) => (num(b.magnitude) || 0) - (num(a.magnitude) || 0));
+  const seenQuakeArea = new Set();
+  const aftershockEnd = new Date(now.getTime() + AFTERSHOCK_HORIZON_HOURS * 3600e3).toISOString();
+
+  for (const e of strongQuakes) {
+    if (outlooks.length >= MAX_OUTLOOKS + 8) break;
+    const area = (Math.round(e.lat) + ',' + Math.round(e.lon));
+    if (seenQuakeArea.has(area)) continue;
+    seenQuakeArea.add(area);
+    outlooks.push({
+      id: outlookId('aftershock-' + e.id),
+      source: 'Predict Natural Disasters · derived from ' + e.source,
+      sourceType: 'forecast', type: 'Earthquake aftershock sequence',
+      title: 'Aftershock-sequence outlook — ' + (e.region || e.country || e.title),
+      country: e.country || '', region: e.region || e.title || '',
+      alert: num(e.magnitude) >= 6.5 ? 'High' : 'Moderate',
+      lat: e.lat, lon: e.lon,
+      updated: now.toISOString(), issuedAt: now.toISOString(),
+      targetStart: now.toISOString(), targetEnd: aftershockEnd,
+      details: 'Experimental 7-day aftershock-sequence outlook following an observed M' + num(e.magnitude) +
+        ' earthquake. Aftershocks decay over days to weeks and the largest is typically about one magnitude below the mainshock, ' +
+        'so further felt shaking and additional damage to already-weakened structures should be expected. ' +
+        'This describes the ongoing sequence — it is not a prediction of a new independent earthquake.',
+      forecast: true, forecastKind: 'aftershock-sequence', forecastOf: e.id,
+      confidence: 'Sequence-based — derived from observed mainshock magnitude and standard aftershock decay behaviour',
+      evidence: 'Observed ' + e.source + ' event “' + e.title + '” at ' + e.updated + '.',
+      sourceUrl: e.sourceUrl || '',
+      verificationRule: 'Grade against observed aftershock activity and any additional impacts in the window. No claim is made about predicting the mainshock.'
+    });
+  }
+
+  outlooks.forEach(push);
+  out.meta.outlooks = outlooks.length;
+  out.meta.forecastNote = outlooks.length
+    ? outlooks.length + ' active experimental outlooks derived from ' + okSources.length + ' online official sources, plus the frozen ND-001 benchmark.'
+    : 'No active official hazard signal is currently available to derive an outlook from. Only the frozen ND-001 benchmark is shown.';
+
+  /* --------------------------------------------------------- dedupe + sort */
+
+  const seen = new Set();
+  const risk = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };
+  out.events = out.events
+    .filter(e => {
+      const k = (e.source + '|' + e.title + '|' + e.lat.toFixed(2) + '|' + e.lon.toFixed(2)).toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .sort((a, b) => (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated));
+
+  out.meta.eventCount = out.events.length;
+  out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
+  out.meta.forecastCount = out.events.filter(e => e.forecast).length;
+
   res.status(200).json(out);
 }
+
+module.exports = handler;
+module.exports.default = handler;
+module.exports.normalizeType = normalizeType;
+module.exports.centroid = centroid;

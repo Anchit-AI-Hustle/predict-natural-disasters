@@ -16,6 +16,20 @@ const PND={
   slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
   enc(v=''){return encodeURIComponent(String(v))},
   eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;},
+  /* Resolve a record by id even when the id was re-encoded by a rewrite, changed case,
+     or arrived slugified from an older link. Returns null when nothing matches. */
+  findEvent(events,id){
+    if(!Array.isArray(events)||!id)return null;
+    const raw=String(id);let dec=raw;try{dec=decodeURIComponent(raw)}catch(e){}
+    const norm=v=>String(v==null?'':v).toLowerCase().replace(/[^a-z0-9]+/g,'');
+    const wanted=[raw,dec];
+    for(const w of wanted){const hit=events.find(e=>String(e.id)===w);if(hit)return hit}
+    const n=norm(dec);
+    const byNorm=events.find(e=>norm(e.id)===n);if(byNorm)return byNorm;
+    const byTitle=events.find(e=>norm(e.title)===n);if(byTitle)return byTitle;
+    const bySuffix=events.find(e=>norm(e.id).endsWith(n)||n.endsWith(norm(e.id)));
+    return bySuffix||null;
+  },
   calamityUrl(e){return '/calamities/'+this.enc(e&&e.id||'');},
   historicalUrl(e){return '/history/'+this.enc(this.slug(e&&e.name||e&&e.title||''));},
   regionUrl(name){return '/regions/'+this.enc(name||'World');},
@@ -53,7 +67,29 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
   function navigateFrom(el){const href=el&&el.dataset&&el.dataset.href;if(href)PND.redirect(href);}
   document.addEventListener('click',e=>{if(e.defaultPrevented||e.button!==0)return;const dataEl=e.target.closest('[data-href]');if(dataEl){e.preventDefault();e.stopPropagation();navigateFrom(dataEl);return}const a=e.target.closest('a[href]');if(!a||a.target==='_blank')return;const href=PND.canonicalDetailUrl(a.getAttribute('href'));if(entityPrefixes.test(href)){e.preventDefault();PND.redirect(href);}},true);
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const el=e.target.closest&&e.target.closest('[data-href]');if(el){e.preventDefault();navigateFrom(el)}},true);
-  async function attachEnrichment(){const path=location.pathname;if(!(/^\/(disasters|alerts|calamities|forecasts)\//.test(path)||['/event-detail','/alert-detail','/calamity-detail','/forecast-detail'].includes(path)))return;const id=PND.qs('id');if(!id)return;const main=document.querySelector('main');if(!main)return;if(!document.getElementById('eventEnrichment')){const mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';main.insertAdjacentElement('afterend',mount)}try{const d=await PND.getEvents();const e=d.events.find(x=>String(x.id)===String(id));if(!e)return;const s=document.createElement('script');s.src='/event-enrichment.js?v=5';s.onload=()=>window.PNDEventEnrichment&&window.PNDEventEnrichment.load(e);document.body.appendChild(s)}catch(e){}}
+  const DETAIL_PATH=/^\/(disasters|alerts|calamities|forecasts)\//;
+  const DETAIL_PAGES=['/event-detail','/alert-detail','/calamity-detail','/forecast-detail',
+    '/event-detail.html','/alert-detail.html','/calamity-detail.html','/forecast-detail.html'];
+  async function attachEnrichment(){
+    const path=location.pathname;
+    if(!(DETAIL_PATH.test(path)||DETAIL_PAGES.includes(path)))return;
+    const id=PND.qs('id');
+    if(!id)return;
+    let mount=document.getElementById('eventEnrichment');
+    if(!mount){const main=document.querySelector('main');if(!main)return;
+      mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';
+      main.insertAdjacentElement('afterend',mount)}
+    let e=null;
+    try{const d=await PND.getEvents();e=PND.findEvent(d.events,id)}catch(err){return}
+    if(!e)return;
+    const run=()=>{if(window.PNDEventEnrichment)window.PNDEventEnrichment.load(e)};
+    if(window.PNDEventEnrichment){run();return}
+    if(document.querySelector('script[data-pnd-enrichment]')){
+      document.querySelector('script[data-pnd-enrichment]').addEventListener('load',run);return}
+    const s=document.createElement('script');
+    s.src='/event-enrichment.js?v=8';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
+    document.body.appendChild(s);
+  }
   function init(){wire();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1)wire(n)});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

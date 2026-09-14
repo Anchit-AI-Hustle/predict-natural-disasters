@@ -1,0 +1,12 @@
+{
+  "name": "predict-natural-disasters-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Offline test suite for the API handlers and every rendered detail page. Kept out of the site root so the Vercel static build is unaffected.",
+  "scripts": {
+    "test": "node --test api.test.js pages.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}
