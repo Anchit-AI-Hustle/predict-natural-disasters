@@ -37,5 +37,5 @@ const HRANK={red:5,critical:5,orange:4,high:4,moderate:3,watch:2,green:1};const 
 async function load(){try{const d=await getEvents();all=d.events||[];kEvents.textContent=all.length;kOfficial.textContent=all.filter(e=>e.sourceType==='official').length;kHigh.textContent=all.filter(e=>['Red','Orange','High'].includes(e.alert)).length;kFeeds.textContent=[d.meta&&d.meta.gdacs,d.meta&&d.meta.usgs,d.meta&&d.meta.eonet].filter(Boolean).length+'/3';freshness.textContent=(d.meta&&d.meta.live?'Live · ':'Cached · ')+fmtDate(d.generatedAt);render()}catch(e){freshness.textContent='Live feed error — retrying'}}
 search.oninput=render;haz.onchange=render;load();setInterval(load,60000);
 </script>
-</body>
+<script src="/glossary.js"></script></body>
 </html>

@@ -5,6 +5,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { renderPage, sampleEvents, closeAllWindows } = require('./render.js');
+// Titles are displayed with acronyms written out, so expected strings go
+// through the same rules rather than being hand-maintained copies of them.
+const { expandAlways } = require('../glossary.js');
 
 // jsdom windows keep interval timers alive; without this the runner never exits.
 test.after(closeAllWindows);
@@ -170,7 +173,10 @@ test('every experimental outlook has a working detail page', async () => {
     const r = await renderPage('forecast-detail.html', { search: q(o.id), waitFor: settled('title'), timeoutMs: 6000 });
     const doc = r.document;
     assert.equal(r.errors.length, 0, o.id + ': ' + r.errors.map(String).join('|'));
-    assert.equal(doc.getElementById('title').textContent, o.title, 'wrong record resolved for ' + o.id);
+    // The page writes acronyms out, so compare against the same transform
+    // rather than against the raw feed title.
+    assert.equal(doc.getElementById('title').textContent, expandAlways(o.title),
+      'wrong record resolved for ' + o.id);
     assert.equal(doc.getElementById('rid').textContent, o.id);
     assert.notEqual(doc.getElementById('forecastWindow').textContent, '—');
     assert.ok(doc.getElementById('confidence').textContent.length > 5, 'no confidence on ' + o.id);
@@ -361,7 +367,11 @@ test('changing the sort reorders the list on a collection page', async () => {
   const byTitle = orderOf(doc, 'cards');
 
   assert.equal(byTitle.length, bySeverity.length, 'sorting changed how many records are shown');
-  assert.deepEqual([...byTitle].sort(), [...bySeverity].sort(), 'sorting changed which records are shown');
+  // Acronyms are written out asynchronously by the glossary pass, so the two
+  // readings can straddle it. Normalising both sides makes the comparison
+  // about ordering, which is what this test is for.
+  assert.deepEqual([...byTitle].map(expandAlways).sort(), [...bySeverity].map(expandAlways).sort(),
+    'sorting changed which records are shown');
   const alphabetical = [...byTitle].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   assert.deepEqual(byTitle, alphabetical, 'title sort did not produce A-Z order');
   assert.notDeepEqual(byTitle, bySeverity, 'the ordering did not actually change');
