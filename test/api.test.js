@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
 
 const { makeFetch, mockRes } = require('./mock-upstreams.js');
 const eventsHandler = require(path.join(__dirname, '..', 'api', 'events.js'));
@@ -287,7 +288,21 @@ test('enrichment merges news across providers, dedupes and flags outlets', async
   assert.equal(reuters[0].established, true);
   assert.equal(reuters[0].outlet, 'Reuters');
   assert.ok(d.news.every(x => x.title && x.link), 'every item needs a title and a link');
-  assert.ok(d.news.some(x => x.established === false), 'non-established outlets are still shown');
+
+  // Only recognised newsrooms and official agencies are admitted. On a page
+  // people may read during an emergency, an unvetted outlet carries a cost a
+  // "not established" label does not cover.
+  assert.ok(d.news.every(x => x.established === true), 'an unvetted outlet was admitted');
+  assert.ok(!d.news.some(x => /example-local-news\.test/.test(x.link)),
+    'the unvetted fixture outlet is still being shown');
+});
+
+test('the unvetted outlet really is in the feed, so the filter is doing work', async () => {
+  // Guards the premise of the test above: if the fixture stopped serving an
+  // unrecognised outlet, that assertion would pass without proving anything.
+  const raw = fs.readFileSync(path.join(__dirname, 'mock-upstreams.js'), 'utf8');
+  assert.match(raw, /example-local-news\.test/,
+    'the fixture no longer contains an unrecognised outlet to exclude');
 });
 
 test('enrichment returns official situation reports and videos', async () => {

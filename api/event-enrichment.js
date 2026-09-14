@@ -91,9 +91,11 @@ async function getJson(url, timeout, headers) {
 /* ------------------------------------------------------- news / reporting */
 
 /**
- * Outlets with published editorial standards and corrections policies. Used
- * only to badge an item as an established newsroom — every item always shows
- * its own outlet name and a direct link so the reader can judge the source.
+ * Outlets with published editorial standards and corrections policies, plus the
+ * official scientific and humanitarian agencies. This is now an admission list,
+ * not a badge: an item from anything else is dropped rather than shown with a
+ * caveat. On a page people may read during an emergency, an unvetted outlet
+ * carries a cost that a label does not cover.
  */
 const ESTABLISHED_OUTLETS = [
   'reuters.com', 'apnews.com', 'bbc.com', 'bbc.co.uk', 'afp.com', 'aljazeera.com', 'theguardian.com',
@@ -452,13 +454,16 @@ async function handler(req, res) {
   ]);
   const videos = videoResult.videos;
 
+  // Admit only recognised newsrooms and official agencies. Filtering precedes
+  // the slice, so the cap is 24 admitted items rather than 24 candidates of
+  // which some are then dropped.
   const news = dedupe(
     [].concat(googleItems, bingItems),
     x => (x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 90)
   ).map(x => Object.assign({}, x, {
     outlet: x.outlet || hostOf(x.link) || 'News source',
     established: isEstablished(x.link, x.outlet)
-  })).sort(byNewest).slice(0, 24);
+  })).filter(x => x.established).sort(byNewest).slice(0, 24);
 
   const situationReports = rwItems.slice().sort(byNewest).slice(0, 12).map(x => Object.assign({}, x, { established: true }));
 

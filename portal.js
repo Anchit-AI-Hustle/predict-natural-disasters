@@ -49,7 +49,7 @@ const PND={
     source:{label:'Source — A to Z',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
     title:{label:'Title — A to Z',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
     distance:{label:'Distance — nearest first',cmp(a,b){return (Number.isFinite(a._d)?a._d:Infinity)-(Number.isFinite(b._d)?b._d:Infinity)}},
-    windowEnd:{label:'Window ends — soonest first',cmp(a,b){const x=Date.parse(a.targetEnd||'')||Infinity,y=Date.parse(b.targetEnd||'')||Infinity;return x-y}},
+    windowEnd:{label:'Ending soonest first',cmp(a,b){const x=Date.parse(a.targetEnd||'')||Infinity,y=Date.parse(b.targetEnd||'')||Infinity;return x-y}},
     yearNew:{label:'Date — most recent first',cmp(a,b){return PND.numOf(b.sort)-PND.numOf(a.sort)}},
     yearOld:{label:'Date — earliest first',cmp(a,b){return PND.numOf(a.sort)-PND.numOf(b.sort)}},
     name:{label:'Name — A to Z',cmp(a,b){return PND.textOf(a,'name','title').localeCompare(PND.textOf(b,'name','title'))}},
@@ -105,6 +105,26 @@ const PND={
   initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s)return;const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);s.innerHTML=preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'?'IST · India':z)}</option>`).join('');},
   nav(active=''){setTimeout(()=>this.initTimezonePicker(),0);return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Verification','/verification'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px"></select><a class="live" href="/events">● Live</a></header>`;},
   sourceBadge(e){return `<span class="source" data-source="${this.esc(e&&e.source||'Source')}">${this.esc(e&&e.source||'Source')}</span>`;},
+  /* A window is stated as a start plus how long it is expected to run, never as
+     a date range: a joined pair of dates reads as one continuous event, and a second
+     occurrence of the same hazard is a separate record with its own start. */
+  duration(fromISO,toISO){
+    const a=Date.parse(fromISO||''),b=Date.parse(toISO||'');
+    if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a)return '';
+    const hours=(b-a)/3600e3;
+    if(hours<1)return 'under an hour';
+    const h=Math.round(hours);
+    if(h<48)return h+(h===1?' hour':' hours');
+    const d=Math.round(h/24);
+    return d+(d===1?' day':' days');
+  },
+  /* "Starts <date> · expected duration <n>" for a forecast record. */
+  windowText(e){
+    const start=e&&(e.targetStart||e.startedAt||e.updated);
+    if(!start)return 'Start not supplied by the source';
+    const dur=this.duration(start,e&&e.targetEnd);
+    return 'Starts '+this.fmtDate(start)+(dur?' · expected duration '+dur:' · duration not stated');
+  },
   statusText(meta){if(!meta)return 'Refreshing';const all=Object.values(meta.sources||{});const n=all.filter(x=>x&&x.ok).length;/* The denominator was hard-coded to 3 while the feed grew to eight providers, so a healthy feed read "7/3 sources online". */return meta.live?`Live · ${n}/${all.length||n} sources online`:'Source outage · verified fallbacks only';},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
