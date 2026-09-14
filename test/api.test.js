@@ -395,9 +395,30 @@ test('an unparsable video page is reported rather than shown as empty', async ()
   assert.match(yt.note, /no parsable results/i);
 });
 
-test('volcano notices are placed from notice_data when the record has no coordinates', async () => {
+test('volcanoes are placed inline or by following the notice URL', async () => {
   const res = await runEvents();
-  const volc = res.body.events.filter(e => e.source.includes('Volcano Hazards'));
-  assert.ok(volc.length >= 1, 'elevated volcanoes should be mapped');
+  const volc = res.body.events.filter(e => e.sourceType === 'official' && e.source.includes('Volcano Hazards'));
+  assert.equal(volc.length, 2, 'both elevated volcanoes should be mapped');
   assert.ok(volc.every(e => Number.isFinite(e.lat) && Number.isFinite(e.lon)));
+
+  const kilauea = volc.find(e => /Kilauea/.test(e.title));
+  assert.ok(Math.abs(kilauea.lat - 19.421) < 0.01, 'inline coordinates should be used as-is');
+  assert.equal(kilauea.alert, 'Red', 'WARNING maps to red');
+
+  // This one carries no coordinates at all; they come from the fetched notice.
+  const sitkin = volc.find(e => /Great Sitkin/.test(e.title));
+  assert.ok(Math.abs(sitkin.lat - 52.076) < 0.01, 'notice coordinates were not followed');
+  assert.ok(Math.abs(sitkin.lon + 176.13) < 0.01);
+  assert.equal(sitkin.alert, 'Orange', 'WATCH maps to orange');
+  assert.match(sitkin.updated, /^2026-09-13T18:56:31Z$/, 'sent_utc should be normalised to ISO');
+
+  assert.equal(res.body.meta.sources.usgs_volcano.placedViaNotice, 1);
+});
+
+test('a volcano whose notice cannot be fetched is left unplaced, not invented', async () => {
+  const res = await runEvents({ down: ['usgs_volcano_notice'] });
+  const volc = res.body.events.filter(e => e.sourceType === 'official' && e.source.includes('Volcano Hazards'));
+  assert.equal(volc.length, 1, 'only the inline-coordinate volcano should remain');
+  assert.match(volc[0].title, /Kilauea/);
+  assert.equal(res.body.meta.sources.usgs_volcano.placedViaNotice, 0);
 });

@@ -143,9 +143,30 @@ const FIXTURES = {
   },
 
   usgsVolcano: [
-    { vnum: 321050, volcano_name: 'Kilauea', latitude: 19.42, longitude: -155.29, alert_level: 'WATCH', color_code: 'ORANGE', obs_abbr: 'HVO', obs_fullname: 'Hawaiian Volcano Observatory', sent_utc: isoNow },
-    { vnum: 331010, volcano_name: 'Great Sitkin', latitude: 52.08, longitude: -176.13, alert_level: 'ADVISORY', color_code: 'YELLOW', obs_abbr: 'AVO', sent_utc: isoNow }
+    {
+      obs_fullname: 'Alaska Volcano Observatory', obs_abbr: 'avo', volcano_name: 'Great Sitkin',
+      vnum: '311120', notice_type_cd: 'DU', notice_identifier: 'DOI-USGS-AVO-2026-09-13T18:54:33+00:00',
+      sent_utc: '2026-09-13 18:56:31', sent_unixtime: 1789325791, color_code: 'ORANGE', alert_level: 'WATCH',
+      notice_url: 'https://volcanoes.usgs.gov/hans-public/notice/DOI-USGS-AVO-2026-09-13T18:54:33+00:00',
+      // As in production: a URL to the notice, not the notice itself.
+      notice_data: 'https://volcanoes.usgs.gov/hans-public/api/notice/getNotice/DOI-USGS-AVO-2026-09-13T18:54:33+00:00'
+    },
+    {
+      obs_fullname: 'Hawaiian Volcano Observatory', obs_abbr: 'hvo', volcano_name: 'Kilauea',
+      vnum: '332010', sent_utc: '2026-09-14 01:00:00', color_code: 'ORANGE', alert_level: 'WARNING',
+      // Some records do carry coordinates inline.
+      latitude: '19.421', longitude: '-155.287',
+      notice_url: 'https://volcanoes.usgs.gov/hans-public/notice/hvo-1'
+    }
   ],
+
+  // Coordinates live one fetch away, nested inside the notice body.
+  usgsVolcanoNotice: {
+    notice: {
+      notice_identifier: 'DOI-USGS-AVO-2026-09-13T18:54:33+00:00',
+      volcano: { volcano_name: 'Great Sitkin', vnum: '311120', latitude: 52.076, longitude: -176.13 }
+    }
+  },
 
   emsc: {
     features: [
@@ -245,6 +266,7 @@ function makeFetch(opts) {
     if (u.includes('api.reliefweb.int') && u.includes('/disasters')) return route('reliefweb', FIXTURES.reliefwebDisasters);
     if (u.includes('api.reliefweb.int') && u.includes('/reports')) return route('reliefweb_reports', FIXTURES.reliefwebReports);
     if (u.includes('reliefweb.int/updates/rss.xml')) return route('reliefweb_rss', FIXTURES.reliefwebRss);
+    if (u.includes('volcanoes.usgs.gov/hans-public/api/notice/')) return route('usgs_volcano_notice', FIXTURES.usgsVolcanoNotice);
     if (u.includes('volcanoes.usgs.gov')) return route('usgs_volcano', FIXTURES.usgsVolcano);
     if (u.includes('seismicportal.eu')) return route('emsc', FIXTURES.emsc);
     if (u.includes('news.google.com/rss')) return route('google_news', FIXTURES.googleNewsRss);
