@@ -47,12 +47,19 @@ let raw = seg.length >= 2 ? seg.slice(1).join('/') : '';
 try { raw = decodeURIComponent(raw); } catch (e) { /* keep as-is */ }
 
 /* Forward to the query form of the route, never back to the pretty URL this
-   page was reached through: a negative response cached at the edge for that
-   path would otherwise bounce the reader straight back here in a loop.
-   The link is shown first so the reader still gets there if the automatic
-   redirect is blocked. */
-function forward(page, query, label) {
-  const dest = '/' + page + '?' + query;
+   page was reached through: that address is the one that just failed, so
+   sending the reader to it again only bounces them straight back here.
+   The link is shown first so they still get there if the automatic redirect
+   is blocked. */
+function forward(page, params, label) {
+  // Carry the query the visitor arrived with, so /hazards/Flood?region=Nepal
+  // recovers as Nepal-specific rather than silently widening to the world.
+  // The value read from the path wins over any copy of it in the query.
+  const carried = new URLSearchParams(location.search);
+  Object.keys(params).forEach(k => carried.delete(k));
+  const pairs = Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k]))
+    .concat([...carried].map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)));
+  const dest = '/' + page + '?' + pairs.join('&');
   onward.href = dest;
   onward.textContent = label;
   onward.hidden = false;
@@ -64,7 +71,7 @@ async function resolve() {
   if (seg.length >= 2 && DIRECT[seg[0]] && raw) {
     headline.textContent = 'Taking you to ' + raw;
     sub.textContent = 'That page is built from the live feed under a different address.';
-    forward(DIRECT[seg[0]], PARAM[seg[0]] + '=' + encodeURIComponent(raw), 'Continue to ' + raw);
+    forward(DIRECT[seg[0]], { [PARAM[seg[0]]]: raw }, 'Continue to ' + raw);
     return;
   }
   if (seg.length >= 2 && KIND[seg[0]] && raw) {
@@ -75,7 +82,7 @@ async function resolve() {
       if (e) {
         headline.textContent = 'Taking you to ' + e.title;
         sub.textContent = 'The record is live — opening its detail page.';
-        forward(KIND[seg[0]], 'id=' + encodeURIComponent(e.id), 'Continue to ' + e.title);
+        forward(KIND[seg[0]], { id: e.id }, 'Continue to ' + e.title);
         return;
       }
       headline.textContent = 'That record is no longer in the live feed';

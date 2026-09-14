@@ -115,10 +115,11 @@ test('a not-found page exists so unmatched paths are not a bare platform 404', (
 /* --------------------------------------------- the 404 page's own behaviour
 
    The route table above is complete, but a visitor can still land on the
-   not-found page: a negative response cached at the edge, a link to a record
-   whose id changed upstream, a path typed by hand. Rendering 404.html at the
-   address the visitor actually asked for is the only way to prove it recovers
-   rather than dead-ends, so these run it exactly as production serves it. */
+   not-found page: a link to a record whose id changed upstream, an old
+   bookmark, a path typed by hand, or a routing fault like the one that made
+   every rewrite resolve to nothing. Rendering 404.html at the address the
+   visitor actually asked for is the only way to prove it recovers rather than
+   dead-ends, so these run it exactly as production serves it. */
 
 /** Where the rendered 404 page sends the reader, or null if it offers nowhere. */
 async function forwardedTo(url) {
@@ -134,7 +135,7 @@ async function forwardedTo(url) {
   return { dest, headline };
 }
 
-test('a live record reached through a stale 404 is forwarded to its detail page', async () => {
+test('a live record whose pretty URL did not resolve is forwarded to its detail page', async () => {
   const events = await sampleEvents();
   const alert = events.find(e => e.sourceType === 'official' && !e.forecast) || events[0];
 
@@ -148,7 +149,7 @@ test('a live record reached through a stale 404 is forwarded to its detail page'
   }
 });
 
-test('an outlook reached through a stale 404 is forwarded to its outlook page', async () => {
+test('an outlook whose pretty URL did not resolve is forwarded to its outlook page', async () => {
   const events = await sampleEvents();
   const outlook = events.find(e => e.forecast);
   assert.ok(outlook, 'the mocked feed produced no outlook to test with');
@@ -164,6 +165,17 @@ test('catalog paths are forwarded without waiting on the live feed', async () =>
     ['/history/thera-santorini-eruption', '/historical-event-detail?id=thera-santorini-eruption']]) {
     assert.equal((await forwardedTo(url)).dest, dest, url + ' did not forward correctly');
   }
+});
+
+test('a filtered link keeps its filter through the recovery', async () => {
+  // PND.hazardUrl(type, region) builds /hazards/Flood?region=Nepal and
+  // hazard-detail reads region; dropping it turns Nepal-specific results into
+  // worldwide ones without saying so.
+  assert.equal((await forwardedTo('/hazards/Flood?region=Nepal')).dest,
+    '/hazard-detail?type=Flood&region=Nepal');
+  // The value taken from the path wins over a stale copy in the query.
+  assert.equal((await forwardedTo('/regions/Nepal?region=Chile')).dest,
+    '/region-detail?region=Nepal');
 });
 
 test('an id that is genuinely gone gets an explanation, not a silent dead end', async () => {
