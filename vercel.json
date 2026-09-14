@@ -1,18 +1,23 @@
 {
   "cleanUrls": true,
+  "headers": [
+    {"source":"/","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/home.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/portal.js","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]}
+  ],
   "rewrites": [
     {"source":"/","destination":"/home.html"},
     {"source":"/dashboard","destination":"/home.html"},
 
-    {"source":"/disasters/:id","destination":"/event-detail.html"},
-    {"source":"/calamities/:id","destination":"/calamity-detail.html"},
-    {"source":"/alerts/:id","destination":"/alert-detail.html"},
-    {"source":"/forecasts/:id","destination":"/forecast-detail.html"},
-    {"source":"/regions/:region","destination":"/region-detail.html"},
-    {"source":"/locations/:location","destination":"/location-detail.html"},
-    {"source":"/hazards/:type","destination":"/hazard-detail.html"},
-    {"source":"/history/:id","destination":"/historical-event-detail.html"},
-    {"source":"/sources/:source","destination":"/source-detail.html"},
+    {"source":"/disasters/:id","destination":"/event-detail.html?id=:id"},
+    {"source":"/calamities/:id","destination":"/calamity-detail.html?id=:id"},
+    {"source":"/alerts/:id","destination":"/alert-detail.html?id=:id"},
+    {"source":"/forecasts/:id","destination":"/forecast-detail.html?id=:id"},
+    {"source":"/regions/:region","destination":"/region-detail.html?region=:region"},
+    {"source":"/locations/:location","destination":"/location-detail.html?location=:location"},
+    {"source":"/hazards/:type","destination":"/hazard-detail.html?type=:type"},
+    {"source":"/history/:id","destination":"/historical-event-detail.html?id=:id"},
+    {"source":"/sources/:source","destination":"/source-detail.html?source=:source"},
 
     {"source":"/calamities","destination":"/calamities.html"},
     {"source":"/event-detail","destination":"/event-detail.html"},
