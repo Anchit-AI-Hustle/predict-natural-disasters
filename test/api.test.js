@@ -8,6 +8,10 @@ const eventsHandler = require(path.join(__dirname, '..', 'api', 'events.js'));
 const enrichHandler = require(path.join(__dirname, '..', 'api', 'event-enrichment.js'));
 const support = require(path.join(__dirname, '..', 'api', 'verified-support.js'));
 
+// ReliefWeb v2 requires a pre-approved appname; exercise the configured path
+// here and the unconfigured path in its own test below.
+process.env.RELIEFWEB_APPNAME = 'pnd-test-appname';
+
 const realFetch = global.fetch;
 function withFetch(mock, fn) {
   global.fetch = mock;
@@ -111,6 +115,49 @@ test('outlooks still appear when GDACS is down', async () => {
   const forecasts = res.body.events.filter(e => e.forecast && e.id !== 'ND-001');
   assert.ok(forecasts.length >= 3,
     'a GDACS outage must not collapse the outlook set, got ' + forecasts.length);
+});
+
+test('ReliefWeb is reported as unconfigured rather than failing silently', async () => {
+  const saved = process.env.RELIEFWEB_APPNAME;
+  delete process.env.RELIEFWEB_APPNAME;
+  try {
+    const res = await runEvents();
+    const rw = res.body.meta.sources.reliefweb;
+    assert.equal(rw.ok, false);
+    assert.match(rw.error, /RELIEFWEB_APPNAME/);
+    assert.match(rw.hint, /reliefweb\.int\/help\/api/);
+    // The other seven providers carry on.
+    assert.ok(res.body.meta.sourceCount >= 7);
+  } finally { process.env.RELIEFWEB_APPNAME = saved; }
+});
+
+test('a rejected NWS parameter falls back instead of losing the provider', async () => {
+  const res = await runEvents();
+  const nws = res.body.meta.sources.nws;
+  assert.equal(nws.ok, true);
+  assert.ok(nws.query, 'the query that answered should be recorded');
+  assert.equal(nws.zoneOnlySkipped, 1, 'the geometry-less alert should be counted as skipped');
+});
+
+test('NWS keeps working when the API rejects a query parameter', async () => {
+  // Production answered HTTP 400 to the message_type query; the ladder must
+  // drop down to a query the API accepts rather than lose the provider.
+  const res = await runEvents({ nwsRejects: ['message_type'] });
+  const nws = res.body.meta.sources.nws;
+  assert.equal(nws.ok, true, 'provider should survive a rejected parameter');
+  assert.equal(nws.query, 'status=actual&severity=Extreme,Severe');
+  assert.ok(res.body.events.some(e => e.source.includes('National Weather Service')));
+});
+
+test('NWS is reported offline only when every query is rejected', async () => {
+  const res = await runEvents({ nwsRejects: ['alerts/active'] });
+  assert.equal(res.body.meta.sources.nws.ok, false);
+  assert.match(res.body.meta.sources.nws.error, /HTTP 400/);
+});
+
+test('upstream failures record the reason, not just the status code', async () => {
+  const res = await runEvents({ down: ['gdacs'] });
+  assert.match(res.body.meta.sources.gdacs.error, /HTTP 503/);
 });
 
 test('feed degrades safely when every upstream is down', async () => {
@@ -289,4 +336,53 @@ test('every stored contact and link is well formed', () => {
     assert.match(r.donate, /^https:\/\//);
     if (r.email) assert.match(r.email, /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i);
   }
+});
+
+test('situation reports fall back to the public ReliefWeb feed without an appname', async () => {
+  const saved = process.env.RELIEFWEB_APPNAME;
+  delete process.env.RELIEFWEB_APPNAME;
+  try {
+    const d = (await runEnrichment(NEPAL)).body;
+    assert.ok(d.situationReports.length >= 2, 'the public RSS feed should still supply reports');
+    assert.ok(d.situationReports.every(x => x.link.includes('reliefweb.int')));
+    assert.equal(d.situationReports[0].via, 'ReliefWeb (UN OCHA)');
+  } finally { process.env.RELIEFWEB_APPNAME = saved; }
+});
+
+test('the API-backed path is used when an appname is configured', async () => {
+  const d = (await runEnrichment(NEPAL)).body;
+  assert.ok(d.situationReports.length >= 2);
+  assert.ok(d.situationReports.some(x => /Situation Report/i.test(x.title)));
+});
+
+/* ---------------------------------------------- video extraction shapes */
+
+test('videos are extracted from every YouTube result shape', async () => {
+  const cases = [
+    [undefined, 'AAAAAAAAAAA', 'Nepal floods: rescue operations continue'],
+    ['SimpleText', 'CCCCCCCCCCC', 'Flood rescue live'],
+    ['Accessibility', 'DDDDDDDDDDD', 'Drone footage of the flooded valley']
+  ];
+  for (const [variant, id, title] of cases) {
+    const d = (await runEnrichment(NEPAL, { youtubeVariant: variant })).body;
+    assert.ok(d.videos.length >= 1, 'no videos for variant ' + variant);
+    const hit = d.videos.find(v => v.id === id);
+    assert.ok(hit, 'missing ' + id + ' for variant ' + variant);
+    assert.equal(hit.title, title);
+    assert.equal(hit.url, 'https://www.youtube.com/watch?v=' + id);
+  }
+});
+
+test('a consent interstitial still yields openable videos', async () => {
+  const d = (await runEnrichment(NEPAL, { youtubeVariant: 'IdsOnly' })).body;
+  assert.equal(d.videos.length, 2);
+  assert.ok(d.videos.every(v => v.url.startsWith('https://www.youtube.com/watch?v=')));
+});
+
+test('an unparsable video page is reported rather than shown as empty', async () => {
+  const d = (await runEnrichment(NEPAL, { youtubeVariant: 'Empty' })).body;
+  assert.deepEqual(d.videos, []);
+  const yt = d.sources.find(s => s.name === 'YouTube');
+  assert.equal(yt.items, 0);
+  assert.match(yt.note, /no parsable results/i);
 });

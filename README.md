@@ -19,10 +19,23 @@ provider outage degrades coverage instead of emptying the feed:
 | NASA EONET | Satellite-observed open natural events |
 | NOAA National Hurricane Center | Active tropical cyclones |
 | NOAA / National Weather Service | Active Extreme and Severe US warnings with mapped geometry |
-| ReliefWeb (UN OCHA) | Alert and ongoing humanitarian disaster records |
+| ReliefWeb (UN OCHA) | Alert and ongoing humanitarian disaster records — needs `RELIEFWEB_APPNAME` (see below) |
 | USGS Volcano Hazards Program | Volcanoes at elevated alert level |
 
-Per-source status, record counts and failure reasons are returned in `meta.sources`.
+Per-source status, record counts and failure reasons (including the upstream's
+own error body) are returned in `meta.sources`.
+
+### ReliefWeb configuration
+
+ReliefWeb decommissioned API v1 and, since 1 November 2025, v2 requires an
+**appname approved by ReliefWeb**. Register one at
+<https://reliefweb.int/help/api> and set it as the `RELIEFWEB_APPNAME`
+environment variable in the Vercel project.
+
+Until it is set, `/api/events` reports ReliefWeb as unconfigured (with that
+hint) and carries on with the other seven providers. Detail pages are not
+affected: situation reports fall back to ReliefWeb's public search RSS feed,
+which needs no credential.
 
 ## Experimental outlooks
 

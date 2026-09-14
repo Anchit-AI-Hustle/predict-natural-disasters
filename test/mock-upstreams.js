@@ -155,9 +155,28 @@ const FIXTURES = {
     ]
   },
 
+  reliefwebRss: `<?xml version="1.0"?><rss version="2.0"><channel>
+    <item><title>Nepal: Floods and Landslides Situation Report No. 4</title><link>https://reliefweb.int/report/nepal/sitrep-4</link><pubDate>Sat, 13 Sep 2026 12:00:00 GMT</pubDate><description>Humanitarian partners scaled up water and sanitation support.</description><source url="https://reliefweb.int">OCHA</source></item>
+    <item><title>IFRC Emergency Appeal: Nepal Floods</title><link>https://reliefweb.int/report/nepal/ifrc-appeal</link><pubDate>Fri, 12 Sep 2026 09:00:00 GMT</pubDate><description>The appeal seeks CHF 5 million.</description><source url="https://reliefweb.int">IFRC</source></item>
+  </channel></rss>`,
+
   youtubeHtml: 'var ytInitialData = {"contents":' +
     '{"a":{"videoId":"AAAAAAAAAAA","x":1,"title":{"runs":[{"text":"Nepal floods: rescue operations continue"}]}},' +
     '"b":{"videoId":"BBBBBBBBBBB","x":1,"title":{"runs":[{"text":"Aerial footage of flooded districts"}]}}}};',
+
+  // YouTube also serves a simpleText title shape...
+  youtubeHtmlSimpleText: 'var ytInitialData = {"contents":' +
+    '{"a":{"videoId":"CCCCCCCCCCC","x":1,"title":{"simpleText":"Flood rescue live"}}}};',
+
+  // ...and a layout where only accessibility text carries the title.
+  youtubeHtmlAccessibility: 'var ytInitialData = {"contents":' +
+    '{"a":{"videoId":"DDDDDDDDDDD","lockupViewModel":{"x":1},"accessibilityText":"Drone footage of the flooded valley"}}};',
+
+  // A consent interstitial: ids present, no titles at all.
+  youtubeHtmlIdsOnly: 'var ytInitialData = {"c":[{"videoId":"EEEEEEEEEEE"},{"videoId":"FFFFFFFFFFF"}]};',
+
+  // A bot wall with nothing usable.
+  youtubeHtmlEmpty: '<html><body>Before you continue to YouTube</body></html>',
 
   bigDataCloud: {
     countryName: 'Nepal', countryCode: 'NP', principalSubdivision: 'Bagmati Province',
@@ -181,6 +200,8 @@ function failure(status) {
 /**
  * @param {object} opts
  *   down: array of source keys that should fail (or 'all')
+ *   nwsRejects: query fragments api.weather.gov should answer with HTTP 400
+ *   youtubeVariant: which youtubeHtml* fixture the search page should return
  */
 function makeFetch(opts) {
   const o = opts || {};
@@ -197,14 +218,24 @@ function makeFetch(opts) {
     if (u.includes('earthquake.usgs.gov')) return route('usgs', FIXTURES.usgs);
     if (u.includes('eonet.gsfc.nasa.gov')) return route('eonet', FIXTURES.eonet);
     if (u.includes('nhc.noaa.gov/CurrentStorms')) return route('nhc', FIXTURES.nhc);
-    if (u.includes('api.weather.gov/alerts')) return route('nws', FIXTURES.nws);
-    if (u.includes('api.reliefweb.int/v1/disasters')) return route('reliefweb', FIXTURES.reliefwebDisasters);
-    if (u.includes('api.reliefweb.int/v1/reports')) return route('reliefweb_reports', FIXTURES.reliefwebReports);
+    if (u.includes('api.weather.gov/alerts')) {
+      // Reproduce production's HTTP 400: the API rejects one query parameter.
+      if (o.nwsRejects && o.nwsRejects.some(p => u.includes(p))) {
+        return { ok: false, status: 400, text: async () => '{"detail":"Invalid parameter"}', json: async () => ({}) };
+      }
+      return route('nws', FIXTURES.nws);
+    }
+    if (u.includes('api.reliefweb.int') && u.includes('/disasters')) return route('reliefweb', FIXTURES.reliefwebDisasters);
+    if (u.includes('api.reliefweb.int') && u.includes('/reports')) return route('reliefweb_reports', FIXTURES.reliefwebReports);
+    if (u.includes('reliefweb.int/updates/rss.xml')) return route('reliefweb_rss', FIXTURES.reliefwebRss);
     if (u.includes('volcanoes.usgs.gov')) return route('usgs_volcano', FIXTURES.usgsVolcano);
     if (u.includes('seismicportal.eu')) return route('emsc', FIXTURES.emsc);
     if (u.includes('news.google.com/rss')) return route('google_news', FIXTURES.googleNewsRss);
     if (u.includes('bing.com/news')) return route('bing_news', FIXTURES.bingNewsRss);
-    if (u.includes('youtube.com/results')) return route('youtube', FIXTURES.youtubeHtml);
+    if (u.includes('youtube.com/results')) {
+      const variant = o.youtubeVariant ? FIXTURES['youtubeHtml' + o.youtubeVariant] : FIXTURES.youtubeHtml;
+      return route('youtube', variant);
+    }
     if (u.includes('bigdatacloud.net')) return route('geocode', FIXTURES.bigDataCloud);
 
     return failure(404);

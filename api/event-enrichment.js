@@ -133,48 +133,122 @@ async function bingNews(query) {
   try { return parseRss(await getText(u), 20).map(x => Object.assign(x, { via: 'Bing News' })); } catch (e) { return []; }
 }
 
-/** UN OCHA ReliefWeb: authoritative situation reports, assessments and appeals. */
+/**
+ * UN OCHA ReliefWeb: authoritative situation reports, assessments and appeals.
+ *
+ * API v1 is decommissioned and v2 needs an appname approved by ReliefWeb, so
+ * fall back to ReliefWeb's public search RSS feed, which needs no credential.
+ */
+function mapReliefwebApi(j) {
+  return (j.data || []).map(d => {
+    const f = d.fields || {};
+    return {
+      title: f.title || 'ReliefWeb report',
+      link: f.url || ('https://reliefweb.int/node/' + d.id),
+      outlet: (f.source && f.source[0] && (f.source[0].shortname || f.source[0].name)) || 'ReliefWeb',
+      publishedAt: (f.date && (f.date.created || f.date.original)) || '',
+      summary: strip(f.body || '').slice(0, 320),
+      via: 'ReliefWeb (UN OCHA)'
+    };
+  }).filter(x => x.title && x.link);
+}
+
 async function reliefwebReports(query, country) {
-  const params = new URLSearchParams({
-    appname: 'predict-natural-disasters',
-    profile: 'list',
-    limit: '12',
-    'query[value]': [query, country].filter(Boolean).join(' ').slice(0, 240),
-    'sort[]': 'date:desc'
-  });
+  const search = [query, country].filter(Boolean).join(' ').slice(0, 240);
+  const appname = process.env.RELIEFWEB_APPNAME || '';
+
+  if (appname) {
+    const params = new URLSearchParams({
+      appname, profile: 'list', limit: '12', 'query[value]': search, 'sort[]': 'date:desc'
+    });
+    try {
+      return mapReliefwebApi(await getJson('https://api.reliefweb.int/v2/reports?' + params.toString()));
+    } catch (e) { /* fall through to the public feed */ }
+  }
+
   try {
-    const j = await getJson('https://api.reliefweb.int/v1/reports?' + params.toString());
-    return (j.data || []).map(d => {
-      const f = d.fields || {};
-      return {
-        title: f.title || 'ReliefWeb report',
-        link: f.url || ('https://reliefweb.int/node/' + d.id),
-        outlet: (f.source && f.source[0] && (f.source[0].shortname || f.source[0].name)) || 'ReliefWeb',
-        publishedAt: (f.date && (f.date.created || f.date.original)) || '',
-        summary: strip(f.body || '').slice(0, 320),
-        via: 'ReliefWeb (UN OCHA)'
-      };
-    }).filter(x => x.title && x.link);
+    const url = 'https://reliefweb.int/updates/rss.xml?search=' + encodeURIComponent(search);
+    return parseRss(await getText(url), 12).map(x => Object.assign(x, {
+      outlet: x.outlet || 'ReliefWeb',
+      via: 'ReliefWeb (UN OCHA)'
+    }));
   } catch (e) { return []; }
 }
 
-async function youtubeVideos(query) {
-  const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=CAI%253D';
-  try {
-    const html = await getText(url, 7000);
-    const out = [];
-    const re = /"videoId":"([A-Za-z0-9_-]{11})"[\s\S]{0,500}?"title":\{"runs":\[\{"text":"([^"]{2,200})"/g;
+/**
+ * YouTube search results.
+ *
+ * Live checks showed the previous single-pattern scrape returning nothing:
+ * YouTube serves a consent interstitial to datacentre IPs and has more than one
+ * result-item shape. Send the consent cookie and try several patterns, then
+ * report what happened so the detail page's provenance panel is honest.
+ */
+const VIDEO_PATTERNS = [
+  // classic videoRenderer
+  /"videoId":"([A-Za-z0-9_-]{11})"[\s\S]{0,600}?"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.){2,200})"/g,
+  // accessibility / simpleText shape
+  /"videoId":"([A-Za-z0-9_-]{11})"[\s\S]{0,600}?"title":\{"simpleText":"((?:[^"\\]|\\.){2,200})"/g,
+  // newer lockupViewModel shape
+  /"videoId":"([A-Za-z0-9_-]{11})"[\s\S]{0,900}?"accessibilityText":"((?:[^"\\]|\\.){2,200})"/g
+];
+
+function unescapeJson(v) {
+  return decodeXml(String(v)
+    .replace(/\\u0026/g, '&')
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, ' ')
+    .replace(/\\\//g, '/'));
+}
+
+function extractVideos(html) {
+  const out = [];
+  for (const pattern of VIDEO_PATTERNS) {
+    pattern.lastIndex = 0;
     let m;
-    while ((m = re.exec(html)) && out.length < 12) {
+    while ((m = pattern.exec(html)) && out.length < 12) {
       out.push({
         id: m[1],
-        title: decodeXml(m[2].replace(/\\u0026/g, '&').replace(/\\"/g, '"')),
+        title: unescapeJson(m[2]),
         url: 'https://www.youtube.com/watch?v=' + m[1],
         thumbnail: 'https://i.ytimg.com/vi/' + m[1] + '/hqdefault.jpg'
       });
     }
-    return dedupe(out, x => x.id);
-  } catch (e) { return []; }
+    if (out.length) break;
+  }
+  // Last resort: ids with no usable title still give the reader a video to open.
+  if (!out.length) {
+    const ids = [...new Set([...String(html).matchAll(/"videoId":"([A-Za-z0-9_-]{11})"/g)].map(m => m[1]))];
+    for (const id of ids.slice(0, 12)) {
+      out.push({
+        id,
+        title: 'Video report',
+        url: 'https://www.youtube.com/watch?v=' + id,
+        thumbnail: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'
+      });
+    }
+  }
+  return dedupe(out, x => x.id);
+}
+
+async function youtubeVideos(query) {
+  const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=CAI%253D';
+  const status = { fetched: false, bytes: 0, note: '' };
+  try {
+    const html = await getText(url, 7000, {
+      // Bypasses the EU consent interstitial that otherwise replaces the results.
+      cookie: 'CONSENT=YES+cb; SOCS=CAI',
+      accept: 'text/html,application/xhtml+xml',
+      'accept-language': 'en-US,en;q=0.9'
+    });
+    status.fetched = true;
+    status.bytes = html.length;
+    const videos = extractVideos(html);
+    if (!videos.length) status.note = 'Search page returned no parsable results.';
+    return { videos, status };
+  } catch (e) {
+    status.note = String(e.message || e);
+    return { videos: [], status };
+  }
 }
 
 /* --------------------------------------------------------- place resolving */
@@ -380,13 +454,14 @@ async function handler(req, res) {
   const newsQuery = base + ' (disaster OR emergency OR flood OR earthquake OR cyclone OR storm OR wildfire OR landslide OR volcano OR relief)';
   const videoQuery = base + ' disaster news report';
 
-  const [googleItems, bingItems, rwItems, videos, place] = await Promise.all([
+  const [googleItems, bingItems, rwItems, videoResult, place] = await Promise.all([
     googleNews(newsQuery),
     bingNews(base + ' disaster'),
     reliefwebReports(title || type, country),
     youtubeVideos(videoQuery),
     resolvePlace(lat, lon)
   ]);
+  const videos = videoResult.videos;
 
   const news = dedupe(
     [].concat(googleItems, bingItems),
@@ -479,7 +554,7 @@ async function handler(req, res) {
       { name: 'Google News', role: 'Live press coverage aggregation', url: 'https://news.google.com/', items: googleItems.length },
       { name: 'Bing News', role: 'Secondary press coverage aggregation', url: 'https://www.bing.com/news', items: bingItems.length },
       { name: 'ReliefWeb (UN OCHA)', role: 'Official situation reports and humanitarian updates', url: 'https://reliefweb.int/', items: rwItems.length },
-      { name: 'YouTube', role: 'Video and field reporting search', url: 'https://www.youtube.com/', items: videos.length },
+      { name: 'YouTube', role: 'Video and field reporting search', url: 'https://www.youtube.com/', items: videos.length, note: videoResult.status.note },
       { name: 'BigDataCloud', role: 'Reverse geocoding of the source coordinates', url: 'https://www.bigdatacloud.com/', items: place ? 1 : 0 },
       { name: 'Verified support directory', role: 'National emergency numbers, authorities and relief organisations', url: 'https://www.ifrc.org/national-societies-directory', items: support.emergency.length + support.authorities.length }
     ],

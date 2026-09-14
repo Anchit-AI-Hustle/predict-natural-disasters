@@ -32,7 +32,11 @@ async function timedFetch(url, opts) {
       signal: controller.signal,
       headers: Object.assign({ accept: 'application/json', 'user-agent': UA }, o.headers || {})
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) {
+      let detail = '';
+      try { detail = (await r.text()).replace(/\s+/g, ' ').slice(0, 220); } catch (e) { /* body unreadable */ }
+      throw new Error('HTTP ' + r.status + (detail ? ' — ' + detail : ''));
+    }
     return o.text ? await r.text() : await r.json();
   } finally {
     clearTimeout(timer);
@@ -69,9 +73,11 @@ function centroid(geometry) {
 const GDACS_TYPES = { FL: 'Flood', EQ: 'Earthquake', TC: 'Tropical Cyclone', VO: 'Volcano', DR: 'Drought', WF: 'Wildfire', TS: 'Tsunami' };
 
 /** Normalise the many labels upstreams use into one hazard vocabulary. */
-function normalizeType(raw) {
+function normalizeType(raw, hint) {
   const t = String(raw || '').toLowerCase();
+  const h = String(hint || '').toLowerCase();
   if (!t) return 'Natural Hazard';
+  if (/tropical storm|tropical depression|hurricane|typhoon|cyclone/.test(h)) return 'Tropical Cyclone';
   if (/flash flood|flood|inundat/.test(t)) return 'Flood';
   if (/landslide|mudslide|debris flow/.test(t)) return 'Landslide';
   if (/tropical cyclone|hurricane|typhoon|tropical storm|tropical depression/.test(t)) return 'Tropical Cyclone';
@@ -284,7 +290,8 @@ async function handler(req, res) {
           id: 'nhc-' + (s.id || s.binNumber || s.name),
           source: 'NOAA National Hurricane Center', sourceType: 'official', type: 'Tropical Cyclone',
           title: [s.classification, s.name].filter(Boolean).join(' ') || 'Active tropical cyclone',
-          country: '', region: s.basin || s.binNumber || '',
+          country: '',
+          region: [s.name, s.binNumber ? '(' + s.binNumber + ')' : ''].filter(Boolean).join(' ') || s.basin || '',
           alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
           lat, lon,
           updated: s.lastUpdate || now.toISOString(),
@@ -301,50 +308,75 @@ async function handler(req, res) {
   })());
 
   // 5. NOAA / NWS — active severe and extreme US warnings with a mapped area.
+  //    A single fixed query is brittle: one parameter the API rejects takes the
+  //    whole provider offline with a bare 400. Walk a ladder instead.
   jobs.push((async () => {
-    try {
-      const j = await timedFetch(
-        'https://api.weather.gov/alerts/active?status=actual&message_type=alert&severity=Extreme,Severe&limit=200',
-        { headers: { accept: 'application/geo+json' } }
-      );
-      let n = 0;
-      for (const f of j.features || []) {
-        const p = f.properties || {};
-        const c = centroid(f.geometry);
-        if (!c) continue; // zone-only alerts carry no geometry to place on the map
-        push({
-          id: 'nws-' + (p.id || f.id),
-          source: 'NOAA / National Weather Service', sourceType: 'official',
-          type: normalizeType(p.event),
-          title: p.event + (p.areaDesc ? ' — ' + String(p.areaDesc).split(';')[0].trim() : ''),
-          country: 'United States', region: p.areaDesc || '',
-          alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
-          lat: c.lat, lon: c.lon,
-          startedAt: p.onset || p.effective || null,
-          updated: p.sent || p.effective || now.toISOString(),
-          expiresAt: p.expires || p.ends || null,
-          details: (p.headline || p.description || '').slice(0, 600),
-          instruction: (p.instruction || '').slice(0, 600),
-          sourceUrl: (p['@id'] || '').replace('api.weather.gov', 'api.weather.gov') || 'https://www.weather.gov/',
-          issuingAgency: p.senderName || 'NWS'
-        });
-        n++;
+    const queries = [
+      'status=actual&message_type=alert&severity=Extreme,Severe',
+      'status=actual&severity=Extreme,Severe',
+      'severity=Extreme,Severe',
+      'status=actual',
+      ''
+    ];
+    let lastError = '';
+    for (const query of queries) {
+      try {
+        const j = await timedFetch(
+          'https://api.weather.gov/alerts/active' + (query ? '?' + query : ''),
+          { headers: { accept: 'application/geo+json' } }
+        );
+        let n = 0, skipped = 0;
+        for (const f of j.features || []) {
+          const p = f.properties || {};
+          if (query === '' && !['Extreme', 'Severe'].includes(p.severity)) continue;
+          const c = centroid(f.geometry);
+          if (!c) { skipped++; continue; } // zone-only alerts carry no mappable geometry
+          push({
+            id: 'nws-' + (p.id || f.id),
+            source: 'NOAA / National Weather Service', sourceType: 'official',
+            type: normalizeType(p.event, p.event),
+            title: p.event + (p.areaDesc ? ' — ' + String(p.areaDesc).split(';')[0].trim() : ''),
+            country: 'United States', region: p.areaDesc || '',
+            alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
+            lat: c.lat, lon: c.lon,
+            startedAt: p.onset || p.effective || null,
+            updated: p.sent || p.effective || now.toISOString(),
+            expiresAt: p.expires || p.ends || null,
+            details: String(p.headline || p.description || '').slice(0, 600),
+            instruction: String(p.instruction || '').slice(0, 600),
+            sourceUrl: p['@id'] || 'https://www.weather.gov/',
+            issuingAgency: p.senderName || 'NWS'
+          });
+          n++;
+        }
+        mark('nws', true, { records: n, zoneOnlySkipped: skipped, query: query || '(no filters)' });
+        return;
+      } catch (e) {
+        lastError = String(e.message || e);
       }
-      mark('nws', true, { records: n, window: 'Active Extreme/Severe alerts with mapped geometry' });
-    } catch (e) { mark('nws', false, { error: String(e.message || e) }); }
+    }
+    mark('nws', false, { error: lastError });
   })());
 
   // 6. ReliefWeb (UN OCHA) — currently alert/ongoing humanitarian disasters.
+  //    API v1 is decommissioned (HTTP 410). v2 is compatible but requires an
+  //    appname approved by ReliefWeb; set RELIEFWEB_APPNAME to enable it.
   jobs.push((async () => {
-    try {
-      const params = new URLSearchParams({
-        appname: 'predict-natural-disasters', profile: 'full', limit: '50', preset: 'latest'
+    const appname = process.env.RELIEFWEB_APPNAME || '';
+    if (!appname) {
+      mark('reliefweb', false, {
+        error: 'RELIEFWEB_APPNAME is not set',
+        hint: 'ReliefWeb requires a pre-approved appname since 1 Nov 2025. Register one at https://reliefweb.int/help/api and set RELIEFWEB_APPNAME.'
       });
-      const j = await timedFetch('https://api.reliefweb.int/v1/disasters?' + params.toString());
+      return;
+    }
+    const params = new URLSearchParams({ appname, profile: 'full', limit: '50', preset: 'latest' });
+    try {
+      const j = await timedFetch('https://api.reliefweb.int/v2/disasters?' + params.toString());
       let n = 0;
       for (const d of j.data || []) {
         const f = d.fields || {};
-        const status = (f.status || '').toLowerCase();
+        const status = String(f.status || '').toLowerCase();
         if (status && status !== 'alert' && status !== 'ongoing' && status !== 'current') continue;
         const loc = (f.primary_country && f.primary_country.location) || {};
         const lat = num(loc.lat), lon = num(loc.lon);
@@ -352,7 +384,8 @@ async function handler(req, res) {
         const typeName = (f.type && f.type[0] && f.type[0].name) || 'Disaster';
         push({
           id: 'reliefweb-' + d.id,
-          source: 'ReliefWeb (UN OCHA)', sourceType: 'official', type: normalizeType(typeName),
+          source: 'ReliefWeb (UN OCHA)', sourceType: 'official',
+          type: normalizeType(typeName, f.name),
           title: f.name || 'Humanitarian disaster record',
           country: (f.primary_country && f.primary_country.name) || '',
           region: (f.country || []).map(c => c.name).filter(Boolean).slice(0, 4).join(', '),
@@ -367,36 +400,50 @@ async function handler(req, res) {
         });
         n++;
       }
-      mark('reliefweb', true, { records: n });
-    } catch (e) { mark('reliefweb', false, { error: String(e.message || e) }); }
+      mark('reliefweb', true, { records: n, endpoint: 'v2' });
+    } catch (e) {
+      mark('reliefweb', false, { error: String(e.message || e) });
+    }
   })());
 
   // 7. USGS Volcano Hazards Program — volcanoes at elevated alert level.
   jobs.push((async () => {
     try {
       const j = await timedFetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes');
-      const arr = Array.isArray(j) ? j : (j.data || j.volcanoes || []);
+      const arr = Array.isArray(j) ? j : (j.data || j.volcanoes || j.results || j.features || []);
       let n = 0;
-      for (const v of arr) {
-        const lat = num(v.latitude != null ? v.latitude : v.lat);
-        const lon = num(v.longitude != null ? v.longitude : v.lon);
+      for (const raw of arr) {
+        const v = raw.properties || raw;
+        const lat = num(v.latitude != null ? v.latitude : (v.lat != null ? v.lat : v.vlat));
+        const lon = num(v.longitude != null ? v.longitude : (v.lon != null ? v.lon : (v.lng != null ? v.lng : v.vlon)));
         if (lat === null || lon === null) continue;
-        const level = String(v.alert_level || v.alertLevel || '').toUpperCase();
+        const name = v.volcano_name || v.volcanoName || v.name || 'Volcano';
+        const level = String(v.alert_level || v.alertLevel || v.alert || '').toUpperCase();
+        const colour = v.color_code || v.colorCode || v.cc || '';
         push({
-          id: 'usgs-volcano-' + (v.vnum || v.volcano_name || v.volcanoName || n),
+          id: 'usgs-volcano-' + (v.vnum || v.volcanoId || name),
           source: 'USGS Volcano Hazards Program', sourceType: 'official', type: 'Volcano',
-          title: (v.volcano_name || v.volcanoName || 'Volcano') + ' — ' + (level || 'elevated') + ' alert level',
-          country: 'United States', region: v.obs_fullname || v.obs_abbr || '',
+          title: name + ' — ' + (level || 'elevated') + ' alert level',
+          country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
           lat, lon,
-          updated: v.sent_utc || v.sent || now.toISOString(),
+          updated: v.sent_utc || v.sent || v.updated || now.toISOString(),
           details: 'Volcano alert level ' + (level || 'elevated') +
-            (v.color_code || v.colorCode ? ' · aviation colour code ' + (v.color_code || v.colorCode) : '') + '.',
+            (colour ? ' · aviation colour code ' + colour : '') + '.',
           sourceUrl: 'https://www.usgs.gov/programs/VHP'
         });
         n++;
       }
-      mark('usgs_volcano', true, { records: n });
+      // Zero records with a 200 means the payload shape changed; capture enough
+      // to tell that apart from "no US volcano is currently elevated".
+      const shape = n === 0
+        ? {
+            payload: Array.isArray(j) ? 'array' : typeof j,
+            entries: Array.isArray(arr) ? arr.length : 0,
+            firstKeys: (arr && arr[0]) ? Object.keys(arr[0].properties || arr[0]).slice(0, 12) : []
+          }
+        : null;
+      mark('usgs_volcano', true, shape ? { records: n, shape } : { records: n });
     } catch (e) { mark('usgs_volcano', false, { error: String(e.message || e) }); }
   })());
 
