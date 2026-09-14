@@ -35,7 +35,7 @@ const LEAFLET_STUB = `
     setLatLng:function(){return o}, setStyle:function(){return o}, flyTo:function(){return o},
     getZoom:function(){return 3}
   }; return o; }
-  /* The map stub models the pieces map-scroll.js drives: an event bus, a
+  /* The map stub models the pieces map-setup.js drives: an event bus, a
      container, and a scrollWheelZoom handler whose state the tests inspect. */
   function mapStub(el, opts){
     var handlers = {};
@@ -48,6 +48,19 @@ const LEAFLET_STUB = `
       enabled:function(){ return wheel; }
     };
     m.getContainer = function(){ return node; };
+    /* Sizing: jsdom lays nothing out, so the stub reports the height the page
+       actually asked for. That is what map-setup.js measures to decide the
+       zoom at which the whole world fits. */
+    m.getSize = function(){
+      var h = node && node.style && /(\d+)px/.test(node.style.height) ? +RegExp.$1 : 0;
+      if (!h && node && node.className) h = /mapTall/.test(node.className) ? 520 : 460;
+      return { x: 800, y: h || 460 };
+    };
+    m.setMinZoom = function(z){ m.__minZoom = z; return m; };
+    m.setMaxBounds = function(b){ m.__maxBounds = b; return m; };
+    m.invalidateSize = function(){ m.__invalidated = (m.__invalidated || 0) + 1; return m; };
+    m.setView = function(c, z){ m.__view = { center: c, zoom: z }; return m; };
+    m.getZoom = function(){ return m.__view ? m.__view.zoom : 3; };
     m.on = function(name, fn){ (handlers[name] = handlers[name] || []).push(fn); return m; };
     m.fire = function(name){ (handlers[name]||[]).forEach(function(fn){ fn({type:name}); }); return m; };
     window.__pndMaps = window.__pndMaps || [];
