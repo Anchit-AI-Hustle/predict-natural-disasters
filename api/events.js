@@ -98,6 +98,87 @@ function normalizeType(raw, hint) {
 
 /* ---------------------------------------------------------------- handler */
 
+/**
+ * Merge the same earthquake reported by several agencies.
+ *
+ * The United States Geological Survey, EMSC and GDACS all publish the same
+ * seismic events, and the dedupe key below includes the source name -- so one
+ * earthquake arrived three times and was counted three times. The live feed
+ * showed exactly that: "M 6.5 - 126 km NNE of Teluknaga, Indonesia" from USGS
+ * beside "M 6.5 - JAVA, INDONESIA" from EMSC, one quake counted twice.
+ *
+ * Origin time is what makes merging safe here. Two distinct earthquakes
+ * essentially never share an origin time to within 45 seconds, a location
+ * within 200 km and a magnitude within half a unit; agency solutions for one
+ * quake routinely differ by that much. Only seismic records are merged: a GDACS
+ * flood alert and a ReliefWeb situation report about the same flood describe
+ * different things and are both worth keeping.
+ */
+const ORIGIN_MS = 45000, SAME_KM = 200, SAME_MAG = 0.5;
+const SEISMIC_PRIORITY = ['USGS', 'EMSC', 'GDACS'];
+
+function kmBetween(a, b) {
+  const rad = d => d * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const h = Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(h));
+}
+
+/** The agency behind a record, so two of its own records are never merged. */
+function agencyOf(e) { return String(e.source || '').split(' ')[0]; }
+
+/** How much a record actually carries, so the fullest one survives the merge. */
+function reportRank(e) {
+  const priority = SEISMIC_PRIORITY.indexOf(agencyOf(e));
+  return [
+    (e.deaths ? 4 : 0) + (e.affected ? 2 : 0) + (e.displaced ? 2 : 0) +
+      (e.sourceUrl ? 1 : 0) + (e.country ? 1 : 0),
+    priority === -1 ? -SEISMIC_PRIORITY.length : -priority
+  ];
+}
+
+function mergeSeismicReports(events) {
+  const groups = [], groupOf = new Map();
+  for (const e of events) {
+    const t = Date.parse(e.startedAt || '');
+    const seismic = e.type === 'Earthquake' && !e.forecast &&
+      Number.isFinite(e.magnitude) && Number.isFinite(t) &&
+      Number.isFinite(e.lat) && Number.isFinite(e.lon);
+    if (!seismic) continue;
+    // Only ever merge across agencies. A catalogue already deduplicates
+    // itself, so two records from one agency are two earthquakes by that
+    // agency's own determination -- the live feed carries doublets 21 and 44
+    // seconds apart that are genuinely separate events.
+    const hit = groups.find(g =>
+      Math.abs(g.t - t) <= ORIGIN_MS &&
+      Math.abs(g.members[0].magnitude - e.magnitude) <= SAME_MAG &&
+      kmBetween(g.members[0], e) <= SAME_KM &&
+      !g.members.some(m => agencyOf(m) === agencyOf(e)));
+    if (hit) { hit.members.push(e); groupOf.set(e, hit); }
+    else { const g = { t, members: [e] }; groups.push(g); groupOf.set(e, g); }
+  }
+  for (const g of groups) {
+    const ranked = g.members.slice().sort((a, b) => {
+      const [ra, pa] = reportRank(a), [rb, pb] = reportRank(b);
+      return rb - ra || pb - pa;
+    });
+    g.lead = ranked[0];
+    const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);
+    // Independent corroboration is worth stating, not discarding.
+    if (others.length) g.lead.corroboratedBy = [...new Set(others)];
+  }
+  // Rebuild in the caller's order so the newest-first sort survives the merge.
+  return events.filter(e => { const g = groupOf.get(e); return !g || g.lead === e; });
+}
+
+/** ?summary=1 asks for the meta block alone. */
+function wantsSummary(req) {
+  const v = (req && req.query && req.query.summary) ||
+    (req && req.url && new URL(req.url, 'http://x').searchParams.get('summary'));
+  return v === '1' || v === 'true';
+}
+
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
@@ -782,9 +863,20 @@ async function handler(req, res) {
     })
     .sort((a, b) => (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated));
 
+  out.events = mergeSeismicReports(out.events);
+  out.meta.mergedSeismicReports =
+    out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
+
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
   out.meta.forecastCount = out.events.filter(e => e.forecast).length;
+
+  // The counts without the records, so the deployed feed can be checked
+  // without transferring every event to do it.
+  if (wantsSummary(req)) {
+    res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
+    return;
+  }
 
   res.status(200).json(out);
 }
@@ -793,3 +885,4 @@ module.exports = handler;
 module.exports.default = handler;
 module.exports.normalizeType = normalizeType;
 module.exports.centroid = centroid;
+module.exports.mergeSeismicReports = mergeSeismicReports;

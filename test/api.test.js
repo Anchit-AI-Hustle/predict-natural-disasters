@@ -524,3 +524,162 @@ test('a volcano that cannot be identified in its notice is left unplaced', async
   assert.match(volc[0].title, /Kilauea/);
   assert.equal(res.body.meta.sources.usgs_volcano.unplaced, 1);
 });
+
+/* ------------------------------------------- one earthquake, one feed entry */
+
+const { mergeSeismicReports } = eventsHandler;
+
+function quake(over) {
+  return Object.assign({
+    id: 'q', type: 'Earthquake', source: 'USGS', title: 'M 6.5',
+    magnitude: 6.5, lat: -5.9, lon: 106.6,
+    startedAt: '2026-09-11T04:12:00Z', updated: '2026-09-11T05:00:00Z'
+  }, over);
+}
+
+test('the same earthquake reported by two agencies collapses to one record', () => {
+  const out = mergeSeismicReports([
+    quake({ id: 'us7000abcd', sourceUrl: 'https://earthquake.usgs.gov/x', country: 'Indonesia' }),
+    quake({ id: 'emsc-1', source: 'EMSC', title: 'M 6.5 JAVA, INDONESIA', magnitude: 6.5, lat: -6.1, lon: 106.9, startedAt: '2026-09-11T04:12:23Z' })
+  ]);
+  assert.equal(out.length, 1, 'two solutions for one quake should be one record');
+  assert.equal(out[0].source, 'USGS', 'the fuller record should survive');
+  assert.deepEqual(out[0].corroboratedBy, ['EMSC'], 'the other agency must still be credited');
+});
+
+test('genuinely distinct earthquakes are never merged', () => {
+  const cases = {
+    'magnitude half a unit apart is still one quake': [quake(), quake({ id: 'b', source: 'EMSC', magnitude: 6.4 })],
+    'magnitude a full unit apart': [quake(), quake({ id: 'b', source: 'EMSC', magnitude: 5.2 })],
+    'same instant, opposite sides of the planet': [quake(), quake({ id: 'b', source: 'EMSC', lat: 38.2, lon: 26.1 })],
+    'same place, ninety minutes later': [quake(), quake({ id: 'b', source: 'EMSC', startedAt: '2026-09-11T05:42:00Z' })],
+    'same place, two minutes later': [quake(), quake({ id: 'b', source: 'EMSC', startedAt: '2026-09-11T04:14:00Z' })]
+  };
+  for (const [name, pair] of Object.entries(cases)) {
+    const expected = name.startsWith('magnitude half') ? 1 : 2;
+    assert.equal(mergeSeismicReports(pair).length, expected, name);
+  }
+});
+
+test('non-seismic records are left alone by the seismic merge', () => {
+  const flood = { id: 'f1', type: 'Flood', source: 'GDACS', title: 'Flood', lat: 27.7, lon: 85.3, startedAt: '2026-09-11T04:12:00Z' };
+  const sitrep = Object.assign({}, flood, { id: 'f2', source: 'ReliefWeb' });
+  assert.equal(mergeSeismicReports([flood, sitrep]).length, 2,
+    'a flood alert and a situation report about it are different documents');
+
+  // A forecast about a quake is not a report of one and must not absorb it.
+  assert.equal(mergeSeismicReports([quake(), quake({ id: 'p', source: 'EMSC', forecast: true })]).length, 2);
+});
+
+test('merging preserves the order of the feed it was given', () => {
+  const ordered = [
+    { id: 'newest', type: 'Flood', source: 'GDACS', startedAt: '2026-09-14T00:00:00Z' },
+    quake({ id: 'us7000abcd', sourceUrl: 'https://earthquake.usgs.gov/x' }),
+    quake({ id: 'emsc-1', source: 'EMSC', lat: -6.1, lon: 106.9, startedAt: '2026-09-11T04:12:23Z' }),
+    { id: 'oldest', type: 'Flood', source: 'GDACS', startedAt: '2026-09-01T00:00:00Z' }
+  ];
+  assert.deepEqual(mergeSeismicReports(ordered).map(e => e.id),
+    ['newest', 'us7000abcd', 'oldest'],
+    'the merged record must keep its place, not be appended to the end');
+});
+
+test('the live feed merges the cross-agency earthquake it is given', async () => {
+  const res = await runEvents();
+  const java = res.body.events.filter(e =>
+    e.type === 'Earthquake' && Math.abs(e.magnitude - 6.5) < 0.01 &&
+    String(e.startedAt).startsWith('2026-09-11'));
+  assert.equal(java.length, 1,
+    'the Teluknaga quake is reported by two agencies and must appear once, got ' +
+      JSON.stringify(java.map(e => e.source + ' ' + e.title)));
+  assert.deepEqual(java[0].corroboratedBy, ['EMSC']);
+  assert.equal(res.body.meta.mergedSeismicReports, 1);
+
+  // The unrelated Aegean quake from the same agency must survive untouched.
+  assert.ok(res.body.events.some(e => /AEGEAN/i.test(e.title || '')),
+    'an unrelated EMSC earthquake was swallowed by the merge');
+
+  // The headline count the homepage prints is the merged count.
+  assert.equal(res.body.meta.eventCount, res.body.events.length);
+});
+
+test('the feed stays in the order it was sorted into after merging', async () => {
+  const res = await runEvents();
+  const risk = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };
+  const ev = res.body.events;
+  for (let i = 1; i < ev.length; i++) {
+    const a = ev[i - 1], b = ev[i];
+    const ra = risk[a.alert] || 0, rb = risk[b.alert] || 0;
+    assert.ok(ra >= rb, 'alert ranking broke at index ' + i);
+    if (ra === rb) {
+      assert.ok(new Date(a.updated) >= new Date(b.updated),
+        'newest-first order broke at index ' + i + ': ' + a.updated + ' before ' + b.updated);
+    }
+  }
+});
+
+test('the feed can report its counts without shipping every record', async () => {
+  const full = await runEvents();
+  const res = mockRes();
+  await withFetch(makeFetch({}), () =>
+    eventsHandler({ query: { summary: '1' }, url: '/api/events?summary=1' }, res));
+
+  assert.equal(res.statusCode, 200);
+  assert.ok(!('events' in res.body), 'the summary should carry no records');
+  assert.equal(res.body.meta.eventCount, full.body.events.length);
+  assert.equal(res.body.meta.mergedSeismicReports, full.body.meta.mergedSeismicReports);
+  assert.ok(res.body.generatedAt, 'the summary should say when it was built');
+
+  // The parameter is also read straight off the url, since not every runtime
+  // hands the handler a parsed query.
+  const fromUrl = mockRes();
+  await withFetch(makeFetch({}), () =>
+    eventsHandler({ url: '/api/events?summary=1' }, fromUrl));
+  assert.ok(!('events' in fromUrl.body));
+
+  // Anything else still returns the whole feed.
+  const plain = mockRes();
+  await withFetch(makeFetch({}), () =>
+    eventsHandler({ query: { summary: '0' }, url: '/api/events?summary=0' }, plain));
+  assert.ok(Array.isArray(plain.body.events) && plain.body.events.length > 0);
+});
+
+test('two earthquakes from the same agency are never merged into one', () => {
+  // Found against the live feed: three same-agency pairs were being collapsed.
+  // A catalogue already deduplicates itself, so two records from one agency
+  // are two earthquakes by that agency's own determination.
+  const doublets = {
+    // Petrolia, California: 44 seconds apart, same spot, both from USGS.
+    'a doublet 44 seconds apart': [
+      quake({ id: 'p1', title: 'M 3.6 - 21 km W of Petrolia, CA', magnitude: 3.63, lat: 40.29, lon: -124.53, startedAt: '2026-09-10T01:24:48.040Z' }),
+      quake({ id: 'p2', title: 'M 3.8 - 20 km WSW of Petrolia, CA', magnitude: 3.79, lat: 40.29, lon: -124.52, startedAt: '2026-09-10T01:24:04.400Z' })
+    ],
+    // Cobb, California: 21 seconds apart, a swarm, both from USGS.
+    'a swarm pair 21 seconds apart': [
+      quake({ id: 'c1', title: 'M 3.2 - 10 km WNW of Cobb, CA', magnitude: 3.15, lat: 38.86, lon: -122.83, startedAt: '2026-09-10T20:36:38.680Z' }),
+      quake({ id: 'c2', title: 'M 3.0 - 10 km WNW of Cobb, CA', magnitude: 2.97, lat: 38.85, lon: -122.83, startedAt: '2026-09-10T20:36:17.230Z' })
+    ]
+  };
+  for (const [name, pair] of Object.entries(doublets)) {
+    const out = mergeSeismicReports(pair);
+    assert.equal(out.length, 2, name + ' was merged into one record');
+    assert.ok(out.every(e => !e.corroboratedBy), name + ' was credited as corroboration');
+  }
+
+  // A third agency still joins a pair that already holds two others.
+  const three = mergeSeismicReports([
+    quake({ id: 'u', source: 'USGS' }),
+    quake({ id: 'e', source: 'EMSC', lat: -6.1, lon: 106.9, startedAt: '2026-09-11T04:12:23Z' }),
+    quake({ id: 'g', source: 'GDACS', lat: -6.0, lon: 106.7, startedAt: '2026-09-11T04:12:10Z' })
+  ]);
+  assert.equal(three.length, 1, 'three agencies reporting one quake should be one record');
+  assert.deepEqual(three[0].corroboratedBy.slice().sort(), ['EMSC', 'GDACS']);
+
+  // A same-agency neighbour must not block a genuine cross-agency merge.
+  const mixed = mergeSeismicReports([
+    quake({ id: 'u1', source: 'USGS' }),
+    quake({ id: 'u2', source: 'USGS', lat: 40.29, lon: -124.53 }),
+    quake({ id: 'e1', source: 'EMSC', lat: -6.1, lon: 106.9, startedAt: '2026-09-11T04:12:23Z' })
+  ]);
+  assert.equal(mixed.length, 2, 'expected the two USGS records to stay and the EMSC one to merge');
+  assert.equal(mixed.filter(e => e.corroboratedBy).length, 1);
+});

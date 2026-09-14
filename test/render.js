@@ -103,7 +103,7 @@ async function callApi(handler, urlString, mockOpts) {
 
 /**
  * @param {string} page  file name, e.g. 'event-detail.html'
- * @param {object} opts  { search, url, mock, waitFor, timeoutMs }
+ * @param {object} opts  { search, url, mock, feedDown, waitFor, timeoutMs }
  *   url  serve this file at a different address — how 404.html is reached in
  *        production, where the path is the route the visitor actually asked for.
  */
@@ -126,7 +126,12 @@ async function renderPage(page, opts) {
         const url = String(input && input.url ? input.url : input);
         apiCalls.push(url);
         if (url.includes('/api/event-enrichment')) return callApi(enrichHandler, url, o.mock);
-        if (url.includes('/api/events')) return callApi(eventsHandler, url, o.mock);
+        // feedDown is the endpoint itself being unreachable, which is not the
+        // same as every upstream provider being down: that still returns 200.
+        if (url.includes('/api/events')) {
+          if (o.feedDown) return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
+          return callApi(eventsHandler, url, o.mock);
+        }
         return { ok: false, status: 404, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
       };
       window.addEventListener('error', e => errors.push(e.error || new Error(e.message)));

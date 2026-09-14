@@ -163,7 +163,11 @@ const FIXTURES = {
 
   emsc: {
     features: [
-      { id: '20260913_0000123', properties: { unid: '20260913_0000123', mag: 5.2, magtype: 'mb', lat: 38.2, lon: 26.1, depth: 12, time: '2026-09-13T18:00:00Z', lastupdate: isoNow, flynn_region: 'AEGEAN SEA', auth: 'EMSC' }, geometry: { coordinates: [26.1, 38.2, 12] } }
+      { id: '20260913_0000123', properties: { unid: '20260913_0000123', mag: 5.2, magtype: 'mb', lat: 38.2, lon: 26.1, depth: 12, time: '2026-09-13T18:00:00Z', lastupdate: isoNow, flynn_region: 'AEGEAN SEA', auth: 'EMSC' }, geometry: { coordinates: [26.1, 38.2, 12] } },
+      // The same earthquake the United States Geological Survey lists as
+      // us7000abcd: a different solution for one event, not a second event.
+      // Origin times differ by 23 seconds, epicentres by about 40 km.
+      { id: '20260911_0000279', properties: { unid: '20260911_0000279', mag: 6.5, magtype: 'mw', lat: -6.1, lon: 106.9, depth: 25, time: '2026-09-11T04:12:23Z', lastupdate: isoNow, flynn_region: 'JAVA, INDONESIA', auth: 'EMSC' }, geometry: { coordinates: [106.9, -6.1, 25] } }
     ]
   },
 

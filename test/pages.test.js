@@ -475,3 +475,91 @@ test('the homepage sorts without portal.js', async () => {
   assert.notDeepEqual(after, before, 'homepage ordering did not change');
   r.close();
 });
+
+/* --------------------------------------------- insights carries no fiction */
+
+test('the insights page reports the live feed, not hardcoded figures', async () => {
+  const evs = await events();
+  const live = evs.filter(e => !e.forecast);
+  const forecasts = evs.filter(e => e.forecast);
+
+  const r = await renderPage('insights.html', { waitFor: settled('iEvents') });
+  const doc = r.document;
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+
+  assert.equal(doc.getElementById('iEvents').textContent, String(evs.length),
+    'the event count does not match the feed');
+  assert.equal(doc.getElementById('iForecasts').textContent, String(forecasts.length),
+    'the outlook count does not match the feed');
+
+  // The top hazard class must be the one the feed actually reports most.
+  const byType = {};
+  for (const e of live) byType[e.type || 'Other'] = (byType[e.type || 'Other'] || 0) + 1;
+  const ranked = Object.keys(byType).sort((a, b) => byType[b] - byType[a] || a.localeCompare(b));
+  assert.equal(doc.getElementById('iTopHazard').textContent, expandAlways(ranked[0]),
+    'the headline hazard class is not the most reported one');
+
+  const dist = doc.getElementById('hazardDist');
+  const names = [...dist.querySelectorAll('.metric')].map(m => m.firstElementChild.textContent);
+  assert.ok(names.length > 1, 'the hazard distribution rendered ' + names.length + ' rows');
+  assert.deepEqual(names, ranked.slice(0, names.length).map(expandAlways),
+    'the distribution is not ordered by how much the feed reports');
+  assert.equal(dist.querySelectorAll('.bar').length, names.length, 'a hazard row has no bar');
+
+  // Bars are relative to the largest class, so the leader is always full width.
+  assert.match(dist.querySelector('.bar i').getAttribute('style'), /width:100%/);
+  r.close();
+});
+
+test('the insights page states that it has no data rather than inventing some', async () => {
+  const r = await renderPage('insights.html', {
+    feedDown: true, waitFor: settled('iEvents')
+  });
+  const doc = r.document;
+  const text = doc.getElementById('hazardDist').textContent;
+  assert.match(doc.getElementById('iEvents').textContent, /Unavailable/);
+  assert.match(text, /could not be reached/);
+  assert.ok(!/\d+\s*(record|countr)/i.test(text), 'a figure survived a dead feed: ' + text);
+  r.close();
+});
+
+test('no page ships a figure that looks live but is written into the markup', () => {
+  // insights.html shipped "96 visible events" and five "N regions" bars as
+  // literals; they were wrong the moment the feed moved.
+  const offenders = [];
+  for (const page of PAGES) {
+    const html = fs.readFileSync(path.join(ROOT, page), 'utf8');
+    const body = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
+    const re = /\b\d[\d,]*\s*(regions?|countries|events|records|alerts|forecasts|sources)\b/gi;
+    for (const m of body.matchAll(re)) offenders.push(page + ': "' + m[0] + '"');
+  }
+  assert.deepEqual(offenders, [], 'static figures presented as live data:\n' + offenders.join('\n'));
+});
+
+test('every homepage headline figure is measured, not written into the page', async () => {
+  // "195 Countries Monitored" was a literal sitting in a row of live counters,
+  // and the outlook counter shipped a literal 1.
+  const evs = await events();
+  const r = await renderPage('index.html', { waitFor: settled('kCountries') });
+  const doc = r.document;
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+
+  const countries = new Set(evs.map(e => e.country).filter(Boolean));
+  assert.ok(countries.size > 1, 'fixture feed needs several countries');
+  assert.equal(doc.getElementById('kCountries').textContent, String(countries.size));
+  assert.equal(doc.getElementById('kEvents').textContent, String(evs.length));
+  assert.equal(doc.getElementById('kEventsNote').textContent, 'Across all connected sources');
+
+  // Filtering the page must move the counters with it, and say that it did.
+  const filter = doc.getElementById('hazardFilter');
+  const flood = [...filter.options].find(o => /flood/i.test(o.value));
+  assert.ok(flood, 'hazard filter offers no flood option');
+  filter.value = flood.value;
+  filter.dispatchEvent(new r.window.Event('change'));
+
+  const shown = Number(doc.getElementById('kEvents').textContent);
+  assert.ok(shown > 0 && shown < evs.length, 'the filter did not narrow the feed: ' + shown);
+  assert.equal(doc.getElementById('kEventsNote').textContent, 'Matching the current hazard filter');
+  assert.ok(Number(doc.getElementById('kCountries').textContent) <= countries.size);
+  r.close();
+});
