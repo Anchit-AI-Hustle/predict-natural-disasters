@@ -50,7 +50,7 @@ const FIXTURES = {
       },
       {
         id: 'us7000ijkl',
-        properties: { place: '5 km S of Ridgecrest, CA', mag: 3.1, time: Date.parse('2026-09-14T01:00:00Z'), updated: Date.parse('2026-09-14T01:05:00Z'), title: 'M 3.1 - 5 km S of Ridgecrest, CA', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000ijkl', tsunami: 0 },
+        properties: { place: '11 km NE of Ridgecrest, CA', mag: 3.1, time: Date.parse('2026-09-14T01:00:00Z'), updated: Date.parse('2026-09-14T01:05:00Z'), title: 'M 3.1 - 11 km NE of Ridgecrest, CA', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000ijkl', tsunami: 0 },
         geometry: { coordinates: [-117.7, 35.6, 8] }
       }
     ]
