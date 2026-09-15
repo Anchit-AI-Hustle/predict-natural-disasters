@@ -1,0 +1,320 @@
+'use strict';
+/**
+ * What each hazard is, how fast it moves, and how bad it is.
+ *
+ * Three things were being decided by a single constant before this file
+ * existed. Every outlook ran 72 hours, so a drought that had already persisted
+ * for 298 days was published with a three-day window. Severity was
+ * whatever colour the alert field happened to carry, so a magnitude-5 tremor
+ * with no casualties and a flood that displaced five thousand people sat at
+ * the same level. And nothing recorded how far ahead of its window a forecast
+ * was actually issued, which is the only number that says whether a forecast
+ * was useful.
+ *
+ * Loaded as a plain script in the browser (window.PNDHazards) and required by
+ * the API and the tests.
+ */
+(function (root) {
+  var H = 3600e3;
+
+  /**
+   * onset      how the hazard arrives, which is what decides whether it can be
+   *            anticipated at all: 'sudden' cannot be forecast, 'rapid' can be
+   *            forecast hours to days ahead, 'slow' develops over weeks.
+   * horizonH   the window an outlook for this hazard should cover. Set from how
+   *            long the hazard itself runs and how far official practice
+   *            forecasts it, not from one number applied to everything.
+   * forecastable  whether the onset of this hazard can be predicted before it
+   *            starts. Where false, anything we publish describes an event
+   *            already under way and must say so.
+   */
+  var HAZARDS = {
+    Earthquake: {
+      name: 'Earthquake',
+      definition: 'Ground shaking from a sudden release of stress on a fault. Measured by magnitude; damage depends on depth, local geology and building stock, not magnitude alone.',
+      onset: 'sudden',
+      forecastable: false,
+      horizonH: 0,
+      duration: 'Seconds to minutes of shaking; the aftershock sequence runs days to months.',
+      severityBasis: 'USGS PAGER impact alert, which estimates expected fatalities and economic loss. Magnitude on its own is not a severity.',
+      leadTime: 'None. No agency forecasts the onset of an individual earthquake, and neither do we.'
+    },
+    'Earthquake aftershock sequence': {
+      name: 'Aftershock sequence',
+      definition: 'The decaying series of smaller earthquakes that follows a mainshock in the same rupture area. The largest aftershock is typically about one magnitude below the mainshock.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 168,
+      duration: 'Days to months, decaying roughly with the reciprocal of elapsed time.',
+      severityBasis: 'Mainshock magnitude and the state of already-damaged structures in the affected area.',
+      leadTime: 'Hours to days. The sequence is forecastable once the mainshock has happened; the mainshock is not.'
+    },
+    'Tropical Cyclone': {
+      name: 'Tropical cyclone',
+      definition: 'A rotating storm system over warm ocean with organised convection and a closed low-level circulation. Named at tropical-storm strength; hurricane or typhoon strength begins at 64 knots of sustained wind.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 120,
+      duration: 'Days at sea; landfall impacts run roughly 12 to 72 hours at a given place.',
+      severityBasis: 'Saffir-Simpson category from sustained wind, plus expected storm surge and rainfall over populated coast.',
+      leadTime: 'Three to five days. This is the hazard with the longest genuinely skilful warning, which is why official tracks run to 120 hours.'
+    },
+    Flood: {
+      name: 'Flood',
+      definition: 'Water covering ground that is normally dry, from river overflow, intense rainfall, storm surge or dam failure. Flash floods develop within hours; riverine floods build over days.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 72,
+      duration: 'Hours for flash flooding; days to weeks for large river basins.',
+      severityBasis: 'People displaced and affected, depth and extent over inhabited land, and the issuing agency’s own alert level.',
+      leadTime: 'Hours to days. Riverine flooding downstream of observed rainfall is the most reliably anticipated case.'
+    },
+    'Flood / Landslide': {
+      name: 'Flood and landslide',
+      definition: 'Intense or prolonged rainfall producing both inundation and slope failure in the same area. The two hazards share a driver and usually arrive together in steep terrain.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 96,
+      duration: 'Days, with slope failures often continuing after the rain stops.',
+      severityBasis: 'Combined displacement and casualties, and whether failures reach settlements or transport routes.',
+      leadTime: 'One to four days, driven by quantitative rainfall forecasts and antecedent soil saturation.'
+    },
+    Landslide: {
+      name: 'Landslide',
+      definition: 'Downslope movement of rock, soil or debris, usually triggered by rainfall, earthquake shaking or undercutting. Includes debris flows and rockfalls.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 72,
+      duration: 'Minutes for a single failure; the period of elevated susceptibility lasts days after saturation.',
+      severityBasis: 'Whether the runout reaches settlements or routes, and observed casualties.',
+      leadTime: 'Hours to days, and only as susceptibility over an area — never a specific slope at a specific time.'
+    },
+    Wildfire: {
+      name: 'Wildfire',
+      definition: 'Uncontrolled fire in vegetation. Behaviour is driven by fuel dryness, wind and terrain; most large-fire growth happens on a small number of extreme fire-weather days.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 72,
+      duration: 'Days to months for a large incident; most detections stay open until containment is reported.',
+      severityBasis: 'Area burned, proximity to settlements, evacuation orders and smoke exposure downwind.',
+      leadTime: 'One to three days for fire-weather conditions. Ignition timing and location are not forecastable.'
+    },
+    Drought: {
+      name: 'Drought',
+      definition: 'A prolonged deficit of water relative to normal for a place and season. Meteorological drought is a rainfall deficit; agricultural and hydrological drought follow later as soil moisture and storage fall.',
+      onset: 'slow',
+      forecastable: true,
+      horizonH: 720,
+      duration: 'Months to years. Drought does not have a three-day window and must never be published with one.',
+      severityBasis: 'Extent and duration of the deficit, and the population dependent on rain-fed agriculture or affected water supply.',
+      leadTime: 'Weeks to seasons. Drought is the hazard where long-range outlooks genuinely add warning, because it develops slowly.'
+    },
+    Volcano: {
+      name: 'Volcanic activity',
+      definition: 'Eruptive activity or unrest at a volcano: ash emission, lava, pyroclastic density currents, lahars or gas. Aviation and ground alerts are issued on separate colour-coded scales.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 168,
+      duration: 'Days to years. Unrest episodes commonly persist for weeks.',
+      severityBasis: 'The observatory’s own alert level, exclusion-zone population, and ash dispersal over air routes and settlements.',
+      leadTime: 'Days to weeks of unrest usually precede an eruption, though the eruption onset itself stays uncertain.'
+    },
+    'Extreme Heat': {
+      name: 'Extreme heat',
+      definition: 'A period of temperature and humidity high enough to threaten health, defined against local norms rather than a single global threshold. Overnight minima matter as much as daytime peaks.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 120,
+      duration: 'Days to a few weeks.',
+      severityBasis: 'Duration, night-time minima, and the size of the exposed population without cooling.',
+      leadTime: 'Three to seven days, among the most skilful warnings available for any hazard.'
+    },
+    'Extreme Cold': {
+      name: 'Extreme cold',
+      definition: 'A period of temperature, wind chill or frost severe enough to threaten health, livestock or crops, defined against local norms.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 120,
+      duration: 'Hours to days.',
+      severityBasis: 'Wind chill, duration, and exposure of people without heating or of vulnerable crops.',
+      leadTime: 'Three to seven days.'
+    },
+    'Severe Storm': {
+      name: 'Severe storm',
+      definition: 'Convective weather producing damaging wind, large hail or torrential rain. Distinct from a tropical cyclone: shorter-lived, smaller and driven by local instability.',
+      onset: 'rapid',
+      forecastable: true,
+      horizonH: 48,
+      duration: 'Hours at any one place; a squall line or outbreak can affect a region for most of a day.',
+      severityBasis: 'Wind gust, hail size, rainfall rate and the population under the storm track.',
+      leadTime: 'Hours to two days. Skill falls away quickly beyond the first day.'
+    },
+    Tornado: {
+      name: 'Tornado',
+      definition: 'A violently rotating column of air in contact with both a convective cloud and the ground. Rated after the fact on the Enhanced Fujita scale from observed damage.',
+      onset: 'sudden',
+      forecastable: true,
+      horizonH: 24,
+      duration: 'Minutes for an individual tornado; an outbreak lasts hours.',
+      severityBasis: 'Observed damage rating and whether the track crosses built-up areas.',
+      leadTime: 'Minutes for a specific tornado warning; up to a day for the area at risk. Never a specific place and time in advance.'
+    },
+    Tsunami: {
+      name: 'Tsunami',
+      definition: 'Long-wavelength ocean waves generated by seafloor displacement, usually from an earthquake. Travels at jet speed across open ocean and builds height in shallow water.',
+      onset: 'sudden',
+      forecastable: true,
+      horizonH: 24,
+      duration: 'Hours of wave trains; the first wave is often not the largest.',
+      severityBasis: 'Expected run-up height against coastal population and evacuation time available.',
+      leadTime: 'Minutes to hours, set by travel time from the source — not by any predictive model.'
+    }
+  };
+
+  var DEFAULT = {
+    name: 'Natural hazard',
+    definition: 'A natural process with the potential to cause loss of life, injury or damage.',
+    onset: 'rapid',
+    forecastable: true,
+    horizonH: 72,
+    duration: 'Varies by hazard.',
+    severityBasis: 'The issuing agency’s alert level and any observed human impact.',
+    leadTime: 'Varies by hazard.'
+  };
+
+  /** Resolve a feed `type` string to its hazard entry. */
+  function hazardOf(type) {
+    var t = String(type || '');
+    if (HAZARDS[t]) return HAZARDS[t];
+    var k = t.toLowerCase();
+    // Ordered so a compound type lands on the entry that describes it best.
+    if (/aftershock/.test(k)) return HAZARDS['Earthquake aftershock sequence'];
+    if (/earthquake|seismic/.test(k)) return HAZARDS.Earthquake;
+    if (/cyclone|hurricane|typhoon/.test(k)) return HAZARDS['Tropical Cyclone'];
+    if (/tsunami/.test(k)) return HAZARDS.Tsunami;
+    if (/tornado/.test(k)) return HAZARDS.Tornado;
+    if (/flood/.test(k) && /landslide|mudslide/.test(k)) return HAZARDS['Flood / Landslide'];
+    if (/flood/.test(k)) return HAZARDS.Flood;
+    if (/landslide|mudslide/.test(k)) return HAZARDS.Landslide;
+    if (/wildfire|bushfire|forest fire/.test(k)) return HAZARDS.Wildfire;
+    if (/drought/.test(k)) return HAZARDS.Drought;
+    if (/volcan/.test(k)) return HAZARDS.Volcano;
+    if (/heat/.test(k)) return HAZARDS['Extreme Heat'];
+    if (/cold|freeze|frost|winter/.test(k)) return HAZARDS['Extreme Cold'];
+    if (/storm|thunder|hail|wind/.test(k)) return HAZARDS['Severe Storm'];
+    return DEFAULT;
+  }
+
+  /** Outlook window for this hazard, in hours. */
+  function horizonHours(type) { return hazardOf(type).horizonH || DEFAULT.horizonH; }
+
+  /* --------------------------------------------------------------- severity */
+
+  /**
+   * One scale across every hazard, so a drought and an earthquake can be
+   * compared. Ranked so the UI can lead with what matters and keep the
+   * routine detections out of the way.
+   */
+  var SEVERITY = [
+    { key: 'Informational', rank: 1, meaning: 'A detection or observation with no impact assessment attached. Most of the feed by volume.' },
+    { key: 'Minor', rank: 2, meaning: 'Impact expected to stay limited and local.' },
+    { key: 'Moderate', rank: 3, meaning: 'Localised damage, disruption or displacement; casualties possible.' },
+    { key: 'Severe', rank: 4, meaning: 'Significant casualties, damage or displacement across a region.' },
+    { key: 'Extreme', rank: 5, meaning: 'Mass casualties or national-scale impact expected or already observed.' }
+  ];
+  var RANK = {};
+  SEVERITY.forEach(function (s) { RANK[s.key] = s.rank; });
+  var BY_RANK = {};
+  SEVERITY.forEach(function (s) { BY_RANK[s.rank] = s.key; });
+
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+
+  /**
+   * Severity from observed human impact. Facts reported by the responding
+   * agency, not an assessment of ours.
+   */
+  function impactRank(e) {
+    var d = num(e.deaths), a = num(e.affected), disp = num(e.displaced);
+    if (d >= 100 || a >= 1000000 || disp >= 100000) return 5;
+    if (d >= 10 || a >= 100000 || disp >= 10000) return 4;
+    if (d >= 1 || a >= 10000 || disp >= 1000) return 3;
+    if (a > 0 || disp > 0) return 2;
+    return 0;
+  }
+
+  /** Severity from the level the issuing authority actually published. */
+  function alertRank(e) {
+    var pager = String(e.pagerAlert || '').toLowerCase();
+    if (pager === 'red') return 5;
+    if (pager === 'orange') return 4;
+    if (pager === 'yellow') return 3;
+
+    var mag = Number(e.magnitude);
+    var kt = Number(e.windKt);
+    if (isFinite(kt) && kt > 0) {
+      if (kt >= 113) return 5;   // Saffir-Simpson category 4-5
+      if (kt >= 96) return 4;    // category 3
+      if (kt >= 64) return 3;    // category 1-2
+      return 2;                  // tropical storm or depression
+    }
+
+    switch (String(e.alert || '')) {
+      case 'Red': return 4;
+      case 'Orange': return 3;
+      case 'High': return 4;
+      case 'Moderate': return 3;
+      case 'Watch': return 2;
+      default: break;
+    }
+    // An earthquake with no PAGER assessment is a measurement, not a severity.
+    if (isFinite(mag) && mag > 0) return 1;
+    return 0;
+  }
+
+  /**
+   * The severity to publish: the worse of what was observed and what the
+   * issuing authority assessed. Never below Informational.
+   */
+  function severityOf(e) {
+    var r = Math.max(impactRank(e || {}), alertRank(e || {}), 1);
+    return BY_RANK[r];
+  }
+  function severityRank(e) { return RANK[severityOf(e)]; }
+
+  /* -------------------------------------------------------------- lead time */
+
+  /**
+   * Hours between issuing a forecast and the start of the window it covers.
+   * A continuation outlook derived from an already-active signal has a lead
+   * time of zero: it describes something happening now. Saying so is the
+   * difference between a forecast and a restatement.
+   */
+  function leadTimeHours(e) {
+    if (!e || !e.forecast) return null;
+    var issued = Date.parse(e.issuedAt || e.updated || '');
+    var start = Date.parse(e.targetStart || '');
+    if (!isFinite(issued) || !isFinite(start)) return null;
+    return Math.round((start - issued) / H * 10) / 10;
+  }
+
+  function leadTimeText(e) {
+    var h = leadTimeHours(e);
+    if (h === null) return '';
+    // Issued after the window opened is a different claim from issued as it
+    // opened, and the benchmark turned out to be the former.
+    if (h < 0) return 'Issued ' + Math.abs(Math.round(h)) + ' hours after the window opened, so it did not anticipate the onset.';
+    if (h === 0) return 'No lead time — this window opened as the outlook was issued, so it describes conditions under way rather than anticipating them.';
+    if (h < 48) return 'Issued ' + Math.round(h) + ' hours before the window opens.';
+    return 'Issued ' + Math.round(h / 24) + ' days before the window opens.';
+  }
+
+  var api = {
+    HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
+    hazardOf: hazardOf, horizonHours: horizonHours,
+    severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
+    impactRank: impactRank, alertRank: alertRank,
+    leadTimeHours: leadTimeHours, leadTimeText: leadTimeText
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (root) root.PNDHazards = api;
+})(typeof window !== 'undefined' ? window : null);

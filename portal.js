@@ -34,7 +34,14 @@ const PND={
      One sort vocabulary shared by every page that lists records, so the
      control behaves and is remembered the same way everywhere. */
   RISK_RANK:{red:5,critical:5,orange:4,high:4,veryhigh:4,moderate:3,watch:2,green:1,low:1},
-  rankOf(e){return this.RISK_RANK[String(e&&e.alert||'').toLowerCase()]||0},
+  rankOf(e){const r=Number(e&&e.severityRank);if(Number.isFinite(r)&&r>0)return r;return this.RISK_RANK[String(e&&e.alert||'').toLowerCase()]||0},
+  /* A chip for the cross-hazard severity, with the scale's own wording as its
+     tooltip so the level is never just a colour. */
+  severityBadge(e){const v=e&&e.severity;if(!v)return '';const M=(typeof window!=='undefined'&&window.PNDHazards)||null;const def=M&&(M.SEVERITY.find(x=>x.key===v)||{}).meaning||'';return `<span class="sev sev-${this.slug(v)}" title="${this.esc(def)}">${this.esc(v)}</span>`;},
+  /* How far ahead of its own window a forecast was issued. Zero means it
+     describes something already happening. */
+  leadText(e){const M=(typeof window!=='undefined'&&window.PNDHazards)||null;return M?M.leadTimeText(e):'';},
+  hazardOf(t){const M=(typeof window!=='undefined'&&window.PNDHazards)||null;return M?M.hazardOf(t):null;},
   timeOf(e){const t=Date.parse((e&&(e.updated||e.targetStart||e.startedAt))||'');return Number.isFinite(t)?t:0},
   numOf(v){const n=Number(v);return Number.isFinite(n)?n:0},
   /* Sort on the displayed text. Titles are rendered with acronyms written out,
