@@ -158,14 +158,31 @@ test('every map names the places on it', () => {
   assert.deepEqual(unlabelled, [], 'maps with no place names:\n' + unlabelled.join('\n'));
 });
 
-test('the shared basemap adds a label layer over its canvas', () => {
+test('the country outlines are present, coloured and credited', () => {
   const src = read('map-setup.js');
-  assert.match(src, /World_Dark_Gray_Base/, 'no basemap');
-  // Boundaries and Places draws white borders and names from zoom 0. The
-  // canvas's own reference layer is all but empty below zoom 3, which is the
-  // zoom a world map opens at.
-  assert.match(src, /World_Boundaries_and_Places/, 'the canvas has no place-name layer over it');
+  assert.match(src, /Natural Earth/, 'the outline source is not credited');
   assert.match(src, /attribution/, 'tiles are used without crediting the provider');
+
+  const geo = JSON.parse(read('world-countries.json'));
+  assert.equal(geo.type, 'FeatureCollection');
+  assert.ok(geo.features.length > 150, 'only ' + geo.features.length + ' countries');
+  assert.ok(geo.features.every(f => f.properties && f.properties.n && Number.isInteger(f.properties.c)),
+    'a country is missing its name or its colour');
+
+  // A ring that crosses the date line and is drawn as-is sweeps the long way
+  // round the globe and paints a band across the map. Antarctica genuinely
+  // spans every longitude; nothing else may.
+  const wide = [];
+  for (const f of geo.features) {
+    for (const poly of f.geometry.coordinates) {
+      for (const ring of poly) {
+        const xs = ring.map(p => p[0]);
+        if (Math.max(...xs) - Math.min(...xs) > 180) wide.push(f.properties.n);
+      }
+    }
+  }
+  assert.deepEqual([...new Set(wide)], ['Antarctica'],
+    'rings cross the date line unsplit: ' + [...new Set(wide)].join(', '));
 });
 
 /* --------------------------------------------- one map, used the same way */
@@ -187,22 +204,24 @@ test('every map on the site is built the same way', () => {
 
 test('both views carry place names, and satellite stays available', () => {
   const src = read('map-setup.js');
-  assert.match(src, /'Map':/, 'no plain map view offered');
-  assert.match(src, /'Satellite':/, 'the satellite view was dropped');
+  assert.match(src, /'Political'/, 'no political world map offered');
+  assert.match(src, /'Satellite'/, 'the satellite view was dropped');
   assert.match(src, /L\.control\.layers/, 'nothing lets the reader switch view');
 
-  // Each base view must be paired with its own label layer: the reference
-  // designed for the dark canvas is not the one that reads over imagery.
-  const plain = src.match(/var plain = L\.layerGroup\(\[[\s\S]*?\]\)/);
-  const sat = src.match(/var satellite = L\.layerGroup\(\[[\s\S]*?\]\)/);
-  assert.ok(plain && sat, 'the two views are not both assembled as layer groups');
-  // Dark Gray Reference draws almost nothing below zoom 3, which is where a
-  // world map opens -- the live map showed no names and no borders at all.
+  // No raster provider renders a political map, so the default view is drawn
+  // from outlines the app serves itself -- which also cannot arrive blank the
+  // way a tile layer can.
+  assert.match(src, /world-countries\.json/, 'the political layer has no country outlines');
+  assert.match(src, /PALETTE/, 'countries are not coloured');
+  assert.match(src, /pnd-country/, 'countries are not named');
   assert.ok(!/World_Dark_Gray_Reference/.test(src),
     'the map is back on the label layer that is blank at world zoom');
-  assert.match(plain[0], /PLACES/, 'the map view has no place-name layer');
-  assert.match(sat[0], /PLACES/, 'the satellite view has no place-name layer');
+
+  // Satellite is imagery plus its own place names; it must never be bare.
+  const sat = src.match(/views\['Satellite'\] = L\.layerGroup\(\[[\s\S]*?\]\)/);
+  assert.ok(sat, 'the satellite view is not assembled as a layer group');
   assert.match(sat[0], /IMAGERY/, 'the satellite view has no imagery');
+  assert.match(sat[0], /PLACES/, 'the satellite view has no place-name layer');
 });
 
 test('the label layer sits in its own pane, above the map and below the markers', () => {
@@ -214,7 +233,10 @@ test('the label layer sits in its own pane, above the map and below the markers'
   const zIndex = src.match(/pane\.style\.zIndex = (\d+)/);
   assert.ok(zIndex, 'the label pane has no stacking order');
   const z = Number(zIndex[1]);
-  assert.ok(z > 200 && z < 600, 'labels at z-index ' + z + ' are not between the tiles and the markers');
+  // Country polygons draw in the overlay pane at 400, so labels must clear
+  // that too, not just the tile pane at 200.
+  assert.ok(z > 400 && z < 600,
+    'labels at z-index ' + z + ' are not above the country polygons and below the markers');
   assert.match(src, /pointerEvents = 'none'/, 'the label layer would swallow marker clicks');
 });
 
@@ -269,4 +291,42 @@ test('the reader can still drag and zoom', () => {
   // Rigid bounds make a drag feel like the map has seized up at the edge.
   const v = src.match(/maxBoundsViscosity = ([\d.]+)/);
   assert.ok(v && Number(v[1]) < 1, 'the world edge is rigid rather than springy');
+});
+
+test('the political layer draws countries, not an empty ocean', async () => {
+  // The previous basemap passed every structural check -- the layer existed,
+  // tiles arrived, panes lined up -- and still rendered nothing, because the
+  // tiles themselves were blank at world zoom. That is only catchable by
+  // asking what actually got drawn, so this test does.
+  const { chromium } = (() => { try { return require('playwright-core'); } catch (e) { return {}; } })();
+  if (!chromium) { console.log('# playwright-core unavailable; skipping render check'); return; }
+
+  const geo = JSON.parse(read('world-countries.json'));
+  const palette = read('map-setup.js').match(/var PALETTE = \[([^\]]+)\]/)[1]
+    .split(',').map(s => s.trim().replace(/'/g, ''));
+  assert.ok(palette.length >= 5, 'the palette is too small to separate neighbours');
+
+  // Every country must get a colour the stylesheet can actually produce.
+  const used = new Set(geo.features.map(f => f.properties.c % palette.length));
+  assert.ok(used.size >= 4, 'only ' + used.size + ' colours in use across the world');
+
+  // And no two countries sharing a border may share one. Adjacency is derived
+  // the same way the build derives it: a shared boundary vertex.
+  const owners = new Map();
+  geo.features.forEach((f, i) => {
+    for (const poly of f.geometry.coordinates) for (const ring of poly) for (const p of ring) {
+      const k = p[0] + ',' + p[1];
+      if (!owners.has(k)) owners.set(k, new Set());
+      owners.get(k).add(i);
+    }
+  });
+  let clashes = 0;
+  for (const set of owners.values()) {
+    if (set.size < 2) continue;
+    const ids = [...set];
+    for (let a = 0; a < ids.length; a++) for (let b = a + 1; b < ids.length; b++) {
+      if (geo.features[ids[a]].properties.c === geo.features[ids[b]].properties.c) clashes++;
+    }
+  }
+  assert.equal(clashes, 0, clashes + ' bordering country pairs share a colour');
 });

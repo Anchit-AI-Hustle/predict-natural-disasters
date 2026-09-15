@@ -60,19 +60,25 @@
   /*
    * One basemap everywhere, so a map means the same thing on every page.
    *
-   * Two views, each paired with its own place-name layer so labels are never
-   * missing whichever one is showing: the dark canvas reads best under
-   * coloured event markers, and the satellite view is there when the terrain
-   * around an incident matters. Esri serves both, and the app already reached
-   * this host for the satellite labels, so it is a provider known to work
-   * rather than a new one taken on trust.
+   * The default is a political world map -- a colour per country, borders,
+   * names, blue ocean -- drawn from country outlines the app serves itself
+   * rather than fetched from a tile service. No raster tile provider renders
+   * that style, and a self-served layer also cannot go blank the way a tile
+   * layer can: the outlines, the colours and the labels are all in the repo.
+   *
+   * Satellite stays as the second view, for when the terrain around an
+   * incident matters, with its own place-name layer so it is never unlabelled.
    */
-  var ESRI = 'https://services.arcgisonline.com/ArcGIS/rest/services/';
   var IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-  var CANVAS = ESRI + 'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
-  var PLACES = ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
-  var CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
+  var PLACES = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+  var ESRI_CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
+  var NE_CREDIT = 'Country outlines: Natural Earth (public domain)';
   var LABEL_PANE = 'pndLabels';
+
+  // Chosen so no two countries that share a border share a colour; the
+  // assignment itself is computed when world-countries.json is built.
+  var PALETTE = ['#f2b880', '#9ad4a0', '#f4d06f', '#a8c8ec', '#e8a0a8', '#c9b3e6', '#8fd5c8'];
+  var OCEAN = '#a9d5e8', BORDER = '#6d7f8c';
 
   /*
    * Place names and borders sit above the basemap but below the event markers,
@@ -85,17 +91,106 @@
     if (typeof map.createPane !== 'function') return undefined;
     if (!map.getPane(LABEL_PANE)) {
       var pane = map.createPane(LABEL_PANE);
-      pane.style.zIndex = 350;
+      /* Above Leaflet's overlay pane (400), where the country polygons are
+         drawn, and below its marker pane (600). At 350 the names rendered
+         underneath the countries and were invisible. */
+      pane.style.zIndex = 450;
       pane.style.pointerEvents = 'none';
     }
     return LABEL_PANE;
   }
 
+  /** The widest ring of a country, and its centre, for placing the name. */
+  function anchorOf(geom) {
+    var rings = geom.type === 'Polygon' ? [geom.coordinates[0]] : geom.coordinates.map(function (p) { return p[0]; });
+    var best = null, bestSpan = -1;
+    for (var i = 0; i < rings.length; i++) {
+      var r = rings[i], minX = 180, maxX = -180, minY = 90, maxY = -90;
+      for (var j = 0; j < r.length; j++) {
+        if (r[j][0] < minX) minX = r[j][0];
+        if (r[j][0] > maxX) maxX = r[j][0];
+        if (r[j][1] < minY) minY = r[j][1];
+        if (r[j][1] > maxY) maxY = r[j][1];
+      }
+      var span = (maxX - minX) * (maxY - minY);
+      if (span > bestSpan) { bestSpan = span; best = { lat: (minY + maxY) / 2, lon: (minX + maxX) / 2, w: maxX - minX }; }
+    }
+    return best;
+  }
+
+  function political(map) {
+    var group = L.layerGroup();
+    if (typeof L.rectangle === 'function') {
+      L.rectangle(WORLD, { fillColor: OCEAN, fillOpacity: 1, stroke: false, interactive: false }).addTo(group);
+    }
+    if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
+
+    var labels = L.layerGroup();
+    fetch('/world-countries.json').then(function (r) { return r.json(); }).then(function (data) {
+      L.geoJSON(data, {
+        interactive: false,
+        style: function (f) {
+          return { fillColor: PALETTE[f.properties.c % PALETTE.length], fillOpacity: 1,
+            color: BORDER, weight: 0.7, opacity: 0.85 };
+        }
+      }).addTo(group);
+
+      var places = data.features.map(function (f) {
+        return { name: f.properties.n, at: anchorOf(f.geometry) };
+      }).filter(function (p) { return p.at; });
+
+      /* A name is only drawn when its country is actually wide enough on
+         screen to hold it, so the world view carries the large countries and
+         the rest appear as the reader zooms in, instead of a pile of
+         overlapping text at every zoom. */
+      function relabel() {
+        labels.clearLayers();
+        var bounds = map.getBounds();
+        var perDegree = map.getSize().x / (bounds.getEast() - bounds.getWest());
+        var placed = [];
+
+        /* Largest countries first, and a name is dropped if it would sit on
+           one already placed. Without this the crowded parts of the map read
+           as "MorAlgeria" and "Mali Niger" rather than as country names. */
+        places.slice().sort(function (a, b) { return b.at.w - a.at.w; }).forEach(function (p) {
+          if (!bounds.contains([p.at.lat, p.at.lon])) return;
+          var textPx = p.name.length * 5.6 + 6;
+          // Only name a country wide enough on screen to carry the text.
+          if (p.at.w * perDegree < Math.max(34, textPx)) return;
+
+          var pt = map.latLngToContainerPoint([p.at.lat, p.at.lon]);
+          var box = { l: pt.x - textPx / 2, r: pt.x + textPx / 2, t: pt.y - 7, b: pt.y + 7 };
+          for (var i = 0; i < placed.length; i++) {
+            var o = placed[i];
+            if (box.l < o.r && box.r > o.l && box.t < o.b && box.b > o.t) return;
+          }
+          placed.push(box);
+
+          L.marker([p.at.lat, p.at.lon], {
+            interactive: false, pane: labelPane(map),
+            icon: L.divIcon({ className: 'pnd-country', html: PNDMapEscape(p.name), iconSize: [0, 0] })
+          }).addTo(labels);
+        });
+      }
+      labels.addTo(group);
+      map.on('zoomend moveend', relabel);
+      relabel();
+    }).catch(function () { /* offline: the ocean and the markers still draw */ });
+
+    group.getAttribution = function () { return NE_CREDIT; };
+    return group;
+  }
+
+  function PNDMapEscape(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
   /*
-   * Leaflet ships the view switcher white, which is a bright box dropped on a
-   * dark page. The rule lives here rather than in a stylesheet because two
-   * pages carry their own CSS and load neither shared sheet -- styling the
-   * control where it is created is the only way it cannot be missed.
+   * Styling ships with the code that builds these controls, rather than a
+   * stylesheet, because index.html and dashboard.html carry their own CSS and
+   * load neither shared sheet -- a rule kept there misses exactly those two.
    */
   var STYLE_ID = 'pnd-map-style';
   var CONTROL_CSS = [
@@ -103,7 +198,12 @@
     '.leaflet-container .leaflet-control-layers-toggle{background-color:#06261d;border-radius:8px}',
     '.leaflet-container .leaflet-control-layers-expanded{padding:8px 10px;font:600 12px/1.5 system-ui,sans-serif}',
     '.leaflet-container .leaflet-control-layers-list label{display:flex;align-items:center;gap:7px;cursor:pointer;color:#f5fbf8}',
-    '.leaflet-container .leaflet-control-layers-separator{border-top:1px solid #156047}'
+    '.leaflet-container .leaflet-control-layers-separator{border-top:1px solid #156047}',
+    // Country names: dark ink haloed in white so they stay readable over every
+    // colour in the palette without a box around them.
+    '.leaflet-container .pnd-country{color:#24323d;font:600 11px/1.1 system-ui,sans-serif;white-space:nowrap;',
+    'transform:translate(-50%,-50%);width:max-content;',
+    'text-shadow:0 0 3px rgba(255,255,255,.95),0 1px 2px rgba(255,255,255,.95),0 -1px 2px rgba(255,255,255,.95)}'
   ].join('');
 
   function injectStyle() {
@@ -115,27 +215,27 @@
   }
 
   function basemap(map) {
-    if (!map || typeof L.tileLayer !== 'function') return map;
+    if (!map) return map;
     try {
       injectStyle();
       var pane = labelPane(map);
-      var named = function (url, max) { return L.tileLayer(url, { maxZoom: max, pane: pane, opacity: 0.95, noWrap: true }); };
+      var views = {};
+      var plain = political(map);
+      views['Political'] = plain;
 
-      var plain = L.layerGroup([
-        L.tileLayer(CANVAS, { attribution: CREDIT, maxZoom: 16, noWrap: true }),
-        named(PLACES, 16)
-      ]);
-      var satellite = L.layerGroup([
-        L.tileLayer(IMAGERY, { attribution: CREDIT, maxZoom: 18, noWrap: true }),
-        named(PLACES, 18)
-      ]);
+      if (typeof L.tileLayer === 'function') {
+        views['Satellite'] = L.layerGroup([
+          L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: 18, noWrap: true }),
+          L.tileLayer(PLACES, { maxZoom: 18, pane: pane, opacity: 0.95, noWrap: true })
+        ]);
+      }
 
       plain.addTo(map);
-      if (L.control && typeof L.control.layers === 'function') {
-        L.control.layers({ 'Map': plain, 'Satellite': satellite },
-          null, { position: 'topright' }).addTo(map);
+      if (map.attributionControl && map.attributionControl.addAttribution) map.attributionControl.addAttribution(NE_CREDIT);
+      if (L.control && typeof L.control.layers === 'function' && views['Satellite']) {
+        L.control.layers(views, null, { position: 'topright' }).addTo(map);
       }
-    } catch (e) { /* stub tileLayer in the test harness */ }
+    } catch (e) { /* stub layers in the test harness */ }
     return map;
   }
 
