@@ -133,6 +133,44 @@ function kmBetween(a, b) {
 // an earthquake. Magnitude is a measurement, not an alert, so it must never be
 // turned into one here: an unassessed quake stays Green and is reported as the
 // observation it is.
+const US_STATES = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
+  FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois',
+  IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
+  ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan',
+  MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana',
+  NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota',
+  OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania',
+  RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee',
+  TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
+  WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  PR: 'Puerto Rico', VI: 'U.S. Virgin Islands', GU: 'Guam',
+  AS: 'American Samoa', MP: 'Northern Mariana Islands'
+};
+const US_PLACE_NAMES = new Set(Object.values(US_STATES));
+
+/** Write any United States postal code in a place string out in full. */
+function spellUsPlaces(text) {
+  // Only after a separator: a bare two-letter match would rewrite the bearing in
+  // "11 km NE of Brentwood" to Nebraska. A state code only ever follows a comma
+  // or a semicolon in these feeds.
+  return String(text || '').replace(/([,;]\s*)([A-Z]{2})\b/g,
+    (m, sep, code) => (US_STATES[code] ? sep + US_STATES[code] : m));
+}
+
+/**
+ * The part of a place after the last comma. For a United States record that is
+ * a state, not a country — "Malibu, CA" was being counted as a country of its
+ * own, so the United States appeared fourteen times in the country total.
+ */
+function splitUsPlace(place) {
+  const tail = place.includes(',') ? place.split(',').pop().trim() : '';
+  if (US_PLACE_NAMES.has(tail)) return { country: 'United States', admin1: tail };
+  return { country: tail, admin1: '' };
+}
+
 function pagerLevel(raw) {
   const v = String(raw || '').toLowerCase();
   return v === 'red' ? 'Red' : (v === 'orange' || v === 'yellow') ? 'Orange' : 'Green';
@@ -317,13 +355,13 @@ async function handler(req, res) {
       const j = await timedFetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson');
       let n = 0;
       for (const f of j.features || []) {
-        const place = f.properties.place || '';
-        const country = place.includes(',') ? place.split(',').pop().trim() : '';
+        const place = spellUsPlaces(f.properties.place || '');
+        const { country, admin1 } = splitUsPlace(place);
         const mag = num(f.properties.mag);
         push({
           id: 'usgs-' + f.id,
           source: 'USGS', sourceType: 'official', type: 'Earthquake',
-          title: f.properties.title, country, region: place,
+          title: spellUsPlaces(f.properties.title), country, admin1, region: place,
           alert: pagerLevel(f.properties.alert),
           lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
           startedAt: new Date(f.properties.time).toISOString(),
@@ -358,7 +396,12 @@ async function handler(req, res) {
         push({
           id: 'eonet-' + v.id,
           source: 'NASA EONET', sourceType: 'official', type: normalizeType(cat),
-          title: v.title, country: '', region: '',
+          // "RX" is fire-management shorthand for a prescribed fire, so EONET titles
+          // read "Prescribed Fire RX Tom Green" — the same words twice, one of them
+          // an abbreviation.
+          title: String(v.title || '').replace(/\bPrescribed Fire RX\b/gi, 'Prescribed Fire')
+            .replace(/\bRX\b/g, 'Prescribed Fire').trim(),
+          country: '', region: '',
           alert: 'Green',
           lat: g.coordinates[1], lon: g.coordinates[0],
           startedAt: (geoms[0] && geoms[0].date) || null,
@@ -371,6 +414,17 @@ async function handler(req, res) {
       out.meta.eonet = true; mark('eonet', true, { records: n });
     } catch (e) { mark('eonet', false, { error: String(e.message || e) }); }
   })());
+
+  const BASINS = {
+    AL: 'Atlantic', AT: 'Atlantic', EP: 'eastern Pacific', CP: 'central Pacific',
+    WP: 'western Pacific', IO: 'Indian Ocean', SH: 'southern hemisphere'
+  };
+  /** "EP4" on its own means nothing to a reader. */
+  const basinText = bin => {
+    const m = /^([A-Z]{2})(\d+)$/.exec(String(bin || '').trim().toUpperCase());
+    if (!m || !BASINS[m[1]]) return bin ? '(' + bin + ')' : '';
+    return '(' + BASINS[m[1]] + ' system ' + Number(m[2]) + ')';
+  };
 
   // 4. NOAA National Hurricane Center — active tropical cyclones.
   jobs.push((async () => {
@@ -388,7 +442,7 @@ async function handler(req, res) {
           source: 'NOAA National Hurricane Center', sourceType: 'official', type: 'Tropical Cyclone',
           title: [s.classification, s.name].filter(Boolean).join(' ') || 'Active tropical cyclone',
           country: '',
-          region: [s.name, s.binNumber ? '(' + s.binNumber + ')' : ''].filter(Boolean).join(' ') || s.basin || '',
+          region: [s.name, basinText(s.binNumber)].filter(Boolean).join(' ') || s.basin || '',
           // 64 kt and 96 kt are the Saffir-Simpson category 1 and category 3
           // boundaries, not thresholds of our own.
           alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
@@ -454,8 +508,8 @@ async function handler(req, res) {
             id: 'nws-' + (p.id || f.id),
             source: 'NOAA / National Weather Service', sourceType: 'official',
             type: normalizeType(p.event, p.event),
-            title: p.event + (p.areaDesc ? ' — ' + String(p.areaDesc).split(';')[0].trim() : ''),
-            country: 'United States', region: p.areaDesc || '',
+            title: p.event + (p.areaDesc ? ' — ' + spellUsPlaces(String(p.areaDesc).split(';')[0].trim()) : ''),
+            country: 'United States', region: spellUsPlaces(p.areaDesc || ''),
             alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
             lat: c.lat, lon: c.lon,
             startedAt: p.onset || p.effective || null,
