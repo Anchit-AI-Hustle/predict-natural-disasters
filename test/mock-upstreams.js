@@ -40,7 +40,7 @@ const FIXTURES = {
     features: [
       {
         id: 'us7000abcd',
-        properties: { place: '12 km NNE of Teluknaga, Indonesia', mag: 6.5, time: Date.parse('2026-09-11T04:12:00Z'), updated: Date.parse('2026-09-11T05:00:00Z'), title: 'M 6.5 - 12 km NNE of Teluknaga, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000abcd', tsunami: 0 },
+        properties: { place: '12 km NNE of Teluknaga, Indonesia', mag: 6.5, time: Date.parse('2026-09-11T04:12:00Z'), updated: Date.parse('2026-09-11T05:00:00Z'), title: 'M 6.5 - 12 km NNE of Teluknaga, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000abcd', tsunami: 0, alert: 'orange' },
         geometry: { coordinates: [106.6, -5.9, 22.4] }
       },
       {

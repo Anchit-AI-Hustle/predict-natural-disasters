@@ -126,6 +126,15 @@ function kmBetween(a, b) {
 }
 
 /** The agency behind a record, so two of its own records are never merged. */
+// USGS PAGER is the only impact alert level any authority actually issues for
+// an earthquake. Magnitude is a measurement, not an alert, so it must never be
+// turned into one here: an unassessed quake stays Green and is reported as the
+// observation it is.
+function pagerLevel(raw) {
+  const v = String(raw || '').toLowerCase();
+  return v === 'red' ? 'Red' : (v === 'orange' || v === 'yellow') ? 'Orange' : 'Green';
+}
+
 function agencyOf(e) { return String(e.source || '').split(' ')[0]; }
 
 /** How much a record actually carries, so the fullest one survives the merge. */
@@ -312,16 +321,20 @@ async function handler(req, res) {
           id: 'usgs-' + f.id,
           source: 'USGS', sourceType: 'official', type: 'Earthquake',
           title: f.properties.title, country, region: place,
-          alert: mag >= 6 ? 'Red' : mag >= 5 ? 'Orange' : 'Green',
+          alert: pagerLevel(f.properties.alert),
           lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
           startedAt: new Date(f.properties.time).toISOString(),
           updated: new Date(f.properties.updated || f.properties.time).toISOString(),
           details: 'Magnitude ' + (mag === null ? '—' : mag) + ' · depth ' +
             (f.geometry.coordinates[2] == null ? '—' : f.geometry.coordinates[2]) + ' km' +
-            (f.properties.tsunami ? ' · tsunami flag issued' : ''),
+            (f.properties.tsunami ? ' · tsunami flag issued' : '') +
+            (f.properties.alert
+              ? ' · USGS PAGER impact alert: ' + String(f.properties.alert).toLowerCase()
+              : ' · no USGS PAGER impact alert issued'),
           sourceUrl: f.properties.url || '',
           magnitude: mag, depthKm: num(f.geometry.coordinates[2]),
-          tsunamiFlag: !!f.properties.tsunami
+          tsunamiFlag: !!f.properties.tsunami,
+          pagerAlert: f.properties.alert ? String(f.properties.alert).toLowerCase() : null
         });
         n++;
       }
@@ -689,12 +702,12 @@ async function handler(req, res) {
           source: 'EMSC', sourceType: 'official', type: 'Earthquake',
           title: 'M ' + (mag === null ? '—' : mag.toFixed(1)) + ' — ' + (p.flynn_region || 'earthquake'),
           country: '', region: p.flynn_region || '',
-          alert: mag >= 6 ? 'Red' : mag >= 5 ? 'Orange' : 'Green',
+          alert: 'Green',
           lat, lon,
           startedAt: p.time || null,
           updated: p.lastupdate || p.time || now.toISOString(),
           details: 'Magnitude ' + (mag === null ? '—' : mag) + ' ' + (p.magtype || '') +
-            ' · depth ' + (p.depth == null ? '—' : p.depth + ' km') + ' · reported by ' + (p.auth || 'EMSC') + '.',
+            ' · depth ' + (p.depth == null ? '—' : p.depth + ' km') + ' · reported by ' + (p.auth || 'EMSC') + '. EMSC publishes detections, not impact alert levels.',
           sourceUrl: p.unid ? 'https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=' + p.unid : 'https://www.emsc-csem.org/',
           magnitude: mag, depthKm: num(p.depth)
         });
@@ -870,6 +883,11 @@ async function handler(req, res) {
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
   out.meta.forecastCount = out.events.filter(e => e.forecast).length;
+  out.meta.countryCount = new Set(out.events.map(e => e.country).filter(Boolean)).size;
+  out.meta.hazardTypeCount = new Set(out.events.map(e => e.type).filter(Boolean)).size;
+  out.meta.highRiskForecastCount = out.events.filter(e => e.forecast && e.alert === 'High').length;
+  out.meta.officialWarningCount =
+    out.events.filter(e => e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')).length;
 
   // The counts without the records, so the deployed feed can be checked
   // without transferring every event to do it.
