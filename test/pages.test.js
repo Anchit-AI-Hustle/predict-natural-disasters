@@ -548,7 +548,14 @@ test('every homepage headline figure is measured, not written into the page', as
   assert.ok(countries.size > 1, 'fixture feed needs several countries');
   assert.equal(doc.getElementById('kCountries').textContent, String(countries.size));
   assert.equal(doc.getElementById('kEvents').textContent, String(evs.length));
-  assert.equal(doc.getElementById('kEventsNote').textContent, 'Across all connected sources');
+
+  // The headline count is mostly routine detections, so the note beside it
+  // breaks the total down by severity rather than describing where it came
+  // from. Both halves have to be countable in the feed.
+  const note = doc.getElementById('kEventsNote').textContent;
+  const bad = evs.filter(e => e.severityRank >= 4).length;
+  const routine = evs.filter(e => e.severityRank === 1).length;
+  assert.equal(note, `${bad} severe or worse · ${routine} routine detections`);
 
   // Filtering the page must move the counters with it, and say that it did.
   const filter = doc.getElementById('hazardFilter');
@@ -559,7 +566,15 @@ test('every homepage headline figure is measured, not written into the page', as
 
   const shown = Number(doc.getElementById('kEvents').textContent);
   assert.ok(shown > 0 && shown < evs.length, 'the filter did not narrow the feed: ' + shown);
-  assert.equal(doc.getElementById('kEventsNote').textContent, 'Matching the current hazard filter');
+
+  // The note tracks the filter too — the split is of what is on screen now.
+  const inView = evs.filter(e => String(e.type).toLowerCase().includes(flood.value.toLowerCase()));
+  const badIn = inView.filter(e => e.severityRank >= 4).length;
+  const routineIn = inView.filter(e => e.severityRank === 1).length;
+  assert.equal(doc.getElementById('kEventsNote').textContent,
+    badIn || routineIn
+      ? `${badIn} severe or worse · ${routineIn} routine detections`
+      : 'Matching the current hazard filter');
   assert.ok(Number(doc.getElementById('kCountries').textContent) <= countries.size);
   r.close();
 });

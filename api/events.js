@@ -13,6 +13,9 @@
 
 const UA = 'PredictNaturalDisasters/2.0 (+https://predict-natural-disasters.anchit-tandon.com)';
 const FETCH_TIMEOUT_MS = 6500;   // keep total wall-clock inside the function limit
+let HAZARD_MODEL = null;
+try { HAZARD_MODEL = require('../hazard-model.js'); } catch (e) { HAZARD_MODEL = null; }
+
 const MAX_OUTLOOKS = 24;
 const OUTLOOK_HORIZON_HOURS = 72;
 const AFTERSHOCK_HORIZON_HOURS = 168;
@@ -386,7 +389,10 @@ async function handler(req, res) {
           title: [s.classification, s.name].filter(Boolean).join(' ') || 'Active tropical cyclone',
           country: '',
           region: [s.name, s.binNumber ? '(' + s.binNumber + ')' : ''].filter(Boolean).join(' ') || s.basin || '',
+          // 64 kt and 96 kt are the Saffir-Simpson category 1 and category 3
+          // boundaries, not thresholds of our own.
           alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
+          windKt: intensity,
           lat, lon,
           updated: s.lastUpdate || now.toISOString(),
           details: 'Active system · maximum sustained wind ' + (intensity === null ? '—' : intensity + ' kt') +
@@ -756,11 +762,12 @@ async function handler(req, res) {
     title: 'Central Vietnam flash-flood + landslide forecast',
     country: 'Vietnam', region: 'Huế–Đà Nẵng corridor',
     alert: 'High', lat: 16.2, lon: 107.8,
-    updated: '2026-09-13T00:00:00Z', issuedAt: '2026-09-13T00:00:00Z',
+    updated: '2026-09-13T19:20:03Z', issuedAt: '2026-09-13T19:20:03Z',
+    issuedAtBasis: 'First verifiable timestamp: the commit that introduced this record. Any earlier drafting cannot be evidenced, so the later time is used.',
     targetStart: '2026-09-13T00:00:00Z', targetEnd: '2026-09-16T23:59:59Z',
-    details: 'Starts 13 Sep 2026; expected duration 4 days. Frozen before the window opened and graded afterwards against observed impact, not against rainfall or a warning alone.',
-    forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen',
-    evidence: 'Issued and frozen ahead of the target window as the platform’s first graded benchmark forecast.',
+    details: 'Starts 13 Sep 2026; expected duration 4 days. Written 19 hours after the window opened, so it carries no lead time; it is still graded against independently observed impact rather than against rainfall or a warning alone.',
+    forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen, but not issued in advance',
+    evidence: 'Frozen as the platform’s first graded benchmark. The record was committed at 2026-09-13T19:20:03Z against a window that opened at 2026-09-13T00:00:00Z, so it did not anticipate the onset.',
     verificationRule: 'Counts as correct only if meaningful flood or landslide impact is independently observed inside the frozen geography and window.',
     sourceUrl: '/verification'
   });
@@ -791,7 +798,11 @@ async function handler(req, res) {
     .filter(e => !/earthquake/i.test(e.type))
     .sort((a, b) => (priority[b.alert] || 0) - (priority[a.alert] || 0) || new Date(b.updated) - new Date(a.updated));
 
-  const targetEnd = new Date(now.getTime() + OUTLOOK_HORIZON_HOURS * 3600e3).toISOString();
+  const horizonFor = t =>
+    (HAZARD_MODEL && HAZARD_MODEL.horizonHours(t)) || OUTLOOK_HORIZON_HOURS;
+  const windowText = h => h >= 48
+    ? Math.round(h / 24) + '-day'
+    : h + '-hour';
   const seenArea = new Set();
   const outlooks = [];
 
@@ -804,14 +815,16 @@ async function handler(req, res) {
       id: outlookId(e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,
       sourceType: 'forecast', type: e.type,
-      title: 'Short-horizon ' + e.type + ' risk outlook — ' + (e.country || e.region || e.title),
+      title: windowText(horizonFor(e.type)) + ' ' + e.type + ' risk outlook — ' + (e.country || e.region || e.title),
       country: e.country || '', region: e.region || e.title || '',
       alert: e.alert === 'Red' ? 'High' : e.alert === 'Orange' ? 'Moderate' : 'Watch',
       lat: e.lat, lon: e.lon,
       updated: now.toISOString(), issuedAt: now.toISOString(),
-      targetStart: now.toISOString(), targetEnd,
-      details: 'Experimental ' + OUTLOOK_HORIZON_HOURS + '-hour outlook derived from an active ' + e.source +
-        ' signal. Outlook: ' + mechanism(e.type) + '. This is not a deterministic prediction and must not replace official warnings.',
+      targetStart: now.toISOString(),
+      targetEnd: new Date(now.getTime() + horizonFor(e.type) * 3600e3).toISOString(),
+      details: 'Experimental ' + windowText(horizonFor(e.type)) + ' outlook derived from an active ' + e.source +
+        ' signal, over a window matched to how this hazard develops rather than a fixed three days. Outlook: ' +
+        mechanism(e.type) + '. This is not a deterministic prediction and must not replace official warnings.',
       forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: e.id,
       confidence: e.alert === 'Red' ? 'Elevated — driven by a red-level official signal'
         : e.alert === 'Orange' ? 'Moderate — driven by an orange-level official signal'
@@ -879,6 +892,25 @@ async function handler(req, res) {
   out.events = mergeSeismicReports(out.events);
   out.meta.mergedSeismicReports =
     out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
+
+  // Severity is comparable across hazards; alert level is not, because each
+  // agency publishes its own scale. Lead time says whether a forecast was
+  // issued ahead of its window or merely restates something already under way.
+  if (HAZARD_MODEL) {
+    for (const e of out.events) {
+      e.severity = HAZARD_MODEL.severityOf(e);
+      e.severityRank = HAZARD_MODEL.severityRank(e);
+      const lead = HAZARD_MODEL.leadTimeHours(e);
+      if (lead !== null) e.leadTimeHours = lead;
+    }
+    out.meta.severityCounts = out.events.reduce((m, e) => {
+      m[e.severity] = (m[e.severity] || 0) + 1; return m;
+    }, {});
+    out.meta.highSeverityCount = out.events.filter(e => e.severityRank >= 4).length;
+    out.meta.aheadOfWindowForecastCount =
+      out.events.filter(e => e.forecast && Number(e.leadTimeHours) > 0).length;
+  }
+  out.meta.hazardModel = HAZARD_MODEL ? 'loaded' : 'unavailable';
 
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
