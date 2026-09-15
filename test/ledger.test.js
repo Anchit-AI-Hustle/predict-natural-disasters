@@ -1,0 +1,181 @@
+'use strict';
+/**
+ * Forecasts that hold still, and a record of them that survives.
+ *
+ * Outlooks were computed with targetStart set to the moment of the request, so
+ * the same outlook id carried a different window every time it was fetched —
+ * measured against production, 26 of 27 windows slid forward between two
+ * fetches 47 minutes apart. A claim that is rewritten on every page load cannot
+ * be right or wrong, which is why nothing had ever been graded.
+ *
+ * Two changes: the window is anchored to the signal that produced it, and every
+ * outlook is written to an append-only ledger in git.
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+const { callApi } = require('./render.js');
+
+const ROOT = path.join(__dirname, '..');
+const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+const handler = () => require(path.join(ROOT, 'api', 'events.js'));
+const feed = async (q) => (await callApi(handler(), '/api/events' + (q || ''))).json();
+
+/* ---------------------------------------------------------- frozen windows */
+
+test('the same outlook keeps the same window across separate requests', async () => {
+  const a = await feed();
+  await new Promise(r => setTimeout(r, 1100));
+  const b = await feed();
+  assert.notEqual(a.generatedAt, b.generatedAt, 'the two fetches should be at different times');
+
+  const first = new Map(a.events.filter(e => e.forecast).map(e => [e.id, e]));
+  const again = b.events.filter(e => e.forecast && first.has(e.id));
+  assert.ok(again.length > 0, 'fixture should produce outlooks present in both fetches');
+
+  const moved = again.filter(e => {
+    const p = first.get(e.id);
+    return p.targetStart !== e.targetStart || p.targetEnd !== e.targetEnd;
+  });
+  assert.deepEqual(moved.map(e => e.id), [],
+    'these windows moved between two requests, so they can never be graded');
+});
+
+test('an outlook window is anchored to its source signal, not to the clock', async () => {
+  const { events, generatedAt } = await feed();
+  const byId = new Map(events.map(e => [e.id, e]));
+  const derived = events.filter(e => e.forecast && e.forecastOf && byId.has(e.forecastOf));
+  assert.ok(derived.length > 0, 'fixture should produce signal-derived outlooks');
+
+  for (const o of derived) {
+    const src = byId.get(o.forecastOf);
+    const anchor = o.forecastKind === 'aftershock-sequence'
+      ? Date.parse(src.startedAt || src.updated)
+      : Date.parse(src.updated);
+    assert.equal(Date.parse(o.targetStart), anchor,
+      o.id + ' does not start when its source signal was published');
+    assert.notEqual(Date.parse(o.targetStart), Date.parse(generatedAt),
+      o.id + ' starts at request time, which is the defect this replaced');
+  }
+});
+
+test('an outlook whose window has already closed is not published as active', async () => {
+  const { events, generatedAt } = await feed();
+  const now = Date.parse(generatedAt);
+  const stale = events.filter(e => e.forecast && Date.parse(e.targetEnd) <= now);
+  assert.deepEqual(stale.map(e => e.id), [],
+    'a closed window is history, not an outlook');
+});
+
+/* ----------------------------------------------------------- the recorder */
+
+function runRecorder(events, ledgerPath) {
+  const evPath = path.join(path.dirname(ledgerPath), 'events.json');
+  fs.writeFileSync(evPath, JSON.stringify({ events }));
+  return execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-outlooks.js'), evPath, ledgerPath],
+    { encoding: 'utf8' });
+}
+
+function tempLedger() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-'));
+  const p = path.join(dir, 'outlook-ledger.json');
+  fs.writeFileSync(p, '[]\n');
+  return p;
+}
+
+test('the recorder writes every outlook once and only once', async () => {
+  const { events } = await feed();
+  const forecasts = events.filter(e => e.forecast);
+  assert.ok(forecasts.length > 0, 'fixture should produce forecasts');
+
+  const p = tempLedger();
+  runRecorder(events, p);
+  const after = JSON.parse(fs.readFileSync(p, 'utf8'));
+  assert.equal(after.length, forecasts.length, 'every outlook should be recorded');
+
+  // Running again over the same feed must add nothing: the windows are frozen,
+  // so the same claims are already on the record.
+  const out = runRecorder(events, p);
+  assert.match(out, /no new outlooks/);
+  assert.equal(JSON.parse(fs.readFileSync(p, 'utf8')).length, forecasts.length);
+});
+
+test('a moved window is recorded as a new claim, not an edit of the old one', async () => {
+  const { events } = await feed();
+  const one = events.filter(e => e.forecast).slice(0, 1);
+  const p = tempLedger();
+  runRecorder(one, p);
+
+  // The signal behind an outlook was updated, so its window moved forward. That
+  // is a claim about a different period and has to be gradeable separately.
+  const moved = one.map(e => Object.assign({}, e, {
+    targetStart: new Date(Date.parse(e.targetStart) + 36e5).toISOString(),
+    targetEnd: new Date(Date.parse(e.targetEnd) + 36e5).toISOString()
+  }));
+  runRecorder(moved, p);
+  const rows = JSON.parse(fs.readFileSync(p, 'utf8'));
+  assert.equal(rows.length, 2, 'the moved window should be a second entry');
+  assert.equal(rows[0].id, rows[1].id, 'both entries are the same outlook');
+  assert.notEqual(rows[0].targetStart, rows[1].targetStart);
+});
+
+test('a recorded outlook keeps what is needed to grade it later', async () => {
+  const { events } = await feed();
+  const p = tempLedger();
+  runRecorder(events, p);
+  const row = JSON.parse(fs.readFileSync(p, 'utf8'))[0];
+  for (const f of ['recordedAt', 'id', 'type', 'targetStart', 'targetEnd',
+    'verificationRule', 'outcome']) {
+    assert.ok(f in row, 'the ledger entry has no ' + f);
+  }
+  assert.equal(row.outcome, null, 'a fresh entry is ungraded');
+  assert.ok(Number.isFinite(Date.parse(row.recordedAt)), 'recordedAt should be a real time');
+});
+
+/* --------------------------------------------------------- what the API says */
+
+test('the feed reports the state of the ledger', async () => {
+  const { meta } = await feed();
+  assert.ok(meta.ledger, 'meta should carry a ledger summary');
+  assert.equal(meta.ledger.status, 'loaded',
+    'if this reads "unavailable" the ledger file did not ship');
+  for (const k of ['recorded', 'windowClosed', 'graded', 'awaitingGrading']) {
+    assert.equal(typeof meta.ledger[k], 'number', k + ' should be counted');
+  }
+});
+
+test('the ledger can be read back without the whole feed', async () => {
+  const body = await feed('?ledger=1');
+  assert.ok(Array.isArray(body.ledger), 'a ledger view should return the rows');
+  assert.equal(body.events, undefined, 'the ledger view should not ship the live feed');
+  assert.ok(body.meta && body.meta.ledger, 'and should summarise itself');
+});
+
+/* ------------------------------------------------- recording must stay cheap */
+
+test('a ledger commit does not spend a deployment', () => {
+  const v = JSON.parse(read('vercel.json'));
+  assert.ok(v.ignoreCommand, 'vercel.json needs an ignoreCommand');
+  // The stored command escapes the brackets for the shell, so match either form.
+  assert.ok(/\\?\[ledger\\?\]/.test(v.ignoreCommand),
+    'the refresh job commits every few minutes; the account allows 100 deploys a day');
+  // exit 0 ignores the build, exit 1 runs it.
+  assert.match(v.ignoreCommand, /exit 0/);
+  assert.match(v.ignoreCommand, /exit 1/);
+});
+
+test('the refresh job can write the ledger, and records before it warms', () => {
+  const y = read('.github/workflows/refresh-disaster-data.yml');
+  assert.match(y, /contents: write/, 'committing the ledger needs write access');
+  assert.match(y, /record-outlooks\.js/, 'the job should record outlooks');
+  assert.match(y, /\[ledger\]/, 'the commit must carry the skip marker');
+  assert.ok(y.indexOf('record-outlooks.js') < y.indexOf('Commit the ledger'),
+    'record, then commit');
+  // A run slower than the five-minute schedule used to be killed by the next one.
+  assert.match(y, /cancel-in-progress: false/,
+    'runs should queue rather than cancel each other');
+});

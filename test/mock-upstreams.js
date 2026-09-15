@@ -59,7 +59,9 @@ const FIXTURES = {
   eonet: {
     events: [
       { id: 'EONET_7001', title: 'Wildfire - Northern California', categories: [{ title: 'Wildfires' }], sources: [{ url: 'https://eonet.gsfc.nasa.gov/x' }], geometry: [{ type: 'Point', date: '2026-09-09T00:00:00Z', coordinates: [-121.5, 40.2] }, { type: 'Point', date: isoNow, coordinates: [-121.4, 40.3] }] },
-      { id: 'EONET_7002', title: 'Volcano - Mount Merapi', categories: [{ title: 'Volcanoes' }], sources: [{ url: 'https://eonet.gsfc.nasa.gov/y' }], geometry: [{ type: 'Point', date: isoNow, coordinates: [110.44, -7.54] }] }
+      { id: 'EONET_7002', title: 'Volcano - Mount Merapi', categories: [{ title: 'Volcanoes' }], sources: [{ url: 'https://eonet.gsfc.nasa.gov/y' }], geometry: [{ type: 'Point', date: isoNow, coordinates: [110.44, -7.54] }] },
+      { id: 'EONET_7003', title: 'Wildfire MEERS, Comanche, Oklahoma', categories: [{ title: 'Wildfires' }], sources: [{ url: 'https://eonet.gsfc.nasa.gov/z' }], geometry: [{ type: 'Point', date: isoNow, coordinates: [-98.5, 34.7] }] },
+      { id: 'EONET_7004', title: 'Prescribed Fire RX Flowing 24, Clay, Minnesota', categories: [{ title: 'Wildfires' }], sources: [{ url: 'https://eonet.gsfc.nasa.gov/w' }], geometry: [{ type: 'Point', date: isoNow, coordinates: [-96.5, 46.9] }] }
     ]
   },
 

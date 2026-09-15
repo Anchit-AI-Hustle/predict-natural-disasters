@@ -128,3 +128,40 @@ test('the homepage location column shows no bare postal code', async () => {
   const bad = cells.filter(t => BARE_CODE.test(t.trim()));
   assert.deepEqual(bad, [], 'the location column reads as a code: ' + bad.join(', '));
 });
+
+/* ------------------------------------- the place NASA puts only in the title */
+
+test('a NASA record carries the place its title names', async () => {
+  const { events } = await feed();
+  const fire = events.find(e => /MEERS/.test(String(e.title)));
+  assert.ok(fire, 'fixture should include a NASA wildfire with a place in its title');
+  // EONET puts the place nowhere but the title, so 295 of 791 production records
+  // arrived with no country and no region at all.
+  assert.equal(fire.country, 'United States');
+  assert.equal(fire.admin1, 'Oklahoma');
+  assert.equal(fire.admin2, 'Comanche');
+  assert.equal(fire.region, 'Comanche, Oklahoma');
+});
+
+test('a prescribed-fire record is placed too, with the shorthand gone', async () => {
+  const { events } = await feed();
+  const rx = events.find(e => /Flowing 24/.test(String(e.title)));
+  assert.ok(rx, 'fixture should include a prescribed fire');
+  assert.ok(!/\bRX\b/.test(rx.title), 'the abbreviation should be gone: ' + rx.title);
+  assert.equal(rx.admin1, 'Minnesota');
+  assert.equal(rx.region, 'Clay, Minnesota');
+});
+
+test('a title with no place in it is left alone rather than guessed at', async () => {
+  const { events } = await feed();
+  // "Tropical Storm Norbert" names no place; inventing one would be worse than
+  // leaving the field empty.
+  // Only the records themselves: an outlook derived from one carries a source
+  // string that also mentions NASA EONET.
+  const noPlace = events.filter(e => e.source === 'NASA EONET'
+    && String(e.title).split(',').length === 1);
+  for (const e of noPlace) {
+    assert.equal(e.country, '', e.title + ' was given a country it does not name');
+    assert.equal(e.region, '', e.title + ' was given a region it does not name');
+  }
+});

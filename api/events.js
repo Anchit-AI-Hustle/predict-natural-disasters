@@ -16,6 +16,12 @@ const FETCH_TIMEOUT_MS = 6500;   // keep total wall-clock inside the function li
 let HAZARD_MODEL = null;
 try { HAZARD_MODEL = require('../hazard-model.js'); } catch (e) { HAZARD_MODEL = null; }
 
+// The append-only record of every outlook ever published, committed to the
+// repository by the refresh job. Loaded defensively for the same reason as the
+// hazard model: a missing file must not take the feed down.
+let OUTLOOK_LEDGER = null;
+try { OUTLOOK_LEDGER = require('../data/outlook-ledger.json'); } catch (e) { OUTLOOK_LEDGER = null; }
+
 const MAX_OUTLOOKS = 24;
 const OUTLOOK_HORIZON_HOURS = 72;
 const AFTERSHOCK_HORIZON_HOURS = 168;
@@ -165,6 +171,19 @@ function spellUsPlaces(text) {
  * a state, not a country — "Malibu, CA" was being counted as a country of its
  * own, so the United States appeared fourteen times in the country total.
  */
+function placeFromTitle(title) {
+  const parts = String(title || '').split(',').map(p => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const last = parts[parts.length - 1];
+  const mid = parts.length >= 3 ? parts[parts.length - 2] : '';
+  if (US_PLACE_NAMES.has(last)) {
+    return { country: 'United States', admin1: last, admin2: mid, region: [mid, last].filter(Boolean).join(', ') };
+  }
+  // Anything else: treat the last part as the country and the one before it as
+  // the area within it, which is how EONET writes its non-US titles.
+  return { country: last, admin1: mid, admin2: '', region: [mid, last].filter(Boolean).join(', ') };
+}
+
 function splitUsPlace(place) {
   const tail = place.includes(',') ? place.split(',').pop().trim() : '';
   if (US_PLACE_NAMES.has(tail)) return { country: 'United States', admin1: tail };
@@ -223,6 +242,12 @@ function mergeSeismicReports(events) {
 }
 
 /** ?summary=1 asks for the meta block alone. */
+function wantsLedger(req) {
+  const v = (req && req.query && req.query.ledger) ||
+    (req && req.url && new URL(req.url, 'http://x').searchParams.get('ledger'));
+  return v === '1' || v === 'true';
+}
+
 function wantsSummary(req) {
   const v = (req && req.query && req.query.summary) ||
     (req && req.url && new URL(req.url, 'http://x').searchParams.get('summary'));
@@ -393,15 +418,20 @@ async function handler(req, res) {
         const g = geoms[geoms.length - 1];
         if (!g || g.type !== 'Point') continue;
         const cat = (v.categories && v.categories[0] && v.categories[0].title) || 'Natural Event';
+        const eonetTitle = String(v.title || '').replace(/\bPrescribed Fire RX\b/gi, 'Prescribed Fire')
+          .replace(/\bRX\b/g, 'Prescribed Fire').trim();
+        const eonetPlace = placeFromTitle(eonetTitle);
         push({
           id: 'eonet-' + v.id,
           source: 'NASA EONET', sourceType: 'official', type: normalizeType(cat),
           // "RX" is fire-management shorthand for a prescribed fire, so EONET titles
           // read "Prescribed Fire RX Tom Green" — the same words twice, one of them
           // an abbreviation.
-          title: String(v.title || '').replace(/\bPrescribed Fire RX\b/gi, 'Prescribed Fire')
-            .replace(/\bRX\b/g, 'Prescribed Fire').trim(),
-          country: '', region: '',
+          title: eonetTitle,
+          country: eonetPlace ? eonetPlace.country : '',
+          admin1: eonetPlace ? eonetPlace.admin1 : '',
+          admin2: eonetPlace ? eonetPlace.admin2 : '',
+          region: eonetPlace ? eonetPlace.region : '',
           alert: 'Green',
           lat: g.coordinates[1], lon: g.coordinates[0],
           startedAt: (geoms[0] && geoms[0].date) || null,
@@ -862,6 +892,11 @@ async function handler(req, res) {
 
   for (const e of continuation) {
     if (outlooks.length >= MAX_OUTLOOKS) break;
+    // The signal's own last-updated time, not the clock: see below.
+    const anchorMs = Date.parse(e.updated) || now.getTime();
+    const windowEndMs = anchorMs + horizonFor(e.type) * 3600e3;
+    // A window that has already closed is history, not an outlook.
+    if (windowEndMs <= now.getTime()) continue;
     const area = ((e.country || e.region || e.title) + '|' + e.type).toLowerCase().replace(/\s+/g, ' ').slice(0, 120);
     if (seenArea.has(area)) continue;
     seenArea.add(area);
@@ -873,9 +908,9 @@ async function handler(req, res) {
       country: e.country || '', region: e.region || e.title || '',
       alert: e.alert === 'Red' ? 'High' : e.alert === 'Orange' ? 'Moderate' : 'Watch',
       lat: e.lat, lon: e.lon,
-      updated: now.toISOString(), issuedAt: now.toISOString(),
-      targetStart: now.toISOString(),
-      targetEnd: new Date(now.getTime() + horizonFor(e.type) * 3600e3).toISOString(),
+      updated: new Date(anchorMs).toISOString(), issuedAt: new Date(anchorMs).toISOString(),
+      targetStart: new Date(anchorMs).toISOString(),
+      targetEnd: new Date(windowEndMs).toISOString(),
       details: 'Experimental ' + windowText(horizonFor(e.type)) + ' outlook derived from an active ' + e.source +
         ' signal, over a window matched to how this hazard develops rather than a fixed three days. Outlook: ' +
         mechanism(e.type) + '. This is not a deterministic prediction and must not replace official warnings.',
@@ -895,10 +930,12 @@ async function handler(req, res) {
     .filter(e => /earthquake/i.test(e.type) && num(e.magnitude) !== null && num(e.magnitude) >= 5.5)
     .sort((a, b) => (num(b.magnitude) || 0) - (num(a.magnitude) || 0));
   const seenQuakeArea = new Set();
-  const aftershockEnd = new Date(now.getTime() + AFTERSHOCK_HORIZON_HOURS * 3600e3).toISOString();
 
   for (const e of strongQuakes) {
     if (outlooks.length >= MAX_OUTLOOKS + 8) break;
+    const shockMs = Date.parse(e.startedAt || e.updated) || now.getTime();
+    const shockEndMs = shockMs + AFTERSHOCK_HORIZON_HOURS * 3600e3;
+    if (shockEndMs <= now.getTime()) continue;
     const area = (Math.round(e.lat) + ',' + Math.round(e.lon));
     if (seenQuakeArea.has(area)) continue;
     seenQuakeArea.add(area);
@@ -910,8 +947,9 @@ async function handler(req, res) {
       country: e.country || '', region: e.region || e.title || '',
       alert: num(e.magnitude) >= 6.5 ? 'High' : 'Moderate',
       lat: e.lat, lon: e.lon,
-      updated: now.toISOString(), issuedAt: now.toISOString(),
-      targetStart: now.toISOString(), targetEnd: aftershockEnd,
+      updated: new Date(shockMs).toISOString(), issuedAt: new Date(shockMs).toISOString(),
+      targetStart: new Date(shockMs).toISOString(),
+      targetEnd: new Date(shockEndMs).toISOString(),
       details: 'Experimental 7-day aftershock-sequence outlook following an observed M' + num(e.magnitude) +
         ' earthquake. Aftershocks decay over days to weeks and the largest is typically about one magnitude below the mainshock, ' +
         'so further felt shaking and additional damage to already-weakened structures should be expected. ' +
@@ -966,6 +1004,20 @@ async function handler(req, res) {
   }
   out.meta.hazardModel = HAZARD_MODEL ? 'loaded' : 'unavailable';
 
+  // What has actually been written down, as opposed to what is live now.
+  if (Array.isArray(OUTLOOK_LEDGER)) {
+    const closed = OUTLOOK_LEDGER.filter(o => Date.parse(o.targetEnd) <= now.getTime());
+    out.meta.ledger = {
+      status: 'loaded',
+      recorded: OUTLOOK_LEDGER.length,
+      windowClosed: closed.length,
+      graded: closed.filter(o => o.outcome).length,
+      awaitingGrading: closed.filter(o => !o.outcome).length
+    };
+  } else {
+    out.meta.ledger = { status: 'unavailable' };
+  }
+
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
   out.meta.forecastCount = out.events.filter(e => e.forecast).length;
@@ -977,6 +1029,15 @@ async function handler(req, res) {
 
   // The counts without the records, so the deployed feed can be checked
   // without transferring every event to do it.
+  if (wantsLedger(req)) {
+    res.status(200).json({
+      generatedAt: out.generatedAt,
+      meta: { ledger: out.meta.ledger },
+      ledger: Array.isArray(OUTLOOK_LEDGER) ? OUTLOOK_LEDGER : []
+    });
+    return;
+  }
+
   if (wantsSummary(req)) {
     res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
     return;
