@@ -134,5 +134,6 @@
       "source": "/notification-detail",
       "destination": "/entity-detail"
     }
-  ]
+  ],
+  "ignoreCommand": "git log -1 --pretty=%B | grep -q '\\[ledger\\]' && exit 0 || exit 1"
 }

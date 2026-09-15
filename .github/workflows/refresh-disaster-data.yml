@@ -9,17 +9,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: disaster-refresh
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - uses: actions/checkout@v4
       - name: Refresh live feed and warm every event's enrichment record
         env:
           BASE_URL: https://predict-natural-disasters.anchit-tandon.com
@@ -101,3 +102,26 @@ jobs:
           if warmed < len(events) * 0.5:
               sys.exit('FAIL: enrichment warmed for only %d of %d events' % (warmed, len(events)))
           PY
+
+      # A forecast recomputed on every request cannot be graded. The ledger is
+      # append-only and lives in git, so what was forecast and when is auditable
+      # and tamper-evident. Recorded before the much longer warm step so it is
+      # written even if that later times out.
+      - name: Record newly-seen outlooks in the forecast ledger
+        run: node tools/record-outlooks.js /tmp/events.json data/outlook-ledger.json
+
+      - name: Commit the ledger when it changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- data/outlook-ledger.json; then
+            echo "ledger unchanged"
+            exit 0
+          fi
+          total=$(node -e "console.log(require('./data/outlook-ledger.json').length)")
+          git config user.name "disaster-refresh"
+          git config user.email "noreply@anthropic.com"
+          git add data/outlook-ledger.json
+          # "[ledger]" is what vercel.json ignoreCommand looks for: recording a
+          # forecast must not spend one of the 100 daily deployments.
+          git commit -m "Record outlooks in the forecast ledger ($total total) [ledger]"
+          git push
