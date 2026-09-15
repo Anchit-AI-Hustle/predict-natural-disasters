@@ -128,6 +128,9 @@ const PND={
     return 'Starts '+this.fmtDate(start)+(dur?' · expected duration '+dur:' · duration not stated');
   },
   statusText(meta){if(!meta)return 'Refreshing';const all=Object.values(meta.sources||{});const n=all.filter(x=>x&&x.ok).length;/* The denominator was hard-coded to 3 while the feed grew to eight providers, so a healthy feed read "7/3 sources online". */return meta.live?`Live · ${n}/${all.length||n} sources online`:'Source outage · verified fallbacks only';},
+  /* Online/total upstream providers. Pages must use this rather than a literal
+     denominator: the provider list grows, and a hard-coded one reads "7/3". */
+  sourcesRatio(meta){const all=Object.values((meta&&meta.sources)||{});const n=all.filter(x=>x&&x.ok).length;return n+'/'+(all.length||n);},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };
