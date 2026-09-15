@@ -112,15 +112,18 @@ test('a map opens on the whole world and cannot be zoomed out past it', async ()
   const map = mapsOf(r)[0];
   assert.ok(map, 'no map was built');
 
-  const h = map.getSize().y;
-  // The Mercator world is square, so it covers a container of height h exactly
-  // at this zoom. Below it empty space shows; above it the poles are cut off.
-  const expected = Math.log(h / 256) / Math.LN2;
+  const w = map.getSize().x;
+  // One world spans a container of width w exactly at this zoom. Fitting the
+  // height instead left the world a quarter of the width in a wide panel, so
+  // it tiled sideways and the page showed three Americas.
+  const expected = Math.log(w / 256) / Math.LN2;
   assert.ok(Math.abs(map.__view.zoom - expected) < 1e-9,
     'opened at zoom ' + map.__view.zoom + ', expected ' + expected);
   // The page builds this array inside the jsdom realm, so compare by value.
-  assert.deepEqual(Array.from(map.__view.center), [0, 0],
-    'the world view should be centred on the equator');
+  // Land sits north of the equator, so the frame is centred there rather than
+  // spending half its height on empty Southern Ocean.
+  assert.deepEqual(Array.from(map.__view.center), [20, 0],
+    'the world view is not framed where the land is');
   assert.ok(Math.abs(map.__minZoom - expected) < 1e-9,
     'the zoom floor does not match the world-fits-the-panel zoom');
 
@@ -158,7 +161,10 @@ test('every map names the places on it', () => {
 test('the shared basemap adds a label layer over its canvas', () => {
   const src = read('map-setup.js');
   assert.match(src, /World_Dark_Gray_Base/, 'no basemap');
-  assert.match(src, /World_Dark_Gray_Reference/, 'the canvas has no place-name layer over it');
+  // Boundaries and Places draws white borders and names from zoom 0. The
+  // canvas's own reference layer is all but empty below zoom 3, which is the
+  // zoom a world map opens at.
+  assert.match(src, /World_Boundaries_and_Places/, 'the canvas has no place-name layer over it');
   assert.match(src, /attribution/, 'tiles are used without crediting the provider');
 });
 
@@ -190,7 +196,11 @@ test('both views carry place names, and satellite stays available', () => {
   const plain = src.match(/var plain = L\.layerGroup\(\[[\s\S]*?\]\)/);
   const sat = src.match(/var satellite = L\.layerGroup\(\[[\s\S]*?\]\)/);
   assert.ok(plain && sat, 'the two views are not both assembled as layer groups');
-  assert.match(plain[0], /CANVAS_REF/, 'the map view has no place-name layer');
+  // Dark Gray Reference draws almost nothing below zoom 3, which is where a
+  // world map opens -- the live map showed no names and no borders at all.
+  assert.ok(!/World_Dark_Gray_Reference/.test(src),
+    'the map is back on the label layer that is blank at world zoom');
+  assert.match(plain[0], /PLACES/, 'the map view has no place-name layer');
   assert.match(sat[0], /PLACES/, 'the satellite view has no place-name layer');
   assert.match(sat[0], /IMAGERY/, 'the satellite view has no imagery');
 });
@@ -222,4 +232,41 @@ test('the view switcher is styled wherever it appears', () => {
     assert.ok(!/\.leaflet-control-layers\{/.test(read(sheet)),
       sheet + ' still carries a second copy of the switcher styling');
   }
+});
+
+test('one world across the frame, not a repeating strip of them', () => {
+  // Fitting the world's height in a panel four times wider than tall left it a
+  // quarter of the width, so it tiled sideways: the live homepage showed three
+  // Americas. Tiles do not wrap and the frame is sized like a map.
+  const src = read('map-setup.js');
+  assert.match(src, /noWrap: true/, 'tiles still repeat sideways');
+  assert.match(src, /opts\.worldCopyJump = false/, 'copies of the world are still jumped to');
+  assert.match(src, /size\.x/, 'the fit is not derived from the width');
+  assert.ok(!/size\.y/.test(src.match(/function worldZoom[\s\S]*?\n  \}/)[0]),
+    'the fit still measures the height');
+
+  const sized = [];
+  for (const page of MAP_PAGES) {
+    const html = read(page);
+    const rules = [...html.matchAll(/(?:#(?:map|leafletMap)|\.map|\.mapTall)\{[^}]*\}/g)].map(m => m[0]);
+    for (const r of rules) {
+      if (/height:\s*\d+px/.test(r) && !/min-height|max-height/.test(r)) sized.push(page + ': ' + r);
+    }
+    const inline = html.match(/id="(?:map|leafletMap)"[^>]*style="([^"]*)"/);
+    if (inline && /height:\s*\d+px/.test(inline[1]) && !/aspect-ratio/.test(inline[1])) sized.push(page + ': inline ' + inline[1]);
+  }
+  assert.deepEqual(sized, [], 'maps still pinned to a fixed height:\n' + sized.join('\n'));
+});
+
+test('the reader can still drag and zoom', () => {
+  // Leaflet enables dragging, the zoom control, double-click and pinch by
+  // default; the shared setup must not quietly take any of them away.
+  const src = read('map-setup.js');
+  for (const option of ['dragging', 'doubleClickZoom', 'zoomControl', 'touchZoom', 'boxZoom', 'keyboard']) {
+    assert.ok(!new RegExp('\\b' + option + '\\s*[:=]').test(src),
+      option + ' is being overridden — Leaflet already enables it');
+  }
+  // Rigid bounds make a drag feel like the map has seized up at the edge.
+  const v = src.match(/maxBoundsViscosity = ([\d.]+)/);
+  assert.ok(v && Number(v[1]) < 1, 'the world edge is rigid rather than springy');
 });

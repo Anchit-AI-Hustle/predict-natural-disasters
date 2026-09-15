@@ -563,3 +563,78 @@ test('every homepage headline figure is measured, not written into the page', as
   assert.ok(Number(doc.getElementById('kCountries').textContent) <= countries.size);
   r.close();
 });
+
+/* ------------------------------------- forecasts laid out as time, not cards */
+
+test('the forecast calendar is a calendar, not the same card grid renamed', async () => {
+  // The page promised a calendar and rendered collection.js's generic grid,
+  // filtered to forecasts. A forecast is a window in time and the grid could
+  // not show one: every card read "starts just now".
+  const outlooks = (await events()).filter(e => e.forecast);
+  assert.ok(outlooks.length > 3, 'fixture feed needs several outlooks');
+
+  const r = await renderPage('forecast-calendar.html', {
+    waitFor: doc => doc.querySelectorAll('.tl-bar').length > 0
+  });
+  const doc = r.document;
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+
+  const bars = [...doc.querySelectorAll('.tl-bar')];
+  assert.equal(bars.length, outlooks.length, 'not every outlook has a bar');
+  assert.equal(doc.querySelectorAll('.tl-day.is-today').length, 1, 'today is not marked exactly once');
+  assert.ok(doc.querySelector('.tl-now'), 'nothing marks where now is');
+
+  // A bar must span its own window, not a uniform block.
+  const spans = bars.map(b => parseFloat(b.style.width));
+  assert.ok(spans.every(w => w > 0 && w <= 100), 'a bar runs outside the axis');
+  assert.ok(new Set(spans.map(w => w.toFixed(1))).size > 1,
+    'every bar is the same width, so the window is not being drawn');
+  assert.ok(bars.every(b => parseFloat(b.style.left) + parseFloat(b.style.width) <= 100.5),
+    'a bar extends past the end of the axis');
+
+  // Each bar opens its own outlook.
+  const hrefs = bars.map(b => b.getAttribute('href'));
+  assert.ok(hrefs.every(h => h && h.startsWith('/forecasts/')), 'a bar does not open an outlook');
+  assert.equal(new Set(hrefs).size, hrefs.length, 'bars point at the same record');
+
+  // Hazards are grouped, so the axis stays readable.
+  const groups = [...doc.querySelectorAll('.tl-group-name')].map(n => n.textContent);
+  assert.ok(groups.length > 1, 'outlooks are not grouped by hazard');
+  assert.equal(new Set(groups).size, groups.length, 'a hazard is grouped twice');
+  r.close();
+});
+
+test('the calendar escapes the card grid it used to live in', async () => {
+  // #cards is an auto-fill grid; left alone, the whole timeline lands in one
+  // narrow column with the footnote beside it.
+  const r = await renderPage('forecast-calendar.html', {
+    waitFor: doc => doc.querySelectorAll('.tl-bar').length > 0
+  });
+  const cards = r.document.getElementById('cards');
+  assert.ok(!cards.classList.contains('event-grid'),
+    'the timeline is still being laid out as a grid cell');
+  r.close();
+});
+
+test('the shared disclaimer is stated once, not on every card', async () => {
+  // It rides on 24 of 30 outlooks, so repeating it per card spent a third of
+  // each one saying what is true of all of them.
+  const r = await renderPage('forecast-list.html', {
+    waitFor: doc => doc.querySelectorAll('.event-card').length > 0
+  });
+  const doc = r.document;
+  // The cards said "not a deterministic prediction", the page note says
+  // "not deterministic predictions"; match the claim, not the wording.
+  const phrase = /deterministic prediction/i;
+  const repeats = [...doc.querySelectorAll('.event-card')].filter(c => phrase.test(c.textContent));
+  assert.equal(repeats.length, 0, repeats.length + ' cards still repeat the disclaimer');
+
+  const note = doc.getElementById('forecastNote');
+  assert.ok(note, 'the disclaimer is gone from the cards but stated nowhere');
+  assert.match(note.textContent, phrase, 'the page-level note does not carry it');
+
+  // The part that actually differs must survive the trim.
+  const bodies = [...doc.querySelectorAll('.event-card p')].map(p => p.textContent.trim());
+  assert.ok(bodies.every(b => b.length > 20), 'a card body was trimmed to nothing');
+  r.close();
+});

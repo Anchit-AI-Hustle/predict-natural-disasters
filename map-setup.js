@@ -28,16 +28,24 @@
   var TILE = 256;
   // The Mercator projection stops here; there is no map data beyond it.
   var TOP = 85.0511287798, WORLD = [[-TOP, -180], [TOP, 180]];
+  // Most land, and nearly all of it that people live on, is north of the
+  // equator; centring there trades Antarctic ocean for Alaska and Scandinavia.
+  var HOME = [20, 0];
 
   /*
-   * The zoom at which the world is exactly as tall as the container. Below it
-   * the world no longer reaches the edges and empty space shows; above it the
-   * poles are cut off. It is therefore both the opening view and the floor.
+   * The zoom at which one world spans the container exactly.
+   *
+   * Fitting the world's height instead put the entire pole-to-pole range in
+   * view, but in a panel four times wider than it is tall that left the world
+   * about a quarter of the width, so it tiled sideways and the page showed
+   * three Americas. A world map shows one world across the frame, which is
+   * what the width decides. It is both the opening view and the zoom floor:
+   * below it the world no longer reaches the edges and empty space shows.
    */
   function worldZoom(map) {
     var size = map.getSize();
-    if (!size || !size.y) return 1;
-    return Math.log(size.y / TILE) / Math.LN2;
+    if (!size || !size.x) return 1;
+    return Math.log(size.x / TILE) / Math.LN2;
   }
 
   function applyWorldFit(map, recenter) {
@@ -45,7 +53,7 @@
     if (!isFinite(z)) return;
     try {
       map.setMinZoom(z);
-      if (recenter || map.getZoom() < z) map.setView([0, 0], z, { animate: false });
+      if (recenter || map.getZoom() < z) map.setView(HOME, z, { animate: false });
     } catch (e) { /* a stub map without a real view */ }
   }
 
@@ -62,7 +70,6 @@
   var ESRI = 'https://services.arcgisonline.com/ArcGIS/rest/services/';
   var IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   var CANVAS = ESRI + 'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
-  var CANVAS_REF = ESRI + 'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
   var PLACES = ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
   var CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
   var LABEL_PANE = 'pndLabels';
@@ -112,14 +119,14 @@
     try {
       injectStyle();
       var pane = labelPane(map);
-      var named = function (url, max) { return L.tileLayer(url, { maxZoom: max, pane: pane, opacity: 0.9 }); };
+      var named = function (url, max) { return L.tileLayer(url, { maxZoom: max, pane: pane, opacity: 0.95, noWrap: true }); };
 
       var plain = L.layerGroup([
-        L.tileLayer(CANVAS, { attribution: CREDIT, maxZoom: 16 }),
-        named(CANVAS_REF, 16)
+        L.tileLayer(CANVAS, { attribution: CREDIT, maxZoom: 16, noWrap: true }),
+        named(PLACES, 16)
       ]);
       var satellite = L.layerGroup([
-        L.tileLayer(IMAGERY, { attribution: CREDIT, maxZoom: 18 }),
+        L.tileLayer(IMAGERY, { attribution: CREDIT, maxZoom: 18, noWrap: true }),
         named(PLACES, 18)
       ]);
 
@@ -145,7 +152,8 @@
     if (!explicitWheel) opts.scrollWheelZoom = false;
     // Whole-number zooms cannot land on "the world exactly fills the panel".
     if (!('zoomSnap' in opts)) opts.zoomSnap = 0;
-    if (!('worldCopyJump' in opts)) opts.worldCopyJump = true;
+    // Copies of the world either side are what made three Americas.
+    opts.worldCopyJump = false;
     // A page-supplied minZoom is a guess at the same thing this measures.
     delete opts.minZoom;
 
@@ -153,7 +161,9 @@
 
     try {
       map.setMaxBounds(WORLD);
-      map.options.maxBoundsViscosity = 1;
+      // Springy rather than rigid: the edge of the world should push back, not
+      // feel like the map has seized up mid-drag.
+      map.options.maxBoundsViscosity = 0.5;
       applyWorldFit(map, true);
 
       var container = typeof map.getContainer === 'function' ? map.getContainer() : null;
