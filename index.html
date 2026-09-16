@@ -1,8 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Predict Natural Disasters</title>
+<meta charset="utf-8">
+<!-- seo:start -->
+<title>Live Natural Disaster Tracker, Map & Forecasts | Predict Natural Disasters</title>
+<meta name="description" content="Track live earthquakes, floods, storms, wildfires and volcanoes worldwide on one map, with official alerts and risk forecasts updated every minute.">
+<link rel="canonical" href="https://predict-natural-disasters.anchit-tandon.com/">
+<meta property="og:site_name" content="Predict Natural Disasters">
+<meta property="og:title" content="Live Natural Disaster Tracker, Map & Forecasts | Predict Natural Disasters">
+<meta property="og:description" content="Track live earthquakes, floods, storms, wildfires and volcanoes worldwide on one map, with official alerts and risk forecasts updated every minute.">
+<meta property="og:url" content="https://predict-natural-disasters.anchit-tandon.com/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Live Natural Disaster Tracker, Map & Forecasts | Predict Natural Disasters">
+<meta name="twitter:description" content="Track live earthquakes, floods, storms, wildfires and volcanoes worldwide on one map, with official alerts and risk forecasts updated every minute.">
+<meta name="theme-color" content="#02110d">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://predict-natural-disasters.anchit-tandon.com/#website","url":"https://predict-natural-disasters.anchit-tandon.com/","name":"Predict Natural Disasters","description":"Track live earthquakes, floods, storms, wildfires and volcanoes worldwide on one map, with official alerts and risk forecasts updated every minute.","inLanguage":"en","publisher":{"@id":"https://predict-natural-disasters.anchit-tandon.com/#org"}},{"@type":"Organization","@id":"https://predict-natural-disasters.anchit-tandon.com/#org","name":"Predict Natural Disasters","url":"https://predict-natural-disasters.anchit-tandon.com/"},{"@type":"WebApplication","name":"Predict Natural Disasters","url":"https://predict-natural-disasters.anchit-tandon.com/","applicationCategory":"Weather","operatingSystem":"Any","description":"Track live earthquakes, floods, storms, wildfires and volcanoes worldwide on one map, with official alerts and risk forecasts updated every minute."}]}</script>
+<!-- seo:end -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#02110d;--panel:#06261d;--line:#1d654c;--line2:#153f33;--text:#f5fbf8;--muted:#91b4a6;--green:#25e29c;--red:#ef2639;--orange:#ff681e;--amber:#ffbf2f}
@@ -56,4 +71,4 @@ function previewById(id){const e=events.find(x=>String(x.id)===String(id));if(e)
 async function load(){try{const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store'});const d=await r.json();events=d.events||[];document.getElementById('lastUpdated').textContent=new Date(d.generatedAt||Date.now()).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',hour12:true})+' IST';render()}catch(err){console.error(err)}}
 document.getElementById('hazardFilter').onchange=render;document.getElementById('mapSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.toLowerCase();const x=events.find(v=>[v.title,v.country,v.region].join(' ').toLowerCase().includes(q));if(x)selectEvent(x,{fly:true,open:true})}});document.getElementById('topSearch').addEventListener('keydown',e=>{if(e.key==='Enter')GO('/events?search='+enc(e.target.value))});load();setInterval(load,60000);
 </script>
-<script src="/glossary.js"></script></body></html>
+<script src="/glossary.js"></script><!-- seo-nav:start --><nav class="seo-nav" aria-label="Site sections"><h2>Explore Predict Natural Disasters</h2><div class="seo-nav-links"><a href="/live-map">Live disaster map</a><a href="/events">Live global events</a><a href="/alerts">Disaster alerts</a><a href="/official-warnings">Official warnings</a><a href="/forecasts">Forecasts</a><a href="/forecast-calendar">Forecast calendar</a><a href="/hazard-types">Hazards by type</a><a href="/regions">Regions</a><a href="/historical-events">Historical events</a><a href="/recent-events">Recent major events</a><a href="/calamities">Current calamities</a><a href="/insights">Insights</a><a href="/verification">Verification</a><a href="/methodology">Methodology</a><a href="/resources">Preparedness resources</a><a href="/about">About</a></div></nav><style>.seo-nav{border-top:1px solid #174638;padding:16px;background:#03140f}.seo-nav h2{font-size:12px;margin:0 0 8px;color:#8eaa9e;text-transform:uppercase;letter-spacing:.12em}.seo-nav-links{display:flex;flex-wrap:wrap;gap:8px 14px}.seo-nav-links a{color:#8ff0ca;font-size:12px;text-decoration:none}.seo-nav-links a:hover{text-decoration:underline}</style><!-- seo-nav:end --></body></html>
