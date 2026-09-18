@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-18T02:00:00Z",
+  "updatedAt": "2026-09-18T06:05:00Z",
   "rules": {
     "verified": "The frozen prediction materially occurred within its original geography, hazard, severity threshold and target window.",
     "partial": "Only part of the frozen prediction verified; geography, timing or severity may not fully match.",
@@ -34,13 +34,15 @@
       "coverageStatus": "UNVERIFIABLE_NO_SCAN_LEDGER",
       "country": "Vietnam",
       "region": "Northern and north-central Viet Nam: Lao Cai, Phu Tho, Ha Noi, Ninh Binh, Thanh Hoa and Nghe An",
-      "hazard": "Flood",
+      "hazard": "Flood / Landslide",
       "observedAt": "2026-09-17T07:00:00+07:00",
-      "authoritativeSource": "Viet Nam Government News citing Department of Dyke Management and Disaster Prevention and Control, Ministry of Agriculture and Environment",
-      "sourceUrl": "https://en.baochinhphu.vn/flooding-damages-more-than-10000-ha-of-crops-in-northern-central-localities-111260917104818936.htm",
-      "impacts": "More than 2,200 homes inundated; thousands of households isolated; three houses collapsed and 21 damaged; more than 10,000 ha of rice, crops and other agricultural plants damaged; widespread flooding in Ha Noi.",
-      "forecastComparison": "No qualifying frozen pre-event prediction was found in the immutable outlook ledger for this northern/north-central geography and event window. ND-001 is excluded because its frozen geography was the Hue–Da Nang corridor and its target window ended on 16 September. Signal-derived or post-event warnings are not eligible for prospective prediction credit.",
+      "lastMaterialChangeAt": "2026-09-17T17:30:00+07:00",
+      "authoritativeSource": "Viet Nam Government News / National Civil Defence Steering Committee and Department of Dyke Management and Disaster Prevention and Control",
+      "sourceUrl": "https://baochinhphu.vn/mua-lu-gay-ngap-sau-nhieu-song-vuot-bao-dong-3-102260917202627839.htm",
+      "impacts": "Material escalation confirmed by national reporting on 17 September: human casualties were reported; more than 16,300 homes were inundated across the affected provinces; flooding and landslides disrupted roads and rail; rivers in Ha Noi, Ninh Binh and Thanh Hoa exceeded alert level 3. Department figures reported by Vietnamese national media specify 3 deaths in a landslide in Da Bac, Phu Tho, 16,310 homes inundated, 4 houses collapsed, 29 damaged, and 22,499 ha of rice/crops/vegetables inundated or damaged.",
+      "forecastComparison": "No qualifying frozen pre-event prediction was found in the immutable outlook ledger for this northern/north-central geography and event window. ND-001 is excluded because its frozen geography was the Hue–Da Nang corridor and its target window ended on 16 September. Signal-derived, aftershock, warning-derived, post-event and retrospective benchmark records are not eligible for independent prospective prediction credit.",
       "coverageReason": "The repository contains no immutable scan ledger in data/, so this event cannot yet be truthfully separated into SCANNED_BUT_NOT_FORECAST versus NOT_SCANNED/COVERAGE_FAILURE.",
+      "materialChange": "Impact severity increased materially from the initial morning assessment: later national reporting established casualties and a much larger inundation footprint. Classification remains FALSE_NEGATIVE_UNPREDICTED_EVENT; this is an impact update, not a duplicate new event.",
       "final": false
     }
   ]
