@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "auditTimestamp": "2026-09-18T16:42:00Z",
+  "event": {
+    "id": "OBS-CO-EQ-20260810-CHOCO",
+    "status": "FALSE_NEGATIVE_UNPREDICTED_EVENT",
+    "observedSeverity": "CATASTROPHIC",
+    "evidenceConfidence": "CONFIRMED",
+    "coverageStatus": "UNVERIFIABLE_NO_SCAN_LEDGER",
+    "country": "Colombia",
+    "region": "San Jose del Palmar, Choco; impacts across 497 municipalities in 16 departments",
+    "hazard": "Earthquake",
+    "observedAt": "2026-08-10T07:34:00-05:00",
+    "magnitude": 7.4,
+    "authoritativeEvidence": [
+      {
+        "source": "Colombia UNGRD",
+        "date": "2026-08-10",
+        "finding": "M7.4 earthquake at 07:34 local time with epicenter in San Jose del Palmar, Choco; national disaster response activated.",
+        "url": "https://portal.gestiondelriesgo.gov.co/Paginas/Noticias/2026/Gobierno-nacional-despliega-respuesta-ante-sismo-en-Choc%C3%B3-bajo-liderazgo-del-presidente-Abelardo-de-la-Espriella.aspx"
+      },
+      {
+        "source": "Colombia UNGRD",
+        "date": "2026-09-10",
+        "finding": "331 deaths, 4,505 injured, 111 missing, 466,345 people affected, 36,327 homes destroyed, 201,939 homes damaged, 759 buildings collapsed; 497 municipalities in 16 departments affected.",
+        "url": "https://portal.gestiondelriesgo.gov.co/Paginas/Noticias/2026/356-personas-rescatadas-la-respuesta-de-la-UNGRD-continua-un-mes-despues-del-terremoto.aspx"
+      },
+      {
+        "source": "Servicio Geologico Colombiano",
+        "date": "2026-09-10",
+        "finding": "SGC identifies the 10 August San Jose del Palmar M7.4 earthquake as the third-largest recorded in Colombia and reports about 300 aftershocks by 8 September.",
+        "url": "https://www2.sgc.gov.co/Noticias/Paginas/Sismo-de-San-Jose-del-Palmar-un-mes-de-monitoreo-investigacion-y-trabajo-en-territorio-del-SGC.aspx"
+      }
+    ],
+    "forecastComparison": {
+      "qualifyingFrozenPredictionBeforeOnset": false,
+      "reason": "The immutable outlook ledger currently available in the repository was first recorded on 2026-09-15, more than one month after the 10 August earthquake. No frozen Colombia earthquake prediction predating onset is present. Post-event aftershock monitoring, warnings, or later records receive zero prospective credit."
+    },
+    "coverageReason": "No immutable scan ledger is available in data/ to prove whether this Colombia geography/hazard was scanned before 10 August. Therefore the false negative cannot be truthfully split into SCANNED_BUT_NOT_FORECAST versus NOT_SCANNED/COVERAGE_FAILURE.",
+    "materialChange": "New historical false negative established during authoritative-feed reconciliation. This is not a new earthquake today; it is a newly identified omission from the historical Accuracy denominator.",
+    "final": true
+  }
+}
