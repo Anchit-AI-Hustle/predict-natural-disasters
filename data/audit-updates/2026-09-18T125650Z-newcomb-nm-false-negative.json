@@ -1,0 +1,34 @@
+{
+  "auditAt": "2026-09-18T12:56:50Z",
+  "type": "SIGNIFICANT_OBSERVED_EVENT_VERIFICATION",
+  "eventId": "OBS-US-NM-FL-20260916-NEWCOMB",
+  "status": "FALSE_NEGATIVE_UNPREDICTED_EVENT",
+  "observedSeverity": "SIGNIFICANT",
+  "evidenceConfidence": "CONFIRMED",
+  "coverageStatus": "UNVERIFIABLE_NO_SCAN_LEDGER",
+  "country": "United States",
+  "region": "Newcomb, San Juan County, northwestern New Mexico, Navajo Nation",
+  "hazard": "Flash flood",
+  "observedAt": "2026-09-16T00:30:00-06:00",
+  "authoritativeEvidence": [
+    {
+      "source": "Navajo Nation Office of the President and Vice President",
+      "published": "2026-09-16",
+      "url": "https://opvp.navajo-nsn.gov/tragic-loss-near-newcomb/",
+      "finding": "Navajo Police responded at approximately 00:30 local time to people swept away by floodwaters near Newcomb; two adults and one juvenile died."
+    }
+  ],
+  "impacts": {
+    "deaths": 3,
+    "fatalityDetail": "Two adults and one juvenile",
+    "response": "Navajo Police Department Shiprock District, Navajo Nation Fire and Rescue, Navajo EMS and search-and-rescue resources responded."
+  },
+  "forecastComparison": {
+    "qualifyingFrozenPredictionFound": false,
+    "reason": "No frozen outlook-ledger entry matching Newcomb/San Juan County flash flooding before the 2026-09-16 00:30 MDT event onset was found. New Mexico flood-warning-derived outlooks visible in the ledger concern Chaves/Lincoln counties and use later 17 September warning evidence; they cannot be expanded retrospectively to Newcomb or credited for this earlier event.",
+    "postEventWarningsCountAsPrediction": false
+  },
+  "coverageReason": "The repository still has no immutable scan ledger sufficient to prove whether Newcomb/San Juan County was scanned before onset. Therefore this false negative cannot honestly be subclassified as SCANNED_BUT_NOT_FORECAST or NOT_SCANNED/COVERAGE_FAILURE.",
+  "materialChange": "New significant observed disaster and false negative established. This event was not present in verification-ledger.json or prior audit-update search results at audit time.",
+  "final": false
+}
