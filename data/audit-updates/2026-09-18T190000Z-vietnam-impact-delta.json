@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "auditTimestamp": "2026-09-18T19:00:00Z",
+  "type": "MATERIAL_EVENT_UPDATE",
+  "eventId": "OBS-VN-FL-20260917-NORTH",
+  "status": "FALSE_NEGATIVE_UNPREDICTED_EVENT",
+  "statusChanged": false,
+  "observedSeverity": "SIGNIFICANT",
+  "coverageSubtype": "UNVERIFIABLE_NO_SCAN_LEDGER",
+  "materialChange": true,
+  "authoritativeSnapshot": {
+    "asOfLocal": "2026-09-18T17:00:00+07:00",
+    "source": "Vietnam Government Portal citing Department of Dyke Management and Disaster Prevention and Control / provincial duty reports",
+    "sourceUrl": "https://baochinhphu.vn/ung-pho-mua-lu-di-doi-hon-2800-ho-dan-tai-5-tinh-thanh-pho-den-noi-an-toan-10226091818521847.htm",
+    "evacuatedHouseholds": 2833,
+    "evacuatedPeople": 10578,
+    "dykeIncidents": 5,
+    "floodedOrAffectedSchools": 27,
+    "remainingRoadLandslideBlockages": 4,
+    "remainingFloodRoadBlockages": 41,
+    "railStatus": "Hanoi-Ho Chi Minh City railway no longer flooded; normal traffic restored"
+  },
+  "comparison": {
+    "priorSnapshotEvacuatedHouseholds": 2345,
+    "priorSnapshotEvacuatedPeople": 8667,
+    "deltaEvacuatedHouseholds": 488,
+    "deltaEvacuatedPeople": 1911
+  },
+  "forecastEligibility": {
+    "qualifyingFrozenPredictionFound": false,
+    "retrospectiveExpansionAllowed": false,
+    "postEventWarningsCountAsPrediction": false
+  },
+  "notes": "Material operational-impact escalation only. Existing false-negative classification is unchanged. No scan-history inference is made because an immutable pre-event scan ledger sufficient to distinguish NOT_SCANNED from SCANNED_BUT_NOT_FORECAST has not been established."
+}
