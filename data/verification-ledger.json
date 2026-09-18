@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-18T06:05:00Z",
+  "updatedAt": "2026-09-18T06:28:33Z",
   "rules": {
     "verified": "The frozen prediction materially occurred within its original geography, hazard, severity threshold and target window.",
     "partial": "Only part of the frozen prediction verified; geography, timing or severity may not fully match.",
@@ -43,6 +43,25 @@
       "forecastComparison": "No qualifying frozen pre-event prediction was found in the immutable outlook ledger for this northern/north-central geography and event window. ND-001 is excluded because its frozen geography was the Hue–Da Nang corridor and its target window ended on 16 September. Signal-derived, aftershock, warning-derived, post-event and retrospective benchmark records are not eligible for independent prospective prediction credit.",
       "coverageReason": "The repository contains no immutable scan ledger in data/, so this event cannot yet be truthfully separated into SCANNED_BUT_NOT_FORECAST versus NOT_SCANNED/COVERAGE_FAILURE.",
       "materialChange": "Impact severity increased materially from the initial morning assessment: later national reporting established casualties and a much larger inundation footprint. Classification remains FALSE_NEGATIVE_UNPREDICTED_EVENT; this is an impact update, not a duplicate new event.",
+      "final": false
+    },
+    {
+      "id": "OBS-NP-FL-20260826-BHOTEKOSHI",
+      "status": "FALSE_NEGATIVE_UNPREDICTED_EVENT",
+      "observedSeverity": "CATASTROPHIC",
+      "evidenceConfidence": "CONFIRMED",
+      "coverageStatus": "UNVERIFIABLE_NO_SCAN_LEDGER",
+      "country": "Nepal",
+      "region": "Bhote Koshi / Trishuli corridor; Rasuwa, Nuwakot, Dhading, Gorkha and downstream affected districts",
+      "hazard": "Glacial flood / Flash flood / Debris flow / Landslide",
+      "observedAt": "2026-08-26T08:40:00+05:45",
+      "lastMaterialChangeAt": "2026-09-17T19:00:00+05:45",
+      "authoritativeSource": "Government of Nepal Ministry of Home Affairs / NDRRMA",
+      "sourceUrl": "https://iscbardibas.moha.gov.np/en/post/ha-ra-tha-ka-apa-l-11",
+      "impacts": "Government of Nepal confirms the major Bhote Koshi flood began at 08:40 local time on 26 August and caused heavy loss of life and property in Rasuwa, Nuwakot, Dhading and Gorkha. NDRRMA's 17 September update, as reported by Nepal News and other outlets, gives 1,410 deaths, 6,145 people missing and 13,756 rescued in Nepal.",
+      "forecastComparison": "No qualifying frozen prediction predating the 26 August onset was found in the immutable outlook ledger. The Nepal flood outlook OUT-gdacs-FL-1104157 was issued on 14 September for a 14–17 September window and was explicitly derived from an already-active GDACS flood signal, so it is post-event and receives no prospective prediction credit.",
+      "coverageReason": "The repository contains no immutable scan ledger in data/, so the August 26 event cannot be truthfully separated into SCANNED_BUT_NOT_FORECAST versus NOT_SCANNED/COVERAGE_FAILURE.",
+      "materialChange": "New historical coverage/forecast gap established in the accuracy ledger. The disaster itself began on 26 August; this record is newly added because the authoritative impact scale and absence of a qualifying pre-event frozen prediction were reconciled in this audit run.",
       "final": false
     }
   ]
