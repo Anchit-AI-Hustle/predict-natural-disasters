@@ -1,0 +1,36 @@
+{
+  "auditAt": "2026-09-18T12:08:54Z",
+  "type": "MATURED_FORECAST_VERIFICATION",
+  "predictionId": "OUT-aftershock-usgs-us7000tgl2",
+  "status": "HIT",
+  "freezeTimestamp": "2026-09-15T12:54:01.772Z",
+  "issuedAtClaim": "2026-09-11T11:56:23.115Z",
+  "forecastKind": "aftershock-sequence",
+  "country": "Timor Leste",
+  "originalGeography": "253 km ENE of Lospalos, Timor Leste; frozen epicentre -7.2863,128.9383",
+  "hazard": "Earthquake aftershock sequence",
+  "severity": "Moderate",
+  "targetStart": "2026-09-11T11:56:23.115Z",
+  "targetEnd": "2026-09-18T11:56:23.115Z",
+  "verificationRule": "Grade against observed aftershock activity and any additional impacts in the window. No claim is made about predicting the mainshock.",
+  "observedEvent": {
+    "eventId": "us7000thlq",
+    "time": "2026-09-15T14:16:11Z",
+    "magnitude": 4.5,
+    "region": "251 km E of Lospalos, Timor Leste",
+    "coordinates": [-8.3244,129.2771],
+    "depthKm": 10.0,
+    "usgsStatus": "reviewed",
+    "significance": 312,
+    "reportedImpacts": "No felt reports or material damage reported in the reviewed event record."
+  },
+  "causalityAudit": "The qualifying M4.5 event occurred 1h22m after the immutable repository freeze and before target-window expiry. The pre-freeze M5.9 mainshock is not counted as prediction success.",
+  "classificationReason": "Observed post-freeze seismic activity occurred in the same Lospalos/Banda Sea source region within the frozen seven-day aftershock window, satisfying the frozen sequence-activity rule. No retrospective geography/window expansion was used.",
+  "evidence": [
+    {
+      "authority": "USGS reviewed event us7000thlq",
+      "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000thlq"
+    }
+  ],
+  "ledgerAction": "Structured audit delta persisted. Main verification-ledger consolidation remains required so the Accuracy page consumes this HIT directly."
+}
