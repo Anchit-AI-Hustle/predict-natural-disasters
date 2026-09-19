@@ -1,0 +1,31 @@
+{
+  "auditTimestamp": "2026-09-19T03:16:21Z",
+  "predictionId": "OUT-aftershock-usgs-us7000tgrk",
+  "classification": "MISS_FALSE_POSITIVE",
+  "frozenPrediction": {
+    "type": "Earthquake aftershock sequence",
+    "title": "Aftershock-sequence outlook — 126 km NNE of Teluknaga, Indonesia",
+    "geography": "126 km NNE of Teluknaga, Indonesia",
+    "coordinates": {"lat": -4.9832, "lon": 106.8742},
+    "severity": "Severe",
+    "targetStart": "2026-09-11T21:23:55.907Z",
+    "targetEnd": "2026-09-18T21:23:55.907Z",
+    "recordedAtFreeze": "2026-09-15T12:54:01.772Z",
+    "verificationRule": "Grade against observed aftershock activity and any additional impacts in the window. No claim is made about predicting the mainshock."
+  },
+  "causality": {
+    "effectiveEvaluationStart": "2026-09-15T12:54:01.772Z",
+    "reason": "The ledger record was not provably frozen until recordedAt; pre-freeze observations receive no prediction credit."
+  },
+  "observed": {
+    "mainshock": "USGS us7000tgrk, M6.5, 2026-09-11T21:23:55Z, depth 372 km; PAGER Green.",
+    "postFreezeQualifyingAftershock": false,
+    "evidenceSummary": "Current USGS-derived event history reports no other earthquakes within 100 km in the preceding 30 days and no material casualties or damage. No qualifying post-freeze aftershock was established before target-window maturity."
+  },
+  "statusReason": "The frozen aftershock-sequence outlook matured without independently observed qualifying aftershock activity after the provable freeze and within the original target geography/window. The pre-freeze M6.5 mainshock is explicitly excluded from prediction credit.",
+  "retrospectiveExpansion": false,
+  "sources": [
+    "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tgrk",
+    "https://www.gdacs.org/"
+  ]
+}
