@@ -1,0 +1,42 @@
+{
+  "auditTimestamp": "2026-09-19T03:37:30Z",
+  "predictionId": "OUT-gdacs-WF-1031990",
+  "classification": "MISS_FALSE_POSITIVE",
+  "frozenPrediction": {
+    "type": "Wildfire",
+    "title": "3-day Wildfire risk outlook — Australia",
+    "country": "Australia",
+    "region": "Forest fires in Australia",
+    "coordinates": {"lat": -12.8067, "lon": 132.1638},
+    "severity": "Minor / Watch",
+    "recordedAtFreeze": "2026-09-16T06:37:35.238Z",
+    "issuedAtClaim": "2026-09-15T00:00:00.000Z",
+    "targetStart": "2026-09-15T00:00:00.000Z",
+    "targetEnd": "2026-09-18T00:00:00.000Z",
+    "forecastKind": "signal-derived-outlook",
+    "verificationRule": "Grade only against independently observed impacts during the stated window; the pre-existing source alert itself does not count as a successful prediction."
+  },
+  "observedEvidence": [
+    {
+      "event": "Blackmore / Top End bushfire, Northern Territory",
+      "date": "2026-09-16",
+      "result": "EXCLUDED_FOR_CAUSALITY",
+      "reason": "The emergency-impacting fire was already underway before the provable repository freeze at 06:37:35Z; it cannot receive prospective forecast credit."
+    },
+    {
+      "event": "Wutul / Cooyar scrub fire, Queensland",
+      "date": "2026-09-16",
+      "result": "EXCLUDED_FOR_CAUSALITY",
+      "reason": "Reported start about 11:30 AEST (01:30Z), before the 06:37:35Z freeze; no structures were under threat in the later report."
+    },
+    {
+      "event": "Wongawallan bushfire, Queensland",
+      "date": "2026-09-18",
+      "result": "OUTSIDE_TARGET_WINDOW",
+      "reason": "Reported around midday AEST (~02:00Z), after the frozen target window expired at 00:00Z on 18 September."
+    }
+  ],
+  "impacts": "No independently established post-freeze, in-window material wildfire impact was found that can validly verify this frozen outlook without retrospective time expansion. Fire-weather warnings alone are not observed-disaster verification.",
+  "statusReason": "The record was not provably frozen until 16 September 06:37:35Z. Significant Australian fire activity identified in the audit either began before that freeze or after the target window expired. The pre-existing GDACS signal itself is explicitly ineligible as verification.",
+  "final": true
+}
