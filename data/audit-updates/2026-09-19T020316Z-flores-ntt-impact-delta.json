@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "eventId": "OBS-ID-EQ-20260815-FLORES-NTT",
+  "changeType": "MATERIAL_IMPACT_UPDATE",
+  "classification": "FALSE_NEGATIVE_UNPREDICTED_EVENT",
+  "classificationChanged": false,
+  "coverageSubtype": "UNVERIFIABLE_NO_SCAN_LEDGER",
+  "hazard": "earthquake",
+  "observedEvent": {
+    "onset": "2026-08-15T04:58:24+07:00",
+    "geography": "Flores / East Nusa Tenggara (NTT), Indonesia",
+    "magnitude": 7.7
+  },
+  "previousAudit": {
+    "path": "data/audit-updates/2026-09-19T003617Z-flores-ntt-earthquake-false-negative.json",
+    "eventId": "OBS-ID-EQ-20260815-FLORES-NTT"
+  },
+  "materialDelta": {
+    "deathsTotal": 142,
+    "deathsDirect": 48,
+    "deathsIndirectInDisplacement": 94,
+    "injured": 1603,
+    "peopleStillDisplaced": 46461,
+    "housesReportedDamaged": 103427,
+    "note": "BNPB clarified the 142-death total: 48 direct earthquake deaths and 94 indirect deaths among displaced people. This materially updates the prior audit impact record without changing the false-negative classification."
+  },
+  "authoritativeBasis": {
+    "agency": "Badan Nasional Penanggulangan Bencana (BNPB)",
+    "statementDate": "2026-09-15",
+    "supportingBNPBUrl": "https://www.bnpb.go.id/berita/sebanyak-51591-rumah-pascagempa-m77-flores-telah-diverifikasi",
+    "evidenceNote": "Current reporting quoting BNPB's 15 September press briefing gives 142 deaths total, including 48 direct and 94 indirect deaths in displacement; BNPB's 7 September page independently confirms the continuing housing verification program and 51,591 verified houses from an initial 102,384-house dataset."
+  },
+  "forecastAudit": {
+    "qualifyingFrozenPredictionId": null,
+    "qualifyingFreezeTimestamp": null,
+    "originalTargetGeography": null,
+    "originalTargetWindow": null,
+    "result": "No qualifying frozen prediction predating the 15 August onset has been established; no retrospective or post-event credit granted."
+  },
+  "auditTimestamp": "2026-09-19T02:03:16Z"
+}
