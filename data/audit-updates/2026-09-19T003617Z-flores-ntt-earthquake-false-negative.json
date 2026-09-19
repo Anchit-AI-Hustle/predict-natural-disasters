@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "eventId": "OBS-ID-EQ-20260815-FLORES-NTT",
+  "classification": "FALSE_NEGATIVE_UNPREDICTED_EVENT",
+  "coverageSubtype": "UNVERIFIABLE_NO_SCAN_LEDGER",
+  "hazard": "earthquake",
+  "observedEvent": {
+    "onset": "2026-08-15T04:58:24+07:00",
+    "geography": "Flores / East Nusa Tenggara (NTT), Indonesia",
+    "magnitude": 7.7,
+    "authoritativeSource": "BNPB",
+    "authoritativeEvidenceUrl": "https://www.bnpb.go.id/berita/gempa-m77-guncang-ntt-14-orang-meninggal-dunia-dan-puluhan-bangunan-rusak",
+    "latestAuthoritativeEvidenceUrl": "https://www.bnpb.go.id/berita/sebanyak-51591-rumah-pascagempa-m77-flores-telah-diverifikasi",
+    "impacts": {
+      "deathsConfirmedInitial": 14,
+      "deathsConfirmedBy2026_08_16": 53,
+      "housesInitialDataset": 102384,
+      "housesVerifiedBy2026_09_07": 51591,
+      "verifiedHeavyDamage": 2382,
+      "verifiedModerateDamage": 7276,
+      "verifiedLightDamage": 14177
+    }
+  },
+  "forecastAudit": {
+    "qualifyingFrozenPredictionId": null,
+    "qualifyingFreezeTimestamp": null,
+    "originalTargetGeography": null,
+    "originalTargetWindow": null,
+    "result": "No qualifying frozen prediction found before event onset; no retrospective or post-event credit granted."
+  },
+  "significance": "SIGNIFICANT",
+  "statusReason": "Authoritative BNPB evidence establishes a fatal M7.7 earthquake with widespread housing damage. Repository audit-updates contained no prior record for this event and no qualifying pre-event frozen prediction was identified. The repository data directory exposes outlook-ledger.json and verification-ledger.json but no immutable scan ledger, so scanned-but-not-forecast versus not-scanned cannot be proven.",
+  "auditTimestamp": "2026-09-19T00:36:17Z"
+}
