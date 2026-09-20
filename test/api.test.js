@@ -592,7 +592,12 @@ test('the live feed merges the cross-agency earthquake it is given', async () =>
     'the Teluknaga quake is reported by two agencies and must appear once, got ' +
       JSON.stringify(java.map(e => e.source + ' ' + e.title)));
   assert.deepEqual(java[0].corroboratedBy, ['EMSC']);
-  assert.equal(res.body.meta.mergedSeismicReports, 1);
+  // Two merging pairs in the fixture now: this one, and the Cianjur quake
+  // GDACS also reports, which covers what a merge must not discard.
+  assert.equal(res.body.meta.mergedSeismicReports, 2);
+  const cianjur = res.body.events.filter(e =>
+    e.type === 'Earthquake' && Math.abs(e.magnitude - 5.6) < 0.01);
+  assert.equal(cianjur.length, 1, 'the Cianjur quake should also appear once');
 
   // The unrelated Aegean quake from the same agency must survive untouched.
   assert.ok(res.body.events.some(e => /AEGEAN/i.test(e.title || '')),

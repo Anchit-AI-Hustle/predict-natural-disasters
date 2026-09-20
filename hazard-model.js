@@ -244,28 +244,40 @@
 
   /** Severity from the level the issuing authority actually published. */
   function alertRank(e) {
+    /* Every assessment on the record is weighed and the gravest wins. Returning
+       on the first one that matched meant a record could be made *less* severe
+       by adding a milder assessment to it: a merged earthquake published Red by
+       one agency and assessed yellow by USGS rated Moderate, where the Red
+       alone rated Severe. Adding information must never lower a rating. */
     var pager = String(e.pagerAlert || '').toLowerCase();
-    if (pager === 'red') return 5;
-    if (pager === 'orange') return 4;
-    if (pager === 'yellow') return 3;
+    var assessed = pager === 'red' ? 5 : pager === 'orange' ? 4 : pager === 'yellow' ? 3 : 0;
 
     var mag = Number(e.magnitude);
     var kt = Number(e.windKt);
+    var wind = 0;
     if (isFinite(kt) && kt > 0) {
-      if (kt >= 113) return 5;   // Saffir-Simpson category 4-5
-      if (kt >= 96) return 4;    // category 3
-      if (kt >= 64) return 3;    // category 1-2
-      return 2;                  // tropical storm or depression
+      wind = kt >= 113 ? 5      // Saffir-Simpson category 4-5
+        : kt >= 96 ? 4          // category 3
+          : kt >= 64 ? 3        // category 1-2
+            : 2;                // tropical storm or depression
     }
 
+    var issued = 0;
     switch (String(e.alert || '')) {
-      case 'Red': return 4;
-      case 'Orange': return 3;
-      case 'High': return 4;
-      case 'Moderate': return 3;
-      case 'Watch': return 2;
+      case 'Red': issued = 4; break;
+      case 'Orange': issued = 3; break;
+      case 'High': issued = 4; break;
+      case 'Moderate': issued = 3; break;
+      case 'Watch': issued = 2; break;
       default: break;
     }
+
+    /* A cyclone's wind reading alone discarded the authority's own assessment.
+       A weakening or slow-moving cyclone can carry a Red alert at well under 64
+       knots because of surge, rainfall or where it is heading, and that read as
+       Minor. GDACS cyclones only started carrying a wind speed in this branch,
+       so that was newly reachable rather than long-standing. */
+    if (assessed || wind || issued) return Math.max(assessed, wind, issued);
     // An earthquake with no PAGER assessment is a measurement, not a severity.
     if (isFinite(mag) && mag > 0) return 1;
     return 0;
@@ -308,12 +320,154 @@
     return 'Issued ' + Math.round(h / 24) + ' days before the window opens.';
   }
 
+
+  /**
+   * The facts that matter for each hazard, in the order a reader wants them.
+   * Each names a field on the record; a field the connected sources do not
+   * publish still appears, marked not reported, because a silent omission reads
+   * as a zero.
+   */
+  var METRICS = {
+    Earthquake: ['magnitude', 'depthKm', 'pagerAlert', 'deaths', 'missing', 'affected', 'tsunamiFlag'],
+    'Earthquake aftershock sequence': ['mainshockMagnitude', 'deaths', 'missing', 'affected'],
+    'Tropical Cyclone': ['windKt', 'category', 'deaths', 'missing', 'displaced', 'affected'],
+    Flood: ['deaths', 'missing', 'displaced', 'affected'],
+    'Flood / Landslide': ['deaths', 'missing', 'displaced', 'affected'],
+    Landslide: ['deaths', 'missing', 'displaced'],
+    Wildfire: ['areaHa', 'deaths', 'missing', 'displaced', 'affected'],
+    Drought: ['affected', 'displaced'],
+    Volcano: ['alertLevel', 'aviationColour', 'deaths', 'displaced', 'affected'],
+    'Extreme Heat': ['deaths', 'affected'],
+    'Extreme Cold': ['deaths', 'affected'],
+    'Severe Storm': ['deaths', 'missing', 'affected'],
+    Tornado: ['deaths', 'missing', 'affected'],
+    Tsunami: ['deaths', 'missing', 'displaced', 'affected']
+  };
+
+  var LABELS = {
+    magnitude: 'Magnitude', mainshockMagnitude: 'Mainshock magnitude',
+    depthKm: 'Depth', pagerAlert: 'USGS impact alert',
+    tsunamiFlag: 'Tsunami flag', windKt: 'Maximum sustained wind', category: 'Category',
+    areaHa: 'Area burned', alertLevel: 'Observatory alert level',
+    aviationColour: 'Aviation colour code',
+    deaths: 'Lives lost', missing: 'Missing or unaccounted for',
+    displaced: 'People displaced', affected: 'People affected'
+  };
+
+  function group(n) {
+    var x = Math.round(Number(n));
+    return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /** Saffir-Simpson category from sustained wind in knots. */
+  function cycloneCategory(kt) {
+    var k = Number(kt);
+    if (!isFinite(k) || k <= 0) return null;
+    if (k >= 137) return 'Category 5';
+    if (k >= 113) return 'Category 4';
+    if (k >= 96) return 'Category 3';
+    if (k >= 83) return 'Category 2';
+    if (k >= 64) return 'Category 1';
+    if (k >= 34) return 'Tropical storm';
+    return 'Tropical depression';
+  }
+
+  /** Render one metric. Returns null only when the metric does not apply at all. */
+  function factOf(e, key) {
+    var label = LABELS[key] || key;
+    var v = e[key];
+    var has = v !== undefined && v !== null && v !== '';
+    switch (key) {
+      case 'mainshockMagnitude':
+      case 'magnitude':
+        // The label already says Magnitude, and the glossary expands a bare
+        // "M 6.5" into "Magnitude 6.5", which would read twice over.
+        return { key: key, label: label, reported: has,
+          value: has ? Number(v).toFixed(1) : null };
+      case 'depthKm':
+        return { key: key, label: label, reported: has,
+          value: has ? Math.round(Number(v)) + ' km' : null };
+      case 'pagerAlert':
+        return { key: key, label: label, reported: has,
+          value: has ? String(v).toLowerCase() : null,
+          note: has ? null : 'USGS issued no impact assessment for this earthquake' };
+      case 'tsunamiFlag':
+        // Only the USGS parser supplies this. On an EMSC or GDACS earthquake
+        // the field is simply absent, and printing "Not raised" there would
+        // turn an unknown into an authoritative negative.
+        return { key: key, label: label, reported: has,
+          value: has ? (v ? 'Raised' : 'Not raised') : null,
+          note: has ? null : 'Only the United States Geological Survey publishes a tsunami flag' };
+      case 'windKt': {
+        // Rounding a converted wind to a whole number can print "64 kt" beside
+        // the category "Tropical storm", whose upper bound is 64. A converted
+        // value keeps one decimal so the two never disagree; a value the source
+        // published as a whole number of knots prints as one.
+        var k = Number(v);
+        var kt = !has ? null
+          : Number.isInteger(k) ? String(k) : String(Math.round(k * 10) / 10);
+        return { key: key, label: label, reported: has,
+          value: has ? kt + ' kt' : null };
+      }
+      case 'category': {
+        var c = cycloneCategory(e.windKt);
+        return { key: key, label: label, reported: !!c, value: c };
+      }
+      case 'areaHa': {
+        var ha = Number(e.areaHa);
+        var ok = isFinite(ha) && ha > 0;
+        // group() rounds to a whole number, so dividing first turned 150 ha
+        // into "2 km²" — a third more ground than burned. Below 100 km² the
+        // fraction is kept; above it, rounding is under one percent.
+        var km = ha / 100;
+        var area = ha < 100 ? group(ha) + ' ha'
+          : km < 100 ? String(Math.round(km * 10) / 10) + ' km²'
+            : group(km) + ' km²';
+        return { key: key, label: label, reported: ok, value: ok ? area : null };
+      }
+      case 'aviationColour':
+        return { key: key, label: label, reported: has, value: has ? String(v) : null,
+          note: has ? null : 'This source publishes no aviation colour code for this volcano' };
+      case 'alertLevel':
+        // e.alert is the colour this site maps a level onto, not the level the
+        // observatory issued: every NASA EONET volcano carries 'Green' without
+        // any observatory having said so, and USGS WATCH/WARNING would be
+        // renamed to Orange/Red under a label claiming to quote the observatory.
+        return { key: key, label: label, reported: !!e.alertLevel,
+          value: e.alertLevel || null,
+          note: e.alertLevel ? null
+            : 'This source publishes no observatory alert level for this volcano' };
+      default: {
+        var n = Number(v);
+        var reported = has && isFinite(n);
+        return { key: key, label: label, reported: reported, value: reported ? group(n) : null };
+      }
+    }
+  }
+
+  /**
+   * Every fact this hazard wants, reported or not. A count no source publishes
+   * says so rather than showing a zero that would read as "nobody died".
+   */
+  function keyFacts(e) {
+    var h = hazardOf(e && e.type);
+    var keys = METRICS[hazardName(h)] || ['deaths', 'affected'];
+    return keys.map(function (k) { return factOf(e || {}, k); }).filter(Boolean);
+  }
+
+  /** The METRICS key for a hazard entry. */
+  function hazardName(h) {
+    for (var k in HAZARDS) if (HAZARDS[k] === h) return k;
+    return '';
+  }
+
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
     severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
     impactRank: impactRank, alertRank: alertRank,
-    leadTimeHours: leadTimeHours, leadTimeText: leadTimeText
+    leadTimeHours: leadTimeHours, leadTimeText: leadTimeText,
+    keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PNDHazards = api;

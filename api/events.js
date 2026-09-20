@@ -126,6 +126,9 @@ function normalizeType(raw, hint) {
 const ORIGIN_MS = 45000, SAME_KM = 200, SAME_MAG = 0.5;
 const SEISMIC_PRIORITY = ['USGS', 'EMSC', 'GDACS'];
 
+/** How grave each alert word is, for comparing two agencies' assessments. */
+const ALERT_STRENGTH = { Green: 1, Watch: 1, Moderate: 2, Orange: 3, High: 3, Red: 4 };
+
 function kmBetween(a, b) {
   const rad = d => d * Math.PI / 180;
   const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
@@ -190,6 +193,103 @@ function splitUsPlace(place) {
   return { country: tail, admin1: '' };
 }
 
+/**
+ * The structured measurement GDACS attaches to an event. Its unit depends on
+ * the hazard, so it is mapped onto the field that hazard actually uses rather
+ * than into one generic "severity" number that would mean different things on
+ * different records.
+ */
+/**
+ * Unit handling for the structured measurement GDACS attaches to an event.
+ *
+ * Matching one spelling and treating everything else as the target unit is a
+ * guess, and a wrong guess here is not cosmetic: read 120 km/h as 120 knots and
+ * a tropical storm is published as a category 4. The spellings are therefore
+ * enumerated, and an unrecognised unit yields null so the measurement is left
+ * off rather than published in the wrong unit.
+ */
+function normaliseUnit(u) {
+  return String(u || '').toLowerCase().replace(/[\s._-]/g, '');
+}
+
+/** Factor converting a wind speed in `unit` to knots, or null if unrecognised. */
+function knotsFactor(unit) {
+  const u = normaliseUnit(unit);
+  if (/^(kt|kts|kn|kns|knot|knots)$/.test(u)) return 1;
+  // GDACS has been seen to label this Kph; km/h, kmh and kmph all occur in the
+  // wild and none of them matched a test for the substring "km/h".
+  if (/^(kph|kmh|km\/h|kmph|km\/hr|kmhr|kilometers?perhour|kilometres?perhour)$/.test(u)) return 1 / 1.852;
+  if (/^(mph|mileperhour|milesperhour)$/.test(u)) return 0.8689762;
+  if (/^(ms|m\/s|meters?persecond|metres?persecond)$/.test(u)) return 1.9438445;
+  return null;
+}
+
+/** Factor converting an area in `unit` to hectares, or null if unrecognised. */
+function hectaresFactor(unit) {
+  const u = normaliseUnit(unit);
+  if (/^(ha|hectare|hectares)$/.test(u)) return 1;
+  if (/^(km2|km\u00b2|sqkm|kmsq|squarekilometers?|squarekilometres?)$/.test(u)) return 100;
+  if (/^(m2|m\u00b2|sqm|squaremeters?|squaremetres?)$/.test(u)) return 0.0001;
+  if (/^(acre|acres|ac)$/.test(u)) return 0.40468564;
+  return null;
+}
+
+function gdacsMeasurement(sd, eventType) {
+  const d = sd && typeof sd === 'object' ? sd : null;
+  if (!d) return {};
+  // num() is Number-based and Number('') is 0, so an empty measurement would
+  // publish "Magnitude 0.0" or "0 kt" as though the agency had measured it.
+  const raw = d.severity !== undefined && d.severity !== null && d.severity !== ''
+    ? d.severity : d.Severity;
+  if (raw === undefined || raw === null || raw === '') return {};
+  const value = num(raw);
+  if (value === null) return {};
+  const unit = d.severityunit || d.severityUnit || '';
+  const out = {};
+  if (/^wf$/i.test(eventType)) {
+    // Burned area: hectares or square kilometres depending on the feed.
+    const f = hectaresFactor(unit);
+    if (f !== null) out.areaHa = value * f;
+  } else if (/^tc$/i.test(eventType)) {
+    // Maximum sustained wind. The rest of the feed, and every Saffir-Simpson
+    // threshold in the hazard model, is in knots.
+    const f = knotsFactor(unit);
+    // Rounding here promotes a cyclone across a Saffir-Simpson boundary before
+    // anything classifies it: 118 Kph is 63.7 kt, a tropical storm, but rounds
+    // to 64 kt and is published as a category 1. The converted value is kept,
+    // and only its printed form is rounded.
+    if (f !== null) out.windKt = value * f;
+  } else if (/^eq$/i.test(eventType)) {
+    // A magnitude carries no unit conversion, so nothing is being assumed.
+    out.magnitude = value;
+  }
+  const text = d.severitytext || d.severityText;
+  if (text) out.severityText = String(text);
+  return out;
+}
+
+/**
+ * Publish a count only where the source actually carried one.
+ *
+ * Coercing an absent field to 0 loses the difference between "the agency
+ * reported no deaths" and "the agency reported nothing", and the page then
+ * prints "Lives lost 0" — a claim nobody made. All 100 GDACS records in the
+ * live feed were carrying a manufactured zero this way.
+ */
+function reportedCounts(specs) {
+  const out = {};
+  for (const [field, ...candidates] of specs) {
+    for (const v of candidates) {
+      // num() coerces null and '' to 0, which is the same manufactured zero
+      // one layer down, so an empty value is rejected before it is parsed.
+      if (v === undefined || v === null || v === '') continue;
+      const n = num(v);
+      if (n !== null) { out[field] = n; break; }
+    }
+  }
+  return out;
+}
+
 function pagerLevel(raw) {
   const v = String(raw || '').toLowerCase();
   return v === 'red' ? 'Red' : (v === 'orange' || v === 'yellow') ? 'Orange' : 'Green';
@@ -233,6 +333,43 @@ function mergeSeismicReports(events) {
       return rb - ra || pb - pa;
     });
     g.lead = ranked[0];
+    /* Only the lead record survives, so anything only one agency publishes
+       would go with the discarded copies. GDACS earthquakes now carry a
+       magnitude, which makes them eligible to lead a group, and a GDACS record
+       reporting deaths outranks the USGS one — taking the depth, the PAGER
+       assessment and the tsunami flag with it. The page then read "USGS issued
+       no impact assessment" while naming USGS as corroboration. These are
+       measurements of the same earthquake, taken from the highest-ranked
+       member that published each one. */
+    /* Impact counts belong here too. reportRank weighs them with a truthy
+       test, so an agency reporting an explicit zero gets no credit for it and
+       need not lead — and that reported zero, which is a finding, would then
+       vanish with its record. Only fields the leader does not already have are
+       taken, so no agency's figure overwrites another's. */
+    for (const f of ['depthKm', 'pagerAlert', 'tsunamiFlag', 'magnitude',
+      'deaths', 'displaced', 'affected']) {
+      if (g.lead[f] !== undefined && g.lead[f] !== null) continue;
+      const donor = ranked.find(m => m[f] !== undefined && m[f] !== null);
+      if (donor) g.lead[f] = donor[f];
+    }
+    /* The gravest assessment any member published stands, whichever record ends
+       up leading. Only one direction was handled before: a GDACS Red that
+       happened to lead kept its Red, but a GDACS Red with no impact count loses
+       the lead to USGS on agency priority, and its Red then vanished from a
+       record still naming GDACS as corroboration. Both directions are the same
+       rule, so it is applied over every member rather than to the leader. */
+    let strongest = g.lead.alert;
+    for (const m of g.members) {
+      if ((ALERT_STRENGTH[m.alert] || 0) > (ALERT_STRENGTH[strongest] || 0)) strongest = m.alert;
+    }
+    // A leader that has just inherited a PAGER assessment must not keep the
+    // Green it carried before it had one.
+    if (g.lead.pagerAlert) {
+      const fromPager = pagerLevel(g.lead.pagerAlert);
+      if ((ALERT_STRENGTH[fromPager] || 0) > (ALERT_STRENGTH[strongest] || 0)) strongest = fromPager;
+    }
+    g.lead.alert = strongest;
+
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);
     // Independent corroboration is worth stating, not discarding.
     if (others.length) g.lead.corroboratedBy = [...new Set(others)];
@@ -298,6 +435,12 @@ async function handler(req, res) {
       const et = p.eventtype || p.eventType || p.type || 'Disaster';
       const eid = p.eventid || p.eventId || p.id;
       if (!eid) continue;
+      const measured = gdacsMeasurement(p.severitydata || p.severityData, et);
+      const counts = reportedCounts([
+        ['deaths', p.death, p.deaths],
+        ['displaced', p.displaced],
+        ['affected', p.affected, p.population]
+      ]);
       push({
         id: 'gdacs-' + et + '-' + eid,
         source: 'GDACS', sourceType: 'official',
@@ -309,10 +452,10 @@ async function handler(req, res) {
         lat: coords[1], lon: coords[0],
         startedAt: p.fromdate || p.fromDate || null,
         updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
-        details: p.description || p.eventdescription || p.severitydata || '',
-        deaths: +(p.death || p.deaths || 0) || 0,
-        displaced: +(p.displaced || 0) || 0,
-        affected: +(p.affected || p.population || 0) || 0,
+        details: [p.description || p.eventdescription || '', measured.severityText || '']
+          .filter(Boolean).join(' · '),
+        ...counts,
+        ...measured,
         sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=' + encodeURIComponent(eid) + '&eventtype=' + encodeURIComponent(et),
         rawId: eid, rawType: et
       });
@@ -753,6 +896,11 @@ async function handler(req, res) {
           title: name + ' — ' + (level || 'elevated') + ' alert level',
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
+          // The observatory's own wording, kept apart from the colour the UI
+          // maps it to. Only a source that publishes a level gets one: every
+          // EONET volcano carries alert 'Green', which EONET never assessed.
+          ...(level ? { alertLevel: level } : {}),
+          ...(colour ? { aviationColour: String(colour).toUpperCase() } : {}),
           lat: coords.lat, lon: coords.lon,
           updated: v.sent_utc ? String(v.sent_utc).replace(' ', 'T') + 'Z' : (v.sent || now.toISOString()),
           details: 'Volcano alert level ' + (level || 'elevated') +
@@ -954,6 +1102,11 @@ async function handler(req, res) {
         ' earthquake. Aftershocks decay over days to weeks and the largest is typically about one magnitude below the mainshock, ' +
         'so further felt shaking and additional damage to already-weakened structures should be expected. ' +
         'This describes the ongoing sequence — it is not a prediction of a new independent earthquake.',
+      /* The magnitude of the mainshock this sequence follows, kept under its own
+         name: the outlook itself has no magnitude, and calling it one would
+         read as a forecast of a quake that size. The narrative already states
+         it, so leaving the field off made the page contradict its own text. */
+      ...(num(e.magnitude) !== null ? { mainshockMagnitude: num(e.magnitude) } : {}),
       forecast: true, forecastKind: 'aftershock-sequence', forecastOf: e.id,
       confidence: 'Sequence-based — derived from observed mainshock magnitude and standard aftershock decay behaviour',
       evidence: 'Observed ' + e.source + ' event “' + e.title + '” at ' + e.updated + '.',
@@ -972,6 +1125,8 @@ async function handler(req, res) {
 
   const seen = new Set();
   const risk = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };
+  const byAlertThenTime = (a, b) =>
+    (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated);
   out.events = out.events
     .filter(e => {
       const k = (e.source + '|' + e.title + '|' + e.lat.toFixed(2) + '|' + e.lon.toFixed(2)).toLowerCase();
@@ -979,9 +1134,12 @@ async function handler(req, res) {
       seen.add(k);
       return true;
     })
-    .sort((a, b) => (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated));
+    .sort(byAlertThenTime);
 
-  out.events = mergeSeismicReports(out.events);
+  /* Merging can raise a record's alert — a leader that inherits a graver
+     assessment from a discarded member — and the feed was sorted before that
+     happened, so a newly Red record kept the position it held while Green. */
+  out.events = mergeSeismicReports(out.events).sort(byAlertThenTime);
   out.meta.mergedSeismicReports =
     out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
 
@@ -1018,12 +1176,24 @@ async function handler(req, res) {
     out.meta.ledger = { status: 'unavailable' };
   }
 
+  /* A forecast whose window has already closed is history, not an outlook.
+     Signal-derived outlooks are dropped once their window ends, but the frozen
+     ND-001 benchmark is deliberately kept so its grading stays visible — and it
+     was being counted among the active forecasts four days after its window
+     closed. It is marked instead of removed. */
+  for (const e of out.events) {
+    if (e.forecast && e.targetEnd && Date.parse(e.targetEnd) <= now.getTime()) e.windowClosed = true;
+  }
+
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
   out.meta.forecastCount = out.events.filter(e => e.forecast).length;
+  out.meta.activeForecastCount = out.events.filter(e => e.forecast && !e.windowClosed).length;
+  out.meta.closedForecastCount = out.events.filter(e => e.windowClosed).length;
   out.meta.countryCount = new Set(out.events.map(e => e.country).filter(Boolean)).size;
   out.meta.hazardTypeCount = new Set(out.events.map(e => e.type).filter(Boolean)).size;
-  out.meta.highRiskForecastCount = out.events.filter(e => e.forecast && e.alert === 'High').length;
+  out.meta.highRiskForecastCount =
+    out.events.filter(e => e.forecast && !e.windowClosed && e.alert === 'High').length;
   out.meta.officialWarningCount =
     out.events.filter(e => e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')).length;
 

@@ -87,8 +87,12 @@ test('every meta count matches the events actually shipped', async () => {
     new Set(events.map(e => e.country).filter(Boolean)).size, 'countryCount');
   assert.equal(meta.hazardTypeCount,
     new Set(events.map(e => e.type).filter(Boolean)).size, 'hazardTypeCount');
+  // A forecast whose window has closed is not an active high-risk forecast.
   assert.equal(meta.highRiskForecastCount,
-    count(e => e.forecast && e.alert === 'High'), 'highRiskForecastCount');
+    count(e => e.forecast && !e.windowClosed && e.alert === 'High'), 'highRiskForecastCount');
+  assert.equal(meta.activeForecastCount, count(e => e.forecast && !e.windowClosed),
+    'activeForecastCount');
+  assert.equal(meta.closedForecastCount, count(e => e.windowClosed), 'closedForecastCount');
   assert.equal(meta.officialWarningCount,
     count(e => e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')),
     'officialWarningCount');

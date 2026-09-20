@@ -165,6 +165,19 @@ const PND={
   /* Online/total upstream providers. Pages must use this rather than a literal
      denominator: the provider list grows, and a hard-coded one reads "7/3". */
   sourcesRatio(meta){const all=Object.values((meta&&meta.sources)||{});const n=all.filter(x=>x&&x.ok).length;return n+'/'+(all.length||n);},
+  /* The measurements that matter for this hazard, in the order a reader wants
+     them. A magnitude means nothing for a fire and a burned area means nothing
+     for an earthquake, so the hazard decides its own. */
+  keyFacts(e){const M=(typeof window!=='undefined'&&window.PNDHazards)||null;return M?M.keyFacts(e||{}):[];},
+  /* Full grid, for a detail page. A figure no connected source publishes says
+     so: an omitted death toll would otherwise read as nobody died. */
+  keyFactsHtml(e){const f=this.keyFacts(e);if(!f.length)return '';
+    return '<div class="keyfacts">'+f.map(x=>`<div class="keyfact${x.reported?'':' kf-missing'}"${x.note?` title="${this.esc(x.note)}"`:''}>`+
+      `<span class="kf-l">${this.esc(x.label)}</span>`+
+      `<span class="kf-v">${x.reported?this.esc(String(x.value)):'Not reported'}</span></div>`).join('')+'</div>';},
+  /* Compact line, for a card: only what is actually reported. */
+  keyFactsLine(e,max){const f=this.keyFacts(e).filter(x=>x.reported).slice(0,max||3);
+    return f.map(x=>this.esc(x.label)+' '+this.esc(String(x.value))).join(' · ');},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };
