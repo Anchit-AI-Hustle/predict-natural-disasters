@@ -126,6 +126,9 @@ function normalizeType(raw, hint) {
 const ORIGIN_MS = 45000, SAME_KM = 200, SAME_MAG = 0.5;
 const SEISMIC_PRIORITY = ['USGS', 'EMSC', 'GDACS'];
 
+/** How grave each alert word is, for comparing two agencies' assessments. */
+const ALERT_STRENGTH = { Green: 1, Watch: 1, Moderate: 2, Orange: 3, High: 3, Red: 4 };
+
 function kmBetween(a, b) {
   const rad = d => d * Math.PI / 180;
   const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
@@ -295,15 +298,27 @@ function mergeSeismicReports(events) {
        no impact assessment" while naming USGS as corroboration. These are
        measurements of the same earthquake, taken from the highest-ranked
        member that published each one. */
-    for (const f of ['depthKm', 'pagerAlert', 'tsunamiFlag', 'magnitude']) {
+    /* Impact counts belong here too. reportRank weighs them with a truthy
+       test, so an agency reporting an explicit zero gets no credit for it and
+       need not lead — and that reported zero, which is a finding, would then
+       vanish with its record. Only fields the leader does not already have are
+       taken, so no agency's figure overwrites another's. */
+    for (const f of ['depthKm', 'pagerAlert', 'tsunamiFlag', 'magnitude',
+      'deaths', 'displaced', 'affected']) {
       if (g.lead[f] !== undefined && g.lead[f] !== null) continue;
       const donor = ranked.find(m => m[f] !== undefined && m[f] !== null);
       if (donor) g.lead[f] = donor[f];
     }
-    // The alert level is read off the PAGER assessment, so a lead that has just
-    // inherited one must not keep the Green it was given without it.
+    /* The alert level is read off the PAGER assessment, so a leader that has
+       just inherited one must not keep the Green it was given without one. It
+       must not be lowered either: a GDACS Red paired with a yellow PAGER is
+       still Red, because both agencies assessed it and the graver assessment
+       stands. Only the stronger of the two is taken. */
     if (g.lead.pagerAlert && agencyOf(g.lead) !== 'USGS') {
-      g.lead.alert = pagerLevel(g.lead.pagerAlert);
+      const fromPager = pagerLevel(g.lead.pagerAlert);
+      if ((ALERT_STRENGTH[fromPager] || 0) > (ALERT_STRENGTH[g.lead.alert] || 0)) {
+        g.lead.alert = fromPager;
+      }
     }
 
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);

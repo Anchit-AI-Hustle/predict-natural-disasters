@@ -436,3 +436,54 @@ test('the ledger sorts hazards by the field its observed rows actually use', () 
   assert.ok(!/LEDGER_SORTS=\[[^\]]*'type'/.test(s),
     "the shared 'type' comparator sorts every observed row as a missing value");
 });
+
+/* ------------------------- a merge may raise an assessment, never lower one */
+
+const { mergeSeismicReports } = require(path.join(ROOT, 'api', 'events.js'));
+const quake = (o) => Object.assign({
+  type: 'Earthquake', startedAt: '2026-09-12T11:30:00Z',
+  lat: -6.8, lon: 107.1, magnitude: 5.6, sourceUrl: 'x', country: 'Indonesia'
+}, o);
+
+test('a merge never lowers the graver of two agencies’ assessments', () => {
+  // Carrying the PAGER assessment onto a non-USGS leader also recomputed its
+  // alert from that assessment alone, so a GDACS Red paired with a yellow PAGER
+  // was published as Orange — a published authority alert, downgraded.
+  const [red] = mergeSeismicReports([
+    quake({ id: 'g', source: 'GDACS', alert: 'Red', deaths: 21 }),
+    quake({ id: 'u', source: 'USGS', alert: 'Orange', pagerAlert: 'yellow', depthKm: 11 })
+  ]);
+  assert.equal(red.source, 'GDACS');
+  assert.equal(red.alert, 'Red', 'the graver assessment was lowered to match the PAGER level');
+
+  // And it must still be raised where the PAGER assessment is the graver one:
+  // a leader that has inherited an assessment cannot keep the Green it carried
+  // before it had one.
+  const [green] = mergeSeismicReports([
+    quake({ id: 'g', source: 'GDACS', alert: 'Green', deaths: 21 }),
+    quake({ id: 'u', source: 'USGS', alert: 'Orange', pagerAlert: 'orange', depthKm: 11 })
+  ]);
+  assert.equal(green.alert, 'Orange');
+});
+
+test('a merge keeps an impact figure the leader never reported, zero included', () => {
+  // reportRank weighs impact with a truthy test, so an agency reporting an
+  // explicit zero gets no credit for it and need not lead — and that reported
+  // zero, which is a finding, went with its record.
+  const [out] = mergeSeismicReports([
+    quake({ id: 'g', source: 'GDACS', alert: 'Green', deaths: 0, affected: 0 }),
+    quake({ id: 'u', source: 'USGS', alert: 'Green', depthKm: 11 })
+  ]);
+  assert.equal(out.source, 'USGS', 'agency priority should still decide the lead');
+  assert.equal(out.deaths, 0, 'a reported zero was discarded with the record that reported it');
+  assert.equal(out.affected, 0);
+  assert.equal(byKey(H.keyFacts(out), 'deaths').reported, true);
+  assert.equal(byKey(H.keyFacts(out), 'deaths').value, '0');
+
+  // A leader's own figure is never overwritten by another agency's.
+  const [own] = mergeSeismicReports([
+    quake({ id: 'g', source: 'GDACS', alert: 'Green', deaths: 3 }),
+    quake({ id: 'u', source: 'USGS', alert: 'Green', deaths: 7, depthKm: 11 })
+  ]);
+  assert.equal(own.deaths, 7, 'the leading agency keeps its own count');
+});
