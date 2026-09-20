@@ -117,7 +117,18 @@ for (const id of Object.keys(previous)) {
      reachable and no longer issued is a withdrawal. */
   const end = Date.parse(was.targetEnd || '');
   if (Number.isFinite(end) && end <= Date.parse(nowIso)) { expired.push(was); continue; }
-  if (was.provider && down.has(was.provider)) {
+  /* A snapshot written before this field existed carries no provider at all,
+     which is not the same as a record that genuinely has no upstream — the
+     frozen benchmark stores an empty string for that. The committed baseline
+     holds 29 such entries, so on the first scheduled run after deploying this
+     every one of them would have failed the guard and been recorded as
+     withdrawn, then re-added on the next run. When we cannot tell which
+     upstream an entry came from, an outage anywhere is reason enough to hold
+     it rather than to accuse the forecast of vanishing. */
+  const unknownProvider = !Object.prototype.hasOwnProperty.call(was, 'provider');
+  const providerDown = unknownProvider ? down.size > 0
+    : (was.provider && down.has(was.provider));
+  if (providerDown) {
     unavailable.push(was);
     /* Held in the snapshot, so the provider recovering does not read as a
        newly issued forecast either. */

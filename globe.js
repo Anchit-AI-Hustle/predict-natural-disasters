@@ -97,9 +97,16 @@
            has a position like any other. Mirrored blindly they became green
            points, so the globe showed an event in the middle of Canada and
            Brazil that does not exist — the worst thing a hazard map can do.
-           The labels are declared non-interactive and live in their own pane;
-           a page's event markers are neither. */
-        if (o.interactive === false || o.pane) return;
+
+           Excluded on being non-interactive, which the labels are and no
+           page's event marker is, plus the label pane by name. The first
+           version of this rejected any layer carrying a pane at all, which
+           looked equivalent and was catastrophic: every real Leaflet marker
+           inherits a default pane — markerPane or overlayPane — so it threw
+           away every hazard and left the globe empty. The unit test missed it
+           because its fixtures were bare objects with no Leaflet defaults. */
+        var labelPane = (window.PNDMap && window.PNDMap.LABEL_PANE) || 'pndLabels';
+        if (o.interactive === false || o.pane === labelPane) return;
         var html = '';
         try {
           var p = typeof layer.getPopup === 'function' ? layer.getPopup() : null;

@@ -406,5 +406,8 @@
   wrapped.__pndScrollGuard = true;
   L.map = wrapped;
 
-  window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD };
+  window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD,
+    /* Published so the globe can exclude exactly this pane rather than
+       guessing at the name or rejecting every layer that has one. */
+    LABEL_PANE: LABEL_PANE };
 })();

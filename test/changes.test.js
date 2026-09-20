@@ -295,6 +295,62 @@ test('a provider recovering is not reported as a new forecast', () => {
     'the outlook was never withdrawn, so its return is not an addition');
 });
 
+test('a snapshot written before providers existed is not accused of vanishing', () => {
+  /* The committed baseline was written before snap() carried a provider. On
+     the first scheduled run after deploying the outage handling, every entry
+     would have failed the guard and been recorded as withdrawn, then re-added
+     on the next run — the exact pair of false statements the outage work
+     exists to prevent, delivered on day one. */
+  const d = tmp();
+  const log = path.join(d, 'changes.json');
+  fs.writeFileSync(log, JSON.stringify({
+    schemaVersion: 1,
+    runs: [{ at: '2026-09-20T00:00:00Z', sinceHours: null, active: 1, baseline: true,
+      added: [], raised: [], lowered: [], windowMoved: [], gone: [], expired: [] }],
+    /* No provider field, exactly as the shipped file had it. */
+    snapshot: { 'OUT-legacy': { id: 'OUT-legacy', type: 'Flood', title: 'Legacy outlook',
+      country: 'X', alert: 'Watch', rank: 2,
+      targetStart: '2026-09-18T00:00:00Z', targetEnd: '2099-01-01T00:00:00Z' } }
+  }));
+  const feed = path.join(d, 'events.json');
+  fs.writeFileSync(feed, JSON.stringify({ events: [], meta: { sources: { gdacs: { ok: false } } } }));
+  execFileSync(process.execPath, [TOOL, feed, log]);
+  const last = JSON.parse(fs.readFileSync(log, 'utf8')).runs.slice(-1)[0];
+  assert.deepEqual(last.gone.map(x => x.id), [],
+    'a legacy entry was reported as a withdrawn forecast during an outage');
+  assert.deepEqual(last.unavailable.map(x => x.id), ['OUT-legacy']);
+});
+
+test('a legacy entry is still a withdrawal when everything is up', () => {
+  /* The over-correction: holding legacy entries forever regardless. */
+  const d = tmp();
+  const log = path.join(d, 'changes.json');
+  fs.writeFileSync(log, JSON.stringify({
+    schemaVersion: 1,
+    runs: [{ at: '2026-09-20T00:00:00Z', active: 1, baseline: true,
+      added: [], raised: [], lowered: [], windowMoved: [], gone: [], expired: [] }],
+    snapshot: { 'OUT-legacy': { id: 'OUT-legacy', title: 'Legacy outlook',
+      alert: 'Watch', rank: 2, targetStart: '2026-09-18T00:00:00Z',
+      targetEnd: '2099-01-01T00:00:00Z' } }
+  }));
+  const feed = path.join(d, 'events.json');
+  fs.writeFileSync(feed, JSON.stringify({ events: [], meta: { sources: { gdacs: { ok: true } } } }));
+  execFileSync(process.execPath, [TOOL, feed, log]);
+  const last = JSON.parse(fs.readFileSync(log, 'utf8')).runs.slice(-1)[0];
+  assert.deepEqual(last.gone.map(x => x.id), ['OUT-legacy']);
+  assert.deepEqual(last.unavailable, []);
+});
+
+test('the committed baseline carries a provider for every entry', () => {
+  /* So the tolerance above is a safety net rather than the normal path. */
+  const log = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'forecast-changes.json'), 'utf8'));
+  const entries = Object.values(log.snapshot || {});
+  assert.ok(entries.length > 0, 'the shipped change log has no snapshot');
+  const missing = entries.filter(e => !Object.prototype.hasOwnProperty.call(e, 'provider'));
+  assert.deepEqual(missing.map(e => e.id), [],
+    'these shipped snapshot entries predate the provider field');
+});
+
 test('a withdrawal is still a withdrawal while its provider is healthy', () => {
   const d = tmp();
   const derived = (id, src) => outlook({ id,

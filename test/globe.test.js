@@ -53,8 +53,17 @@ function loadGlobe() {
   assert.ok(ctx.window.PNDGlobe, 'globe.js defined nothing');
   return { PNDGlobe: ctx.window.PNDGlobe };
 }
-function pt(lat, lng, options) {
-  return { getLatLng: () => ({ lat, lng }), options: options || {} };
+/* Leaflet's own defaults, which the first version of these fixtures omitted.
+   A real Marker carries pane 'markerPane' and a CircleMarker 'overlayPane',
+   both set by Leaflet whether or not the caller asks — so a bare {} fixture
+   tested a shape that never reaches this code, and a guard that rejected
+   every layer with a pane passed here while emptying the globe in production. */
+function pt(lat, lng, options, pane) {
+  return {
+    getLatLng: () => ({ lat, lng }),
+    options: Object.assign({ interactive: true, pane: pane || 'markerPane' },
+      options || {})
+  };
 }
 function fakeMap(layers) {
   return { eachLayer: fn => layers.forEach(fn) };
@@ -132,7 +141,7 @@ test('the basemap country labels are not plotted as hazards', () => {
      that do not exist. They are declared non-interactive and live in their
      own pane; a page's event markers are neither. */
   const { PNDGlobe } = loadGlobe();
-  const label = pt(56, -106, { interactive: false, pane: 'pndLabels' });
+  const label = pt(56, -106, { interactive: false, pane: 'pndLabels' }, 'pndLabels');
   const hazard = pt(27.7, 85.3, { radius: 9, color: '#ef2639' });
   const got = PNDGlobe.readMarkers(fakeMap([label, hazard]));
   assert.equal(got.length, 1, 'a basemap label was mirrored as an event');
@@ -148,12 +157,34 @@ test('a label in the default pane is still excluded by being non-interactive', (
 });
 
 test('an ordinary event marker is not excluded by accident', () => {
+  /* With Leaflet's real defaults. Every hazard on every map page is a marker
+     or circleMarker in markerPane or overlayPane, and a guard that rejected
+     any layer with a pane threw all of them away. */
   const { PNDGlobe } = loadGlobe();
   const got = PNDGlobe.readMarkers(fakeMap([
-    pt(1, 2, { radius: 5, color: '#25e29c' }),
-    pt(3, 4, {})
+    pt(1, 2, { radius: 5, color: '#25e29c' }, 'overlayPane'),
+    pt(3, 4, {}, 'markerPane'),
+    pt(5, 6, {})
   ]));
-  assert.equal(got.length, 2);
+  assert.equal(got.length, 3,
+    'real event markers were rejected for carrying the pane Leaflet gives them');
+});
+
+test('a marker survives every pane Leaflet puts one in', () => {
+  const { PNDGlobe } = loadGlobe();
+  for (const pane of ['markerPane', 'overlayPane', 'shadowPane', 'tooltipPane']) {
+    const got = PNDGlobe.readMarkers(fakeMap([pt(1, 2, {}, pane)]));
+    assert.equal(got.length, 1, `a marker in ${pane} was thrown away`);
+  }
+});
+
+test('the pane the globe excludes is the pane the basemap uses', () => {
+  /* Named in two files; a test rather than a shared import, because globe.js
+     loads before map-setup.js and cannot read the constant at parse time. */
+  assert.match(read('map-setup.js'), /var LABEL_PANE = 'pndLabels';/);
+  assert.match(read('globe.js'), /\|\| 'pndLabels'/);
+  assert.match(read('map-setup.js'), /LABEL_PANE: LABEL_PANE/,
+    'map-setup does not publish the pane name the globe reads');
 });
 
 /* ---------- the flat map stays visible until there is a globe ---------- */

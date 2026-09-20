@@ -11,6 +11,22 @@
       "lowered": [],
       "windowMoved": [],
       "gone": []
+    },
+    {
+      "at": "2026-09-20T22:54:30.325Z",
+      "sinceHours": 1.54,
+      "active": 29,
+      "baseline": false,
+      "added": [],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [],
+      "gone": [],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -22,7 +38,8 @@
       "alert": "High",
       "rank": 4,
       "targetStart": "2026-09-17T14:19:52.210Z",
-      "targetEnd": "2026-09-24T14:19:52.210Z"
+      "targetEnd": "2026-09-24T14:19:52.210Z",
+      "provider": "usgs"
     },
     "OUT-0-357304fb645300e20b66ab50443898c4993a1405-001-1": {
       "id": "OUT-0-357304fb645300e20b66ab50443898c4993a1405-001-1",
@@ -32,7 +49,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-20T20:37:00.000Z",
-      "targetEnd": "2026-09-23T20:37:00.000Z"
+      "targetEnd": "2026-09-23T20:37:00.000Z",
+      "provider": "nws"
     },
     "OUT-0-ff6a15413bbbf0c1b4a746f39ab0a0befdf4140e-001-1": {
       "id": "OUT-0-ff6a15413bbbf0c1b4a746f39ab0a0befdf4140e-001-1",
@@ -42,7 +60,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-20T20:30:00.000Z",
-      "targetEnd": "2026-09-22T20:30:00.000Z"
+      "targetEnd": "2026-09-22T20:30:00.000Z",
+      "provider": "nws"
     },
     "OUT-0-58048012c9975e1a6eb3b95e260bde5f277e1874-001-1": {
       "id": "OUT-0-58048012c9975e1a6eb3b95e260bde5f277e1874-001-1",
@@ -52,7 +71,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-20T20:09:00.000Z",
-      "targetEnd": "2026-09-23T20:09:00.000Z"
+      "targetEnd": "2026-09-23T20:09:00.000Z",
+      "provider": "nws"
     },
     "OUT-usgs-volcano-311120": {
       "id": "OUT-usgs-volcano-311120",
@@ -62,7 +82,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-20T19:15:04.000Z",
-      "targetEnd": "2026-09-27T19:15:04.000Z"
+      "targetEnd": "2026-09-27T19:15:04.000Z",
+      "provider": "usgs_volcano"
     },
     "OUT-aftershock-usgs-us7000tiqc": {
       "id": "OUT-aftershock-usgs-us7000tiqc",
@@ -72,7 +93,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-20T09:17:35.624Z",
-      "targetEnd": "2026-09-27T09:17:35.624Z"
+      "targetEnd": "2026-09-27T09:17:35.624Z",
+      "provider": "usgs"
     },
     "OUT-aftershock-usgs-us7000tigd": {
       "id": "OUT-aftershock-usgs-us7000tigd",
@@ -82,7 +104,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-18T23:18:28.306Z",
-      "targetEnd": "2026-09-25T23:18:28.306Z"
+      "targetEnd": "2026-09-25T23:18:28.306Z",
+      "provider": "usgs"
     },
     "OUT-aftershock-usgs-us7000thcs": {
       "id": "OUT-aftershock-usgs-us7000thcs",
@@ -92,7 +115,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-14T10:58:03.047Z",
-      "targetEnd": "2026-09-21T10:58:03.047Z"
+      "targetEnd": "2026-09-21T10:58:03.047Z",
+      "provider": "usgs"
     },
     "OUT-aftershock-usgs-us7000thc6": {
       "id": "OUT-aftershock-usgs-us7000thc6",
@@ -102,7 +126,8 @@
       "alert": "Moderate",
       "rank": 3,
       "targetStart": "2026-09-14T09:27:38.536Z",
-      "targetEnd": "2026-09-21T09:27:38.536Z"
+      "targetEnd": "2026-09-21T09:27:38.536Z",
+      "provider": "usgs"
     },
     "OUT-nhc-al062026": {
       "id": "OUT-nhc-al062026",
@@ -112,7 +137,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T21:00:00.000Z",
-      "targetEnd": "2026-09-25T21:00:00.000Z"
+      "targetEnd": "2026-09-25T21:00:00.000Z",
+      "provider": "nhc"
     },
     "OUT-nhc-ep162026": {
       "id": "OUT-nhc-ep162026",
@@ -122,7 +148,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T15:00:00.000Z",
-      "targetEnd": "2026-09-25T15:00:00.000Z"
+      "targetEnd": "2026-09-25T15:00:00.000Z",
+      "provider": "nhc"
     },
     "OUT-gdacs-TC-1001323": {
       "id": "OUT-gdacs-TC-1001323",
@@ -132,7 +159,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T15:00:00.000Z",
-      "targetEnd": "2026-09-25T15:00:00.000Z"
+      "targetEnd": "2026-09-25T15:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-TC-1001324": {
       "id": "OUT-gdacs-TC-1001324",
@@ -142,7 +170,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T15:00:00.000Z",
-      "targetEnd": "2026-09-25T15:00:00.000Z"
+      "targetEnd": "2026-09-25T15:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-eonet-EONET_24317": {
       "id": "OUT-eonet-EONET_24317",
@@ -152,7 +181,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T12:00:00.000Z",
-      "targetEnd": "2026-09-22T12:00:00.000Z"
+      "targetEnd": "2026-09-22T12:00:00.000Z",
+      "provider": "eonet"
     },
     "OUT-gdacs-TC-1001322": {
       "id": "OUT-gdacs-TC-1001322",
@@ -162,7 +192,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T12:00:00.000Z",
-      "targetEnd": "2026-09-25T12:00:00.000Z"
+      "targetEnd": "2026-09-25T12:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104175": {
       "id": "OUT-gdacs-FL-1104175",
@@ -172,7 +203,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T01:00:00.000Z",
-      "targetEnd": "2026-09-23T01:00:00.000Z"
+      "targetEnd": "2026-09-23T01:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104178": {
       "id": "OUT-gdacs-FL-1104178",
@@ -182,7 +214,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T01:00:00.000Z",
-      "targetEnd": "2026-09-23T01:00:00.000Z"
+      "targetEnd": "2026-09-23T01:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104053": {
       "id": "OUT-gdacs-FL-1104053",
@@ -192,7 +225,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T01:00:00.000Z",
-      "targetEnd": "2026-09-23T01:00:00.000Z"
+      "targetEnd": "2026-09-23T01:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032259": {
       "id": "OUT-gdacs-WF-1032259",
@@ -202,7 +236,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032256": {
       "id": "OUT-gdacs-WF-1032256",
@@ -212,7 +247,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032258": {
       "id": "OUT-gdacs-WF-1032258",
@@ -222,7 +258,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032228": {
       "id": "OUT-gdacs-WF-1032228",
@@ -232,7 +269,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032237": {
       "id": "OUT-gdacs-WF-1032237",
@@ -242,7 +280,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032238": {
       "id": "OUT-gdacs-WF-1032238",
@@ -252,7 +291,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032241": {
       "id": "OUT-gdacs-WF-1032241",
@@ -262,7 +302,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032229": {
       "id": "OUT-gdacs-WF-1032229",
@@ -272,7 +313,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032225": {
       "id": "OUT-gdacs-WF-1032225",
@@ -282,7 +324,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032271": {
       "id": "OUT-gdacs-WF-1032271",
@@ -292,7 +335,8 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032272": {
       "id": "OUT-gdacs-WF-1032272",
@@ -302,8 +346,15 @@
       "alert": "Watch",
       "rank": 2,
       "targetStart": "2026-09-20T00:00:00.000Z",
-      "targetEnd": "2026-09-23T00:00:00.000Z"
+      "targetEnd": "2026-09-23T00:00:00.000Z",
+      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-09-20T21:22:01.381Z"
+  "updatedAt": "2026-09-20T22:54:30.325Z",
+  "observedCadenceHours": {
+    "runs": 2,
+    "median": 1.54,
+    "min": 1.54,
+    "max": 1.54
+  }
 }
