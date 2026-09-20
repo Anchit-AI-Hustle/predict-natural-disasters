@@ -71,8 +71,15 @@ test('a measurement is rendered with its unit', () => {
   assert.equal(byKey(eq, 'depthKm').value, '22 km');
   // Hectares are what the fire feeds publish; past a square kilometre the
   // number is easier to hold in square kilometres.
-  assert.equal(byKey(H.keyFacts({ type: 'Wildfire', areaHa: 3150 }), 'areaHa').value, '32 km²');
-  assert.equal(byKey(H.keyFacts({ type: 'Wildfire', areaHa: 40 }), 'areaHa').value, '40 ha');
+  const area = ha => byKey(H.keyFacts({ type: 'Wildfire', areaHa: ha }), 'areaHa').value;
+  assert.equal(area(40), '40 ha');
+  assert.equal(area(3150), '31.5 km²');
+  // Dividing by 100 and then rounding to a whole number reported a third more
+  // ground than burned.
+  assert.equal(area(150), '1.5 km²');
+  assert.equal(area(250), '2.5 km²');
+  // Past a hundred square kilometres the fraction is noise; separators are not.
+  assert.equal(area(120000), '1,200 km²');
 });
 
 /* ------------------------------------- a figure nobody published is not zero */
@@ -292,4 +299,52 @@ test('an event near two saved places is listed once for each of them', async () 
   assert.ok(rows.some(t => /Farther place/.test(t)), 'the farther place was dropped from the list');
   // Every row is a distinct pair, so no (place, event) line repeats verbatim.
   assert.equal(new Set(rows).size, rows.length, 'the same row was rendered twice');
+});
+
+/* --------------------------- one page, one answer for the same number */
+
+test('a reported zero reads the same in the grid and in the panel below it', async () => {
+  const { events } = await feed();
+  const flood = events.find(e => /Bagmati/.test(String(e.title)));
+  assert.ok(flood, 'fixture should include the GDACS flood');
+
+  const r = await renderPage('event-detail.html', {
+    search: '?id=' + encodeURIComponent(flood.id),
+    waitFor: d => (d.getElementById('keyFacts') || {}).children &&
+      d.getElementById('keyFacts').children.length > 0
+  });
+  const doc = r.document;
+  // The impact panel tested `+v > 0`, so a source that reported zero deaths was
+  // shown as having reported nothing — directly under a grid showing the zero.
+  const panel = (doc.getElementById('deaths') || {}).textContent;
+  const grid = doc.getElementById('keyFacts').textContent;
+  r.close();
+  assert.equal(panel, '42', 'the panel should carry the reported figure');
+  assert.match(grid, /42/);
+});
+
+test('the impact panel distinguishes a reported zero from an absent count', async () => {
+  const r = await renderPage('event-detail.html', {
+    search: '?id=nope-not-a-real-id',
+    waitFor: d => !!d.getElementById('deaths')
+  });
+  // JSON rather than an array: a value built inside jsdom has that realm's
+  // Array prototype, which deepStrictEqual rejects on identity alone.
+  const n = JSON.parse(r.window.eval(
+    "JSON.stringify([n(0), n(undefined), n(null), n(''), n(5)])"));
+  r.close();
+  assert.deepEqual(n, ['0', 'Not reported', 'Not reported', 'Not reported', '5'],
+    'a published zero is a finding; an absent field is not');
+});
+
+/* ---------------------- the ledger sorts by the field its rows actually use */
+
+test('the verification ledger ranks observed severity, not an absent alert', () => {
+  const s = read('accuracy.html');
+  assert.match(s, /OBSERVED_RANK/,
+    'the shared comparator reads severityRank/alert, which ledger rows do not carry');
+  assert.match(s, /CATASTROPHIC:\s*6/, 'the ledger has its own severity vocabulary');
+  assert.ok(!/LEDGER_SORTS=\[[^\]]*'severity'/.test(s),
+    "the generic 'severity' key ranks every ledger row 0");
+  assert.match(s, /LEDGER_SORTS=\[[^\]]*'observed'/);
 });

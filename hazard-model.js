@@ -393,8 +393,14 @@
       case 'areaHa': {
         var ha = Number(e.areaHa);
         var ok = isFinite(ha) && ha > 0;
-        return { key: key, label: label, reported: ok,
-          value: ok ? (ha >= 100 ? group(ha / 100) + ' km²' : group(ha) + ' ha') : null };
+        // group() rounds to a whole number, so dividing first turned 150 ha
+        // into "2 km²" — a third more ground than burned. Below 100 km² the
+        // fraction is kept; above it, rounding is under one percent.
+        var km = ha / 100;
+        var area = ha < 100 ? group(ha) + ' ha'
+          : km < 100 ? String(Math.round(km * 10) / 10) + ' km²'
+            : group(km) + ' km²';
+        return { key: key, label: label, reported: ok, value: ok ? area : null };
       }
       case 'alertLevel':
         return { key: key, label: label, reported: !!e.alert, value: e.alert || null };
