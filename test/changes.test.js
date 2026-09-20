@@ -176,28 +176,89 @@ test('the page words an ended window differently from a stopped signal', async (
   window.close();
 });
 
-test('a run that saw movement is committed so it can reach production', () => {
+test('no scheduled run is committed in a way that stops it deploying', () => {
   /* /api/events reads data/forecast-changes.json out of the deployed bundle,
-     and vercel.json skips any deployment whose commit carries "[ledger]".
-     Marking every scheduled run with it would have left production showing
-     the first baseline forever. */
+     and vercel.json skips any deployment whose commit carries "[ledger]". The
+     first attempt at this deployed only runs that saw movement, which left
+     production presenting the last movement as the latest check — stale
+     timestamp, stale cadence, stale active count — for as many quiet hours as
+     followed. A check nobody can see is worth less than a deployment. */
   const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows',
     'refresh-disaster-data.yml'), 'utf8');
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  /* The marker is written for grep there, so it reads \[ledger\]. */
   assert.match(vercel.ignoreCommand || '', /ledger/,
     'this test assumes the marker still gates deployment');
-  /* There must be a path that commits without the marker. */
   const commits = [...wf.matchAll(/git commit -m "([^"]+)"/g)].map(m => m[1]);
-  assert.ok(commits.length >= 2,
-    'the workflow has only one commit message, so either every run deploys or none does');
-  assert.ok(commits.some(c => !c.includes('[ledger]')),
-    'every scheduled commit is marked [ledger], so no change log ever reaches production');
-  assert.ok(commits.some(c => c.includes('[ledger]')),
-    'no run is skippable, so a quiet hour spends a deployment');
-  /* And the choice must be driven by whether anything actually moved. */
+  assert.ok(commits.length >= 1, 'the workflow commits nothing');
+  const skipped = commits.filter(c => c.includes('[ledger]'));
+  assert.deepEqual(skipped, [],
+    'these scheduled commits are marked [ledger], so the runs they record never reach production');
   assert.match(wf, /forecast-changes\.json/);
-  assert.match(wf, /moved=/, 'nothing decides which commit message is used');
+});
+
+test('every source the feed can emit maps to an upstream it can check', async () => {
+  /* The mapping missed two of the names the feed actually writes: "USGS
+     Volcano Hazards Program" matched the bare "usgs" entry first, and "NOAA
+     National Hurricane Center" contains no "nhc" at all. During either
+     outage the outlook was still called a withdrawal. Driven by the feed's
+     own source strings, so a new upstream cannot slip through unmapped. */
+  const { callApi } = require('./render.js');
+  const res = await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events', {});
+  const feed = await res.json();
+  const known = new Set(Object.keys(feed.meta.sources || {}));
+  assert.ok(known.size >= 5, `only ${known.size} upstreams in meta.sources`);
+
+  const src = fs.readFileSync(TOOL, 'utf8');
+  const vm = require('node:vm');
+  const ctx = vm.createContext({});
+  vm.runInContext(src.slice(src.indexOf('const PROVIDERS'),
+    src.indexOf('/* Compared on what')), ctx);
+
+  /* A record that is not derived from anything has no upstream to be down:
+     the frozen ND-001 benchmark is written by hand and names no provider, so
+     if it vanished that really would be a withdrawal. Only the derived ones
+     must resolve. */
+  const emitted = [...new Set(feed.events.map(e => String(e.source || '')))]
+    .filter(s => /derived from/i.test(s));
+  assert.ok(emitted.length >= 3, `only ${emitted.length} derived sources in the feed`);
+  const unmapped = [];
+  for (const source of emitted) {
+    const key = ctx.providerOf({ source });
+    if (!key || !known.has(key)) unmapped.push(`${source} -> ${key || '(none)'}`);
+  }
+  assert.deepEqual(unmapped, [],
+    'these sources cannot be matched to an upstream, so an outage of theirs reads as a withdrawal');
+});
+
+test('a specific upstream wins over the generic one it contains', () => {
+  const src = fs.readFileSync(TOOL, 'utf8');
+  const vm = require('node:vm');
+  const ctx = vm.createContext({});
+  vm.runInContext(src.slice(src.indexOf('const PROVIDERS'),
+    src.indexOf('/* Compared on what')), ctx);
+  const cases = [
+    ['Predict Natural Disasters \u00b7 derived from USGS Volcano Hazards Program', 'usgs_volcano'],
+    ['Predict Natural Disasters \u00b7 derived from USGS', 'usgs'],
+    ['Predict Natural Disasters \u00b7 derived from NOAA National Hurricane Center', 'nhc'],
+    ['Predict Natural Disasters \u00b7 derived from NOAA / National Weather Service', 'nws'],
+    ['GDACS verified snapshot', 'gdacs']
+  ];
+  for (const [source, expected] of cases) {
+    assert.equal(ctx.providerOf({ source }), expected, source);
+  }
+});
+
+test('a volcano outage is an outage, not a withdrawal', () => {
+  const d = tmp();
+  const volcano = id => outlook({ id,
+    source: 'Predict Natural Disasters \u00b7 derived from USGS Volcano Hazards Program',
+    targetEnd: '2099-01-01T00:00:00Z' });
+  run(d, [volcano('V')], { usgs_volcano: { ok: true }, usgs: { ok: true } });
+  const last = run(d, [], { usgs_volcano: { ok: false }, usgs: { ok: true } })
+    .runs.slice(-1)[0];
+  assert.deepEqual(last.gone.map(x => x.id), [],
+    'a volcano-feed outage was reported as a withdrawn forecast');
+  assert.deepEqual(last.unavailable.map(x => x.id), ['V']);
 });
 
 test('an upstream outage is not reported as a withdrawn forecast', () => {

@@ -43,17 +43,29 @@ try {
 const sources = (feed.meta && feed.meta.sources) || {};
 const down = new Set(Object.keys(sources).filter(k => sources[k] && sources[k].ok === false));
 
-/* The upstream an outlook came from, taken from the source string the feed
-   already writes ("… derived from GDACS"). */
-const PROVIDERS = {
-  gdacs: 'gdacs', usgs: 'usgs', eonet: 'eonet', emsc: 'emsc',
-  reliefweb: 'reliefweb', nhc: 'nhc',
-  'national weather service': 'nws', nws: 'nws',
-  'volcano hazards': 'usgs_volcano'
-};
+/* The upstream an outlook came from, matched against the names the feed
+   actually writes into its source string.
+   Ordered, and specific before generic, because an unordered map got two of
+   them wrong: "USGS Volcano Hazards Program" matched the bare "usgs" entry
+   first and "NOAA National Hurricane Center" contains no "nhc" at all, so a
+   volcano or hurricane outage was still classified as a withdrawal. */
+const PROVIDERS = [
+  ['usgs volcano hazards', 'usgs_volcano'],
+  ['volcano hazards', 'usgs_volcano'],
+  ['national hurricane center', 'nhc'],
+  ['national weather service', 'nws'],
+  ['reliefweb', 'reliefweb'],
+  ['nasa eonet', 'eonet'],
+  ['eonet', 'eonet'],
+  ['gdacs', 'gdacs'],
+  ['emsc', 'emsc'],
+  ['nhc', 'nhc'],
+  ['nws', 'nws'],
+  ['usgs', 'usgs']
+];
 function providerOf(e) {
   const s = String((e && e.source) || '').toLowerCase();
-  for (const key of Object.keys(PROVIDERS)) if (s.includes(key)) return PROVIDERS[key];
+  for (const [needle, key] of PROVIDERS) if (s.includes(needle)) return key;
   return '';
 }
 
