@@ -199,7 +199,12 @@ function splitUsPlace(place) {
 function gdacsMeasurement(sd, eventType) {
   const d = sd && typeof sd === 'object' ? sd : null;
   if (!d) return {};
-  const value = num(d.severity != null ? d.severity : d.Severity);
+  // num() is Number-based and Number('') is 0, so an empty measurement would
+  // publish "Magnitude 0.0" or "0 kt" as though the agency had measured it.
+  const raw = d.severity !== undefined && d.severity !== null && d.severity !== ''
+    ? d.severity : d.Severity;
+  if (raw === undefined || raw === null || raw === '') return {};
+  const value = num(raw);
   if (value === null) return {};
   const unit = String(d.severityunit || d.severityUnit || '').toLowerCase();
   const out = {};
@@ -282,6 +287,25 @@ function mergeSeismicReports(events) {
       return rb - ra || pb - pa;
     });
     g.lead = ranked[0];
+    /* Only the lead record survives, so anything only one agency publishes
+       would go with the discarded copies. GDACS earthquakes now carry a
+       magnitude, which makes them eligible to lead a group, and a GDACS record
+       reporting deaths outranks the USGS one — taking the depth, the PAGER
+       assessment and the tsunami flag with it. The page then read "USGS issued
+       no impact assessment" while naming USGS as corroboration. These are
+       measurements of the same earthquake, taken from the highest-ranked
+       member that published each one. */
+    for (const f of ['depthKm', 'pagerAlert', 'tsunamiFlag', 'magnitude']) {
+      if (g.lead[f] !== undefined && g.lead[f] !== null) continue;
+      const donor = ranked.find(m => m[f] !== undefined && m[f] !== null);
+      if (donor) g.lead[f] = donor[f];
+    }
+    // The alert level is read off the PAGER assessment, so a lead that has just
+    // inherited one must not keep the Green it was given without it.
+    if (g.lead.pagerAlert && agencyOf(g.lead) !== 'USGS') {
+      g.lead.alert = pagerLevel(g.lead.pagerAlert);
+    }
+
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);
     // Independent corroboration is worth stating, not discarding.
     if (others.length) g.lead.corroboratedBy = [...new Set(others)];

@@ -348,3 +348,46 @@ test('the verification ledger ranks observed severity, not an absent alert', () 
     "the generic 'severity' key ranks every ledger row 0");
   assert.match(s, /LEDGER_SORTS=\[[^\]]*'observed'/);
 });
+
+/* ------------------- a merge must not throw away what only one agency has */
+
+test('merging two agencies keeps the measurements only one of them published', async () => {
+  const { events } = await feed();
+  const quakes = events.filter(e => /Cianjur|West Java/.test(String(e.title)) && !e.forecast);
+  assert.equal(quakes.length, 1, 'the two agency reports should merge into one record');
+
+  const q = quakes[0];
+  // GDACS leads because it reports a death toll, and GDACS publishes no depth,
+  // no PAGER assessment and no tsunami flag. Before this, leading meant the
+  // USGS record was dropped with all three, and the page then read "USGS issued
+  // no impact assessment" while naming USGS as corroboration.
+  assert.equal(q.source, 'GDACS', 'the record reporting impact should lead');
+  assert.ok(q.corroboratedBy.includes('USGS'), 'USGS should be named as corroboration');
+  assert.equal(q.depthKm, 11, 'the USGS depth was discarded');
+  assert.equal(q.pagerAlert, 'yellow', 'the USGS impact assessment was discarded');
+  assert.equal(q.tsunamiFlag, false, 'the USGS tsunami flag was discarded');
+  assert.equal(q.deaths, 21, 'the leading record keeps its own impact figures');
+
+  // The alert level is read off the PAGER assessment, so a record that has just
+  // inherited one cannot keep the level it carried without it.
+  assert.equal(q.alert, 'Orange', 'a yellow PAGER assessment maps to Orange');
+
+  const facts = H.keyFacts(q);
+  assert.equal(byKey(facts, 'pagerAlert').reported, true,
+    'the page would claim USGS made no assessment while citing USGS');
+  assert.equal(byKey(facts, 'depthKm').value, '11 km');
+  assert.equal(byKey(facts, 'tsunamiFlag').value, 'Not raised');
+});
+
+test('an empty GDACS measurement is not published as a measurement of zero', async () => {
+  // severitydata.severity arriving as '' would coerce to 0 and print
+  // "Magnitude 0.0" or "0 kt" as though the agency had measured it.
+  const handler = require(path.join(ROOT, 'api', 'events.js'));
+  const src = fs.readFileSync(path.join(ROOT, 'api', 'events.js'), 'utf8');
+  assert.match(src, /raw === undefined \|\| raw === null \|\| raw === ''/,
+    'gdacsMeasurement needs the same pre-coercion guard as reportedCounts');
+  assert.ok(handler, 'handler should still load');
+  const { events } = await feed();
+  const bogus = events.filter(e => e.magnitude === 0 || e.windKt === 0 || e.areaHa === 0);
+  assert.deepEqual(bogus.map(e => e.title), [], 'a measurement of zero was published');
+});

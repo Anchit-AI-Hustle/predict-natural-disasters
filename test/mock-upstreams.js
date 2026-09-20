@@ -36,6 +36,18 @@ const FIXTURES = {
       death: null, displaced: '', affected: undefined
     },
     {
+      eventid: 1105004, eventtype: 'EQ', name: 'Earthquake in West Java, Indonesia',
+      country: 'Indonesia', location: 'West Java', alertlevel: 'Orange',
+      latitude: -6.8, longitude: 107.1,
+      fromdate: '2026-09-12T11:30:00Z', todate: isoNow,
+      description: 'Strong earthquake with reported casualties.',
+      // GDACS reports the same event USGS catalogues as us7000mnop, with a
+      // death toll that outranks the USGS copy in the seismic merge. GDACS
+      // publishes no depth, no PAGER assessment and no tsunami flag.
+      severitydata: { severity: 5.6, severitytext: 'Magnitude 5.6M', severityunit: 'M' },
+      death: 21
+    },
+    {
       eventid: 1105003, eventtype: 'DR', name: 'Drought in Horn of Africa',
       country: 'Kenya', location: 'Northern Kenya', alertlevel: 'Orange',
       latitude: 2.3, longitude: 37.9, fromdate: '2026-06-01T00:00:00Z', todate: isoNow,
@@ -54,6 +66,12 @@ const FIXTURES = {
         id: 'us7000efgh',
         properties: { place: '40 km W of Concepcion, Chile', mag: 5.8, time: Date.parse('2026-09-13T22:00:00Z'), updated: Date.parse('2026-09-13T22:30:00Z'), title: 'M 5.8 - 40 km W of Concepcion, Chile', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000efgh', tsunami: 0 },
         geometry: { coordinates: [-73.5, -36.8, 30] }
+      },
+      {
+        // The same earthquake GDACS reports as event 1105004, so the two merge.
+        id: 'us7000mnop',
+        properties: { place: '8 km SW of Cianjur, Indonesia', mag: 5.6, time: Date.parse('2026-09-12T11:30:00Z'), updated: Date.parse('2026-09-12T12:00:00Z'), title: 'M 5.6 - 8 km SW of Cianjur, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000mnop', tsunami: 0, alert: 'yellow' },
+        geometry: { coordinates: [107.1, -6.8, 11.0] }
       },
       {
         id: 'us7000ijkl',
