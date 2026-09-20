@@ -32,7 +32,21 @@ function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 function enc(v=''){return encodeURIComponent(String(v));}
 function eventUrl(e){const id=enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;}
 function fmtDate(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' IST';}
-function riskClass(v=''){v=String(v).toLowerCase();return v.includes('red')||v.includes('critical')?'critical':v.includes('orange')||v.includes('high')?'high':'moderate';}
+/* Kept in step with PND.riskClass in portal.js, which this page does not
+   load; a test scans every file for a copy and asserts they all agree. */
+function riskClass(v=''){const s=String(v).toLowerCase();
+    /* Word boundaries, not substrings: "yellow" contains "low", and a bare
+       includes() check would paint a yellow alert as routine. */
+    if(/\b(red|critical|extreme)\b/.test(s))return 'critical';
+    if(/\b(purple|very)\b/.test(s))return 'veryhigh';
+    if(/\b(orange|high|severe)\b/.test(s))return 'high';
+    if(/\b(moderate|yellow)\b/.test(s))return 'moderate';
+    if(/\b(watch|advisory|minor)\b/.test(s))return 'watch';
+    if(/\b(green|low|informational|routine)\b/.test(s))return 'routine';
+    /* An unrecognised level is not a warning. It used to fall through to the
+       amber "moderate" badge, so 732 Green records in the live feed were
+       painted as warnings while their own label read Green. */
+    return 'neutral';}
 async function getEvents(){const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('feed');return r.json();}
 </script>
 </head>

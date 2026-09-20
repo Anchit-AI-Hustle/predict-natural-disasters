@@ -18,14 +18,39 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
-/** The two implementations, pulled from the files that actually ship. */
-function impl(file, re) {
-  const m = re.exec(read(file));
-  assert.ok(m, file + ' no longer defines riskClass in the expected shape');
-  return new Function('v', m[1]);
+/**
+ * Every implementation that ships, found by scanning rather than by naming.
+ *
+ * The first version of this test compared portal.js against index.html — the
+ * two copies I happened to know about — and passed while home-v3.html, a page
+ * live in production, kept the old classifier and its own amber Green badges.
+ * Checking the copies you already know about is not a drift test.
+ */
+function implementations() {
+  const found = [];
+  for (const f of fs.readdirSync(ROOT).filter(n => /\.(html|js)$/.test(n))) {
+    const src = read(f);
+    for (const m of src.matchAll(/riskClass\s*\(\s*v\s*=\s*''\s*\)\s*\{/g)) {
+      // Take the function body by balancing braces from the opening one.
+      let i = m.index + m[0].length - 1, depth = 0, end = -1;
+      for (let j = i; j < src.length; j++) {
+        if (src[j] === '{') depth++;
+        else if (src[j] === '}' && --depth === 0) { end = j; break; }
+      }
+      assert.ok(end > 0, f + ': could not read the riskClass body');
+      found.push({ file: f, fn: new Function('v', src.slice(i + 1, end)) });
+    }
+  }
+  assert.ok(found.length >= 2,
+    'expected the shared helper and at least one standalone copy, found ' + found.length);
+  return found;
 }
-const portal = () => impl('portal.js', /riskClass\(v=''\)\{([\s\S]*?return 'neutral';)\}/);
-const home = () => impl('index.html', /function riskClass\(v=''\)\{([\s\S]*?return 'neutral';)\}/);
+const portalImpl = () => {
+  const p = implementations().find(x => x.file === 'portal.js');
+  assert.ok(p, 'portal.js no longer defines riskClass');
+  return p.fn;
+};
+const portal = portalImpl;
 
 /* ------------------------------------------------- one level, one colour */
 
@@ -63,17 +88,39 @@ test('a substring never decides a colour', () => {
   assert.equal(r('very high'), 'veryhigh');
 });
 
-test('the homepage and the shared helper agree on every level', () => {
-  // index.html carries its own copy so its list renders before portal.js must
-  // have loaded. Two copies is two places to drift.
-  const a = portal(), b = home();
-  const drift = [];
-  for (const v of ['Red', 'Orange', 'Green', 'High', 'Moderate', 'Watch', 'Yellow',
+test('every copy of the classifier anywhere in the site agrees with the shared one', () => {
+  // Pages that render their list before portal.js must have loaded carry their
+  // own copy. Each copy is a place to drift, and one of them — home-v3.html,
+  // live in production — was missed the first time this test was written.
+  const impls = implementations();
+  const ref = impls.find(x => x.file === 'portal.js');
+  assert.ok(ref, 'portal.js no longer defines riskClass');
+
+  const LEVELS = ['Red', 'Orange', 'Green', 'High', 'Moderate', 'Watch', 'Yellow',
     'Advisory', 'Extreme', 'Severe', 'Minor', 'Informational', 'Purple', '',
-    'Bananas', 'Red Warning', 'very high']) {
-    if (a(v) !== b(v)) drift.push(v + ': portal.js=' + a(v) + ' index.html=' + b(v));
+    'Bananas', 'Red Warning', 'very high'];
+  const drift = [];
+  for (const { file, fn } of impls) {
+    if (file === 'portal.js') continue;
+    for (const v of LEVELS) {
+      if (fn(v) !== ref.fn(v)) {
+        drift.push(`${file} ${JSON.stringify(v)}: ${fn(v)} vs portal.js ${ref.fn(v)}`);
+      }
+    }
   }
-  assert.deepEqual(drift, [], 'the two implementations disagree:\n' + drift.join('\n'));
+  assert.deepEqual(drift, [], 'copies disagree with the shared helper:\n' + drift.join('\n'));
+});
+
+test('a page carrying its own classifier also loads a stylesheet that colours it', () => {
+  const missing = [];
+  for (const { file } of implementations()) {
+    if (!/\.html$/.test(file)) continue;
+    const src = read(file);
+    const inline = /\.watch\{background:#[0-9a-f]{6}\}/.test(src);
+    const sheet = /href="\/(portal|app-pages)\.css"/.test(src);
+    if (!inline && !sheet) missing.push(file + ' defines riskClass but loads no stylesheet with the colours');
+  }
+  assert.deepEqual(missing, [], missing.join('\n'));
 });
 
 /* ------------------------------------------- the colours actually ship */
