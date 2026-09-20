@@ -754,3 +754,57 @@ test('summing an empty set is not a reported figure', () => {
   assert.ok(!/const deaths=ev\.reduce\(/.test(s),
     'the sum is published without checking that anything was summed');
 });
+
+/* ---------- the gravest assessment survives, whichever agency ends up leading */
+
+test('a merged record keeps the gravest alert any member published', () => {
+  // Only one direction was handled before: a GDACS Red that happened to lead
+  // kept its Red, but a GDACS Red with no impact count loses the lead to USGS
+  // on agency priority, and its Red then vanished from a record that still
+  // named GDACS as corroboration. Both directions are the same rule, so the
+  // test sweeps every combination rather than the one that was reported.
+  const RANK = { Green: 1, Watch: 1, Moderate: 2, Orange: 3, High: 3, Red: 4 };
+  const levels = ['Green', 'Moderate', 'Orange', 'Red'];
+  const impacts = [undefined, 0, 21];
+  const lost = [];
+
+  for (const gAlert of levels) {
+    for (const uAlert of levels) {
+      for (const deaths of impacts) {
+        const members = [
+          quake(Object.assign({ id: 'g', source: 'GDACS', alert: gAlert },
+            deaths === undefined ? {} : { deaths })),
+          quake({ id: 'u', source: 'USGS', alert: uAlert, depthKm: 11 })
+        ];
+        const [out] = mergeSeismicReports(members);
+        const want = Math.max(RANK[gAlert], RANK[uAlert]);
+        if ((RANK[out.alert] || 0) < want) {
+          lost.push(`GDACS ${gAlert} (deaths ${deaths}) + USGS ${uAlert}` +
+            ` -> lead ${out.source}, alert ${out.alert}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(lost, [],
+    'the graver agency assessment was dropped:\n' + lost.join('\n'));
+});
+
+test('an alert raised by the merge is ordered as the alert it became', async () => {
+  // The feed is sorted by alert before records are merged, and a leader that
+  // inherits a graver assessment changes alert after that — so a newly Red
+  // record kept the position it held while it was Green.
+  const { events } = await feed();
+  const RANK = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };
+  const out = [];
+  for (let i = 1; i < events.length; i++) {
+    const prev = RANK[events[i - 1].alert] || 0;
+    const here = RANK[events[i].alert] || 0;
+    if (here > prev) out.push(events[i].alert + ' (' + events[i].title + ') sits behind ' +
+      events[i - 1].alert + ' (' + events[i - 1].title + ')');
+  }
+  assert.deepEqual(out, [], 'the feed is not ordered by alert:\n' + out.slice(0, 5).join('\n'));
+
+  const src = read('api/events.js');
+  assert.match(src, /mergeSeismicReports\(out\.events\)\.sort\(/,
+    'the feed must be re-sorted after a merge can change an alert');
+});

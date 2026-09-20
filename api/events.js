@@ -352,17 +352,23 @@ function mergeSeismicReports(events) {
       const donor = ranked.find(m => m[f] !== undefined && m[f] !== null);
       if (donor) g.lead[f] = donor[f];
     }
-    /* The alert level is read off the PAGER assessment, so a leader that has
-       just inherited one must not keep the Green it was given without one. It
-       must not be lowered either: a GDACS Red paired with a yellow PAGER is
-       still Red, because both agencies assessed it and the graver assessment
-       stands. Only the stronger of the two is taken. */
-    if (g.lead.pagerAlert && agencyOf(g.lead) !== 'USGS') {
-      const fromPager = pagerLevel(g.lead.pagerAlert);
-      if ((ALERT_STRENGTH[fromPager] || 0) > (ALERT_STRENGTH[g.lead.alert] || 0)) {
-        g.lead.alert = fromPager;
-      }
+    /* The gravest assessment any member published stands, whichever record ends
+       up leading. Only one direction was handled before: a GDACS Red that
+       happened to lead kept its Red, but a GDACS Red with no impact count loses
+       the lead to USGS on agency priority, and its Red then vanished from a
+       record still naming GDACS as corroboration. Both directions are the same
+       rule, so it is applied over every member rather than to the leader. */
+    let strongest = g.lead.alert;
+    for (const m of g.members) {
+      if ((ALERT_STRENGTH[m.alert] || 0) > (ALERT_STRENGTH[strongest] || 0)) strongest = m.alert;
     }
+    // A leader that has just inherited a PAGER assessment must not keep the
+    // Green it carried before it had one.
+    if (g.lead.pagerAlert) {
+      const fromPager = pagerLevel(g.lead.pagerAlert);
+      if ((ALERT_STRENGTH[fromPager] || 0) > (ALERT_STRENGTH[strongest] || 0)) strongest = fromPager;
+    }
+    g.lead.alert = strongest;
 
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);
     // Independent corroboration is worth stating, not discarding.
@@ -1119,6 +1125,8 @@ async function handler(req, res) {
 
   const seen = new Set();
   const risk = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };
+  const byAlertThenTime = (a, b) =>
+    (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated);
   out.events = out.events
     .filter(e => {
       const k = (e.source + '|' + e.title + '|' + e.lat.toFixed(2) + '|' + e.lon.toFixed(2)).toLowerCase();
@@ -1126,9 +1134,12 @@ async function handler(req, res) {
       seen.add(k);
       return true;
     })
-    .sort((a, b) => (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated));
+    .sort(byAlertThenTime);
 
-  out.events = mergeSeismicReports(out.events);
+  /* Merging can raise a record's alert — a leader that inherits a graver
+     assessment from a discarded member — and the feed was sorted before that
+     happened, so a newly Red record kept the position it held while Green. */
+  out.events = mergeSeismicReports(out.events).sort(byAlertThenTime);
   out.meta.mergedSeismicReports =
     out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
 
