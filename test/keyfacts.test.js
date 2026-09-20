@@ -487,3 +487,54 @@ test('a merge keeps an impact figure the leader never reported, zero included', 
   ]);
   assert.equal(own.deaths, 7, 'the leading agency keeps its own count');
 });
+
+/* ------------------------------- adding information must never lower a rating */
+
+test('no assessment added to a record can make it less severe', () => {
+  // This class of bug has now appeared three times in this file: the cyclone
+  // wind reading, the merged alert, and the PAGER value. Each was a branch that
+  // returned on the first assessment it matched, so a record could be made
+  // milder by adding a milder assessment to it. The property is the fix; the
+  // three instances were symptoms.
+  const bases = [
+    {}, { alert: 'Red' }, { alert: 'Orange' }, { alert: 'Watch' },
+    { type: 'Tropical Cyclone', alert: 'Red' },
+    { type: 'Tropical Cyclone', windKt: 130 },
+    { type: 'Earthquake', magnitude: 6.9 },
+    { type: 'Earthquake', pagerAlert: 'red' },
+    { deaths: 12 }, { deaths: 0 }, { affected: 250 }
+  ];
+  const additions = [
+    { pagerAlert: 'yellow' }, { pagerAlert: 'orange' }, { pagerAlert: 'red' },
+    { windKt: 30 }, { windKt: 70 }, { windKt: 130 },
+    { alert: 'Watch' }, { alert: 'Moderate' }, { alert: 'Orange' }, { alert: 'Red' },
+    { magnitude: 3.1 }, { magnitude: 7.8 },
+    { deaths: 0 }, { deaths: 3 }, { affected: 10 }
+  ];
+
+  const worse = [];
+  for (const base of bases) {
+    const before = H.severityRank(base);
+    for (const extra of additions) {
+      // Only ever adds a field the base does not already state.
+      const merged = Object.assign({}, extra, base);
+      const after = H.severityRank(merged);
+      if (after < before) {
+        worse.push(JSON.stringify(base) + ' + ' + JSON.stringify(extra) +
+          ' : ' + before + ' -> ' + after);
+      }
+    }
+  }
+  assert.deepEqual(worse, [],
+    'adding an assessment lowered the severity rank:\n' + worse.join('\n'));
+});
+
+test('a record published Red keeps a Red-level severity whatever else is on it', () => {
+  // A merged earthquake published Red by one agency and assessed yellow by USGS
+  // rated Moderate, so its badge and its place in every severity-ordered list
+  // disagreed with its own alert label.
+  assert.equal(H.severityOf({ alert: 'Red', pagerAlert: 'yellow' }), 'Severe');
+  assert.equal(H.severityOf({ alert: 'Red' }), 'Severe');
+  // And a graver PAGER assessment still raises it above the alert alone.
+  assert.equal(H.severityOf({ alert: 'Red', pagerAlert: 'red' }), 'Extreme');
+});

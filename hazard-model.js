@@ -244,10 +244,13 @@
 
   /** Severity from the level the issuing authority actually published. */
   function alertRank(e) {
+    /* Every assessment on the record is weighed and the gravest wins. Returning
+       on the first one that matched meant a record could be made *less* severe
+       by adding a milder assessment to it: a merged earthquake published Red by
+       one agency and assessed yellow by USGS rated Moderate, where the Red
+       alone rated Severe. Adding information must never lower a rating. */
     var pager = String(e.pagerAlert || '').toLowerCase();
-    if (pager === 'red') return 5;
-    if (pager === 'orange') return 4;
-    if (pager === 'yellow') return 3;
+    var assessed = pager === 'red' ? 5 : pager === 'orange' ? 4 : pager === 'yellow' ? 3 : 0;
 
     var mag = Number(e.magnitude);
     var kt = Number(e.windKt);
@@ -269,12 +272,12 @@
       default: break;
     }
 
-    /* Returning on the wind alone discarded the authority's own assessment. A
-       weakening or slow-moving cyclone can carry a Red alert at well under 64
+    /* A cyclone's wind reading alone discarded the authority's own assessment.
+       A weakening or slow-moving cyclone can carry a Red alert at well under 64
        knots because of surge, rainfall or where it is heading, and that read as
        Minor. GDACS cyclones only started carrying a wind speed in this branch,
-       so this was newly reachable rather than long-standing. */
-    if (wind || issued) return Math.max(wind, issued);
+       so that was newly reachable rather than long-standing. */
+    if (assessed || wind || issued) return Math.max(assessed, wind, issued);
     // An earthquake with no PAGER assessment is a measurement, not a severity.
     if (isFinite(mag) && mag > 0) return 1;
     return 0;
