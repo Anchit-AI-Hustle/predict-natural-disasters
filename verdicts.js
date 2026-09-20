@@ -111,6 +111,13 @@ function rate(hit, total) {
     hit, total, pct: Math.round(hit / total * 100) };
 }
 
+/* What the ledger froze: exactly the fields tools/record-outlooks.js writes.
+   A verdict may add to a record but never change any of these. */
+const CLAIM_FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region',
+  'lat', 'lon', 'alert', 'severity', 'severityRank', 'issuedAt', 'targetStart',
+  'targetEnd', 'forecastKind', 'forecastOf', 'source', 'sourceUrl',
+  'confidence', 'evidence', 'verificationRule'];
+
 /* Attaching a verdict to the window it judged.
  *
  * The outlook ledger is append-only and re-records a rolling outlook each time
@@ -126,9 +133,15 @@ function rate(hit, total) {
  * therefore unambiguous. Anything left over is returned in `unattached`
  * rather than dropped, so a verdict can never quietly stop counting.
  */
+/* The whole window, not just its start: a rolling outlook reissued with the
+   same start and a revised end would otherwise collapse onto one key, and the
+   merge would apply one verdict to both rows — the multi-window misgrading
+   this helper exists to prevent. */
 function windowKey(r) {
-  const t = Date.parse((r && r.targetStart) || '');
-  return (r && r.id) + '@' + (Number.isFinite(t) ? t : '');
+  const a = Date.parse((r && r.targetStart) || '');
+  const b = Date.parse((r && r.targetEnd) || '');
+  return (r && r.id) + '@' + (Number.isFinite(a) ? a : '') +
+    '..' + (Number.isFinite(b) ? b : '');
 }
 
 function joinVerdicts(rows, verifications) {
@@ -151,13 +164,25 @@ function joinVerdicts(rows, verifications) {
   }
   const merged = (rows || []).map(r => {
     const v = attached.get(windowKey(r));
-    return v ? Object.assign({}, r, v, { targetStart: r.targetStart, targetEnd: r.targetEnd }) : r;
+    if (!v) return r;
+    /* The ledger row is the frozen claim; the verdict is what was found
+       afterwards. Spreading the verdict over the row let it rewrite the claim
+       it was judging: ND-001's frozen area is the Hu\u1ebf\u2013\u0110\u00e0 N\u1eb5ng corridor, and the
+       verdict's wider "Hue\u2013Da Nang\u2013Quang Ngai corridor" was then displayed as
+       what had been predicted. Every claim field is restored from the row, so
+       a verdict can only ever add the outcome. */
+    const out = Object.assign({}, r, v);
+    for (const f of CLAIM_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(r, f)) out[f] = r[f];
+      else delete out[f];
+    }
+    return out;
   });
   return { records: merged, unattached };
 }
 
 const V = { VERDICTS, OCCURRED, LABELS, CSS, normalise, stateOf, tally, rate,
-  windowKey, joinVerdicts };
+  windowKey, joinVerdicts, CLAIM_FIELDS };
 if (typeof window !== 'undefined') window.PNDVerdicts = V;
 if (typeof module !== 'undefined' && module.exports) module.exports = V;
 })();

@@ -67,6 +67,74 @@ function tag(name, block) {
 }
 
 /** Mean of a GeoJSON geometry's coordinates — good enough to place an alert polygon. */
+/* A point guaranteed to lie inside the shape, which the mean of its vertices
+   is not: for a C-shaped or multipart warning area the mean lands in the gap.
+   That is tolerable for a map pin but not for the source link, which opens the
+   National Weather Service's point forecast for exactly that coordinate — from
+   outside the polygon it shows a location with no warning and omits the very
+   alert the reader clicked through from.
+
+   Rings are taken from the geometry, the centroid is used when it is actually
+   inside one, and otherwise a horizontal scanline is run through the middle of
+   the largest ring and the midpoint of its first crossed span taken, which is
+   interior for any simple polygon. */
+function ringsOf(geometry) {
+  if (!geometry || !Array.isArray(geometry.coordinates)) return [];
+  const out = [];
+  const isRing = c => Array.isArray(c) && c.length > 2 &&
+    Array.isArray(c[0]) && typeof c[0][0] === 'number';
+  const walk = c => {
+    if (!Array.isArray(c)) return;
+    if (isRing(c)) { out.push(c); return; }
+    c.forEach(walk);
+  };
+  walk(geometry.coordinates);
+  return out;
+}
+
+function inRing(lon, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if ((yi > lat) !== (yj > lat) &&
+        lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function scanlinePoint(ring) {
+  let lo = Infinity, hi = -Infinity;
+  for (const p of ring) { if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1]; }
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) return null;
+  const lat = (lo + hi) / 2;
+  const xs = [];
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const x1 = ring[j][0], y1 = ring[j][1], x2 = ring[i][0], y2 = ring[i][1];
+    if ((y1 > lat) !== (y2 > lat)) xs.push(x1 + (lat - y1) / (y2 - y1) * (x2 - x1));
+  }
+  xs.sort((a, b) => a - b);
+  if (xs.length < 2) return null;
+  const lon = (xs[0] + xs[1]) / 2;
+  return Number.isFinite(lon) ? { lat, lon } : null;
+}
+
+function insidePoint(geometry, mean) {
+  const rings = ringsOf(geometry);
+  if (!rings.length) return mean || null;
+  if (mean && rings.some(r => inRing(mean.lon, mean.lat, r))) return mean;
+  let best = null, bestArea = -1;
+  for (const r of rings) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const p of r) {
+      if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+    }
+    const a = (x1 - x0) * (y1 - y0);
+    if (a > bestArea) { bestArea = a; best = r; }
+  }
+  return (best && scanlinePoint(best)) || mean || null;
+}
+
 function centroid(geometry) {
   if (!geometry) return null;
   const pts = [];
@@ -708,10 +776,16 @@ async function handler(req, res) {
                Service's own human page for this location and lists the warnings
                active there. The API URL is kept for provenance, under a name
                that says what it is, and is never offered as a source to read. */
-            sourceUrl: Number.isFinite(c.lat) && Number.isFinite(c.lon)
-              ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(c.lat).toFixed(4) +
-                '&lon=' + Number(c.lon).toFixed(4)
-              : 'https://www.weather.gov/',
+            sourceUrl: (() => {
+              /* Linked from a point inside the warned area rather than from
+                 the marker's coordinate, which for a concave or multipart
+                 alert can sit outside it. */
+              const link = insidePoint(f.geometry, c) || c;
+              return Number.isFinite(link.lat) && Number.isFinite(link.lon)
+                ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(link.lat).toFixed(4) +
+                  '&lon=' + Number(link.lon).toFixed(4)
+                : 'https://www.weather.gov/';
+            })(),
             sourceApiUrl: p['@id'] || '',
             issuingAgency: p.senderName || 'NWS'
           });
@@ -1298,4 +1372,7 @@ module.exports = handler;
 module.exports.default = handler;
 module.exports.normalizeType = normalizeType;
 module.exports.centroid = centroid;
+module.exports.insidePoint = insidePoint;
+module.exports.inRing = inRing;
+module.exports.ringsOf = ringsOf;
 module.exports.mergeSeismicReports = mergeSeismicReports;
