@@ -192,3 +192,47 @@ test('every risk badge reads at WCAG AA against its own text colour', () => {
   }
   assert.deepEqual(fails, [], 'below AA:\n' + fails.join('\n'));
 });
+/* ------------------------------ no link offered to a reader opens raw JSON */
+
+test('no source link shown to a reader opens a machine-readable endpoint', async () => {
+  // A National Weather Service record carried p['@id'] — the CAP record's API
+  // URL — as its source link, so "Open original source record" dropped the
+  // reader into raw GeoJSON. 36 of 795 live records did this.
+  const handler = require(path.join(ROOT, 'api', 'events.js'));
+  const { callApi } = require('./render.js');
+  const { events } = await (await callApi(handler, '/api/events')).json();
+
+  const RAW = /(^https?:\/\/api\.|\/api\/|\.json($|\?)|\/gdacsapi\/|geteventlist|urn:oid:)/i;
+  const bad = events
+    .filter(e => e.sourceUrl && RAW.test(e.sourceUrl))
+    .map(e => e.source + ' → ' + e.sourceUrl);
+  assert.deepEqual(bad, [],
+    'these source links open a payload rather than a page:\n' + bad.join('\n'));
+
+  // Every record still has somewhere to send a reader.
+  const none = events.filter(e => !e.sourceUrl).map(e => e.source + ' — ' + e.title);
+  assert.deepEqual(none, [], 'records with no source link at all:\n' + none.join('\n'));
+});
+
+test('a machine-readable record is kept for provenance under its own name', async () => {
+  const handler = require(path.join(ROOT, 'api', 'events.js'));
+  const { callApi } = require('./render.js');
+  const { events } = await (await callApi(handler, '/api/events')).json();
+  const nws = events.filter(e => /Weather Service/.test(String(e.source)) && !e.forecast);
+  assert.ok(nws.length, 'fixture should include National Weather Service records');
+  // The API URL is not thrown away — it moves to a field whose name says what
+  // it is, so provenance survives without being offered as something to read.
+  assert.ok(nws.some(e => e.sourceApiUrl), 'the API record should be retained as sourceApiUrl');
+  for (const e of nws) {
+    assert.ok(!/^https?:\/\/api\./.test(e.sourceUrl || ''),
+      e.title + ' still links a reader to the API');
+  }
+});
+
+test('no page offers sourceApiUrl to a reader as a source to open', () => {
+  const offenders = fs.readdirSync(ROOT)
+    .filter(f => /\.(html|js)$/.test(f))
+    .filter(f => /sourceApiUrl/.test(read(f)));
+  assert.deepEqual(offenders, [],
+    'the machine-readable URL is for provenance, not for a link: ' + offenders.join(', '));
+});

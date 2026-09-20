@@ -580,7 +580,11 @@ async function handler(req, res) {
           startedAt: (geoms[0] && geoms[0].date) || null,
           updated: g.date || now.toISOString(),
           details: 'Open event tracked by NASA EONET · ' + cat,
-          sourceUrl: (v.sources && v.sources[0] && v.sources[0].url) || ('https://eonet.gsfc.nasa.gov/api/v3/events/' + v.id)
+          /* Falling back to the API URL would put raw JSON behind a link that
+             reads as a source. Every EONET record carries a page today; if one
+             ever does not, the reader gets the tracker, not a payload. */
+          sourceUrl: (v.sources && v.sources[0] && v.sources[0].url) || 'https://eonet.gsfc.nasa.gov/',
+          sourceApiUrl: 'https://eonet.gsfc.nasa.gov/api/v3/events/' + v.id
         });
         n++;
       }
@@ -690,7 +694,16 @@ async function handler(req, res) {
             expiresAt: p.expires || p.ends || null,
             details: String(p.headline || p.description || '').slice(0, 600),
             instruction: String(p.instruction || '').slice(0, 600),
-            sourceUrl: p['@id'] || 'https://www.weather.gov/',
+            /* p['@id'] is the CAP record's API URL: opening it drops the reader
+               into raw GeoJSON. The point forecast page is the National Weather
+               Service's own human page for this location and lists the warnings
+               active there. The API URL is kept for provenance, under a name
+               that says what it is, and is never offered as a source to read. */
+            sourceUrl: Number.isFinite(c.lat) && Number.isFinite(c.lon)
+              ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(c.lat).toFixed(4) +
+                '&lon=' + Number(c.lon).toFixed(4)
+              : 'https://www.weather.gov/',
+            sourceApiUrl: p['@id'] || '',
             issuingAgency: p.senderName || 'NWS'
           });
           n++;
