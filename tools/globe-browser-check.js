@@ -10,7 +10,8 @@
  *
  * It is deliberately not part of `npm test`: it needs Playwright and a
  * twenty-megabyte Cesium download, which have no business in CI. Run it by
- * hand when the globe changes.
+ * hand when the globe changes. It sweeps every map page (override with PAGES=)
+ * and exits non-zero if any of them fails, so a wrapper cannot read it as green.
  *
  *   mkdir -p /tmp/gc && cd /tmp/gc && npm init -y
  *   npm install playwright@1.49.1 leaflet@1.9.4
@@ -109,108 +110,92 @@ const server = http.createServer(async (req, res) => {
   await page.route(/services\.arcgisonline\.com/, r => r.abort());
   await page.route(/terrain\.reearth\.land/, r => r.abort());
 
-  await page.goto('http://localhost:8099/live-map', { waitUntil: 'load', timeout: 60000 });
+  /* Every map page that stands on its own, not just the one I happened to
+     develop against. The globe is wired in at one shared call, but each page
+     draws its own markers, and this branch's repeated failure has been fixing
+     one case and missing its twin. */
+  const PAGES = (process.env.PAGES || 'live-map,index,forecasts,alerts,regions,home-v3,dashboard,home,home-v2')
+    .split(',').map(s => s.trim()).filter(Boolean);
 
-  const webgl = await page.evaluate(() => {
-    const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
-  });
-  console.log('real WebGL available      :', webgl);
+  let failures = 0;
+  for (const name of PAGES) {
+    errors.length = 0;
+    await page.goto('http://localhost:8099/' + name, { waitUntil: 'load', timeout: 60000 });
+    await page.waitForFunction(() => window.Cesium !== undefined, { timeout: 60000 })
+      .catch(() => {});
+    /* Long enough for the feed, the page's own draw, and the globe's debounced
+       mirror to settle. */
+    await page.waitForTimeout(7000);
 
-  await page.waitForFunction(() => window.Cesium !== undefined, { timeout: 60000 })
-    .then(() => console.log('real Cesium loaded        : true'))
-    .catch(() => console.log('real Cesium loaded        : FALSE (timed out)'));
+    const r = await page.evaluate(() => {
+      const host = document.querySelector('.pnd-globe');
+      const viewer = host && host.__pndViewer;
+      const canvas = host && host.querySelector('canvas');
+      const leaflet = document.querySelectorAll('.leaflet-container path.leaflet-interactive').length;
+      const controls = [...document.querySelectorAll('.leaflet-control-container')];
+      return {
+        cesium: !!window.Cesium,
+        host: !!host,
+        visible: host ? getComputedStyle(host).display !== 'none' : false,
+        canvas: canvas ? canvas.width + 'x' + canvas.height : null,
+        toggle: !!document.querySelector('.pnd-view-toggle'),
+        leafletMarkers: leaflet,
+        entities: viewer ? viewer.entities.values.length : null,
+        controlsHidden: controls.length
+          ? controls.every(c => getComputedStyle(c).display === 'none') : 'n/a'
+      };
+    });
 
-  console.log('Cesium version            :', await page.evaluate(() => window.Cesium && Cesium.VERSION));
+    /* The globe must exist, be visible, carry a way back to the flat map, keep
+       Leaflet's own controls out of the way, and agree with the flat map about
+       how many hazards there are. A page that drew nothing is reported, not
+       silently passed. */
+    const ok = r.cesium && r.host && r.visible && r.canvas && r.toggle &&
+      (r.controlsHidden === true || r.controlsHidden === 'n/a') &&
+      r.leafletMarkers > 0 && r.entities === r.leafletMarkers;
+    if (!ok || errors.length) failures++;
+    console.log(
+      (ok && !errors.length ? '  ok   ' : '  FAIL ') + name.padEnd(12) +
+      ' cesium=' + r.cesium + ' host=' + r.host + ' visible=' + r.visible +
+      ' canvas=' + r.canvas + ' markers=' + r.leafletMarkers +
+      ' entities=' + r.entities + ' toggle=' + r.toggle +
+      ' controlsHidden=' + r.controlsHidden +
+      (errors.length ? ' ERRORS=' + JSON.stringify(errors.slice(0, 2)) : ''));
+    await page.screenshot({ path: 'globe-' + name + '.png' });
+  }
 
-  await page.waitForTimeout(9000);
-
-  const diag = await page.evaluate(async () => {
-    const r = await fetch('/api/events');
-    const d = await r.json();
-    return { apiOk: r.status, events: (d.events||[]).length,
-      statusLine: (document.getElementById('statusLine')||{}).textContent,
-      cards: document.querySelectorAll('#cards .event-card').length };
-  });
-  console.log('--- page data ---');
-  for (const [k,v] of Object.entries(diag)) console.log('  ' + k.padEnd(24) + ':', v);
-
-  const result = await page.evaluate(() => {
-    const host = document.querySelector('.pnd-globe');
-    const canvas = host && host.querySelector('canvas');
-    const out = {
-      hostPresent: !!host,
-      hostVisible: host ? getComputedStyle(host).display !== 'none' : false,
-      canvasPresent: !!canvas,
-      canvasSize: canvas ? canvas.width + 'x' + canvas.height : null,
-      togglePresent: !!document.querySelector('.pnd-view-toggle'),
-      leafletMarkers: 0, globeEntities: null
-    };
-    /* Real Leaflet has no global registry of maps, so the markers are counted
-       from what it actually rendered: a circleMarker is an SVG path. */
-    out.leafletMarkers = document.querySelectorAll('#map path.leaflet-interactive').length;
-    const viewer = host && host.__pndViewer;
-    out.globeEntities = viewer ? viewer.entities.values.length : null;
-    out.globeHasImagery = viewer ? viewer.imageryLayers.length : null;
-    if (viewer && viewer.entities.values.length) {
-      const e = viewer.entities.values[0];
-      const c = Cesium.Cartographic.fromCartesian(e.position.getValue(Cesium.JulianDate.now()));
-      out.firstEntityLatLon =
-        (Cesium.Math.toDegrees(c.latitude)).toFixed(3) + ',' +
-        (Cesium.Math.toDegrees(c.longitude)).toFixed(3);
-      out.firstEntityHasPopup = !!e.description;
-    }
-    return out;
-  });
-  for (const [k, v] of Object.entries(result)) console.log('  ' + k.padEnd(24) + ':', v);
-  console.log('page errors               :', errors.length ? errors.slice(0,3) : 'none');
-  console.log('intercepted               :', hits.length, hits.slice(0,6));
-
-  /* The toggle, in a real browser: Flat must hide the globe and Globe bring
-     it back, because that is the fallback every other claim rests on. */
-  await page.screenshot({ path: 'globe-on.png' });
+  /* The toggle, in a real browser, on the first page swept: Flat must hide the
+     globe without taking the flat map's markers with it, and Globe must bring
+     it back with its hazards still plotted. Every other claim above rests on
+     that fallback existing, so it is exercised rather than assumed. */
+  await page.goto('http://localhost:8099/' + PAGES[0], { waitUntil: 'load', timeout: 60000 });
+  await page.waitForTimeout(7000);
   await page.click('.pnd-view-toggle button:nth-child(2)');
   await page.waitForTimeout(700);
-  const afterFlat = await page.evaluate(() => {
+  const flat = await page.evaluate(() => {
     const h = document.querySelector('.pnd-globe');
     return { globeHidden: getComputedStyle(h).display === 'none',
-      leafletStillThere: document.querySelectorAll('#map path.leaflet-interactive').length };
+      markers: document.querySelectorAll('.leaflet-container path.leaflet-interactive').length };
   });
-  const boxes = await page.evaluate(() => {
-    const r = el => { if (!el) return null; const b = el.getBoundingClientRect();
-      return Math.round(b.width) + 'x' + Math.round(b.height); };
-    const hosts = [...document.querySelectorAll('.pnd-globe')];
-    const host = hosts[0];
-    const canvas = host && host.querySelector('canvas');
-    const mapEl = document.getElementById('map');
-    return { hostCount: hosts.length,
-      hostDisplay: host ? getComputedStyle(host).display : null,
-      hostOffset: host ? host.offsetWidth + 'x' + host.offsetHeight : null,
-      mapPosition: mapEl ? getComputedStyle(mapEl).position : null,
-      canvasCount: host ? host.querySelectorAll('canvas').length : 0,
-      mapDiv: r(mapEl), host: r(host),
-      canvasBox: r(canvas),
-      canvasAttr: canvas ? canvas.width + 'x' + canvas.height : null,
-      dpr: window.devicePixelRatio,
-      panel: r(document.querySelector('#map') ? document.querySelector('#map').parentElement : null) };
-  });
-  console.log('--- geometry ---');
-  for (const [k,v] of Object.entries(boxes)) console.log('  ' + k.padEnd(24) + ':', v);
-
-  console.log('--- pressing Flat ---');
-  for (const [k,v] of Object.entries(afterFlat)) console.log('  ' + k.padEnd(24) + ':', v);
-  await page.screenshot({ path: 'flat.png' });
   await page.click('.pnd-view-toggle button:nth-child(1)');
   await page.waitForTimeout(700);
-  const backToGlobe = await page.evaluate(() => {
+  const back = await page.evaluate(() => {
     const h = document.querySelector('.pnd-globe');
-    return { globeVisibleAgain: getComputedStyle(h).display !== 'none',
-      entitiesStillPlotted: h.__pndViewer ? h.__pndViewer.entities.values.length : null };
+    return { globeVisible: getComputedStyle(h).display !== 'none',
+      entities: h.__pndViewer ? h.__pndViewer.entities.values.length : null };
   });
-  console.log('--- pressing Globe again ---');
-  for (const [k,v] of Object.entries(backToGlobe)) console.log('  ' + k.padEnd(24) + ':', v);
-  await page.screenshot({ path: 'globe.png', fullPage: false });
-  console.log('screenshot                : globe.png');
+  const toggleOk = flat.globeHidden && flat.markers > 0 &&
+    back.globeVisible && back.entities > 0;
+  if (!toggleOk) failures++;
+  console.log((toggleOk ? '  ok   ' : '  FAIL ') + 'toggle'.padEnd(12) +
+    ' flatHidesGlobe=' + flat.globeHidden + ' flatKeepsMarkers=' + flat.markers +
+    ' globeReturns=' + back.globeVisible + ' entitiesKept=' + back.entities);
+
+  console.log('\npages checked: ' + PAGES.length + ', failing: ' + failures);
+
   await browser.close();
   server.close();
+  /* A checker that reports failures and exits 0 is worse than no checker: it
+     reads as green to anything wrapping it. */
+  process.exitCode = failures ? 1 : 0;
 })().catch(e => { console.error('FAILED:', e.message); process.exit(1); });
