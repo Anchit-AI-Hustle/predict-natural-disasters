@@ -1,11 +1,21 @@
 name: Refresh disaster intelligence
 
-# Every 5 minutes: re-pull the live feed and pre-warm the per-event enrichment
-# cache so each detail page serves fresh news, situation reports, videos,
-# helplines and relief links straight from the edge.
+# Hourly: re-pull the live feed, record any newly-seen outlook and any movement
+# in the existing ones, and pre-warm the per-event enrichment cache.
+#
+# This asked for every five minutes and never got it. Measured from the
+# ledger's own write times over 15-20 September, GitHub actually ran it every
+# 2.0 to 5.6 hours, median 3.7 — about a fortieth of the declared rate, because
+# a schedule this aggressive on a free runner is throttled hard. Asking hourly
+# is both achievable and honest; the run also measures what it actually
+# achieves and publishes that rather than the intention.
+#
+# The pages themselves are not stale in between: /api/events recomputes the
+# feed from the upstream sources on every request. What this job adds is the
+# written record — which outlook existed when, and what changed since.
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -36,17 +46,24 @@ jobs:
       - name: Record newly-seen outlooks in the forecast ledger
         run: node tools/record-outlooks.js /tmp/events.json data/outlook-ledger.json
 
+      # What moved since the last run, which the append-only ledger cannot
+      # answer: a re-issued outlook is appended as a new row indistinguishable
+      # from a new one, and an outlook that stopped being issued leaves no
+      # trace at all.
+      - name: Record what changed in the forecast set
+        run: node tools/record-changes.js /tmp/events.json data/forecast-changes.json
+
       - name: Commit the ledger when it changed
         run: |
           set -euo pipefail
-          if git diff --quiet -- data/outlook-ledger.json; then
+          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json; then
             echo "ledger unchanged"
             exit 0
           fi
           total=$(node -e "console.log(require('./data/outlook-ledger.json').length)")
           git config user.name "disaster-refresh"
           git config user.email "noreply@anthropic.com"
-          git add data/outlook-ledger.json
+          git add data/outlook-ledger.json data/forecast-changes.json
           # "[ledger]" is what vercel.json ignoreCommand looks for: recording a
           # forecast must not spend one of the 100 daily deployments.
           git commit -m "Record outlooks in the forecast ledger ($total total) [ledger]"

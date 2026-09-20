@@ -237,7 +237,9 @@
         '<li>' + esc(s.name) + ' — ' + esc(s.role) + ' · <b>' + (s.items || 0) + '</b> item(s)</li>').join('') + '</ul>',
       '<p class="muted" style="margin-top:8px">' + esc(d.disclaimer || '') + '</p>');
     setBody('directories', dirs.join('') + provenance);
-    setMeta('directories', 'Refresh target ' + ((d.coverage && d.coverage.refreshTarget) || '5 minutes'));
+    /* The fallback used to assert a five-minute rate, so a payload with no
+       coverage block still published a refresh rate nothing was meeting. */
+    setMeta('directories', 'Refresh ' + ((d.coverage && d.coverage.refreshTarget) || 'recomputed on every request'));
   }
 
   function render(d, e) {

@@ -83,6 +83,34 @@ const PND={
         : 'of varying length')+
       '. Nothing here looks further ahead, and that is a limit of the method rather than a forecast of calm.';
   },
+  /* "Has anything changed in the forecasts since I last looked" had no answer:
+     the ledger appends a re-issued outlook as a new row indistinguishable from
+     a new one, and an outlook that stopped being issued left no trace. */
+  changesHtml(meta){
+    const c=meta&&meta.forecastChanges;
+    if(!c)return '<p class="muted">No change record has been written yet.</p>';
+    const when=this.fmtDate(c.at)+' · '+this.age(c.at);
+    if(c.baseline)return '<p class="muted">First recorded check, '+this.esc(when)+
+      '. '+c.activeOutlooks+' outlooks are open; there is nothing earlier to compare them with yet.</p>';
+    const gap=typeof c.sinceHours==='number'&&c.sinceHours>0
+      ? ' (' + (c.sinceHours<1 ? Math.round(c.sinceHours*60)+' minutes' : c.sinceHours+' hours') + ' after the one before)'
+      : '';
+    if(!c.total)return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+
+      '. None of the '+c.activeOutlooks+' open outlooks changed level, window or status.</p>';
+    const R=c.records||{};
+    const row=(label,list,fmt)=>(list&&list.length)
+      ? '<div><b>'+label+' ('+list.length+')</b>'+list.slice(0,8).map(x=>
+          '<p class="muted">'+this.esc(fmt(x))+'</p>').join('')+
+          (list.length>8?'<p class="muted">…and '+(list.length-8)+' more</p>':'')+'</div>'
+      : '';
+    return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+' · '+c.total+
+      ' change'+(c.total===1?'':'s')+' across '+c.activeOutlooks+' open outlooks.</p>'+
+      row('Newly issued',R.added,x=>x.title+' — '+x.alert)+
+      row('Raised',R.raised,x=>x.title+' — '+x.from+' → '+x.to)+
+      row('Lowered',R.lowered,x=>x.title+' — '+x.from+' → '+x.to)+
+      row('Window moved',R.windowMoved,x=>x.title+' — now ends '+this.fmtDate(x.toEnd))+
+      row('No longer issued',R.gone,x=>x.title+' — the signal behind it stopped');
+  },
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
     newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},

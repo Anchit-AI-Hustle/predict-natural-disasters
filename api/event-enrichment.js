@@ -574,7 +574,11 @@ async function handler(req, res) {
     ],
 
     coverage: {
-      refreshTarget: '5 minutes',
+      /* This read as a five-minute refresh. The enrichment record is warmed
+         by the same scheduled job as the ledger, which GitHub runs every few
+         hours, not every few minutes; what is genuinely per-request is the
+         event feed. Saying which is which beats claiming a rate for both. */
+      refreshTarget: 'Event feed recomputed per request; enrichment warmed hourly by the scheduled job',
       scope: 'Every event in the live feed, worldwide',
       newsProviders: ['Google News', 'Bing News', 'ReliefWeb (UN OCHA)'],
       videoProviders: ['YouTube'],

@@ -21,6 +21,9 @@ try { HAZARD_MODEL = require('../hazard-model.js'); } catch (e) { HAZARD_MODEL =
 // hazard model: a missing file must not take the feed down.
 let OUTLOOK_LEDGER = null;
 try { OUTLOOK_LEDGER = require('../data/outlook-ledger.json'); } catch (e) { OUTLOOK_LEDGER = null; }
+let FORECAST_CHANGES;
+try { FORECAST_CHANGES = require('../data/forecast-changes.json'); }
+catch (e) { FORECAST_CHANGES = null; }
 
 const MAX_OUTLOOKS = 24;
 const OUTLOOK_HORIZON_HOURS = 72;
@@ -407,7 +410,13 @@ async function handler(req, res) {
       sourceCount: 0,
       coverage: 'Global terrestrial and coastal coverage; all countries and territories are supported by the UI, subject to upstream reporting.',
       forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
-      refreshTarget: '5 minutes'
+      /* The feed itself is recomputed from the upstream sources on every
+         request, so a page load is never serving a cached forecast. What runs
+         on a schedule is the written record — the ledger and the change log —
+         and that is described by refreshRecorded, measured rather than
+         declared. This field used to state a five-minute rate, which was the cron's
+         request and about a fortieth of what GitHub actually granted it. */
+      refreshTarget: 'recomputed on every request'
     },
     events: []
   };
@@ -1174,6 +1183,39 @@ async function handler(req, res) {
       out.events.filter(e => e.forecast && Number(e.leadTimeHours) > 0).length;
   }
   out.meta.hazardModel = HAZARD_MODEL ? 'loaded' : 'unavailable';
+  /* What moved in the forecast set since the previous recorded run, and how
+     often that recording actually happens. Both are read from what the job
+     wrote, so neither can drift from the schedule the job really keeps. */
+  if (FORECAST_CHANGES && Array.isArray(FORECAST_CHANGES.runs) && FORECAST_CHANGES.runs.length) {
+    const last = FORECAST_CHANGES.runs[FORECAST_CHANGES.runs.length - 1];
+    const n = a => (Array.isArray(a) ? a.length : 0);
+    out.meta.forecastChanges = {
+      at: last.at,
+      sinceHours: last.sinceHours,
+      activeOutlooks: last.active,
+      baseline: !!last.baseline,
+      added: n(last.added),
+      raised: n(last.raised),
+      lowered: n(last.lowered),
+      windowMoved: n(last.windowMoved),
+      gone: n(last.gone),
+      total: n(last.added) + n(last.raised) + n(last.lowered) +
+        n(last.windowMoved) + n(last.gone),
+      records: {
+        added: last.added || [], raised: last.raised || [],
+        lowered: last.lowered || [], windowMoved: last.windowMoved || [],
+        gone: last.gone || []
+      }
+    };
+    out.meta.refreshRecorded = Object.assign(
+      { schedule: 'hourly', runsRecorded: FORECAST_CHANGES.runs.length },
+      FORECAST_CHANGES.observedCadenceHours || {},
+      { note: 'The written record is what runs on a schedule. The feed above ' +
+        'is recomputed from the upstream sources on every request.' });
+  } else {
+    out.meta.forecastChanges = null;
+  }
+
 
   // What has actually been written down, as opposed to what is live now.
   if (Array.isArray(OUTLOOK_LEDGER)) {
