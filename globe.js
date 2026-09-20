@@ -134,16 +134,24 @@
        left it there. The promised fallback has to actually be visible while
        the globe is on its way. */
     host.style.cssText =
-      /* Above every Leaflet pane. At 400 this sat at the overlay level, so
-         the flat map's marker pane (600) and controls (800) stayed on top of
-         the Cesium canvas: rotate the globe and those markers held still
-         while the mirrored points moved beneath them, showing each hazard in
-         two places at once and neither of them right. */
-      'position:absolute;inset:0;z-index:900;background:#04120e;display:none';
+      /* Above everything Leaflet draws. Two goes at this were wrong: 400 put
+         it at the overlay level, under the marker pane, so rotating the globe
+         left the flat markers hanging over it; 900 cleared the panes but not
+         .leaflet-top/.leaflet-bottom, which Leaflet's own stylesheet puts at
+         1000 — a browser screenshot showed the zoom and layers controls
+         floating on the globe. The pane list is not the whole stacking order. */
+      'position:absolute;inset:0;z-index:1200;background:#04120e;display:none';
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(host);
 
     var viewer = null, entities = null, disposed = false;
+
+    function setControls(display) {
+      try {
+        var bars = container.querySelectorAll('.leaflet-control-container');
+        for (var i = 0; i < bars.length; i++) bars[i].style.display = display;
+      } catch (e) { /* no controls on this map */ }
+    }
 
     function destroy() {
       disposed = true;
@@ -197,6 +205,11 @@
       viewer.scene.skyAtmosphere.saturationShift = -0.12;
       viewer.scene.skyAtmosphere.brightnessShift = -0.08;
       entities = viewer.entities;
+      /* Hung off the host so the globe can be inspected from outside the
+         closure. Nothing in the app reads it; it exists because the one
+         defect that emptied this globe entirely was invisible to every
+         test, and a browser check needs some way to ask what is on it. */
+      host.__pndViewer = viewer;
 
       Promise.resolve(Cesium.ArcGisMapServerImageryProvider.fromUrl(ESRI_IMAGERY, {
         credit: ESRI_CREDIT, enablePickFeatures: false
@@ -219,8 +232,15 @@
 
     return {
       host: host, sync: sync, destroy: destroy, ready: promise,
-      reveal: function () { if (!disposed && viewer) host.style.display = ''; },
-      hide: function () { host.style.display = 'none'; },
+      /* The flat map's own controls are hidden with it. They still drive
+         the Leaflet map underneath, so leaving them up means a zoom button
+         that visibly does nothing. */
+      reveal: function () {
+        if (disposed || !viewer) return;
+        host.style.display = '';
+        setControls('none');
+      },
+      hide: function () { host.style.display = 'none'; setControls(''); },
       viewer: function () { return viewer; }
     };
   }

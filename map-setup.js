@@ -211,7 +211,7 @@
      panes know nothing about. */
   var GLOBE_CSS = [
     /* Above the globe host, which is itself above every Leaflet pane. */
-    '.pnd-view-toggle{position:absolute;top:10px;left:10px;z-index:1000;',
+    '.pnd-view-toggle{position:absolute;top:10px;left:10px;z-index:1300;',
     'display:inline-flex;gap:0;border:1px solid #2c5c4c;border-radius:8px;',
     'overflow:hidden;font:600 11px/1 system-ui,sans-serif}',
     '.pnd-view-toggle button{appearance:none;border:0;padding:7px 11px;cursor:pointer;',

@@ -211,23 +211,36 @@ test('a mounted globe reveals itself only once ready', async () => {
 
 /* ---------- the globe must actually be on top ---------- */
 
-test('the globe covers every Leaflet pane, and the toggle covers the globe', () => {
-  /* Leaflet stacks its panes tile 200, overlay 400, shadow 500, marker 600,
-     tooltip 650, popup 700, control 800. The host was at 400 — the overlay
-     level — so the flat map's markers and controls stayed above the Cesium
-     canvas. Rotating the globe then left those markers fixed on screen while
-     the mirrored points moved underneath, showing every hazard in two places
-     and neither of them right. */
-  const LEAFLET_TOP = 800;
+test('the globe covers everything Leaflet draws, toggle included', () => {
+  /* Leaflet 1.9.4's stylesheet, read rather than remembered: the panes run
+     tile 200 … control 800, but .leaflet-top and .leaflet-bottom — the
+     containers the zoom and layers controls live in — are at 1000.
+     The first version of this test asserted only "above 800", so a globe at
+     900 passed while a real browser screenshot showed the zoom and layers
+     controls sitting on top of the globe. The pane list is not the whole
+     stacking order. */
+  const LEAFLET_TOP = 1000;
   const globeZ = Number((read('globe.js').match(/z-index:(\d+);background:#04120e/) || [])[1]);
   assert.ok(Number.isFinite(globeZ), 'the globe host sets no z-index');
   assert.ok(globeZ > LEAFLET_TOP,
-    `the globe sits at ${globeZ}, under Leaflet's controls at ${LEAFLET_TOP}`);
+    `the globe sits at ${globeZ}, under Leaflet's control containers at ${LEAFLET_TOP}`);
   const toggleZ = Number((read('map-setup.js')
     .match(/\.pnd-view-toggle\{[^']*z-index:(\d+)/) || [])[1]);
   assert.ok(Number.isFinite(toggleZ), 'the toggle sets no z-index');
   assert.ok(toggleZ > globeZ,
     `the toggle at ${toggleZ} is under the globe at ${globeZ}, so it cannot be pressed`);
+});
+
+test('the flat map controls are hidden while the globe is showing', () => {
+  /* Raising the globe above them is not enough on its own: they drive the
+     Leaflet map underneath, so a zoom button left visible would be one that
+     visibly does nothing. They go with the map they control. */
+  const g = read('globe.js');
+  assert.match(g, /leaflet-control-container/,
+    'nothing hides the flat map controls when the globe takes over');
+  assert.match(g, /reveal: function[\s\S]{0,240}setControls\('none'\)/);
+  assert.match(g, /hide: function[\s\S]{0,120}setControls\(''\)/,
+    'the controls never come back when the reader presses Flat');
 });
 
 /* ---------- a hazard on the globe can be read ---------- */
