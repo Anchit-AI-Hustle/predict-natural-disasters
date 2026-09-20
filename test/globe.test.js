@@ -178,6 +178,27 @@ test('a mounted globe reveals itself only once ready', async () => {
   window.close();
 });
 
+/* ---------- the globe must actually be on top ---------- */
+
+test('the globe covers every Leaflet pane, and the toggle covers the globe', () => {
+  /* Leaflet stacks its panes tile 200, overlay 400, shadow 500, marker 600,
+     tooltip 650, popup 700, control 800. The host was at 400 — the overlay
+     level — so the flat map's markers and controls stayed above the Cesium
+     canvas. Rotating the globe then left those markers fixed on screen while
+     the mirrored points moved underneath, showing every hazard in two places
+     and neither of them right. */
+  const LEAFLET_TOP = 800;
+  const globeZ = Number((read('globe.js').match(/z-index:(\d+);background:#04120e/) || [])[1]);
+  assert.ok(Number.isFinite(globeZ), 'the globe host sets no z-index');
+  assert.ok(globeZ > LEAFLET_TOP,
+    `the globe sits at ${globeZ}, under Leaflet's controls at ${LEAFLET_TOP}`);
+  const toggleZ = Number((read('map-setup.js')
+    .match(/\.pnd-view-toggle\{[^']*z-index:(\d+)/) || [])[1]);
+  assert.ok(Number.isFinite(toggleZ), 'the toggle sets no z-index');
+  assert.ok(toggleZ > globeZ,
+    `the toggle at ${toggleZ} is under the globe at ${globeZ}, so it cannot be pressed`);
+});
+
 /* ---------- a hazard on the globe can be read ---------- */
 
 test('clicking a hazard can show what it is', async () => {

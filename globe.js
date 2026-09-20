@@ -127,7 +127,12 @@
        left it there. The promised fallback has to actually be visible while
        the globe is on its way. */
     host.style.cssText =
-      'position:absolute;inset:0;z-index:400;background:#04120e;display:none';
+      /* Above every Leaflet pane. At 400 this sat at the overlay level, so
+         the flat map's marker pane (600) and controls (800) stayed on top of
+         the Cesium canvas: rotate the globe and those markers held still
+         while the mirrored points moved beneath them, showing each hazard in
+         two places at once and neither of them right. */
+      'position:absolute;inset:0;z-index:900;background:#04120e;display:none';
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(host);
 

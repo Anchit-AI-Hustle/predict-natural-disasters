@@ -95,7 +95,13 @@ const PND={
     const gap=typeof c.sinceHours==='number'&&c.sinceHours>0
       ? ' (' + (c.sinceHours<1 ? Math.round(c.sinceHours*60)+' minutes' : c.sinceHours+' hours') + ' after the one before)'
       : '';
-    if(!c.total)return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+
+    /* An outage is not a change in the forecasts, so it is deliberately not
+       counted in total — but it still has to be shown. Returning on total
+       alone meant a run whose only exceptional result was an unreachable
+       source reported "nothing changed" and dropped the outage rows entirely,
+       which is the opposite of what recording them was for. */
+    const un=Number(c.unavailable)||0;
+    if(!c.total&&!un)return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+
       '. None of the '+c.activeOutlooks+' open outlooks changed level, window or status.</p>';
     const R=c.records||{};
     const row=(label,list,fmt)=>(list&&list.length)
@@ -103,8 +109,12 @@ const PND={
           '<p class="muted">'+this.esc(fmt(x))+'</p>').join('')+
           (list.length>8?'<p class="muted">…and '+(list.length-8)+' more</p>':'')+'</div>'
       : '';
-    return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+' · '+c.total+
-      ' change'+(c.total===1?'':'s')+' across '+c.activeOutlooks+' open outlooks.</p>'+
+    const headline=c.total
+      ? c.total+' change'+(c.total===1?'':'s')+' across '+c.activeOutlooks+' open outlooks'
+      : 'no changes across '+c.activeOutlooks+' open outlooks';
+    const caveat=un?', and '+un+' that could not be checked':'';
+    return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+' · '+
+      this.esc(headline+caveat)+'.</p>'+
       row('Newly issued',R.added,x=>x.title+' — '+x.alert)+
       row('Raised',R.raised,x=>x.title+' — '+x.from+' → '+x.to)+
       row('Lowered',R.lowered,x=>x.title+' — '+x.from+' → '+x.to)+

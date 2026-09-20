@@ -408,6 +408,39 @@ test('every kind of change is put into words', async () => {
   window.close();
 });
 
+test('a quiet run still reports a source it could not check', async () => {
+  /* An outage is deliberately not counted as a change to the forecasts, so on
+     an otherwise quiet run total is zero — and the panel returned early on
+     total alone, reporting "nothing changed" and dropping the outage rows.
+     That is the opposite of what recording them was for. */
+  const { window } = await renderPage('forecasts.html', { timeoutMs: 15000,
+    waitFor: d => !((d.getElementById('changes') || {}).textContent || '').includes('Loading') });
+  const say = window.PND.changesHtml.bind(window.PND);
+  const html = say({ forecastChanges: {
+    at: '2026-09-20T12:00:00Z', sinceHours: 1, activeOutlooks: 29, baseline: false,
+    total: 0, unavailable: 1,
+    records: { unavailable: [{ id: 'a', title: 'Flood outlook', provider: 'gdacs' }] } } });
+  assert.match(html, /Could not be checked/,
+    'a source outage was hidden because nothing else changed');
+  assert.match(html, /could not be checked/);
+  assert.doesNotMatch(html, /None of the 29 open outlooks changed/,
+    'the panel claimed nothing changed while a source was unreachable');
+  window.close();
+});
+
+test('a genuinely quiet run still reads as quiet', async () => {
+  /* The obvious over-correction: every quiet run now shouting about nothing. */
+  const { window } = await renderPage('forecasts.html', { timeoutMs: 15000,
+    waitFor: d => !((d.getElementById('changes') || {}).textContent || '').includes('Loading') });
+  const say = window.PND.changesHtml.bind(window.PND);
+  const html = say({ forecastChanges: {
+    at: '2026-09-20T12:00:00Z', sinceHours: 1, activeOutlooks: 29, baseline: false,
+    total: 0, unavailable: 0, records: {} } });
+  assert.match(html, /None of the 29 open outlooks changed/);
+  assert.doesNotMatch(html, /Could not be checked/);
+  window.close();
+});
+
 test('no change is reported as no change, not as silence', async () => {
   const { window } = await page();
   const say = window.PND.changesHtml.bind(window.PND);
