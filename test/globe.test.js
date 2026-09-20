@@ -32,6 +32,35 @@ test.after(closeAllWindows);
 
 const mounted = d => d.querySelector('.pnd-globe');
 
+/* globe.js run on its own, with no page around it, so the marker rules can be
+   exercised against layers this suite constructs rather than whatever a page
+   happened to draw. */
+function loadGlobe() {
+  const vm = require('node:vm');
+  /* Just enough of a browser for the module to define itself: it returns
+     early without a window and a document, and everything under test here is
+     pure. */
+  const el = () => ({ style: { cssText: '' }, className: '', appendChild() {},
+    setAttribute() {}, remove() {}, addEventListener() {} });
+  const ctx = vm.createContext({
+    window: {},
+    document: { createElement: el, head: el(), documentElement: el() },
+    localStorage: { getItem: () => null, setItem() {} },
+    getComputedStyle: () => ({ position: 'relative' }),
+    Promise, setTimeout, clearTimeout
+  });
+  vm.runInContext(read('globe.js'), ctx);
+  assert.ok(ctx.window.PNDGlobe, 'globe.js defined nothing');
+  return { PNDGlobe: ctx.window.PNDGlobe };
+}
+function pt(lat, lng, options) {
+  return { getLatLng: () => ({ lat, lng }), options: options || {} };
+}
+function fakeMap(layers) {
+  return { eachLayer: fn => layers.forEach(fn) };
+}
+
+
 /* ---------- it is on every map ---------- */
 
 test('every page that builds a map loads the globe', () => {
@@ -96,6 +125,75 @@ test('the globe follows the page when its markers change', async () => {
   window.close();
 });
 
+test('the basemap country labels are not plotted as hazards', () => {
+  /* political() draws every country's name as a marker, and a marker has a
+     position like any other. Mirrored blindly they became default green
+     points, so the globe showed events in the middle of Canada and Brazil
+     that do not exist. They are declared non-interactive and live in their
+     own pane; a page's event markers are neither. */
+  const { PNDGlobe } = loadGlobe();
+  const label = pt(56, -106, { interactive: false, pane: 'pndLabels' });
+  const hazard = pt(27.7, 85.3, { radius: 9, color: '#ef2639' });
+  const got = PNDGlobe.readMarkers(fakeMap([label, hazard]));
+  assert.equal(got.length, 1, 'a basemap label was mirrored as an event');
+  assert.equal(got[0].lat, 27.7);
+});
+
+test('a label in the default pane is still excluded by being non-interactive', () => {
+  const { PNDGlobe } = loadGlobe();
+  const got = PNDGlobe.readMarkers(fakeMap([pt(10, 10, { interactive: false })]));
+  /* Length, not deepEqual: the array comes from a vm realm, so its Array is
+     not this realm's and a strict deep comparison fails on the constructor. */
+  assert.equal(got.length, 0);
+});
+
+test('an ordinary event marker is not excluded by accident', () => {
+  const { PNDGlobe } = loadGlobe();
+  const got = PNDGlobe.readMarkers(fakeMap([
+    pt(1, 2, { radius: 5, color: '#25e29c' }),
+    pt(3, 4, {})
+  ]));
+  assert.equal(got.length, 2);
+});
+
+/* ---------- the flat map stays visible until there is a globe ---------- */
+
+test('the globe host is hidden until the viewer exists', () => {
+  const g = read('globe.js');
+  assert.match(g, /display:none/,
+    'the host is appended visible, covering the flat map for the whole download');
+  assert.match(g, /reveal: function/);
+  const m = read('map-setup.js');
+  assert.match(m, /handle\.reveal\(\)/, 'nothing ever reveals it');
+});
+
+test('a mounted globe reveals itself only once ready', async () => {
+  const { window } = await renderPage('live-map.html', { timeoutMs: 15000, waitFor: mounted });
+  const host = window.document.querySelector('.pnd-globe');
+  assert.ok(host);
+  /* By the time the viewer exists it must be visible; before that, hidden. */
+  await new Promise(r => setTimeout(r, 300));
+  assert.notEqual(host.style.display, 'none',
+    'the globe never became visible even though its viewer was created');
+  window.close();
+});
+
+/* ---------- a hazard on the globe can be read ---------- */
+
+test('clicking a hazard can show what it is', async () => {
+  const { window } = await renderPage('live-map.html', { timeoutMs: 18000,
+    waitFor: () => (window.__pndViewers || []).length &&
+      window.__pndViewers[0].entities.values.length });
+  const v = window.__pndViewers[0];
+  /* The description is carried... */
+  const withText = v.entities.values.filter(e => e.description && /<b>/.test(e.description));
+  assert.ok(withText.length > 0, 'entities carry no description at all');
+  /* ...and something is configured that can display it. Carrying a popup the
+     viewer cannot render left every hazard on the globe unreadable. */
+  assert.equal(v.__opts.infoBox, true,
+    'infoBox is off, so nothing can display the description each entity carries');
+  window.close();
+});
 /* ---------- it never needs an account, and it credits its sources ---------- */
 
 test('no ion token is set, anywhere', () => {

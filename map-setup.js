@@ -286,14 +286,20 @@
           handle = PNDGlobe.mount(map, container);
           if (!handle) return;
           if (typeof map.on === 'function') map.on('layeradd layerremove', resync);
-          handle.ready.then(resync).catch(function () {
+          handle.ready.then(function () {
+            /* Revealed only now: until the viewer exists there is nothing to
+               show, and the flat map underneath is the better thing to be
+               looking at. */
+            if (PNDGlobe.prefers() !== 'flat') handle.reveal();
+            resync();
+          }).catch(function () {
             /* Cesium never arrived. Drop back to the flat map rather than
                leaving a dead panel over it. */
             teardown();
             setPressed('flat');
           });
         }
-        handle.host.style.display = '';
+        if (handle.viewer && handle.viewer()) handle.reveal();
       }
 
       function teardown() {
@@ -323,7 +329,7 @@
         if (persist) PNDGlobe.remember(view);
         setPressed(view);
         if (view === 'globe') show();
-        else if (handle) handle.host.style.display = 'none';
+        else if (handle) handle.hide();
       }
 
       bGlobe.addEventListener('click', function () { choose('globe', true); });

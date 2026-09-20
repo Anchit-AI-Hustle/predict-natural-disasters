@@ -93,6 +93,13 @@
         try { ll = layer.getLatLng(); } catch (e) { return; }
         if (!ll || !isFinite(ll.lat) || !isFinite(ll.lng)) return;
         var o = layer.options || {};
+        /* The basemap draws every country's name as a marker, and a marker
+           has a position like any other. Mirrored blindly they became green
+           points, so the globe showed an event in the middle of Canada and
+           Brazil that does not exist — the worst thing a hazard map can do.
+           The labels are declared non-interactive and live in their own pane;
+           a page's event markers are neither. */
+        if (o.interactive === false || o.pane) return;
         var html = '';
         try {
           var p = typeof layer.getPopup === 'function' ? layer.getPopup() : null;
@@ -114,7 +121,13 @@
     var host = document.createElement('div');
     host.className = 'pnd-globe';
     host.setAttribute('aria-hidden', 'true');
-    host.style.cssText = 'position:absolute;inset:0;z-index:400;background:#04120e';
+    /* Hidden until the viewer exists. It used to be appended visible and
+       opaque, so a multi-megabyte download covered the already-rendered flat
+       map with a blank dark panel for its whole duration — and a stalled CDN
+       left it there. The promised fallback has to actually be visible while
+       the globe is on its way. */
+    host.style.cssText =
+      'position:absolute;inset:0;z-index:400;background:#04120e;display:none';
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(host);
 
@@ -159,7 +172,12 @@
         timeline: false, animation: false, baseLayerPicker: false, geocoder: false,
         homeButton: false, sceneModePicker: false, navigationHelpButton: false,
         fullscreenButton: false, vrButton: false, selectionIndicator: false,
-        infoBox: false, baseLayer: false, msaaSamples: 4,
+        /* Kept, unlike the source this is adapted from, which has its own
+           UI for it. Each entity carries the page's own popup as its
+           description, and with no info box and no click handler there was no
+           way to read it: clicking a hazard on the globe did nothing at all,
+           so a reader had to find the Flat button to learn what an event was. */
+        infoBox: true, selectionIndicator: true, baseLayer: false, msaaSamples: 4,
         contextOptions: { webgl: { preserveDrawingBuffer: true } }
       });
       viewer.scene.skyAtmosphere.show = true;
@@ -187,8 +205,12 @@
       return viewer;
     });
 
-    return { host: host, sync: sync, destroy: destroy, ready: promise,
-      viewer: function () { return viewer; } };
+    return {
+      host: host, sync: sync, destroy: destroy, ready: promise,
+      reveal: function () { if (!disposed && viewer) host.style.display = ''; },
+      hide: function () { host.style.display = 'none'; },
+      viewer: function () { return viewer; }
+    };
   }
 
   window.PNDGlobe = {

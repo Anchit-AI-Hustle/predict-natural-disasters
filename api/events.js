@@ -781,13 +781,19 @@ async function handler(req, res) {
         });
         const zoneless = features.filter(f => !centroid(f.geometry)).slice(0, 12);
         const zoneCentroids = new Map();
+        /* The zone's shape, not only its middle. An alert with no inline
+           geometry still gets its point-forecast link from somewhere, and
+           passing a null geometry to insidePoint made it accept the mean
+           unchecked — so a concave or multipart forecast zone could still
+           send the reader to a place that is not under the warning. */
+        const zoneGeometry = new Map();
         await Promise.allSettled(zoneless.map(async f => {
           const zone = ((f.properties || {}).affectedZones || [])[0];
           if (!zone) return;
           try {
             const z = await timedFetch(zone, { timeout: 2500, headers: { accept: 'application/geo+json' } });
             const c = centroid(z.geometry);
-            if (c) zoneCentroids.set(f, c);
+            if (c) { zoneCentroids.set(f, c); zoneGeometry.set(f, z.geometry); }
           } catch (e) { /* leave this alert unplaced */ }
         }));
 
@@ -821,7 +827,7 @@ async function handler(req, res) {
                  or holed alert can sit outside it. When no such point can be
                  established the reader goes to the agency's own front page
                  rather than to a forecast for somewhere that is not warned. */
-              const link = insidePoint(f.geometry, c);
+              const link = insidePoint(f.geometry || zoneGeometry.get(f) || null, c);
               return link && Number.isFinite(link.lat) && Number.isFinite(link.lon)
                 ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(link.lat).toFixed(4) +
                   '&lon=' + Number(link.lon).toFixed(4)

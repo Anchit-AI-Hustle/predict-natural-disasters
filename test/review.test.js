@@ -271,12 +271,46 @@ test('insidePoint never returns a point it has itself rejected', () => {
   }
 });
 
+test('an alert placed from its zone is checked against that zone', () => {
+  /* The zone fallback was the path nobody looked at. When an alert carries no
+     inline geometry its coordinate comes from the fetched zone, but the call
+     passed f.geometry — null — to insidePoint, which then accepted the mean
+     unchecked. A concave forecast zone could still send the reader somewhere
+     that is not under the warning. */
+  const src = read(path.join('api', 'events.js'));
+  assert.match(src, /const zoneGeometry = new Map\(\)/,
+    'the zone shape is not retained, only its middle');
+  assert.match(src, /insidePoint\(f\.geometry \|\| zoneGeometry\.get\(f\) \|\| null, c\)/,
+    'the zone shape never reaches the containment check');
+  assert.doesNotMatch(src, /insidePoint\(f\.geometry, c\)/,
+    'the call still passes a null geometry for a zone-placed alert');
+});
+
+test('a null geometry yields no verified point, so no point link', () => {
+  /* The behaviour that makes the above matter: with nothing to check against,
+     insidePoint hands back whatever it was given, so the caller must not use
+     it as if it had been verified. */
+  const concave = { type: 'Polygon', coordinates: [[[0, 0], [10, 0], [10, 10],
+    [7, 10], [7, 3], [3, 3], [3, 10], [0, 10], [0, 0]]] };
+  const mean = api.centroid(concave);
+  const polys = api.polygonsOf(concave);
+  assert.equal(api.inPolygon(mean.lon, mean.lat, polys[0]), false);
+  /* Given the shape, it finds a real interior point. */
+  const good = api.insidePoint(concave, mean);
+  assert.equal(api.inPolygon(good.lon, good.lat, polys[0]), true);
+  /* Given nothing, it can only echo the mean — which is why the shape has to
+     be passed. */
+  assert.deepEqual(api.insidePoint(null, mean), mean);
+});
+
 test('a link is only built from a point that was verified', () => {
   const src = read(path.join('api', 'events.js'));
   /* The fallback must be the agency's front page, not the rejected mean. */
   assert.doesNotMatch(src, /insidePoint\(f\.geometry, c\) \|\| c/,
     'the link falls back to the coordinate insidePoint exists to avoid');
-  assert.match(src, /const link = insidePoint\(f\.geometry, c\);/);
+  /* The zone fallback now supplies a shape when the alert has none inline,
+     so the call is no longer the bare f.geometry it started as. */
+  assert.match(src, /const link = insidePoint\(f\.geometry \|\| zoneGeometry/);
   assert.match(src, /link && Number\.isFinite\(link\.lat\)/);
 });
 
