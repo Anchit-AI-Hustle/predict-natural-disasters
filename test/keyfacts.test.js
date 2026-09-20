@@ -391,3 +391,48 @@ test('an empty GDACS measurement is not published as a measurement of zero', asy
   const bogus = events.filter(e => e.magnitude === 0 || e.windKt === 0 || e.areaHa === 0);
   assert.deepEqual(bogus.map(e => e.title), [], 'a measurement of zero was published');
 });
+
+/* ------------------------- the authority's own words, and its own assessment */
+
+test('a volcano quotes the observatory level, not the colour this site maps it to', async () => {
+  const { events } = await feed();
+  const usgs = events.find(e => e.source === 'USGS Volcano Hazards Program' && !e.forecast);
+  assert.ok(usgs, 'fixture should include a USGS volcano notice');
+  assert.ok(usgs.alertLevel, 'the observatory level should survive onto the record');
+  const f = byKey(H.keyFacts(usgs), 'alertLevel');
+  assert.equal(f.reported, true);
+  assert.equal(f.value, usgs.alertLevel, 'the panel should quote the level verbatim');
+  assert.ok(!/^(Red|Orange|Green)$/.test(f.value),
+    'this renames the observatory\'s assessment into a UI colour: ' + f.value);
+
+  // Every EONET volcano carries alert 'Green' because the parser assigns one;
+  // EONET publishes no observatory level at all, so a panel headed
+  // "Observatory alert level" must not print it.
+  const eonet = events.find(e => e.source === 'NASA EONET' && /Volcano/i.test(String(e.type)));
+  assert.ok(eonet, 'fixture should include an EONET volcano');
+  assert.equal(eonet.alert, 'Green', 'the parser still assigns a colour for the map');
+  const g = byKey(H.keyFacts(eonet), 'alertLevel');
+  assert.equal(g.reported, false, 'EONET never issued an observatory level');
+  assert.match(g.note, /publishes no observatory alert level/);
+});
+
+test('an issued cyclone alert is not overridden by a lower wind reading', () => {
+  // A weakening or slow-moving cyclone can carry a Red alert well under 64 kt
+  // because of surge, rainfall or where it is heading. Returning on the wind
+  // alone rated that Minor, discarding the authority's own assessment.
+  assert.equal(H.severityOf({ type: 'Tropical Cyclone', alert: 'Red', windKt: 40 }), 'Severe');
+  assert.equal(H.severityOf({ type: 'Tropical Cyclone', alert: 'Red' }), 'Severe',
+    'the same alert without a wind reading must not rate higher than with one');
+  // And the wind still wins where it is the worse of the two.
+  assert.equal(H.severityOf({ type: 'Tropical Cyclone', alert: 'Green', windKt: 100 }), 'Severe');
+  assert.equal(H.severityOf({ type: 'Tropical Cyclone', windKt: 130 }), 'Extreme');
+});
+
+test('the ledger sorts hazards by the field its observed rows actually use', () => {
+  const s = read('accuracy.html');
+  assert.match(s, /SORT_DEFS\.hazard=/,
+    'observed ledger rows store their classification in hazard, not type');
+  assert.match(s, /a\.hazard\|\|a\.type/);
+  assert.ok(!/LEDGER_SORTS=\[[^\]]*'type'/.test(s),
+    "the shared 'type' comparator sorts every observed row as a missing value");
+});

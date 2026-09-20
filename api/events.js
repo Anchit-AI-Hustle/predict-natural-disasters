@@ -832,6 +832,11 @@ async function handler(req, res) {
           title: name + ' — ' + (level || 'elevated') + ' alert level',
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
+          // The observatory's own wording, kept apart from the colour the UI
+          // maps it to. Only a source that publishes a level gets one: every
+          // EONET volcano carries alert 'Green', which EONET never assessed.
+          ...(level ? { alertLevel: level } : {}),
+          ...(colour ? { aviationColour: String(colour).toUpperCase() } : {}),
           lat: coords.lat, lon: coords.lon,
           updated: v.sent_utc ? String(v.sent_utc).replace(' ', 'T') + 'Z' : (v.sent || now.toISOString()),
           details: 'Volcano alert level ' + (level || 'elevated') +

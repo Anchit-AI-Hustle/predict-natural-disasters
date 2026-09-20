@@ -251,21 +251,30 @@
 
     var mag = Number(e.magnitude);
     var kt = Number(e.windKt);
+    var wind = 0;
     if (isFinite(kt) && kt > 0) {
-      if (kt >= 113) return 5;   // Saffir-Simpson category 4-5
-      if (kt >= 96) return 4;    // category 3
-      if (kt >= 64) return 3;    // category 1-2
-      return 2;                  // tropical storm or depression
+      wind = kt >= 113 ? 5      // Saffir-Simpson category 4-5
+        : kt >= 96 ? 4          // category 3
+          : kt >= 64 ? 3        // category 1-2
+            : 2;                // tropical storm or depression
     }
 
+    var issued = 0;
     switch (String(e.alert || '')) {
-      case 'Red': return 4;
-      case 'Orange': return 3;
-      case 'High': return 4;
-      case 'Moderate': return 3;
-      case 'Watch': return 2;
+      case 'Red': issued = 4; break;
+      case 'Orange': issued = 3; break;
+      case 'High': issued = 4; break;
+      case 'Moderate': issued = 3; break;
+      case 'Watch': issued = 2; break;
       default: break;
     }
+
+    /* Returning on the wind alone discarded the authority's own assessment. A
+       weakening or slow-moving cyclone can carry a Red alert at well under 64
+       knots because of surge, rainfall or where it is heading, and that read as
+       Minor. GDACS cyclones only started carrying a wind speed in this branch,
+       so this was newly reachable rather than long-standing. */
+    if (wind || issued) return Math.max(wind, issued);
     // An earthquake with no PAGER assessment is a measurement, not a severity.
     if (isFinite(mag) && mag > 0) return 1;
     return 0;
@@ -324,7 +333,7 @@
     Landslide: ['deaths', 'missing', 'displaced'],
     Wildfire: ['areaHa', 'deaths', 'missing', 'displaced', 'affected'],
     Drought: ['affected', 'displaced'],
-    Volcano: ['alertLevel', 'deaths', 'displaced', 'affected'],
+    Volcano: ['alertLevel', 'aviationColour', 'deaths', 'displaced', 'affected'],
     'Extreme Heat': ['deaths', 'affected'],
     'Extreme Cold': ['deaths', 'affected'],
     'Severe Storm': ['deaths', 'missing', 'affected'],
@@ -336,6 +345,7 @@
     magnitude: 'Magnitude', depthKm: 'Depth', pagerAlert: 'USGS impact alert',
     tsunamiFlag: 'Tsunami flag', windKt: 'Maximum sustained wind', category: 'Category',
     areaHa: 'Area burned', alertLevel: 'Observatory alert level',
+    aviationColour: 'Aviation colour code',
     deaths: 'Lives lost', missing: 'Missing or unaccounted for',
     displaced: 'People displaced', affected: 'People affected'
   };
@@ -402,8 +412,18 @@
             : group(km) + ' km²';
         return { key: key, label: label, reported: ok, value: ok ? area : null };
       }
+      case 'aviationColour':
+        return { key: key, label: label, reported: has, value: has ? String(v) : null,
+          note: has ? null : 'This source publishes no aviation colour code for this volcano' };
       case 'alertLevel':
-        return { key: key, label: label, reported: !!e.alert, value: e.alert || null };
+        // e.alert is the colour this site maps a level onto, not the level the
+        // observatory issued: every NASA EONET volcano carries 'Green' without
+        // any observatory having said so, and USGS WATCH/WARNING would be
+        // renamed to Orange/Red under a label claiming to quote the observatory.
+        return { key: key, label: label, reported: !!e.alertLevel,
+          value: e.alertLevel || null,
+          note: e.alertLevel ? null
+            : 'This source publishes no observatory alert level for this volcano' };
       default: {
         var n = Number(v);
         var reported = has && isFinite(n);
