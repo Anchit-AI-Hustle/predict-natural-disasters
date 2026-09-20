@@ -229,6 +229,9 @@ function reportedCounts(specs) {
   const out = {};
   for (const [field, ...candidates] of specs) {
     for (const v of candidates) {
+      // num() coerces null and '' to 0, which is the same manufactured zero
+      // one layer down, so an empty value is rejected before it is parsed.
+      if (v === undefined || v === null || v === '') continue;
       const n = num(v);
       if (n !== null) { out[field] = n; break; }
     }

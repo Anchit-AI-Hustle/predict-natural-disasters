@@ -30,7 +30,10 @@ const FIXTURES = {
       country: 'Greece', location: 'Attica', alertlevel: 'Orange',
       latitude: 38.1, longitude: 23.9, fromdate: '2026-09-13T00:00:00Z', todate: isoNow,
       description: 'Uncontrolled wildfire with evacuation of nearby settlements.',
-      severitydata: { severity: 3150, severitytext: 'burnt area of 3150 ha', severityunit: 'ha' }
+      severitydata: { severity: 3150, severitytext: 'burnt area of 3150 ha', severityunit: 'ha' },
+      // An explicitly null count is still "the agency reported nothing", and
+      // Number(null) is 0.
+      death: null, displaced: '', affected: undefined
     },
     {
       eventid: 1105003, eventtype: 'DR', name: 'Drought in Horn of Africa',

@@ -242,6 +242,13 @@ test('a source that publishes no casualty count is not given a zero', async () =
   assert.equal(byKey(H.keyFacts(tc), 'deaths').reported, false);
 
   // And a source that does publish them still carries them, zeros included.
+  // An explicitly null or empty count is still nothing reported: Number(null)
+  // is 0, so this has to be rejected before it is parsed.
+  const fire = events.find(e => /Attica/.test(String(e.title)) && e.source === 'GDACS');
+  assert.equal(fire.deaths, undefined, 'death: null became a reported zero');
+  assert.equal(fire.displaced, undefined, "displaced: '' became a reported zero");
+  assert.equal(fire.affected, undefined);
+
   const flood = events.find(e => /Bagmati/.test(String(e.title)));
   assert.equal(flood.deaths, 42);
   assert.equal(flood.affected, 120000);
