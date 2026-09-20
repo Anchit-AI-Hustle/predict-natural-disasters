@@ -199,6 +199,41 @@ function splitUsPlace(place) {
  * than into one generic "severity" number that would mean different things on
  * different records.
  */
+/**
+ * Unit handling for the structured measurement GDACS attaches to an event.
+ *
+ * Matching one spelling and treating everything else as the target unit is a
+ * guess, and a wrong guess here is not cosmetic: read 120 km/h as 120 knots and
+ * a tropical storm is published as a category 4. The spellings are therefore
+ * enumerated, and an unrecognised unit yields null so the measurement is left
+ * off rather than published in the wrong unit.
+ */
+function normaliseUnit(u) {
+  return String(u || '').toLowerCase().replace(/[\s._-]/g, '');
+}
+
+/** Factor converting a wind speed in `unit` to knots, or null if unrecognised. */
+function knotsFactor(unit) {
+  const u = normaliseUnit(unit);
+  if (/^(kt|kts|kn|kns|knot|knots)$/.test(u)) return 1;
+  // GDACS has been seen to label this Kph; km/h, kmh and kmph all occur in the
+  // wild and none of them matched a test for the substring "km/h".
+  if (/^(kph|kmh|km\/h|kmph|km\/hr|kmhr|kilometers?perhour|kilometres?perhour)$/.test(u)) return 1 / 1.852;
+  if (/^(mph|mileperhour|milesperhour)$/.test(u)) return 0.8689762;
+  if (/^(ms|m\/s|meters?persecond|metres?persecond)$/.test(u)) return 1.9438445;
+  return null;
+}
+
+/** Factor converting an area in `unit` to hectares, or null if unrecognised. */
+function hectaresFactor(unit) {
+  const u = normaliseUnit(unit);
+  if (/^(ha|hectare|hectares)$/.test(u)) return 1;
+  if (/^(km2|km\u00b2|sqkm|kmsq|squarekilometers?|squarekilometres?)$/.test(u)) return 100;
+  if (/^(m2|m\u00b2|sqm|squaremeters?|squaremetres?)$/.test(u)) return 0.0001;
+  if (/^(acre|acres|ac)$/.test(u)) return 0.40468564;
+  return null;
+}
+
 function gdacsMeasurement(sd, eventType) {
   const d = sd && typeof sd === 'object' ? sd : null;
   if (!d) return {};
@@ -209,15 +244,19 @@ function gdacsMeasurement(sd, eventType) {
   if (raw === undefined || raw === null || raw === '') return {};
   const value = num(raw);
   if (value === null) return {};
-  const unit = String(d.severityunit || d.severityUnit || '').toLowerCase();
+  const unit = d.severityunit || d.severityUnit || '';
   const out = {};
   if (/^wf$/i.test(eventType)) {
-    // Burned area: GDACS reports hectares or square kilometres depending on feed.
-    out.areaHa = /km/.test(unit) ? value * 100 : value;
+    // Burned area: hectares or square kilometres depending on the feed.
+    const f = hectaresFactor(unit);
+    if (f !== null) out.areaHa = value * f;
   } else if (/^tc$/i.test(eventType)) {
-    // Maximum sustained wind, published in km/h; the rest of the feed uses knots.
-    out.windKt = /km/.test(unit) ? Math.round(value / 1.852) : value;
+    // Maximum sustained wind. The rest of the feed, and every Saffir-Simpson
+    // threshold in the hazard model, is in knots.
+    const f = knotsFactor(unit);
+    if (f !== null) out.windKt = Math.round(value * f);
   } else if (/^eq$/i.test(eventType)) {
+    // A magnitude carries no unit conversion, so nothing is being assumed.
     out.magnitude = value;
   }
   const text = d.severitytext || d.severityText;

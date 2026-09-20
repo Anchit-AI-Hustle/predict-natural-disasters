@@ -636,3 +636,61 @@ test('no detail template treats a reported zero as an absent figure', () => {
   assert.deepEqual(offenders, [],
     'a source reporting zero has reported something: ' + offenders.join(', '));
 });
+
+/* --------------------------- a unit is recognised, or the measurement is dropped */
+
+test('every spelling of a wind unit converts to knots, and an unknown one is refused', () => {
+  const src = read('api/events.js');
+  const fns = (/function normaliseUnit[\s\S]*?\n}/.exec(src) || [''])[0] +
+    (/function knotsFactor[\s\S]*?\n}/.exec(src) || [''])[0] +
+    (/function hectaresFactor[\s\S]*?\n}/.exec(src) || [''])[0];
+  assert.ok(/knotsFactor/.test(fns) && /hectaresFactor/.test(fns),
+    'api/events.js should enumerate its units rather than test for a substring');
+  const { knotsFactor, hectaresFactor } = (0, eval)(fns +
+    ';({knotsFactor: knotsFactor, hectaresFactor: hectaresFactor})');
+
+  // 120 units of wind, in each spelling. GDACS is reported to label this Kph,
+  // which a test for the substring "km/h" does not match — so the value passed
+  // through as 120 knots and a tropical storm was published as a category 4.
+  const kt = u => { const f = knotsFactor(u); return f === null ? null : Math.round(120 * f); };
+  for (const u of ['Kph', 'kph', 'KPH', 'km/h', 'KM/H', 'kmh', 'kmph', 'km/hr']) {
+    assert.equal(kt(u), 65, u + ' was not converted to knots');
+  }
+  for (const u of ['kt', 'kts', 'kn', 'Knots']) {
+    assert.equal(kt(u), 120, u + ' is already knots and must not be converted');
+  }
+  // An unrecognised unit is not a licence to assume one.
+  for (const u of ['', 'furlongs', 'unknown', null, undefined]) {
+    assert.equal(knotsFactor(u), null, JSON.stringify(u) + ' should not be guessed at');
+  }
+
+  const ha = u => { const f = hectaresFactor(u); return f === null ? null : Math.round(3150 * f); };
+  assert.equal(ha('ha'), 3150);
+  assert.equal(ha('Hectares'), 3150);
+  assert.equal(ha('km2'), 315000);
+  assert.equal(ha('km²'), 315000);
+  assert.equal(ha('sqkm'), 315000);
+  assert.equal(hectaresFactor('blorks'), null);
+});
+
+test('a cyclone published in kilometres per hour is not rated a category higher', async () => {
+  const { events } = await feed();
+  const tc = events.find(e => /RAI-26/.test(String(e.title)) && e.source === 'GDACS');
+  assert.ok(tc, 'fixture should include the GDACS cyclone');
+  // 120 Kph is 65 kt: a category 1. Read as 120 kt it is a category 4, and the
+  // severity scale would call it Extreme.
+  assert.equal(tc.windKt, 65);
+  assert.equal(H.cycloneCategory(tc.windKt), 'Category 1');
+  assert.notEqual(H.severityOf(tc), 'Extreme',
+    'a tropical storm was being published as a category 4');
+});
+
+test('a measurement whose unit is not recognised is left off the record', async () => {
+  const handler = require(path.join(ROOT, 'api', 'events.js'));
+  assert.ok(handler);
+  const src = read('api/events.js');
+  // The measurement is only set when the factor resolves; nothing falls through
+  // to "assume the unit we wanted".
+  assert.match(src, /if \(f !== null\) out\.windKt/);
+  assert.match(src, /if \(f !== null\) out\.areaHa/);
+});

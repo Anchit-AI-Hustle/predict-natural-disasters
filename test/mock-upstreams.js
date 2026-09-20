@@ -23,7 +23,10 @@ const FIXTURES = {
       description: 'Active tropical cyclone approaching the eastern seaboard.',
       // GDACS publishes its measurement as a structured object whose unit
       // changes with the hazard: km/h of wind here, hectares on the wildfire.
-      severitydata: { severity: 120, severitytext: 'Tropical Storm, maximum wind speed 120 km/h', severityunit: 'km/h' }
+      // GDACS labels this unit Kph in production, which a test for the substring
+// "km/h" does not match. The fixture used the one spelling that happened
+// to work, which hid the case that actually ships.
+      severitydata: { severity: 120, severitytext: 'Tropical Storm, maximum wind speed 120 Kph', severityunit: 'Kph' }
     },
     {
       eventid: 1105002, eventtype: 'WF', name: 'Wildfire in Attica, Greece',
