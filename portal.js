@@ -59,6 +59,15 @@ const PND={
   /* Sort on the displayed text. Titles are rendered with acronyms written out,
      so sorting the raw feed value put the list out of A-Z order on screen. */
   textOf(e,...keys){for(const k of keys){let v=e&&e[k];if(v){v=String(v);const g=typeof window!=='undefined'&&window.__pndGlossary;if(g&&g.expandAlways)v=g.expandAlways(v);return v.toLowerCase()}}return '￿'},
+  /* The matching rules live in search.js, so the pages that do not load this
+     file get exactly the same ones rather than a copy that drifts. A test
+     asserts every page calling these also loads it. */
+  matches(e,q){return window.PNDSearch.matches(e,q)},
+  matchesPlace(e,q){return window.PNDSearch.matchesPlace(e,q)},
+  searchText(e){return window.PNDSearch.searchText(e)},
+  searchParam(){return window.PNDSearch.searchParam()},
+  initSearch(id,draw){return window.PNDSearch.initSearch(id,draw)},
+  emptyHtml(q,pool,all,noun){return window.PNDSearch.emptyHtml(q,pool,all,noun)},
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
     newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},
