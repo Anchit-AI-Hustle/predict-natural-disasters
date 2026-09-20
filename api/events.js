@@ -217,6 +217,25 @@ function gdacsMeasurement(sd, eventType) {
   return out;
 }
 
+/**
+ * Publish a count only where the source actually carried one.
+ *
+ * Coercing an absent field to 0 loses the difference between "the agency
+ * reported no deaths" and "the agency reported nothing", and the page then
+ * prints "Lives lost 0" — a claim nobody made. All 100 GDACS records in the
+ * live feed were carrying a manufactured zero this way.
+ */
+function reportedCounts(specs) {
+  const out = {};
+  for (const [field, ...candidates] of specs) {
+    for (const v of candidates) {
+      const n = num(v);
+      if (n !== null) { out[field] = n; break; }
+    }
+  }
+  return out;
+}
+
 function pagerLevel(raw) {
   const v = String(raw || '').toLowerCase();
   return v === 'red' ? 'Red' : (v === 'orange' || v === 'yellow') ? 'Orange' : 'Green';
@@ -326,6 +345,11 @@ async function handler(req, res) {
       const eid = p.eventid || p.eventId || p.id;
       if (!eid) continue;
       const measured = gdacsMeasurement(p.severitydata || p.severityData, et);
+      const counts = reportedCounts([
+        ['deaths', p.death, p.deaths],
+        ['displaced', p.displaced],
+        ['affected', p.affected, p.population]
+      ]);
       push({
         id: 'gdacs-' + et + '-' + eid,
         source: 'GDACS', sourceType: 'official',
@@ -339,9 +363,7 @@ async function handler(req, res) {
         updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
         details: [p.description || p.eventdescription || '', measured.severityText || '']
           .filter(Boolean).join(' · '),
-        deaths: +(p.death || p.deaths || 0) || 0,
-        displaced: +(p.displaced || 0) || 0,
-        affected: +(p.affected || p.population || 0) || 0,
+        ...counts,
         ...measured,
         sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=' + encodeURIComponent(eid) + '&eventtype=' + encodeURIComponent(et),
         rawId: eid, rawType: et

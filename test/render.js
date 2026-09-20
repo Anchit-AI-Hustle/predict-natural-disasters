@@ -135,6 +135,13 @@ async function renderPage(page, opts) {
     resources: new RepoLoader(),
     virtualConsole,
     beforeParse(window) {
+      // Pages that read saved state on load need it in place before their
+      // scripts run, not after.
+      if (o.storage) {
+        for (const [k, v] of Object.entries(o.storage)) {
+          try { window.localStorage.setItem(k, v); } catch (e) { /* no storage */ }
+        }
+      }
       window.fetch = async (input) => {
         const url = String(input && input.url ? input.url : input);
         apiCalls.push(url);

@@ -100,9 +100,9 @@ test('an earthquake with no USGS impact assessment says so', () => {
   const pager = byKey(f, 'pagerAlert');
   assert.equal(pager.reported, false);
   assert.match(pager.note, /USGS/, 'the reason the field is empty belongs on the field');
-  // The tsunami flag is on every USGS record, so its absence is a real answer.
-  assert.equal(byKey(f, 'tsunamiFlag').reported, true);
-  assert.equal(byKey(f, 'tsunamiFlag').value, 'Not raised');
+  // This fixture record carries no tsunami flag either; see the dedicated test
+  // below for why that is not the same as "Not raised".
+  assert.equal(byKey(f, 'tsunamiFlag').reported, false);
 });
 
 /* ------------------------------ the measurement GDACS was publishing unread */
@@ -206,4 +206,83 @@ test('the styles the key-facts grid needs ship with every page that renders it',
     assert.match(read(f), /\.keyfact\b/, f + ' has no key-facts styling');
     assert.match(read(f), /\.hazard-observed\b/, f + ' cannot mark an observed-only hazard');
   }
+});
+
+/* ------------------------------------------ absence is not an authoritative no */
+
+test('a tsunami flag is reported only where the source publishes one', () => {
+  // Only the USGS parser supplies it. Thirty-three earthquake records in the
+  // live feed come from EMSC, GDACS or a derived outlook and carry no flag at
+  // all; "Not raised" on those would be an authoritative negative nobody
+  // issued.
+  const usgs = byKey(H.keyFacts({ type: 'Earthquake', magnitude: 6.5, tsunamiFlag: 0 }), 'tsunamiFlag');
+  assert.equal(usgs.reported, true, 'a published 0 means no tsunami was flagged');
+  assert.equal(usgs.value, 'Not raised');
+
+  const raised = byKey(H.keyFacts({ type: 'Earthquake', magnitude: 7.9, tsunamiFlag: 1 }), 'tsunamiFlag');
+  assert.equal(raised.value, 'Raised');
+
+  const emsc = byKey(H.keyFacts({ type: 'Earthquake', magnitude: 5.1 }), 'tsunamiFlag');
+  assert.equal(emsc.reported, false, 'no flag from this source is not "Not raised"');
+  assert.equal(emsc.value, null);
+  assert.match(emsc.note, /United States Geological Survey/);
+});
+
+test('a source that publishes no casualty count is not given a zero', async () => {
+  const { events } = await feed();
+  // The GDACS cyclone and wildfire fixtures carry no casualty fields, exactly
+  // as the live endpoint does: all 100 GDACS records were arriving with
+  // `deaths: 0` manufactured by `+(p.death || 0) || 0`, and the card then read
+  // "Lives lost 0".
+  const tc = events.find(e => /RAI-26/.test(String(e.title)) && e.source === 'GDACS');
+  assert.ok(tc, 'fixture should include the GDACS cyclone');
+  assert.equal(tc.deaths, undefined, 'an absent death count should stay absent');
+  assert.equal(tc.displaced, undefined);
+  assert.equal(tc.affected, undefined);
+  assert.equal(byKey(H.keyFacts(tc), 'deaths').reported, false);
+
+  // And a source that does publish them still carries them, zeros included.
+  const flood = events.find(e => /Bagmati/.test(String(e.title)));
+  assert.equal(flood.deaths, 42);
+  assert.equal(flood.affected, 120000);
+  assert.equal(byKey(H.keyFacts(flood), 'deaths').value, '42');
+});
+
+test('no card or grid prints a zero for a count its source never published', async () => {
+  const r = await renderPage('events.html', {
+    url: '/events',
+    waitFor: d => d.querySelectorAll('.event-card').length > 0
+  });
+  const cards = [...r.document.querySelectorAll('.event-card')].map(c => c.textContent);
+  r.close();
+  const claimed = cards.filter(t => /Lives lost 0\b|People displaced 0\b|People affected 0\b/.test(t));
+  assert.deepEqual(claimed, [], 'these cards state a zero nobody reported');
+});
+
+/* ----------------------------------- one event, two places, two separate rows */
+
+test('an event near two saved places is listed once for each of them', async () => {
+  // The rows are (place, event) pairs. Sorting the shared event objects and
+  // mapping back by identity returned the first matching row twice, so one
+  // place was duplicated and the other silently dropped.
+  const { events } = await feed();
+  const anchor = events.find(e => !e.forecast && Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
+  assert.ok(anchor, 'fixture should include a placed record');
+  const places = JSON.stringify([
+    { id: 'p1', kind: 'Home', name: 'Nearer place', lat: +anchor.lat + 0.2, lon: +anchor.lon },
+    { id: 'p2', kind: 'Family', name: 'Farther place', lat: +anchor.lat + 1.2, lon: +anchor.lon }
+  ]);
+
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: places },
+    waitFor: d => d.querySelectorAll('#risks .card').length > 0
+  });
+  const rows = [...r.document.querySelectorAll('#risks .card')].map(c => c.textContent);
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  r.close();
+
+  assert.ok(rows.some(t => /Nearer place/.test(t)), 'the nearer place has no risk row');
+  assert.ok(rows.some(t => /Farther place/.test(t)), 'the farther place was dropped from the list');
+  // Every row is a distinct pair, so no (place, event) line repeats verbatim.
+  assert.equal(new Set(rows).size, rows.length, 'the same row was rendered twice');
 });

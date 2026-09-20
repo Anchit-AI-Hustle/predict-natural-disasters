@@ -377,9 +377,12 @@
           value: has ? String(v).toLowerCase() : null,
           note: has ? null : 'USGS issued no impact assessment for this earthquake' };
       case 'tsunamiFlag':
-        // Present on every USGS record, so absence is meaningful rather than missing.
-        return { key: key, label: label, reported: true,
-          value: v ? 'Raised' : 'Not raised' };
+        // Only the USGS parser supplies this. On an EMSC or GDACS earthquake
+        // the field is simply absent, and printing "Not raised" there would
+        // turn an unknown into an authoritative negative.
+        return { key: key, label: label, reported: has,
+          value: has ? (v ? 'Raised' : 'Not raised') : null,
+          note: has ? null : 'Only the United States Geological Survey publishes a tsunami flag' };
       case 'windKt':
         return { key: key, label: label, reported: has,
           value: has ? Math.round(Number(v)) + ' kt' : null };
