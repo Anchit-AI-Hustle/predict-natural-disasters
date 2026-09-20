@@ -78,14 +78,20 @@ function tag(name, block) {
    inside one, and otherwise a horizontal scanline is run through the middle of
    the largest ring and the midpoint of its first crossed span taken, which is
    interior for any simple polygon. */
-function ringsOf(geometry) {
+/* Polygons, each kept as its exterior ring plus its holes. The first version
+   of this flattened every ring into one list and accepted a point inside any
+   of them — so for a warning area with a hole, a point sitting in the hole
+   passed, because it is also inside the exterior. GeoJSON defines a hole as
+   outside the geometry, so that link could still open an unwarned location. */
+function polygonsOf(geometry) {
   if (!geometry || !Array.isArray(geometry.coordinates)) return [];
-  const out = [];
   const isRing = c => Array.isArray(c) && c.length > 2 &&
     Array.isArray(c[0]) && typeof c[0][0] === 'number';
+  const isPolygon = c => Array.isArray(c) && c.length && isRing(c[0]);
+  const out = [];
   const walk = c => {
     if (!Array.isArray(c)) return;
-    if (isRing(c)) { out.push(c); return; }
+    if (isPolygon(c)) { out.push({ outer: c[0], holes: c.slice(1) }); return; }
     c.forEach(walk);
   };
   walk(geometry.coordinates);
@@ -102,37 +108,58 @@ function inRing(lon, lat, ring) {
   return inside;
 }
 
-function scanlinePoint(ring) {
+/* Inside the shape means inside an exterior ring and outside every one of that
+   polygon's holes. */
+function inPolygon(lon, lat, poly) {
+  if (!inRing(lon, lat, poly.outer)) return false;
+  return !poly.holes.some(h => inRing(lon, lat, h));
+}
+
+/* A horizontal scanline through the middle of the ring; the midpoint of its
+   first crossed span is interior to any simple polygon. Spans that fall in a
+   hole are rejected, and the next one tried. */
+function scanlinePoint(poly) {
   let lo = Infinity, hi = -Infinity;
-  for (const p of ring) { if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1]; }
+  for (const p of poly.outer) { if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1]; }
   if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) return null;
-  const lat = (lo + hi) / 2;
-  const xs = [];
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const x1 = ring[j][0], y1 = ring[j][1], x2 = ring[i][0], y2 = ring[i][1];
-    if ((y1 > lat) !== (y2 > lat)) xs.push(x1 + (lat - y1) / (y2 - y1) * (x2 - x1));
+  /* A few scanlines rather than one: a single line through the middle can cut
+     a shape exactly where its hole is widest. */
+  for (const f of [0.5, 0.25, 0.75, 0.1, 0.9]) {
+    const lat = lo + (hi - lo) * f;
+    const xs = [];
+    for (let i = 0, j = poly.outer.length - 1; i < poly.outer.length; j = i++) {
+      const x1 = poly.outer[j][0], y1 = poly.outer[j][1];
+      const x2 = poly.outer[i][0], y2 = poly.outer[i][1];
+      if ((y1 > lat) !== (y2 > lat)) xs.push(x1 + (lat - y1) / (y2 - y1) * (x2 - x1));
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const lon = (xs[k] + xs[k + 1]) / 2;
+      if (Number.isFinite(lon) && inPolygon(lon, lat, poly)) return { lat, lon };
+    }
   }
-  xs.sort((a, b) => a - b);
-  if (xs.length < 2) return null;
-  const lon = (xs[0] + xs[1]) / 2;
-  return Number.isFinite(lon) ? { lat, lon } : null;
+  return null;
 }
 
 function insidePoint(geometry, mean) {
-  const rings = ringsOf(geometry);
-  if (!rings.length) return mean || null;
-  if (mean && rings.some(r => inRing(mean.lon, mean.lat, r))) return mean;
-  let best = null, bestArea = -1;
-  for (const r of rings) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const p of r) {
-      if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
-      if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
-    }
-    const a = (x1 - x0) * (y1 - y0);
-    if (a > bestArea) { bestArea = a; best = r; }
+  const polys = polygonsOf(geometry);
+  if (!polys.length) return mean || null;
+  if (mean && polys.some(p => inPolygon(mean.lon, mean.lat, p))) return mean;
+  const ordered = polys.slice().sort((a, b) => boxArea(b.outer) - boxArea(a.outer));
+  for (const p of ordered) {
+    const pt = scanlinePoint(p);
+    if (pt) return pt;
   }
-  return (best && scanlinePoint(best)) || mean || null;
+  return mean || null;
+}
+
+function boxArea(ring) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of ring) {
+    if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+    if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+  }
+  return (x1 - x0) * (y1 - y0);
 }
 
 function centroid(geometry) {
@@ -1375,5 +1402,6 @@ module.exports.normalizeType = normalizeType;
 module.exports.centroid = centroid;
 module.exports.insidePoint = insidePoint;
 module.exports.inRing = inRing;
-module.exports.ringsOf = ringsOf;
+module.exports.polygonsOf = polygonsOf;
+module.exports.inPolygon = inPolygon;
 module.exports.mergeSeismicReports = mergeSeismicReports;

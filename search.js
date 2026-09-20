@@ -76,7 +76,14 @@ const S={
   /* Place-scoped match, for the controls that filter by geography rather than
      by free text: a region box must not match a record because the word
      appears in its source name or its narrative. */
-  PLACE_FIELDS:['country','region','location','title'],
+  /* No title. It was included because a few records carry their place only
+     there, but it made a geography box searchable by hazard text: 'flood'
+     matched 323 of the live feed's 792 records through their titles, and
+     /regions would then list flood records worldwide while its button
+     opened a region named "flood". Measured against the same feed, only 2
+     records have no country, region or location at all, and both are named
+     storms whose titles are storm names rather than places. */
+  PLACE_FIELDS:['country','region','location'],
   matchesPlace(e,q){
     const terms=String(q==null?'':q).toLowerCase().split(/\s+/).filter(Boolean);
     if(!terms.length)return true;

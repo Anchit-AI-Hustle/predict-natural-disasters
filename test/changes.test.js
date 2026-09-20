@@ -56,6 +56,24 @@ test('the first run is a baseline, not thirty brand-new forecasts', () => {
   assert.equal(last.active, 2);
 });
 
+test('an empty run does not make the next one a second baseline', () => {
+  /* `first` was read from whether the previous snapshot had entries. A run
+     that legitimately finds no open outlooks writes an empty snapshot, so the
+     next run looked like a first run: every newly issued outlook was
+     suppressed from `added` and the panel claimed there was nothing earlier to
+     compare against, despite the history sitting right there. */
+  const d = tmp();
+  run(d, [outlook()]);
+  const empty = run(d, []);
+  assert.equal(empty.runs[empty.runs.length - 1].baseline, false);
+  const after = run(d, [outlook({ id: 'OUT-new', title: 'Issued after the gap' })]);
+  const last = after.runs[after.runs.length - 1];
+  assert.equal(last.baseline, false,
+    'a run with three runs behind it was reported as a baseline');
+  assert.deepEqual(last.added.map(x => x.id), ['OUT-new'],
+    'the newly issued outlook was suppressed');
+});
+
 test('an unchanged forecast set records no change', () => {
   const d = tmp();
   run(d, [outlook()]);

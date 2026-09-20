@@ -91,6 +91,21 @@ test('the place matcher ignores everything that is not a place', () => {
   assert.equal(require(path.join(ROOT, 'search.js')).matchesPlace(e, 'whitley'), true);
 });
 
+test('a geography filter does not match hazard words in a title', () => {
+  const S = require(path.join(ROOT, 'search.js'));
+  /* title was in the place field list because a few records carry their place
+     only there. Measured against the live feed of 792 records, that made
+     "flood" match 323 of them through their titles, while only 2 records have
+     no country, region or location at all — and both are named storms. */
+  assert.equal(S.matchesPlace({ country: 'Japan', title: 'Flood warning' }, 'flood'), false);
+  assert.equal(S.matchesPlace({ country: 'Japan', title: 'Flood warning' }, 'japan'), true);
+  assert.equal(S.PLACE_FIELDS.includes('title'), false,
+    'a geography box is searchable by hazard text again');
+  for (const f of ['country', 'region', 'location']) {
+    assert.ok(S.PLACE_FIELDS.includes(f), `${f} dropped from place matching`);
+  }
+});
+
 /* ---------- a verdict judges one window and changes nothing ---------- */
 
 test('a reissue with the same start and a new end is a different window', () => {
@@ -168,12 +183,48 @@ test('a multipart warning area is linked from inside one of its parts', () => {
     [[[20, 0], [24, 0], [24, 4], [20, 4], [20, 0]]]
   ] };
   const mean = api.centroid(M);
-  const rings = api.ringsOf(M);
-  assert.equal(rings.length, 2);
-  assert.equal(rings.some(r => api.inRing(mean.lon, mean.lat, r)), false,
+  const polys = api.polygonsOf(M);
+  assert.equal(polys.length, 2);
+  assert.equal(polys.some(p => api.inPolygon(mean.lon, mean.lat, p)), false,
     'the mean of two distant parts should fall between them');
   const p = api.insidePoint(M, mean);
-  assert.equal(rings.some(r => api.inRing(p.lon, p.lat, r)), true);
+  assert.equal(polys.some(q => api.inPolygon(p.lon, p.lat, q)), true);
+});
+
+test('a hole is outside the warned area, and the link respects that', () => {
+  /* A warning area with a hole in it: the mean of the vertices lands in the
+     hole. The first version of this accepted it, because it flattened every
+     ring and asked only whether the point was inside any of them — and a point
+     in a hole is inside the exterior. GeoJSON says a hole is outside the
+     geometry, so the link still opened an unwarned location. */
+  const donut = { type: 'Polygon', coordinates: [
+    [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
+    [[3, 3], [7, 3], [7, 7], [3, 7], [3, 3]]
+  ] };
+  const polys = api.polygonsOf(donut);
+  assert.equal(polys.length, 1);
+  assert.equal(polys[0].holes.length, 1, 'the hole was not kept as a hole');
+  const mean = api.centroid(donut);
+  assert.equal(api.inRing(mean.lon, mean.lat, polys[0].outer), true,
+    'this fixture relies on the mean being inside the exterior');
+  assert.equal(api.inPolygon(mean.lon, mean.lat, polys[0]), false,
+    'a point in the hole is being treated as inside the warned area');
+  const p = api.insidePoint(donut, mean);
+  assert.equal(api.inPolygon(p.lon, p.lat, polys[0]), true,
+    'the link still points into the hole');
+});
+
+test('a scanline that cuts straight through a hole still finds a point', () => {
+  /* A hole spanning the full width at the vertical middle: one scanline
+     through the centre finds only spans that are inside the hole. */
+  const band = { type: 'Polygon', coordinates: [
+    [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
+    [[1, 4], [9, 4], [9, 6], [1, 6], [1, 4]]
+  ] };
+  const polys = api.polygonsOf(band);
+  const p = api.insidePoint(band, api.centroid(band));
+  assert.ok(p, 'no point was found at all');
+  assert.equal(api.inPolygon(p.lon, p.lat, polys[0]), true);
 });
 
 test('a convex area keeps its centroid rather than moving for no reason', () => {

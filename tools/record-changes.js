@@ -53,7 +53,12 @@ for (const e of events) {
 }
 
 const previous = (log.snapshot && typeof log.snapshot === 'object') ? log.snapshot : {};
-const first = Object.keys(previous).length === 0;
+/* Whether any run has happened before, not whether the last one saw
+   anything. A run that legitimately finds no open outlooks writes an empty
+   snapshot, and reading that as "no history" would make the next run a
+   second baseline — suppressing every newly issued outlook from `added`
+   and telling the reader there is nothing earlier to compare with. */
+const first = !log.runs.length;
 
 const added = [], raised = [], lowered = [], windowMoved = [], gone = [], expired = [];
 const nowIso = new Date().toISOString();
