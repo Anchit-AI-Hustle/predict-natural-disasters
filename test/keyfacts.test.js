@@ -579,3 +579,60 @@ test('no record reports a figure as absent while its own narrative states it', a
   assert.deepEqual(contradictions, [],
     'the grid contradicts the narrative beside it:\n' + contradictions.join('\n'));
 });
+
+/* ---------------- the facts must appear on the page the router actually opens */
+
+/** The route prefixes PND.eventUrl() can produce, read from portal.js itself. */
+function routePrefixes() {
+  const src = read('portal.js');
+  const fn = /eventUrl\(e\)\{[\s\S]*?\}/.exec(src);
+  assert.ok(fn, 'portal.js no longer defines eventUrl');
+  return [...new Set([...fn[0].matchAll(/'(\/[a-z]+)\//g)].map(m => m[1] + '/'))];
+}
+
+/** Which template each prefix is rewritten to, read from vercel.json. */
+function templateFor(prefix) {
+  const v = JSON.parse(read('vercel.json'));
+  const r = (v.rewrites || []).find(x => x.source.startsWith(prefix) && /:id/.test(x.source));
+  assert.ok(r, 'vercel.json has no rewrite for ' + prefix);
+  return r.destination.replace(/^\//, '').split('?')[0] + '.html';
+}
+
+test('every record shows its hazard facts on the page its own link opens', async () => {
+  const { events } = await feed();
+  const prefixes = routePrefixes();
+  assert.ok(prefixes.length >= 3,
+    'eventUrl routes to ' + prefixes.length + ' places; each needs the grid');
+
+  // The rule eventUrl applies, kept beside the assertion it drives.
+  const routeOf = e => e.forecast ? '/forecasts/'
+    : (e.sourceType === 'official' && ['Red', 'Orange'].includes(e.alert)) ? '/alerts/'
+      : '/disasters/';
+
+  const bare = [];
+  for (const prefix of prefixes) {
+    const sample = events.find(e => routeOf(e) === prefix && H.keyFacts(e).some(f => f.reported));
+    assert.ok(sample, 'no record in the fixture routes to ' + prefix);
+    const page = templateFor(prefix);
+
+    const r = await renderPage(page, {
+      search: '?id=' + encodeURIComponent(sample.id),
+      waitFor: d => d.querySelectorAll('#keyFacts .keyfact').length > 0
+    });
+    const n = r.document.querySelectorAll('#keyFacts .keyfact').length;
+    r.close();
+    // Red and Orange official records route to /alerts/, so a grid added only to
+    // event-detail.html reached everything except the highest-severity records.
+    if (!n) bare.push(prefix + ' -> ' + page + ' (' + sample.title + ')');
+  }
+  assert.deepEqual(bare, [],
+    'these pages open without the hazard facts:\n' + bare.join('\n'));
+});
+
+test('no detail template treats a reported zero as an absent figure', () => {
+  const offenders = fs.readdirSync(ROOT)
+    .filter(f => /-detail\.html$/.test(f))
+    .filter(f => /Number\.isFinite\(\+v\)\s*&&\s*\+v\s*>\s*0/.test(read(f)));
+  assert.deepEqual(offenders, [],
+    'a source reporting zero has reported something: ' + offenders.join(', '));
+});

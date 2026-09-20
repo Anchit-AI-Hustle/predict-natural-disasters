@@ -17,7 +17,10 @@
 const key=(fc&&(fc.country||fc.region))||'';
 const NOT_REPORTED='<span class="muted">Not reported by any connected source</span>';
 const NOT_FORECAST='<span class="muted">Not forecast — this outlook does not predict casualties</span>';
-const num=v=>Number.isFinite(+v)&&+v>0?(+v).toLocaleString():null;
+/* A source reporting zero deaths has reported something. Testing +v>0 read
+   that as nothing, so a published 0 appeared as "Not reported" — the same
+   claim-from-silence this page exists to avoid. */
+const num=v=>(v===undefined||v===null||v==='')?null:(Number.isFinite(+v)?(+v).toLocaleString():null);
 /* Only startedAt says when the hazard began. e.updated is when the source last
    refreshed the record, so falling back to it would report "five minutes ago"
    as the start of a flood that began three days earlier. */
@@ -39,7 +42,7 @@ const rows=[
   ['Extent', fc&&fc.details?PND.esc(fc.details):'Not quantified in the frozen record',
     ev.length?PND.esc(ev.length+' matching record'+(ev.length===1?'':'s')+' across '+places.length+' area'+(places.length===1?'':'s')):NOT_REPORTED],
   ['Magnitude / severity', PND.esc((fc&&fc.alert)||'Not stated'), mags.length?PND.esc('Highest reported magnitude '+Math.max(...mags)):PND.esc([...new Set(ev.map(e=>e.alert).filter(Boolean))].join(' · '))||NOT_REPORTED],
-  ['Lives lost', NOT_FORECAST, num(deaths)?PND.esc(num(deaths)):NOT_REPORTED],
+  ['Lives lost', NOT_FORECAST, num(deaths)!==null?PND.esc(num(deaths)):NOT_REPORTED],
   ['Missing people', NOT_FORECAST, NOT_REPORTED]
 ];
 compareRows.innerHTML=rows.map(([metric,forecast,actual])=>
