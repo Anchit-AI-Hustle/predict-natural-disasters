@@ -20,13 +20,17 @@ const FIXTURES = {
       eventid: 1105001, eventtype: 'TC', name: 'Tropical Cyclone RAI-26',
       country: 'Philippines', location: 'Eastern Visayas', alertlevel: 'Orange',
       latitude: 11.2, longitude: 125.0, fromdate: '2026-09-12T00:00:00Z', todate: isoNow,
-      description: 'Active tropical cyclone approaching the eastern seaboard.'
+      description: 'Active tropical cyclone approaching the eastern seaboard.',
+      // GDACS publishes its measurement as a structured object whose unit
+      // changes with the hazard: km/h of wind here, hectares on the wildfire.
+      severitydata: { severity: 120, severitytext: 'Tropical Storm, maximum wind speed 120 km/h', severityunit: 'km/h' }
     },
     {
       eventid: 1105002, eventtype: 'WF', name: 'Wildfire in Attica, Greece',
       country: 'Greece', location: 'Attica', alertlevel: 'Orange',
       latitude: 38.1, longitude: 23.9, fromdate: '2026-09-13T00:00:00Z', todate: isoNow,
-      description: 'Uncontrolled wildfire with evacuation of nearby settlements.'
+      description: 'Uncontrolled wildfire with evacuation of nearby settlements.',
+      severitydata: { severity: 3150, severitytext: 'burnt area of 3150 ha', severityunit: 'ha' }
     },
     {
       eventid: 1105003, eventtype: 'DR', name: 'Drought in Horn of Africa',

@@ -308,12 +308,124 @@
     return 'Issued ' + Math.round(h / 24) + ' days before the window opens.';
   }
 
+
+  /**
+   * The facts that matter for each hazard, in the order a reader wants them.
+   * Each names a field on the record; a field the connected sources do not
+   * publish still appears, marked not reported, because a silent omission reads
+   * as a zero.
+   */
+  var METRICS = {
+    Earthquake: ['magnitude', 'depthKm', 'pagerAlert', 'deaths', 'missing', 'affected', 'tsunamiFlag'],
+    'Earthquake aftershock sequence': ['magnitude', 'deaths', 'missing', 'affected'],
+    'Tropical Cyclone': ['windKt', 'category', 'deaths', 'missing', 'displaced', 'affected'],
+    Flood: ['deaths', 'missing', 'displaced', 'affected'],
+    'Flood / Landslide': ['deaths', 'missing', 'displaced', 'affected'],
+    Landslide: ['deaths', 'missing', 'displaced'],
+    Wildfire: ['areaHa', 'deaths', 'missing', 'displaced', 'affected'],
+    Drought: ['affected', 'displaced'],
+    Volcano: ['alertLevel', 'deaths', 'displaced', 'affected'],
+    'Extreme Heat': ['deaths', 'affected'],
+    'Extreme Cold': ['deaths', 'affected'],
+    'Severe Storm': ['deaths', 'missing', 'affected'],
+    Tornado: ['deaths', 'missing', 'affected'],
+    Tsunami: ['deaths', 'missing', 'displaced', 'affected']
+  };
+
+  var LABELS = {
+    magnitude: 'Magnitude', depthKm: 'Depth', pagerAlert: 'USGS impact alert',
+    tsunamiFlag: 'Tsunami flag', windKt: 'Maximum sustained wind', category: 'Category',
+    areaHa: 'Area burned', alertLevel: 'Observatory alert level',
+    deaths: 'Lives lost', missing: 'Missing or unaccounted for',
+    displaced: 'People displaced', affected: 'People affected'
+  };
+
+  function group(n) {
+    var x = Math.round(Number(n));
+    return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /** Saffir-Simpson category from sustained wind in knots. */
+  function cycloneCategory(kt) {
+    var k = Number(kt);
+    if (!isFinite(k) || k <= 0) return null;
+    if (k >= 137) return 'Category 5';
+    if (k >= 113) return 'Category 4';
+    if (k >= 96) return 'Category 3';
+    if (k >= 83) return 'Category 2';
+    if (k >= 64) return 'Category 1';
+    if (k >= 34) return 'Tropical storm';
+    return 'Tropical depression';
+  }
+
+  /** Render one metric. Returns null only when the metric does not apply at all. */
+  function factOf(e, key) {
+    var label = LABELS[key] || key;
+    var v = e[key];
+    var has = v !== undefined && v !== null && v !== '';
+    switch (key) {
+      case 'magnitude':
+        // The label already says Magnitude, and the glossary expands a bare
+        // "M 6.5" into "Magnitude 6.5", which would read twice over.
+        return { key: key, label: label, reported: has,
+          value: has ? Number(v).toFixed(1) : null };
+      case 'depthKm':
+        return { key: key, label: label, reported: has,
+          value: has ? Math.round(Number(v)) + ' km' : null };
+      case 'pagerAlert':
+        return { key: key, label: label, reported: has,
+          value: has ? String(v).toLowerCase() : null,
+          note: has ? null : 'USGS issued no impact assessment for this earthquake' };
+      case 'tsunamiFlag':
+        // Present on every USGS record, so absence is meaningful rather than missing.
+        return { key: key, label: label, reported: true,
+          value: v ? 'Raised' : 'Not raised' };
+      case 'windKt':
+        return { key: key, label: label, reported: has,
+          value: has ? Math.round(Number(v)) + ' kt' : null };
+      case 'category': {
+        var c = cycloneCategory(e.windKt);
+        return { key: key, label: label, reported: !!c, value: c };
+      }
+      case 'areaHa': {
+        var ha = Number(e.areaHa);
+        var ok = isFinite(ha) && ha > 0;
+        return { key: key, label: label, reported: ok,
+          value: ok ? (ha >= 100 ? group(ha / 100) + ' km²' : group(ha) + ' ha') : null };
+      }
+      case 'alertLevel':
+        return { key: key, label: label, reported: !!e.alert, value: e.alert || null };
+      default: {
+        var n = Number(v);
+        var reported = has && isFinite(n);
+        return { key: key, label: label, reported: reported, value: reported ? group(n) : null };
+      }
+    }
+  }
+
+  /**
+   * Every fact this hazard wants, reported or not. A count no source publishes
+   * says so rather than showing a zero that would read as "nobody died".
+   */
+  function keyFacts(e) {
+    var h = hazardOf(e && e.type);
+    var keys = METRICS[hazardName(h)] || ['deaths', 'affected'];
+    return keys.map(function (k) { return factOf(e || {}, k); }).filter(Boolean);
+  }
+
+  /** The METRICS key for a hazard entry. */
+  function hazardName(h) {
+    for (var k in HAZARDS) if (HAZARDS[k] === h) return k;
+    return '';
+  }
+
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
     severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
     impactRank: impactRank, alertRank: alertRank,
-    leadTimeHours: leadTimeHours, leadTimeText: leadTimeText
+    leadTimeHours: leadTimeHours, leadTimeText: leadTimeText,
+    keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PNDHazards = api;

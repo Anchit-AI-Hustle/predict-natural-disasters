@@ -190,6 +190,33 @@ function splitUsPlace(place) {
   return { country: tail, admin1: '' };
 }
 
+/**
+ * The structured measurement GDACS attaches to an event. Its unit depends on
+ * the hazard, so it is mapped onto the field that hazard actually uses rather
+ * than into one generic "severity" number that would mean different things on
+ * different records.
+ */
+function gdacsMeasurement(sd, eventType) {
+  const d = sd && typeof sd === 'object' ? sd : null;
+  if (!d) return {};
+  const value = num(d.severity != null ? d.severity : d.Severity);
+  if (value === null) return {};
+  const unit = String(d.severityunit || d.severityUnit || '').toLowerCase();
+  const out = {};
+  if (/^wf$/i.test(eventType)) {
+    // Burned area: GDACS reports hectares or square kilometres depending on feed.
+    out.areaHa = /km/.test(unit) ? value * 100 : value;
+  } else if (/^tc$/i.test(eventType)) {
+    // Maximum sustained wind, published in km/h; the rest of the feed uses knots.
+    out.windKt = /km/.test(unit) ? Math.round(value / 1.852) : value;
+  } else if (/^eq$/i.test(eventType)) {
+    out.magnitude = value;
+  }
+  const text = d.severitytext || d.severityText;
+  if (text) out.severityText = String(text);
+  return out;
+}
+
 function pagerLevel(raw) {
   const v = String(raw || '').toLowerCase();
   return v === 'red' ? 'Red' : (v === 'orange' || v === 'yellow') ? 'Orange' : 'Green';
@@ -298,6 +325,7 @@ async function handler(req, res) {
       const et = p.eventtype || p.eventType || p.type || 'Disaster';
       const eid = p.eventid || p.eventId || p.id;
       if (!eid) continue;
+      const measured = gdacsMeasurement(p.severitydata || p.severityData, et);
       push({
         id: 'gdacs-' + et + '-' + eid,
         source: 'GDACS', sourceType: 'official',
@@ -309,10 +337,12 @@ async function handler(req, res) {
         lat: coords[1], lon: coords[0],
         startedAt: p.fromdate || p.fromDate || null,
         updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
-        details: p.description || p.eventdescription || p.severitydata || '',
+        details: [p.description || p.eventdescription || '', measured.severityText || '']
+          .filter(Boolean).join(' · '),
         deaths: +(p.death || p.deaths || 0) || 0,
         displaced: +(p.displaced || 0) || 0,
         affected: +(p.affected || p.population || 0) || 0,
+        ...measured,
         sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=' + encodeURIComponent(eid) + '&eventtype=' + encodeURIComponent(et),
         rawId: eid, rawType: et
       });
