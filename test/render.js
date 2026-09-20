@@ -152,6 +152,19 @@ async function renderPage(page, opts) {
           if (o.feedDown) return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
           return callApi(eventsHandler, url, o.mock);
         }
+        // The ledgers are static files the pages fetch like any other asset.
+        // They were not served here, so /accuracy — the page whose whole job is
+        // to report the verification record — could only ever render its
+        // "data unavailable" branch, and nothing tested what it publishes.
+        const dataMatch = url.match(/\/data\/[\w.-]+\.json/);
+        if (dataMatch) {
+          const file = path.join(ROOT, dataMatch[0].replace(/^\//, ''));
+          if (file.startsWith(ROOT) && fs.existsSync(file)) {
+            const body = JSON.parse(fs.readFileSync(file, 'utf8'));
+            return { ok: true, status: 200, headers: { get: () => null },
+              json: async () => body, text: async () => JSON.stringify(body) };
+          }
+        }
         return { ok: false, status: 404, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
       };
       window.addEventListener('error', e => errors.push(e.error || new Error(e.message)));

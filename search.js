@@ -3,6 +3,10 @@
    (the dashboard) load only this, so no page has to keep its own copy of
    the matching rules — which is how the field lists drifted apart in the
    first place. */
+/* Wrapped, because a top-level const in a classic script becomes a global
+   binding: an unwrapped `const S` here collided with the same name in a
+   page's own inline script and killed that script outright. */
+(function(){
 const S={
   /* Kept identical to portal.js's; a test sweeps both over every code point
      that either one escapes, so the two copies cannot drift. */
@@ -110,3 +114,4 @@ const S={
 };
 if(typeof window!=='undefined')window.PNDSearch=S;
 if(typeof module!=='undefined'&&module.exports)module.exports=S;
+})();
