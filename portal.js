@@ -68,6 +68,21 @@ const PND={
   searchParam(){return window.PNDSearch.searchParam()},
   initSearch(id,draw){return window.PNDSearch.initSearch(id,draw)},
   emptyHtml(q,pool,all,noun){return window.PNDSearch.emptyHtml(q,pool,all,noun)},
+  /* "Until when have predictions been made" had no answer anywhere on the
+     site: the horizon lived inside each record's own window and was never
+     stated. Phrased once here so every page says the same thing. */
+  horizonText(meta){
+    const h=meta&&meta.forecastHorizon;
+    if(!h||!h.furthestWindowEnds)return 'No outlook windows are open right now.';
+    const d=h.daysAhead;
+    const ahead=d>=1?Math.round(d)+' day'+(Math.round(d)===1?'':'s'):'less than a day';
+    return 'Forecasts currently run to '+this.fmtDate(h.furthestWindowEnds)+
+      ' — '+ahead+' ahead. Windows are '+
+      (h.windowLengthDays&&h.windowLengthDays.length
+        ? h.windowLengthDays.join(', ')+' day'+(h.windowLengthDays.length===1&&h.windowLengthDays[0]===1?'':'s')+' long'
+        : 'of varying length')+
+      '. Nothing here looks further ahead, and that is a limit of the method rather than a forecast of calm.';
+  },
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
     newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},

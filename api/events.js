@@ -1204,6 +1204,29 @@ async function handler(req, res) {
   out.meta.activeForecastCount = out.events.filter(e => e.forecast && !e.windowClosed).length;
   out.meta.closedForecastCount = out.events.filter(e => e.windowClosed).length;
   out.meta.countryCount = new Set(out.events.map(e => e.country).filter(Boolean)).size;
+  /* How far ahead this site actually looks. The horizon was implicit in each
+     record's own window and stated nowhere, so "until when have predictions
+     been made" could only be answered by opening all thirty of them. */
+  const openWindows = out.events.filter(e => e.forecast && !e.windowClosed);
+  const ends = openWindows.map(e => Date.parse(e.targetEnd || ''))
+    .filter(Number.isFinite).sort((a, b) => a - b);
+  const lengths = [...new Set(openWindows.map(e => {
+    const a = Date.parse(e.targetStart || ''), b = Date.parse(e.targetEnd || '');
+    return Number.isFinite(a) && Number.isFinite(b)
+      ? Math.round((b - a) / 86400000 * 10) / 10 : null;
+  }).filter(v => v !== null))].sort((a, b) => a - b);
+  out.meta.forecastHorizon = ends.length ? {
+    nextWindowEnds: new Date(ends[0]).toISOString(),
+    furthestWindowEnds: new Date(ends[ends.length - 1]).toISOString(),
+    daysAhead: Math.round((ends[ends.length - 1] - now.getTime()) / 86400000 * 10) / 10,
+    windowLengthDays: lengths,
+    /* Said once, here, so no page has to phrase it for itself: nothing on this
+       site looks further ahead than this, and the absence of a forecast beyond
+       it is a limit of the method, not a forecast of calm. */
+    note: 'No outlook on this site extends past the furthest window end. ' +
+      'Beyond it there is no forecast at all — which is not the same as a forecast of no hazard.'
+  } : null;
+
   out.meta.hazardTypeCount = new Set(out.events.map(e => e.type).filter(Boolean)).size;
   out.meta.highRiskForecastCount =
     out.events.filter(e => e.forecast && !e.windowClosed && e.alert === 'High').length;
