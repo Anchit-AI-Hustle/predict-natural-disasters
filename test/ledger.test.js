@@ -62,12 +62,32 @@ test('an outlook window is anchored to its source signal, not to the clock', asy
   }
 });
 
-test('an outlook whose window has already closed is not published as active', async () => {
-  const { events, generatedAt } = await feed();
+test('an outlook whose window has already closed is not counted as active', async () => {
+  const { events, meta, generatedAt } = await feed();
   const now = Date.parse(generatedAt);
-  const stale = events.filter(e => e.forecast && Date.parse(e.targetEnd) <= now);
+
+  // A signal-derived outlook is dropped outright once its window closes.
+  const stale = events.filter(e => e.forecast && e.forecastKind !== 'frozen-benchmark'
+    && Date.parse(e.targetEnd) <= now);
   assert.deepEqual(stale.map(e => e.id), [],
     'a closed window is history, not an outlook');
+
+  // The frozen benchmark is deliberately kept so its grading stays visible, and
+  // was being counted among the active forecasts four days after its window
+  // closed. Every closed window must say so.
+  const closed = events.filter(e => e.forecast && Date.parse(e.targetEnd) <= now);
+  const unmarked = closed.filter(e => e.windowClosed !== true);
+  assert.deepEqual(unmarked.map(e => e.id), [],
+    'these forecasts have closed windows but are not marked closed');
+  assert.equal(meta.activeForecastCount, events.filter(e => e.forecast && !e.windowClosed).length);
+  assert.equal(meta.activeForecastCount, meta.forecastCount - closed.length,
+    'the active count still includes a forecast whose window has closed');
+});
+
+test('the homepage forecast tile counts only forecasts whose window is still open', () => {
+  const s = read('index.html');
+  assert.match(s, /e\.forecast&&!e\.windowClosed/,
+    'the Active Forecasts tile counts a benchmark whose window closed days ago');
 });
 
 /* ----------------------------------------------------------- the recorder */

@@ -1048,12 +1048,24 @@ async function handler(req, res) {
     out.meta.ledger = { status: 'unavailable' };
   }
 
+  /* A forecast whose window has already closed is history, not an outlook.
+     Signal-derived outlooks are dropped once their window ends, but the frozen
+     ND-001 benchmark is deliberately kept so its grading stays visible — and it
+     was being counted among the active forecasts four days after its window
+     closed. It is marked instead of removed. */
+  for (const e of out.events) {
+    if (e.forecast && e.targetEnd && Date.parse(e.targetEnd) <= now.getTime()) e.windowClosed = true;
+  }
+
   out.meta.eventCount = out.events.length;
   out.meta.officialCount = out.events.filter(e => e.sourceType === 'official').length;
   out.meta.forecastCount = out.events.filter(e => e.forecast).length;
+  out.meta.activeForecastCount = out.events.filter(e => e.forecast && !e.windowClosed).length;
+  out.meta.closedForecastCount = out.events.filter(e => e.windowClosed).length;
   out.meta.countryCount = new Set(out.events.map(e => e.country).filter(Boolean)).size;
   out.meta.hazardTypeCount = new Set(out.events.map(e => e.type).filter(Boolean)).size;
-  out.meta.highRiskForecastCount = out.events.filter(e => e.forecast && e.alert === 'High').length;
+  out.meta.highRiskForecastCount =
+    out.events.filter(e => e.forecast && !e.windowClosed && e.alert === 'High').length;
   out.meta.officialWarningCount =
     out.events.filter(e => e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')).length;
 

@@ -429,7 +429,9 @@ test('a detail page can reorder its nearby-events list', async () => {
 test('the homepage lists every outlook, not a hardcoded one', async () => {
   // The panel shipped with a single static ND-001 row and a KPI hardcoded to "1",
   // so the homepage claimed one upcoming forecast however many the feed carried.
-  const forecasts = (await events()).filter(e => e.forecast);
+  // The tile reads "Active Forecasts", so a frozen benchmark whose window has
+  // already closed does not belong in it.
+  const forecasts = (await events()).filter(e => e.forecast && !e.windowClosed);
   assert.ok(forecasts.length > 1, 'fixture feed needs several outlooks to make this meaningful');
 
   const r = await renderPage('index.html', {
@@ -452,10 +454,15 @@ test('the homepage lists every outlook, not a hardcoded one', async () => {
   r.close();
 });
 
-test('the homepage sorts without portal.js', async () => {
-  // index.html is self-contained and carries its own sort implementation.
+test('the homepage carries its own sort implementation', async () => {
+  // The homepage renders its list before anything else has to load, so its
+  // ordering is implemented inline rather than deferred to a shared helper.
+  // It does load portal.js for the first-run tour; what must not come back is
+  // the sort depending on it.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  assert.ok(!/src="\/portal\.js/.test(html), 'index.html now loads portal.js — use the shared helper instead');
+  assert.match(html, /const SORTS=\{/, 'index.html no longer defines its own sort table');
+  assert.ok(!/PND\.(initSort|sortBy|sortValue|applySort)\b/.test(html),
+    'index.html now sorts through portal.js — keep the homepage list self-contained');
   const r = await renderPage('index.html', {
     waitFor: doc => doc.getElementById('sortBy').options.length > 1 &&
       doc.getElementById('topEvents').children.length > 1
