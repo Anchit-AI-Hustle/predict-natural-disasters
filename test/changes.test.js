@@ -37,10 +37,10 @@ function outlook(over) {
     targetStart: '2026-09-20T00:00:00Z', targetEnd: '2026-09-23T00:00:00Z'
   }, over || {});
 }
-function run(dir, events) {
+function run(dir, events, sources) {
   const feed = path.join(dir, 'events.json');
   const log = path.join(dir, 'changes.json');
-  fs.writeFileSync(feed, JSON.stringify({ events }));
+  fs.writeFileSync(feed, JSON.stringify({ events, meta: { sources: sources || {} } }));
   execFileSync(process.execPath, [TOOL, feed, log], { encoding: 'utf8' });
   return JSON.parse(fs.readFileSync(log, 'utf8'));
 }
@@ -198,6 +198,52 @@ test('a run that saw movement is committed so it can reach production', () => {
   /* And the choice must be driven by whether anything actually moved. */
   assert.match(wf, /forecast-changes\.json/);
   assert.match(wf, /moved=/, 'nothing decides which commit message is used');
+});
+
+test('an upstream outage is not reported as a withdrawn forecast', () => {
+  /* /api/events deliberately serves a partial feed when a provider is down —
+     ReliefWeb has been answering HTTP 406 for days — so every outlook derived
+     from it simply vanishes. Read as a withdrawal, an outage would claim the
+     signal stopped, and the provider recovering would claim a fresh forecast. */
+  const d = tmp();
+  const derived = (id, src) => outlook({ id,
+    source: 'Predict Natural Disasters \u00b7 derived from ' + src,
+    targetEnd: '2099-01-01T00:00:00Z' });
+  const up = { gdacs: { ok: true }, usgs: { ok: true } };
+  run(d, [derived('A', 'GDACS'), derived('B', 'USGS')], up);
+  const outage = run(d, [derived('B', 'USGS')],
+    { gdacs: { ok: false, error: 'HTTP 406' }, usgs: { ok: true } });
+  const last = outage.runs[outage.runs.length - 1];
+  assert.deepEqual(last.gone.map(x => x.id), [],
+    'an unreachable provider was reported as a withdrawn signal');
+  assert.deepEqual(last.unavailable.map(x => x.id), ['A']);
+  assert.deepEqual(last.sourcesDown, ['gdacs']);
+});
+
+test('a provider recovering is not reported as a new forecast', () => {
+  const d = tmp();
+  const derived = (id, src) => outlook({ id,
+    source: 'Predict Natural Disasters \u00b7 derived from ' + src,
+    targetEnd: '2099-01-01T00:00:00Z' });
+  const up = { gdacs: { ok: true } };
+  run(d, [derived('A', 'GDACS')], up);
+  run(d, [], { gdacs: { ok: false } });
+  const back = run(d, [derived('A', 'GDACS')], up);
+  const last = back.runs[back.runs.length - 1];
+  assert.deepEqual(last.added.map(x => x.id), [],
+    'the outlook was never withdrawn, so its return is not an addition');
+});
+
+test('a withdrawal is still a withdrawal while its provider is healthy', () => {
+  const d = tmp();
+  const derived = (id, src) => outlook({ id,
+    source: 'Predict Natural Disasters \u00b7 derived from ' + src,
+    targetEnd: '2099-01-01T00:00:00Z' });
+  const up = { gdacs: { ok: true } };
+  run(d, [derived('A', 'GDACS')], up);
+  const last = run(d, [], up).runs.slice(-1)[0];
+  assert.deepEqual(last.gone.map(x => x.id), ['A']);
+  assert.deepEqual(last.unavailable, []);
 });
 
 test('the history is bounded so the log cannot grow without limit', () => {

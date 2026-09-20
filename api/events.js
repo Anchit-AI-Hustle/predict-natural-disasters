@@ -115,26 +115,34 @@ function inPolygon(lon, lat, poly) {
   return !poly.holes.some(h => inRing(lon, lat, h));
 }
 
-/* A horizontal scanline through the middle of the ring; the midpoint of its
-   first crossed span is interior to any simple polygon. Spans that fall in a
-   hole are rejected, and the next one tried. */
+/* A horizontal scanline, with the holes cutting it as well as the exterior.
+   Sampling only the exterior's crossings meant a hole wider than the sampled
+   midpoints swallowed every candidate: an outer square from -10 to 10 with a
+   hole from -9 to 9 left a 1-unit rim that no sampled midpoint ever landed in.
+   Every ring contributes its crossings, so the spans between them alternate
+   correctly and the rim is found. */
+function crossings(ring, lat) {
+  const xs = [];
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const x1 = ring[j][0], y1 = ring[j][1], x2 = ring[i][0], y2 = ring[i][1];
+    if ((y1 > lat) !== (y2 > lat)) xs.push(x1 + (lat - y1) / (y2 - y1) * (x2 - x1));
+  }
+  return xs;
+}
+
 function scanlinePoint(poly) {
   let lo = Infinity, hi = -Infinity;
   for (const p of poly.outer) { if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1]; }
   if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) return null;
-  /* A few scanlines rather than one: a single line through the middle can cut
-     a shape exactly where its hole is widest. */
-  for (const f of [0.5, 0.25, 0.75, 0.1, 0.9]) {
-    const lat = lo + (hi - lo) * f;
-    const xs = [];
-    for (let i = 0, j = poly.outer.length - 1; i < poly.outer.length; j = i++) {
-      const x1 = poly.outer[j][0], y1 = poly.outer[j][1];
-      const x2 = poly.outer[i][0], y2 = poly.outer[i][1];
-      if ((y1 > lat) !== (y2 > lat)) xs.push(x1 + (lat - y1) / (y2 - y1) * (x2 - x1));
-    }
+  /* Several latitudes, because one line can graze a vertex or run along an
+     edge; each is checked span by span against the real shape. */
+  for (let k = 1; k < 16; k++) {
+    const lat = lo + (hi - lo) * (k / 16);
+    const xs = crossings(poly.outer, lat);
+    for (const h of poly.holes) xs.push(...crossings(h, lat));
     xs.sort((a, b) => a - b);
-    for (let k = 0; k + 1 < xs.length; k += 2) {
-      const lon = (xs[k] + xs[k + 1]) / 2;
+    for (let n = 0; n + 1 < xs.length; n++) {
+      const lon = (xs[n] + xs[n + 1]) / 2;
       if (Number.isFinite(lon) && inPolygon(lon, lat, poly)) return { lat, lon };
     }
   }
@@ -150,7 +158,11 @@ function insidePoint(geometry, mean) {
     const pt = scanlinePoint(p);
     if (pt) return pt;
   }
-  return mean || null;
+  /* No verified interior point. The mean has already been rejected, so
+     returning it would be handing back the coordinate this function exists to
+     avoid. Nothing is better than somewhere wrong: the caller sends the reader
+     to the agency's own front page instead. */
+  return null;
 }
 
 function boxArea(ring) {
@@ -804,11 +816,13 @@ async function handler(req, res) {
                active there. The API URL is kept for provenance, under a name
                that says what it is, and is never offered as a source to read. */
             sourceUrl: (() => {
-              /* Linked from a point inside the warned area rather than from
-                 the marker's coordinate, which for a concave or multipart
-                 alert can sit outside it. */
-              const link = insidePoint(f.geometry, c) || c;
-              return Number.isFinite(link.lat) && Number.isFinite(link.lon)
+              /* Linked from a point proven to be inside the warned area, not
+                 from the marker's coordinate, which for a concave, multipart
+                 or holed alert can sit outside it. When no such point can be
+                 established the reader goes to the agency's own front page
+                 rather than to a forecast for somewhere that is not warned. */
+              const link = insidePoint(f.geometry, c);
+              return link && Number.isFinite(link.lat) && Number.isFinite(link.lon)
                 ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(link.lat).toFixed(4) +
                   '&lon=' + Number(link.lon).toFixed(4)
                 : 'https://www.weather.gov/';
@@ -1301,12 +1315,15 @@ async function handler(req, res) {
       windowMoved: n(last.windowMoved),
       gone: n(last.gone),
       expired: n(last.expired),
+      unavailable: n(last.unavailable),
+      sourcesDown: last.sourcesDown || [],
       total: n(last.added) + n(last.raised) + n(last.lowered) +
         n(last.windowMoved) + n(last.gone) + n(last.expired),
       records: {
         added: last.added || [], raised: last.raised || [],
         lowered: last.lowered || [], windowMoved: last.windowMoved || [],
-        gone: last.gone || [], expired: last.expired || []
+        gone: last.gone || [], expired: last.expired || [],
+        unavailable: last.unavailable || []
       }
     };
     out.meta.refreshRecorded = Object.assign(

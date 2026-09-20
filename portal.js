@@ -112,7 +112,12 @@ const PND={
       row('No longer issued',R.gone,x=>x.title+' — the signal behind it stopped')+
       /* An outlook whose window simply ended did what it said it would. It
          must not read as a withdrawal. */
-      row('Window closed as scheduled',R.expired,x=>x.title+' — its forecast window ended');
+      row('Window closed as scheduled',R.expired,x=>x.title+' — its forecast window ended')+
+      /* Not a change in the forecasts at all — a gap in what could be seen.
+         Reporting it as a withdrawal would blame the forecast for our
+         outage, and blame it again as a new forecast on recovery. */
+      row('Could not be checked',R.unavailable,x=>x.title+
+        ' — its source was unreachable on this run, so it is unchanged rather than withdrawn');
   },
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},

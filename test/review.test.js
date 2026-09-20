@@ -233,6 +233,53 @@ test('a convex area keeps its centroid rather than moving for no reason', () => 
   assert.deepEqual(api.insidePoint(S, mean), mean);
 });
 
+test('a hole large enough to swallow every sample is still handled', () => {
+  /* The first hole fix sampled five fixed scanlines through the exterior only.
+     An outer square from -10 to 10 with a hole from -9 to 9 leaves a one-unit
+     rim that no sampled midpoint lands in, so it fell back to the mean — the
+     very coordinate it had already rejected. */
+  const rim = { type: 'Polygon', coordinates: [
+    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]],
+    [[-9, -9], [9, -9], [9, 9], [-9, 9], [-9, -9]]
+  ] };
+  const polys = api.polygonsOf(rim);
+  const mean = api.centroid(rim);
+  assert.equal(api.inPolygon(mean.lon, mean.lat, polys[0]), false,
+    'this fixture relies on the mean being in the hole');
+  const p = api.insidePoint(rim, mean);
+  assert.ok(p, 'no point was found at all');
+  assert.equal(api.inPolygon(p.lon, p.lat, polys[0]), true,
+    'the link still opens a point outside the warned area');
+});
+
+test('insidePoint never returns a point it has itself rejected', () => {
+  /* The rule rather than the shape: whatever comes back must pass the same
+     containment test, or nothing comes back. Sampling can always be defeated
+     by some geometry; handing back a known-wrong coordinate cannot be. */
+  const shapes = [
+    { type: 'Polygon', coordinates: [[[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]],
+      [[-9.9, -9.9], [9.9, -9.9], [9.9, 9.9], [-9.9, 9.9], [-9.9, -9.9]]] },
+    { type: 'Polygon', coordinates: [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
+      [[0.01, 0.01], [9.99, 0.01], [9.99, 9.99], [0.01, 9.99], [0.01, 0.01]]] }
+  ];
+  for (const g of shapes) {
+    const polys = api.polygonsOf(g);
+    const p = api.insidePoint(g, api.centroid(g));
+    if (p === null) continue;
+    assert.equal(polys.some(q => api.inPolygon(p.lon, p.lat, q)), true,
+      `returned ${JSON.stringify(p)}, which is outside the shape`);
+  }
+});
+
+test('a link is only built from a point that was verified', () => {
+  const src = read(path.join('api', 'events.js'));
+  /* The fallback must be the agency's front page, not the rejected mean. */
+  assert.doesNotMatch(src, /insidePoint\(f\.geometry, c\) \|\| c/,
+    'the link falls back to the coordinate insidePoint exists to avoid');
+  assert.match(src, /const link = insidePoint\(f\.geometry, c\);/);
+  assert.match(src, /link && Number\.isFinite\(link\.lat\)/);
+});
+
 test('an alert with no usable geometry still gets a link', () => {
   const mean = { lat: 40, lon: -75 };
   assert.deepEqual(api.insidePoint(null, mean), mean);

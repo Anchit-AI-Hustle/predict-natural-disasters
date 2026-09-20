@@ -35,13 +35,36 @@ try {
   if (raw && Array.isArray(raw.runs)) log = raw;
 } catch (e) { /* first run: start empty */ }
 
+/* Which upstreams were unreachable on this run. /api/events deliberately
+   returns a partial feed when a provider is down — ReliefWeb has been
+   answering HTTP 406 for days — so every outlook derived from it simply
+   vanishes from the feed. Without this, an outage reads as "the signal behind
+   it stopped", and the provider coming back reads as a fresh forecast. */
+const sources = (feed.meta && feed.meta.sources) || {};
+const down = new Set(Object.keys(sources).filter(k => sources[k] && sources[k].ok === false));
+
+/* The upstream an outlook came from, taken from the source string the feed
+   already writes ("… derived from GDACS"). */
+const PROVIDERS = {
+  gdacs: 'gdacs', usgs: 'usgs', eonet: 'eonet', emsc: 'emsc',
+  reliefweb: 'reliefweb', nhc: 'nhc',
+  'national weather service': 'nws', nws: 'nws',
+  'volcano hazards': 'usgs_volcano'
+};
+function providerOf(e) {
+  const s = String((e && e.source) || '').toLowerCase();
+  for (const key of Object.keys(PROVIDERS)) if (s.includes(key)) return PROVIDERS[key];
+  return '';
+}
+
 /* Compared on what a reader would call a change: the level, the window, and
    whether it is still being issued at all. */
 function snap(e) {
   return {
     id: e.id, type: e.type, title: e.title, country: e.country || e.region || '',
     alert: e.alert || '', rank: Number(e.severityRank) || 0,
-    targetStart: e.targetStart || '', targetEnd: e.targetEnd || ''
+    targetStart: e.targetStart || '', targetEnd: e.targetEnd || '',
+    provider: providerOf(e)
   };
 }
 
@@ -60,7 +83,8 @@ const previous = (log.snapshot && typeof log.snapshot === 'object') ? log.snapsh
    and telling the reader there is nothing earlier to compare with. */
 const first = !log.runs.length;
 
-const added = [], raised = [], lowered = [], windowMoved = [], gone = [], expired = [];
+const added = [], raised = [], lowered = [], windowMoved = [], gone = [], expired = [],
+  unavailable = [];
 const nowIso = new Date().toISOString();
 for (const id of Object.keys(current)) {
   const now = current[id], was = previous[id];
@@ -73,14 +97,22 @@ for (const id of Object.keys(current)) {
 }
 for (const id of Object.keys(previous)) {
   if (current[id]) continue;
-  /* An outlook leaves the open set for two very different reasons, and this
-     reported both as the second. Its window ending is the outlook doing
-     exactly what it said it would; the signal behind it stopping is a
-     withdrawal. Calling a completed forecast a withdrawn signal is a false
-     alarm about a false alarm. */
-  const end = Date.parse(previous[id].targetEnd || '');
-  if (Number.isFinite(end) && end <= Date.parse(nowIso)) expired.push(previous[id]);
-  else gone.push(previous[id]);
+  const was = previous[id];
+  /* An outlook leaves the open set for three very different reasons, and this
+     reported all of them as the last one. Its window ending is the outlook
+     doing exactly what it said it would. Its provider being unreachable is our
+     problem, not a change in the forecast. Only a signal that is still
+     reachable and no longer issued is a withdrawal. */
+  const end = Date.parse(was.targetEnd || '');
+  if (Number.isFinite(end) && end <= Date.parse(nowIso)) { expired.push(was); continue; }
+  if (was.provider && down.has(was.provider)) {
+    unavailable.push(was);
+    /* Held in the snapshot, so the provider recovering does not read as a
+       newly issued forecast either. */
+    current[id] = was;
+    continue;
+  }
+  gone.push(was);
 }
 
 const at = nowIso;
@@ -99,7 +131,10 @@ const run = {
   added: first ? [] : added,
   raised, lowered, windowMoved,
   gone: first ? [] : gone,
-  expired: first ? [] : expired
+  expired: first ? [] : expired,
+  /* Not a change in the forecasts; a gap in what we could see. */
+  unavailable: first ? [] : unavailable,
+  sourcesDown: [...down]
 };
 
 log.schemaVersion = 1;
@@ -133,3 +168,4 @@ for (const a of lowered) console.log('  v lowered ' + a.id + ' ' + a.from + ' ->
 for (const a of windowMoved) console.log('  > window  ' + a.id + ' ends ' + a.fromEnd + ' -> ' + a.toEnd);
 for (const a of run.gone) console.log('  - gone    ' + a.id + ' ' + a.title);
 for (const a of run.expired) console.log('  . expired ' + a.id + ' ' + a.title);
+for (const a of run.unavailable) console.log('  ? source  ' + a.id + ' ' + a.title + ' (' + a.provider + ' unreachable)');
