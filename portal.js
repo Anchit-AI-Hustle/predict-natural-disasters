@@ -12,7 +12,19 @@ const PND={
   fmtDate(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   fmtTime(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
-  riskClass(v=''){v=String(v).toLowerCase();return v.includes('red')||v.includes('critical')?'critical':v.includes('orange')||v.includes('high')?'high':v.includes('purple')||v.includes('very')?'veryhigh':'moderate';},
+  riskClass(v=''){const s=String(v).toLowerCase();
+    /* Word boundaries, not substrings: "yellow" contains "low", and a bare
+       includes() check would paint a yellow alert as routine. */
+    if(/\b(red|critical|extreme)\b/.test(s))return 'critical';
+    if(/\b(purple|very)\b/.test(s))return 'veryhigh';
+    if(/\b(orange|high|severe)\b/.test(s))return 'high';
+    if(/\b(moderate|yellow)\b/.test(s))return 'moderate';
+    if(/\b(watch|advisory|minor)\b/.test(s))return 'watch';
+    if(/\b(green|low|informational|routine)\b/.test(s))return 'routine';
+    /* An unrecognised level is not a warning. It used to fall through to the
+       amber "moderate" badge, so 732 Green records in the live feed were
+       painted as warnings while their own label read Green. */
+    return 'neutral';},
   slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
   enc(v=''){return encodeURIComponent(String(v))},
   eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;},
