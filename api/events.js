@@ -1053,6 +1053,11 @@ async function handler(req, res) {
         ' earthquake. Aftershocks decay over days to weeks and the largest is typically about one magnitude below the mainshock, ' +
         'so further felt shaking and additional damage to already-weakened structures should be expected. ' +
         'This describes the ongoing sequence — it is not a prediction of a new independent earthquake.',
+      /* The magnitude of the mainshock this sequence follows, kept under its own
+         name: the outlook itself has no magnitude, and calling it one would
+         read as a forecast of a quake that size. The narrative already states
+         it, so leaving the field off made the page contradict its own text. */
+      ...(num(e.magnitude) !== null ? { mainshockMagnitude: num(e.magnitude) } : {}),
       forecast: true, forecastKind: 'aftershock-sequence', forecastOf: e.id,
       confidence: 'Sequence-based — derived from observed mainshock magnitude and standard aftershock decay behaviour',
       evidence: 'Observed ' + e.source + ' event “' + e.title + '” at ' + e.updated + '.',

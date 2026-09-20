@@ -329,7 +329,7 @@
    */
   var METRICS = {
     Earthquake: ['magnitude', 'depthKm', 'pagerAlert', 'deaths', 'missing', 'affected', 'tsunamiFlag'],
-    'Earthquake aftershock sequence': ['magnitude', 'deaths', 'missing', 'affected'],
+    'Earthquake aftershock sequence': ['mainshockMagnitude', 'deaths', 'missing', 'affected'],
     'Tropical Cyclone': ['windKt', 'category', 'deaths', 'missing', 'displaced', 'affected'],
     Flood: ['deaths', 'missing', 'displaced', 'affected'],
     'Flood / Landslide': ['deaths', 'missing', 'displaced', 'affected'],
@@ -345,7 +345,8 @@
   };
 
   var LABELS = {
-    magnitude: 'Magnitude', depthKm: 'Depth', pagerAlert: 'USGS impact alert',
+    magnitude: 'Magnitude', mainshockMagnitude: 'Mainshock magnitude',
+    depthKm: 'Depth', pagerAlert: 'USGS impact alert',
     tsunamiFlag: 'Tsunami flag', windKt: 'Maximum sustained wind', category: 'Category',
     areaHa: 'Area burned', alertLevel: 'Observatory alert level',
     aviationColour: 'Aviation colour code',
@@ -377,6 +378,7 @@
     var v = e[key];
     var has = v !== undefined && v !== null && v !== '';
     switch (key) {
+      case 'mainshockMagnitude':
       case 'magnitude':
         // The label already says Magnitude, and the glossary expands a bare
         // "M 6.5" into "Magnitude 6.5", which would read twice over.

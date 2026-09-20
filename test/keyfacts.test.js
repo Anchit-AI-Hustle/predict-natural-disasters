@@ -538,3 +538,44 @@ test('a record published Red keeps a Red-level severity whatever else is on it',
   // And a graver PAGER assessment still raises it above the alert alone.
   assert.equal(H.severityOf({ alert: 'Red', pagerAlert: 'red' }), 'Extreme');
 });
+
+/* ------------------- the grid may not contradict the text beside it */
+
+test('an aftershock outlook states the mainshock magnitude its own text quotes', async () => {
+  const { events } = await feed();
+  const a = events.find(e => e.forecastKind === 'aftershock-sequence');
+  assert.ok(a, 'fixture should produce an aftershock outlook');
+
+  const quoted = /\bM\s?(\d+(?:\.\d+)?)/.exec(String(a.details));
+  assert.ok(quoted, 'the outlook narrative should quote the mainshock magnitude');
+
+  const f = byKey(H.keyFacts(a), 'mainshockMagnitude');
+  assert.ok(f, 'an aftershock outlook should report the magnitude it follows');
+  assert.equal(f.reported, true,
+    'the grid read "Not reported" while the text beside it quoted M' + quoted[1]);
+  assert.equal(f.value, Number(quoted[1]).toFixed(1));
+
+  // It is the mainshock's magnitude, not the outlook's: an outlook labelled
+  // plain "Magnitude" would read as a forecast of a quake that size.
+  assert.equal(f.label, 'Mainshock magnitude');
+  assert.equal(a.magnitude, undefined, 'an outlook has no magnitude of its own');
+});
+
+test('no record reports a figure as absent while its own narrative states it', async () => {
+  const { events } = await feed();
+  const contradictions = [];
+  for (const e of events) {
+    if (!/earthquake/i.test(String(e.type))) continue;
+    const quoted = /\bM\s?(\d+(?:\.\d+)?)\b/.exec(String(e.details || ''));
+    if (!quoted) continue;
+    const facts = H.keyFacts(e);
+    const mag = facts.find(f => f.key === 'magnitude' || f.key === 'mainshockMagnitude');
+    if (!mag) continue;
+    if (!mag.reported) {
+      contradictions.push(e.id + ': text says M' + quoted[1] + ', grid says "' +
+        mag.label + ' — Not reported"');
+    }
+  }
+  assert.deepEqual(contradictions, [],
+    'the grid contradicts the narrative beside it:\n' + contradictions.join('\n'));
+});
