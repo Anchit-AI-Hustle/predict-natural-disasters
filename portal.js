@@ -109,7 +109,10 @@ const PND={
       row('Raised',R.raised,x=>x.title+' — '+x.from+' → '+x.to)+
       row('Lowered',R.lowered,x=>x.title+' — '+x.from+' → '+x.to)+
       row('Window moved',R.windowMoved,x=>x.title+' — now ends '+this.fmtDate(x.toEnd))+
-      row('No longer issued',R.gone,x=>x.title+' — the signal behind it stopped');
+      row('No longer issued',R.gone,x=>x.title+' — the signal behind it stopped')+
+      /* An outlook whose window simply ended did what it said it would. It
+         must not read as a withdrawal. */
+      row('Window closed as scheduled',R.expired,x=>x.title+' — its forecast window ended');
   },
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},

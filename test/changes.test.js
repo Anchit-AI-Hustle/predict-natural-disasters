@@ -107,15 +107,79 @@ test('an outlook that stopped being issued is recorded as gone', () => {
 });
 
 test('a closed window is not counted as an outlook that vanished', () => {
-  /* Its window ending is the outlook doing what it said, not the signal
-     stopping — two different things a reader would read differently. */
+  /* This test previously asserted the defect its own comment described: it
+     checked that a window which had simply ended landed in `gone`, which the
+     page renders as "the signal behind it stopped". A completed forecast is
+     the outlook doing exactly what it said; only a withdrawal is a
+     withdrawal. */
   const d = tmp();
-  run(d, [outlook()]);
-  const log = run(d, [outlook({ windowClosed: true })]);
+  run(d, [outlook({ targetEnd: '2020-01-02T00:00:00Z' })]);
+  const log = run(d, []);
   const last = log.runs[log.runs.length - 1];
   assert.equal(last.active, 0);
-  assert.equal(last.gone.length, 1, 'a closed window should leave the open set');
-  assert.equal(last.gone[0].id, 'OUT-a');
+  assert.equal(last.gone.length, 0,
+    'a window that ended on schedule was reported as a withdrawn signal');
+  assert.equal(last.expired.length, 1);
+  assert.equal(last.expired[0].id, 'OUT-a');
+});
+
+test('an outlook that stops being issued mid-window is still a withdrawal', () => {
+  const d = tmp();
+  run(d, [outlook({ targetEnd: '2099-01-01T00:00:00Z' })]);
+  const log = run(d, []);
+  const last = log.runs[log.runs.length - 1];
+  assert.equal(last.gone.length, 1, 'a live signal that stopped was not reported');
+  assert.equal(last.expired.length, 0);
+});
+
+test('both reasons are counted, and neither is silent', () => {
+  const d = tmp();
+  run(d, [outlook({ id: 'ends', targetEnd: '2020-01-02T00:00:00Z' }),
+    outlook({ id: 'stops', targetEnd: '2099-01-01T00:00:00Z' })]);
+  const log = run(d, []);
+  const last = log.runs[log.runs.length - 1];
+  assert.deepEqual(last.expired.map(x => x.id), ['ends']);
+  assert.deepEqual(last.gone.map(x => x.id), ['stops']);
+});
+
+test('the page words an ended window differently from a stopped signal', async () => {
+  const { window } = await renderPage('forecasts.html', { timeoutMs: 15000,
+    waitFor: d => !((d.getElementById('changes') || {}).textContent || '').includes('Loading') });
+  const say = window.PND.changesHtml.bind(window.PND);
+  const html = say({ forecastChanges: { at: '2026-09-20T12:00:00Z', sinceHours: 1,
+    activeOutlooks: 5, baseline: false, total: 2,
+    records: { gone: [{ id: 'a', title: 'Withdrawn outlook' }],
+      expired: [{ id: 'b', title: 'Completed outlook' }] } } });
+  assert.match(html, /No longer issued/);
+  assert.match(html, /Window closed as scheduled/);
+  /* The completed one must not carry the withdrawal wording. */
+  const completed = html.slice(html.indexOf('Window closed as scheduled'));
+  assert.doesNotMatch(completed, /the signal behind it stopped/);
+  window.close();
+});
+
+test('a run that saw movement is committed so it can reach production', () => {
+  /* /api/events reads data/forecast-changes.json out of the deployed bundle,
+     and vercel.json skips any deployment whose commit carries "[ledger]".
+     Marking every scheduled run with it would have left production showing
+     the first baseline forever. */
+  const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows',
+    'refresh-disaster-data.yml'), 'utf8');
+  const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+  /* The marker is written for grep there, so it reads \[ledger\]. */
+  assert.match(vercel.ignoreCommand || '', /ledger/,
+    'this test assumes the marker still gates deployment');
+  /* There must be a path that commits without the marker. */
+  const commits = [...wf.matchAll(/git commit -m "([^"]+)"/g)].map(m => m[1]);
+  assert.ok(commits.length >= 2,
+    'the workflow has only one commit message, so either every run deploys or none does');
+  assert.ok(commits.some(c => !c.includes('[ledger]')),
+    'every scheduled commit is marked [ledger], so no change log ever reaches production');
+  assert.ok(commits.some(c => c.includes('[ledger]')),
+    'no run is skippable, so a quiet hour spends a deployment');
+  /* And the choice must be driven by whether anything actually moved. */
+  assert.match(wf, /forecast-changes\.json/);
+  assert.match(wf, /moved=/, 'nothing decides which commit message is used');
 });
 
 test('the history is bounded so the log cannot grow without limit', () => {

@@ -55,7 +55,8 @@ for (const e of events) {
 const previous = (log.snapshot && typeof log.snapshot === 'object') ? log.snapshot : {};
 const first = Object.keys(previous).length === 0;
 
-const added = [], raised = [], lowered = [], windowMoved = [], gone = [];
+const added = [], raised = [], lowered = [], windowMoved = [], gone = [], expired = [];
+const nowIso = new Date().toISOString();
 for (const id of Object.keys(current)) {
   const now = current[id], was = previous[id];
   if (!was) { added.push(now); continue; }
@@ -66,12 +67,18 @@ for (const id of Object.keys(current)) {
   }
 }
 for (const id of Object.keys(previous)) {
-  /* No longer issued. That is not the same as the window having closed: the
-     signal behind it stopped, which is itself worth showing. */
-  if (!current[id]) gone.push(previous[id]);
+  if (current[id]) continue;
+  /* An outlook leaves the open set for two very different reasons, and this
+     reported both as the second. Its window ending is the outlook doing
+     exactly what it said it would; the signal behind it stopping is a
+     withdrawal. Calling a completed forecast a withdrawn signal is a false
+     alarm about a false alarm. */
+  const end = Date.parse(previous[id].targetEnd || '');
+  if (Number.isFinite(end) && end <= Date.parse(nowIso)) expired.push(previous[id]);
+  else gone.push(previous[id]);
 }
 
-const at = new Date().toISOString();
+const at = nowIso;
 const last = log.runs.length ? log.runs[log.runs.length - 1] : null;
 const sinceHours = last && last.at
   ? Math.round((Date.parse(at) - Date.parse(last.at)) / 36e5 * 100) / 100
@@ -86,7 +93,8 @@ const run = {
   baseline: first,
   added: first ? [] : added,
   raised, lowered, windowMoved,
-  gone: first ? [] : gone
+  gone: first ? [] : gone,
+  expired: first ? [] : expired
 };
 
 log.schemaVersion = 1;
@@ -110,7 +118,8 @@ if (gaps.length) {
 }
 
 fs.writeFileSync(changesPath, JSON.stringify(log, null, 2) + '\n');
-const moved = run.added.length + raised.length + lowered.length + windowMoved.length + run.gone.length;
+const moved = run.added.length + raised.length + lowered.length +
+  windowMoved.length + run.gone.length + run.expired.length;
 console.log('changes: ' + (first ? 'baseline snapshot, ' : '') + moved + ' change(s) across ' +
   run.active + ' active outlook(s)');
 for (const a of run.added) console.log('  + new     ' + a.id + ' ' + a.alert + ' ' + a.title);
@@ -118,3 +127,4 @@ for (const a of raised) console.log('  ^ raised  ' + a.id + ' ' + a.from + ' -> 
 for (const a of lowered) console.log('  v lowered ' + a.id + ' ' + a.from + ' -> ' + a.to);
 for (const a of windowMoved) console.log('  > window  ' + a.id + ' ends ' + a.fromEnd + ' -> ' + a.toEnd);
 for (const a of run.gone) console.log('  - gone    ' + a.id + ' ' + a.title);
+for (const a of run.expired) console.log('  . expired ' + a.id + ' ' + a.title);

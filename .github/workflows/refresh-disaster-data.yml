@@ -61,12 +61,31 @@ jobs:
             exit 0
           fi
           total=$(node -e "console.log(require('./data/outlook-ledger.json').length)")
+          # Did this run actually see the forecast set move? /api/events reads
+          # data/forecast-changes.json out of the deployed bundle, so a change
+          # nobody deploys is a change nobody can see: marking every run
+          # "[ledger]" would have left production showing the baseline forever.
+          moved=$(node -e "
+            const l = require('./data/forecast-changes.json');
+            const r = l.runs[l.runs.length - 1] || {};
+            const n = a => (Array.isArray(a) ? a.length : 0);
+            const total = n(r.added) + n(r.raised) + n(r.lowered) +
+              n(r.windowMoved) + n(r.gone) + n(r.expired);
+            console.log(r.baseline || total > 0 ? 'yes' : 'no');
+          ")
           git config user.name "disaster-refresh"
           git config user.email "noreply@anthropic.com"
           git add data/outlook-ledger.json data/forecast-changes.json
-          # "[ledger]" is what vercel.json ignoreCommand looks for: recording a
-          # forecast must not spend one of the 100 daily deployments.
-          git commit -m "Record outlooks in the forecast ledger ($total total) [ledger]"
+          # "[ledger]" is what vercel.json ignoreCommand looks for. A quiet hour
+          # is still recorded, for the cadence measurement and the next run's
+          # snapshot, but must not spend one of the 100 daily deployments. An
+          # hour in which something moved has to reach production, so it is
+          # committed without the marker.
+          if [ "$moved" = "yes" ]; then
+            git commit -m "Record outlooks and forecast changes ($total recorded)"
+          else
+            git commit -m "Record outlooks in the forecast ledger ($total total) [ledger]"
+          fi
           git push
 
       - name: Refresh live feed and warm every event's enrichment record

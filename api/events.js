@@ -1273,12 +1273,13 @@ async function handler(req, res) {
       lowered: n(last.lowered),
       windowMoved: n(last.windowMoved),
       gone: n(last.gone),
+      expired: n(last.expired),
       total: n(last.added) + n(last.raised) + n(last.lowered) +
-        n(last.windowMoved) + n(last.gone),
+        n(last.windowMoved) + n(last.gone) + n(last.expired),
       records: {
         added: last.added || [], raised: last.raised || [],
         lowered: last.lowered || [], windowMoved: last.windowMoved || [],
-        gone: last.gone || []
+        gone: last.gone || [], expired: last.expired || []
       }
     };
     out.meta.refreshRecorded = Object.assign(
