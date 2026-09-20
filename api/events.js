@@ -254,7 +254,11 @@ function gdacsMeasurement(sd, eventType) {
     // Maximum sustained wind. The rest of the feed, and every Saffir-Simpson
     // threshold in the hazard model, is in knots.
     const f = knotsFactor(unit);
-    if (f !== null) out.windKt = Math.round(value * f);
+    // Rounding here promotes a cyclone across a Saffir-Simpson boundary before
+    // anything classifies it: 118 Kph is 63.7 kt, a tropical storm, but rounds
+    // to 64 kt and is published as a category 1. The converted value is kept,
+    // and only its printed form is rounded.
+    if (f !== null) out.windKt = value * f;
   } else if (/^eq$/i.test(eventType)) {
     // A magnitude carries no unit conversion, so nothing is being assumed.
     out.magnitude = value;

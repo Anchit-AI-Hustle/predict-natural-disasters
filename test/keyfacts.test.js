@@ -128,7 +128,10 @@ test('the GDACS cyclone measurement is converted into the unit the rest of the f
   assert.ok(tc, 'fixture should include the GDACS cyclone');
   // GDACS publishes 120 km/h; severity thresholds and every other provider
   // here are in knots, so a raw 120 would read as a category 4.
-  assert.equal(tc.windKt, 65, '120 km/h is 65 kt');
+  // The converted value is kept, not rounded: rounding at conversion time
+  // decides the category before anything classifies it.
+  assert.ok(Math.abs(tc.windKt - 120 / 1.852) < 1e-9, '120 Kph is 64.79 kt, got ' + tc.windKt);
+  assert.equal(byKey(H.keyFacts(tc), 'windKt').value, '64.8 kt');
   assert.equal(byKey(H.keyFacts(tc), 'category').value, 'Category 1');
 });
 
@@ -679,7 +682,7 @@ test('a cyclone published in kilometres per hour is not rated a category higher'
   assert.ok(tc, 'fixture should include the GDACS cyclone');
   // 120 Kph is 65 kt: a category 1. Read as 120 kt it is a category 4, and the
   // severity scale would call it Extreme.
-  assert.equal(tc.windKt, 65);
+  assert.ok(Math.abs(tc.windKt - 120 / 1.852) < 1e-9, 'expected 64.79 kt, got ' + tc.windKt);
   assert.equal(H.cycloneCategory(tc.windKt), 'Category 1');
   assert.notEqual(H.severityOf(tc), 'Extreme',
     'a tropical storm was being published as a category 4');
@@ -693,4 +696,61 @@ test('a measurement whose unit is not recognised is left off the record', async 
   // to "assume the unit we wanted".
   assert.match(src, /if \(f !== null\) out\.windKt/);
   assert.match(src, /if \(f !== null\) out\.areaHa/);
+});
+
+/* ----------------- rounding may change how a figure reads, never what it is */
+
+test('converting a wind speed never promotes a cyclone across a category boundary', () => {
+  // 118 Kph is 63.7 kt, a tropical storm. Rounded to 64 kt it is a category 1.
+  // Rounding at conversion time decided the category before anything classified
+  // it, so the sweep checks the whole range rather than that one value.
+  const toKt = kph => kph / 1.852;
+  const wrong = [];
+  for (let kph = 20; kph <= 300; kph++) {
+    const exact = toKt(kph);
+    if (H.cycloneCategory(Math.round(exact)) !== H.cycloneCategory(exact)) {
+      wrong.push(kph + ' Kph: ' + exact.toFixed(2) + ' kt is ' + H.cycloneCategory(exact) +
+        ', rounded to ' + Math.round(exact) + ' kt it is ' + H.cycloneCategory(Math.round(exact)));
+    }
+  }
+  assert.ok(wrong.length > 0,
+    'if no wind speed rounds across a boundary this test proves nothing');
+
+  // The feed must classify on the converted value, not the rounded one.
+  for (const line of wrong) {
+    const kph = Number(line.split(' ')[0]);
+    const e = { type: 'Tropical Cyclone', windKt: toKt(kph) };
+    assert.equal(byKey(H.keyFacts(e), 'category').value, H.cycloneCategory(toKt(kph)),
+      'classified on a rounded wind: ' + line);
+  }
+});
+
+test('the wind a page prints never contradicts the category printed beside it', () => {
+  const bad = [];
+  for (let kph = 20; kph <= 300; kph++) {
+    const e = { type: 'Tropical Cyclone', windKt: kph / 1.852 };
+    const facts = H.keyFacts(e);
+    const shown = Number(String(byKey(facts, 'windKt').value).replace(/[^\d.]/g, ''));
+    const category = byKey(facts, 'category').value;
+    // Reading the printed number back must land in the category printed with it.
+    if (H.cycloneCategory(shown) !== category) {
+      bad.push(kph + ' Kph prints ' + shown + ' kt beside "' + category +
+        '", but ' + shown + ' kt is "' + H.cycloneCategory(shown) + '"');
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('\n'));
+
+  // A source that publishes whole knots still prints whole knots.
+  assert.equal(byKey(H.keyFacts({ type: 'Tropical Cyclone', windKt: 105 }), 'windKt').value, '105 kt');
+});
+
+test('summing an empty set is not a reported figure', () => {
+  const s = read('verification-detail.html');
+  // reduce(..., 0) over records that carry no deaths yields 0, and the
+  // presence-based formatter added earlier in this branch then published that
+  // synthetic zero as "Lives lost 0".
+  assert.match(s, /anyDeaths/,
+    'the aggregate needs to know whether any record supplied the field');
+  assert.ok(!/const deaths=ev\.reduce\(/.test(s),
+    'the sum is published without checking that anything was summed');
 });

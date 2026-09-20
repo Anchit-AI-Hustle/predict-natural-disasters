@@ -27,7 +27,12 @@ const num=v=>(v===undefined||v===null||v==='')?null:(Number.isFinite(+v)?(+v).to
 const times=ev.map(e=>Date.parse(e.startedAt||'')).filter(Number.isFinite).sort((a,b)=>a-b);
 const firstSeen=times.length?new Date(times[0]).toISOString():'';
 const lastSeen=times.length?new Date(times[times.length-1]).toISOString():'';
-const deaths=ev.reduce((n,e)=>n+(Number(e.deaths)||0),0);
+/* Summing an empty set gives 0, and the formatter above now treats a 0 as a
+   reported figure — so with no source reporting casualties at all the page
+   claimed "Lives lost 0". The sum is only a finding if some record carried
+   the field. */
+const anyDeaths=ev.some(e=>e.deaths!==undefined&&e.deaths!==null&&e.deaths!=='')
+const deaths=anyDeaths?ev.reduce((n,e)=>n+(Number(e.deaths)||0),0):null;
 const places=[...new Set(ev.map(e=>e.country||e.region).filter(Boolean))];
 /* \bM must start a word: without it "Central Vietnam 2026" scraped as magnitude 2026. */
 const mags=ev.map(e=>{const m=String(e.title||'').match(/\bM\s*(\d+(?:\.\d+)?)\b/)||String(e.title||'').match(/\bmagnitude\s+(\d+(?:\.\d+)?)/i);return m?Number(m[1]):null}).filter(Number.isFinite);

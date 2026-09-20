@@ -398,9 +398,17 @@
         return { key: key, label: label, reported: has,
           value: has ? (v ? 'Raised' : 'Not raised') : null,
           note: has ? null : 'Only the United States Geological Survey publishes a tsunami flag' };
-      case 'windKt':
+      case 'windKt': {
+        // Rounding a converted wind to a whole number can print "64 kt" beside
+        // the category "Tropical storm", whose upper bound is 64. A converted
+        // value keeps one decimal so the two never disagree; a value the source
+        // published as a whole number of knots prints as one.
+        var k = Number(v);
+        var kt = !has ? null
+          : Number.isInteger(k) ? String(k) : String(Math.round(k * 10) / 10);
         return { key: key, label: label, reported: has,
-          value: has ? Math.round(Number(v)) + ' kt' : null };
+          value: has ? kt + ' kt' : null };
+      }
       case 'category': {
         var c = cycloneCategory(e.windKt);
         return { key: key, label: label, reported: !!c, value: c };
