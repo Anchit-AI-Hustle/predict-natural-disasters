@@ -259,6 +259,31 @@ test('clicking a hazard can show what it is', async () => {
     'infoBox is off, so nothing can display the description each entity carries');
   window.close();
 });
+test('every hazard on the globe is named, and named what the map calls it', async () => {
+  const r = await renderPage('live-map.html', { timeoutMs: 18000,
+    waitFor: (d, w) => (w.__pndViewers || []).length &&
+      w.__pndViewers[0].entities.values.length });
+  const ents = r.window.__pndViewers[0].entities.values;
+  assert.ok(ents.length > 0, 'the globe plotted nothing to name');
+  /* Cesium heads its info box with the entity's own generated id when an
+     entity has no name, so a reader who clicked a flood in Nepal got a panel
+     titled 2d209c77-12a8-4d55-ba59-414a34cd6853. */
+  const unnamed = ents.filter(e => !e.name);
+  assert.equal(unnamed.length, 0, unnamed.length + ' hazards would be headed by a generated id');
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
+  assert.ok(!ents.some(e => uuid.test(String(e.name))), 'a hazard is named with a generated id');
+  /* And the name is the one the flat map's own popup leads with, not some
+     second title invented for the globe. */
+  ents.forEach(e => {
+    const bold = /<b[^>]*>([\s\S]*?)<\/b>/i.exec(String(e.description));
+    if (!bold) return;
+    const want = bold[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    assert.equal(String(e.name).replace(/…$/, ''), want.slice(0, String(e.name).replace(/…$/, '').length),
+      'the globe renamed a hazard the map calls "' + want + '"');
+  });
+  r.window.close();
+});
+
 /* ---------- every Cesium symbol it calls actually exists ---------- */
 
 test('globe.js only calls Cesium symbols that exist in the pinned version', () => {
@@ -357,11 +382,50 @@ test('no ion token is set, anywhere', () => {
   assert.match(g, /baseLayer: false/, 'the viewer would fetch ion imagery by default');
 });
 
-test('the imagery and terrain it uses are credited', () => {
+test('the basemap it draws is the flat map\'s, and is credited', async () => {
   const g = read('globe.js');
-  assert.match(g, /Powered by Esri/);
-  assert.match(g, /CC BY 4\.0/, 'Re:Earth terrain is CC BY 4.0 and must be credited');
   assert.match(g, /gods-eye-view \(MIT/, 'the MIT source it is adapted from is not credited');
+  assert.match(g, /CC BY 4\.0/, 'Re:Earth terrain is CC BY 4.0 and must be credited');
+  /* Esri used to be credited here for satellite imagery. A browser check
+     found the globe never received any: the provider it used asks a MapServer
+     for metadata before any tile, that one request was the only one it ever
+     made, and the viewer carried zero imagery layers — a blank blue sphere.
+     So the globe draws the same world the flat map does, from the same file,
+     and this asserts the credit follows the data rather than the other way
+     round. */
+  assert.ok(!/Powered by Esri/.test(g),
+    'the globe still credits Esri for imagery it no longer fetches');
+
+  const r = await renderPage('live-map.html', { timeoutMs: 18000,
+    waitFor: (d, w) => (w.__pndViewers || []).length &&
+      w.__pndViewers[0].imageryLayers.length });
+  const layers = r.window.__pndViewers[0].imageryLayers;
+  assert.equal(layers.length, 1, 'the globe added no basemap at all');
+  assert.match(String(layers.__added && layers.__added.opts && layers.__added.opts.credit),
+    /Natural Earth/, 'the outlines the globe draws are not credited to Natural Earth');
+  r.window.close();
+});
+
+test('the globe paints the flat map\'s own countries, not a blank sphere', async () => {
+  const r = await renderPage('live-map.html', { timeoutMs: 18000,
+    waitFor: (d, w) => (w.__pndViewers || []).length &&
+      w.__pndViewers[0].imageryLayers.length });
+  /* Every fill the world texture made, recorded by the canvas stub. The ocean
+     goes down first and then one fill per landmass, each in a palette colour
+     the flat map itself uses — so a globe painted from some other palette, or
+     from nothing, is not mistaken for this. */
+  const ops = (r.window.__pndPaints || [])
+    .slice().sort((a, b) => b.fills.length - a.fills.length)[0];
+  assert.ok(ops, 'the globe painted no canvas at all');
+  const palette = r.window.PNDMap.PALETTE;
+  assert.ok(ops.fills.some(f => f.startsWith('rect:') && f.endsWith(r.window.PNDMap.OCEAN)),
+    'the ocean was never laid down');
+  const land = ops.fills.filter(f => f.startsWith('evenodd:'));
+  assert.ok(land.length > 100,
+    'only ' + land.length + ' landmasses were painted; the world file has 177 countries');
+  assert.ok(land.every(f => palette.indexOf(f.split(':')[1]) >= 0),
+    'a country was painted in a colour the flat map does not use');
+  r.window.close();
 });
 
 /* ---------- it never costs anyone their map ---------- */

@@ -152,10 +152,11 @@ const server = http.createServer(async (req, res) => {
     const r = await page.evaluate(() => {
       const host = document.querySelector('.pnd-globe');
       const viewer = host && host.__pndViewer;
+      const lmap = host && host.__pndMap;
       const canvas = host && host.querySelector('canvas');
       const leaflet = document.querySelectorAll('.leaflet-container path.leaflet-interactive').length;
       const controls = [...document.querySelectorAll('.leaflet-control-container')];
-      return {
+      const out = {
         cesium: !!window.Cesium,
         host: !!host,
         visible: host ? getComputedStyle(host).display !== 'none' : false,
@@ -163,9 +164,77 @@ const server = http.createServer(async (req, res) => {
         toggle: !!document.querySelector('.pnd-view-toggle'),
         leafletMarkers: leaflet,
         entities: viewer ? viewer.entities.values.length : null,
+        imagery: viewer ? viewer.imageryLayers.length : null,
         controlsHidden: controls.length
-          ? controls.every(c => getComputedStyle(c).display === 'none') : 'n/a'
+          ? controls.every(c => getComputedStyle(c).display === 'none') : 'n/a',
+        edgeTB: null, edgeLR: null, edgeBright: null, centreLum: null, aimOffDeg: null
       };
+
+      /* What the globe LOOKS like, which is the part every earlier assertion
+         here missed: it passed on entity counts while the globe was a
+         featureless sphere, zoomed in far enough to be cut off by the panel.
+         The rendered pixels answer both — space all round the edge means the
+         globe fits, and a lit centre means something was actually drawn. */
+      if (canvas) {
+        try {
+          const o = document.createElement('canvas');
+          o.width = canvas.width; o.height = canvas.height;
+          o.getContext('2d').drawImage(canvas, 0, 0);
+          const d = o.getContext('2d').getImageData(0, 0, o.width, o.height).data;
+          const lum = (x, y) => {
+            const i = (y * o.width + x) * 4;
+            return (d[i] + d[i + 1] + d[i + 2]) / 3;
+          };
+          /* Counted per axis, because what is wrong is the two disagreeing.
+             A globe framed to show the whole world has space along every
+             edge; one zoomed into a region fills every edge. Bright along
+             one axis and dark along the other is the globe spilling out of
+             its panel — the live map had the poles off the top and bottom
+             while the left and right sat in black. */
+          let tb = 0, lr = 0;
+          for (let k = 1; k < 20; k++) {
+            const x = Math.round(o.width * k / 20), y = Math.round(o.height * k / 20);
+            /* A starfield puts the odd bright pixel on the edge, so these
+               are counted rather than demanding pure black. */
+            if (lum(x, 2) > 60) tb++;
+            if (lum(x, o.height - 3) > 60) tb++;
+            if (lum(2, y) > 60) lr++;
+            if (lum(o.width - 3, y) > 60) lr++;
+          }
+          out.edgeTB = tb; out.edgeLR = lr;
+          out.edgeBright = tb + lr;
+          out.centreLum = Math.round(lum(o.width >> 1, o.height >> 1));
+        } catch (e) { out.edgeBright = 'err'; }
+      }
+
+      /* The map is supposed to fill the panel it sits in. It did not: .map
+         set an aspect-ratio and a max-height but no width, so on a short
+         viewport the height cap shrank the WIDTH and left a band of dead
+         panel beside the map — on the flat map as much as the globe. */
+      const mapEl = document.querySelector('.leaflet-container');
+      if (mapEl && mapEl.parentElement) {
+        const pe = mapEl.parentElement;
+        const cs = getComputedStyle(pe);
+        const inner = pe.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+        out.mapW = Math.round(mapEl.getBoundingClientRect().width);
+        out.panelW = Math.round(inner);
+        out.shortBy = Math.round(inner - mapEl.getBoundingClientRect().width);
+      }
+
+      /* And where it is pointing, against where the flat map was looking. */
+      if (viewer && lmap && lmap.getCenter) {
+        try {
+          const C = window.Cesium;
+          const c = C.Cartographic.fromCartesian(viewer.camera.positionWC);
+          const want = lmap.getCenter();
+          const dLat = C.Math.toDegrees(c.latitude) - want.lat;
+          let dLon = C.Math.toDegrees(c.longitude) - want.lng;
+          while (dLon > 180) dLon -= 360;
+          while (dLon < -180) dLon += 360;
+          out.aimOffDeg = Math.round(Math.sqrt(dLat * dLat + dLon * dLon) * 10) / 10;
+        } catch (e) { out.aimOffDeg = 'err'; }
+      }
+      return out;
     });
 
     /* The globe must exist, be visible, carry a way back to the flat map, keep
@@ -174,14 +243,24 @@ const server = http.createServer(async (req, res) => {
        silently passed. */
     const ok = r.cesium && r.host && r.visible && r.canvas && r.toggle &&
       (r.controlsHidden === true || r.controlsHidden === 'n/a') &&
-      r.leafletMarkers > 0 && r.entities === r.leafletMarkers;
+      r.leafletMarkers > 0 && r.entities === r.leafletMarkers &&
+      /* A basemap, a globe that fits inside its panel, something actually lit
+         at the centre, and a camera aimed where the flat map was looking. */
+      r.imagery >= 1 && r.centreLum > 60 && r.aimOffDeg <= 2 &&
+      /* Framed: space all round, or filled all round — never one and not the
+         other. 38 samples per axis. */
+      ((r.edgeTB <= 3 && r.edgeLR <= 3) || (r.edgeTB >= 30 && r.edgeLR >= 30)) &&
+      /* And the map fills the panel it sits in. Measured across all sixteen
+         pages this is exact, so a couple of pixels is all the slack. */
+      r.shortBy <= 2;
     if (!ok || errors.length) failures++;
     console.log(
       (ok && !errors.length ? '  ok   ' : '  FAIL ') + label.padEnd(16) +
       ' cesium=' + r.cesium + ' host=' + r.host + ' visible=' + r.visible +
       ' canvas=' + r.canvas + ' markers=' + r.leafletMarkers +
-      ' entities=' + r.entities + ' toggle=' + r.toggle +
-      ' controlsHidden=' + r.controlsHidden +
+      ' entities=' + r.entities + ' imagery=' + r.imagery +
+      ' edgeTB=' + r.edgeTB + ' edgeLR=' + r.edgeLR + ' centreLum=' + r.centreLum +
+      ' aimOff=' + r.aimOffDeg + ' mapW=' + r.mapW + '/' + r.panelW +
       (errors.length ? ' ERRORS=' + JSON.stringify(errors.slice(0, 2)) : ''));
     await page.screenshot({ path: 'globe-' + label + '.png' });
   }
@@ -212,6 +291,48 @@ const server = http.createServer(async (req, res) => {
   console.log((toggleOk ? '  ok   ' : '  FAIL ') + 'toggle'.padEnd(16) +
     ' flatHidesGlobe=' + flat.globeHidden + ' flatKeepsMarkers=' + flat.markers +
     ' globeReturns=' + back.globeVisible + ' entitiesKept=' + back.entities);
+
+  /* And that a hazard can be read. Clicking one opened a panel headed by
+     Cesium's own generated entity id until the entities were given names. */
+  const box = await page.evaluate(() => {
+    const c = document.querySelector('.pnd-globe canvas').getBoundingClientRect();
+    return { x: c.x, y: c.y, w: c.width, h: c.height };
+  });
+  const target = await page.evaluate(() => {
+    const v = document.querySelector('.pnd-globe').__pndViewer, C = window.Cesium;
+    const occ = new C.EllipsoidalOccluder(C.Ellipsoid.WGS84, v.camera.positionWC);
+    let best = null;
+    v.entities.values.forEach(e => {
+      const p = e.position.getValue(C.JulianDate.now());
+      if (!p || !occ.isPointVisible(p)) return;
+      const s = v.scene.cartesianToCanvasCoordinates(p);
+      if (!s) return;
+      const d = Math.hypot(s.x - v.scene.canvas.width / 2, s.y - v.scene.canvas.height / 2);
+      if (!best || d < best.d) best = { d: d, x: s.x, y: s.y, name: e.name };
+    });
+    return best;
+  });
+  let readOk = false, readNote = 'no hazard was facing the camera to click';
+  if (target) {
+    await page.mouse.click(box.x + target.x, box.y + target.y);
+    await page.waitForTimeout(1200);
+    const info = await page.evaluate(() => {
+      const el = document.querySelector('.cesium-infoBox');
+      const v = document.querySelector('.pnd-globe').__pndViewer;
+      return { visible: !!el && el.classList.contains('cesium-infoBox-visible'),
+        title: ((document.querySelector('.cesium-infoBox-title') || {}).textContent || '').trim(),
+        names: v.entities.values.map(e => String(e.name || '').trim()) };
+    });
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
+    /* Not the entity aimed at: where hazards overlap Cesium picks whichever
+       point is on top, which is its business. What matters is that the panel
+       is headed by a hazard's name and not by a generated id. */
+    readOk = info.visible && info.title.length > 0 && !uuid.test(info.title) &&
+      info.names.indexOf(info.title) >= 0;
+    readNote = 'infoBox=' + info.visible + ' title=' + JSON.stringify(info.title.slice(0, 44));
+  }
+  if (!readOk) failures++;
+  console.log((readOk ? '  ok   ' : '  FAIL ') + 'click'.padEnd(16) + ' ' + readNote);
 
   console.log('\npages checked: ' + PAGES.length + ', failing: ' + failures);
 

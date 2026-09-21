@@ -129,8 +129,34 @@ const CESIUM_STUB = `
         return { drawingBufferWidth: 800, drawingBufferHeight: 460,
           getExtension:function(){ return null; }, getParameter:function(){ return 0; } };
       }
+      if (kind === '2d') {
+        /* jsdom has no 2d canvas without the canvas npm package, and merely
+           asking it for one raises "Not implemented" on the virtual console,
+           which the page-error test reads as a broken page. So this never
+           calls through: the globe paints the world into a canvas, and that
+           whole path — the palette, the antimeridian, the imagery layer it
+           produces — would otherwise go unexercised here. Both work in the
+           real browser; tools/globe-browser-check.js is what checks that. */
+        var ops = { fills: [], strokes: 0, paths: 0 };
+        this.__ops = ops;
+        /* Also on the window: the globe paints into a canvas it never appends
+           to the document, so there is no other way to reach what it drew. */
+        (window.__pndPaints = window.__pndPaints || []).push(ops);
+        return {
+          fillStyle: '', strokeStyle: '', lineWidth: 1,
+          fillRect: function () { ops.fills.push('rect:' + this.fillStyle); },
+          beginPath: function () { ops.paths++; },
+          moveTo: function () {}, lineTo: function () {}, closePath: function () {},
+          fill: function (rule) { ops.fills.push((rule || 'nonzero') + ':' + this.fillStyle); },
+          stroke: function () { ops.strokes++; },
+          drawImage: function () {},
+          getImageData: function () { return { data: [] }; }
+        };
+      }
       return real ? real.apply(this, arguments) : null;
     };
+    /* Overridden outright for the same reason: jsdom's own throws. */
+    proto.toDataURL = function () { return 'data:image/png;base64,c3R1Yg=='; };
   }
   if (!window.WebGLRenderingContext) window.WebGLRenderingContext = function(){};
   function ok(v){ return Promise.resolve(v); }
@@ -140,8 +166,18 @@ const CESIUM_STUB = `
       var destroyed = false;
       var ents = [];
       this.__host = host; this.__opts = opts;
-      this.scene = { skyAtmosphere: {}, globe: {} };
-      this.imageryLayers = { addImageryProvider: function(p){ this.__added = p; return p; } };
+      /* Faithful enough for the code paths that read it. The camera and the
+         canvas were missing, so the framing the globe does on every mount
+         threw, the mount was abandoned, and the tests reported no globe. */
+      this.camera = {
+        frustum: { fov: Math.PI / 3, aspectRatio: 2 },
+        positionWC: { x: 0, y: 0, z: 0 },
+        setView: function (o) { this.__view = o; }
+      };
+      this.scene = { skyAtmosphere: {}, globe: {}, camera: this.camera,
+        canvas: { clientWidth: 800, clientHeight: 400, width: 800, height: 400 } };
+      this.imageryLayers = { length: 0,
+        addImageryProvider: function(p){ this.length++; this.__added = p; return p; } };
       this.creditDisplay = { addStaticCredit: function(c){ (window.__pndCredits = window.__pndCredits || []).push(c); } };
       this.entities = {
         values: ents,
@@ -159,6 +195,7 @@ const CESIUM_STUB = `
     Ellipsoid: { WGS84: 'wgs84' },
     Credit: function(text){ this.text = text; },
     ArcGisMapServerImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } },
+    SingleTileImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } },
     CesiumTerrainProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } }
   };
 })();
@@ -245,9 +282,14 @@ async function renderPage(page, opts) {
         // They were not served here, so /accuracy — the page whose whole job is
         // to report the verification record — could only ever render its
         // "data unavailable" branch, and nothing tested what it publishes.
-        const dataMatch = url.match(/\/data\/[\w.-]+\.json/);
+        /* The ledgers under /data, and the root-level JSON the basemap is
+           built from. world-countries.json was not served either, so both
+           the flat map and the globe drew an empty world here and nothing
+           tested the countries, the palette or the antimeridian. */
+        const dataMatch = url.match(/\/data\/[\w.-]+\.json/) ||
+          url.match(/^(?:https?:\/\/[^/]+)?\/[\w.-]+\.json$/);
         if (dataMatch) {
-          const file = path.join(ROOT, dataMatch[0].replace(/^\//, ''));
+          const file = path.join(ROOT, (dataMatch[0].replace(/^https?:\/\/[^/]+/, '')).replace(/^\//, ''));
           if (file.startsWith(ROOT) && fs.existsSync(file)) {
             const body = JSON.parse(fs.readFileSync(file, 'utf8'));
             return { ok: true, status: 200, headers: { get: () => null },

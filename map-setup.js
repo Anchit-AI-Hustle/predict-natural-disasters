@@ -71,6 +71,7 @@
    */
   var IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   var PLACES = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+  var COUNTRIES = '/world-countries.json';
   var ESRI_CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
   var NE_CREDIT = 'Country outlines: Natural Earth (public domain)';
   var LABEL_PANE = 'pndLabels';
@@ -126,7 +127,7 @@
     if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
 
     var labels = L.layerGroup();
-    fetch('/world-countries.json').then(function (r) { return r.json(); }).then(function (data) {
+    fetch(COUNTRIES).then(function (r) { return r.json(); }).then(function (data) {
       L.geoJSON(data, {
         interactive: false,
         style: function (f) {
@@ -409,5 +410,13 @@
   window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD,
     /* Published so the globe can exclude exactly this pane rather than
        guessing at the name or rejecting every layer that has one. */
-    LABEL_PANE: LABEL_PANE };
+    LABEL_PANE: LABEL_PANE,
+    /* And published so the globe draws the same world this map does, from
+       the same file and the same colours, rather than keeping its own second
+       copy. It kept one: its own Esri URL, on a different host and through a
+       provider that asks for metadata first. That request was the only one it
+       ever made, so the globe carried no basemap at all. */
+    COUNTRIES: COUNTRIES, PALETTE: PALETTE, OCEAN: OCEAN, BORDER: BORDER,
+    IMAGERY: IMAGERY, PLACES: PLACES, ESRI_CREDIT: ESRI_CREDIT,
+    NE_CREDIT: NE_CREDIT };
 })();
