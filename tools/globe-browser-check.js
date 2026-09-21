@@ -110,15 +110,37 @@ const server = http.createServer(async (req, res) => {
   await page.route(/services\.arcgisonline\.com/, r => r.abort());
   await page.route(/terrain\.reearth\.land/, r => r.abort());
 
-  /* Every map page that stands on its own, not just the one I happened to
-     develop against. The globe is wired in at one shared call, but each page
-     draws its own markers, and this branch's repeated failure has been fixing
-     one case and missing its twin. */
-  const PAGES = (process.env.PAGES || 'live-map,index,forecasts,alerts,regions,home-v3,dashboard,home,home-v2')
-    .split(',').map(s => s.trim()).filter(Boolean);
+  /* Every map page, not just the one I happened to develop against. The globe
+     is wired in at one shared call, but each page draws its own markers, and
+     this branch's repeated failure has been fixing one case and missing its
+     twin. The seven detail pages need a real subject, so they are keyed off an
+     event the feed actually returned rather than an id invented here. */
+  const feed = await (await fetch('http://localhost:8099/api/events')).json();
+  const events = feed.events || [];
+  const pick = f => events.find(f);
+  const any = pick(e => Number.isFinite(e.lat) && Number.isFinite(e.lon) && e.country);
+  const fc = pick(e => e.forecastKind || e.targetStart) || any;
+  if (!any) { console.error('the feed returned nothing to key the detail pages on'); process.exit(2); }
+  const q = o => Object.entries(o)
+    .map(([k, v]) => k + '=' + encodeURIComponent(String(v))).join('&');
+
+  const STANDALONE = 'live-map,index,forecasts,alerts,regions,home-v3,dashboard,home,home-v2';
+  const DETAIL = [
+    ['event-detail',    q({ id: any.id })],
+    ['alert-detail',    q({ id: any.id })],
+    ['calamity-detail', q({ id: any.id })],
+    ['forecast-detail', q({ id: fc.id })],
+    ['hazard-detail',   q({ type: any.type, region: any.country })],
+    ['location-detail', q({ location: any.region || any.country })],
+    ['region-detail',   q({ country: any.country, region: any.region || '' })]
+  ];
+  const PAGES = process.env.PAGES
+    ? process.env.PAGES.split(',').map(s => s.trim()).filter(Boolean)
+    : STANDALONE.split(',').concat(DETAIL.map(([n, s]) => n + '?' + s));
 
   let failures = 0;
   for (const name of PAGES) {
+    const label = name.split('?')[0];
     errors.length = 0;
     await page.goto('http://localhost:8099/' + name, { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => window.Cesium !== undefined, { timeout: 60000 })
@@ -155,13 +177,13 @@ const server = http.createServer(async (req, res) => {
       r.leafletMarkers > 0 && r.entities === r.leafletMarkers;
     if (!ok || errors.length) failures++;
     console.log(
-      (ok && !errors.length ? '  ok   ' : '  FAIL ') + name.padEnd(12) +
+      (ok && !errors.length ? '  ok   ' : '  FAIL ') + label.padEnd(16) +
       ' cesium=' + r.cesium + ' host=' + r.host + ' visible=' + r.visible +
       ' canvas=' + r.canvas + ' markers=' + r.leafletMarkers +
       ' entities=' + r.entities + ' toggle=' + r.toggle +
       ' controlsHidden=' + r.controlsHidden +
       (errors.length ? ' ERRORS=' + JSON.stringify(errors.slice(0, 2)) : ''));
-    await page.screenshot({ path: 'globe-' + name + '.png' });
+    await page.screenshot({ path: 'globe-' + label + '.png' });
   }
 
   /* The toggle, in a real browser, on the first page swept: Flat must hide the
@@ -187,7 +209,7 @@ const server = http.createServer(async (req, res) => {
   const toggleOk = flat.globeHidden && flat.markers > 0 &&
     back.globeVisible && back.entities > 0;
   if (!toggleOk) failures++;
-  console.log((toggleOk ? '  ok   ' : '  FAIL ') + 'toggle'.padEnd(12) +
+  console.log((toggleOk ? '  ok   ' : '  FAIL ') + 'toggle'.padEnd(16) +
     ' flatHidesGlobe=' + flat.globeHidden + ' flatKeepsMarkers=' + flat.markers +
     ' globeReturns=' + back.globeVisible + ' entitiesKept=' + back.entities);
 
