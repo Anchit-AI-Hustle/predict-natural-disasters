@@ -184,8 +184,11 @@ test('the pages that show severity also load the model that defines it', () => {
   const pages = fs.readdirSync(ROOT).filter(f => f.endsWith('.html'));
   const missing = pages.filter(p => {
     const s = read(p);
-    const uses = /severityBadge|PNDHazards|leadText\(/.test(s) || /portal\.js/.test(s);
-    return uses && !/hazard-model\.js/.test(s);
+    // A script tag, not a mention: a comment naming portal.js is not a page
+    // that loads it, and matching the bare string made a code comment fail.
+    const loads = f => new RegExp('<script[^>]+src="/?' + f + '"').test(s);
+    const uses = /severityBadge|PNDHazards|leadText\(/.test(s) || loads('portal\\.js');
+    return uses && !loads('hazard-model\\.js');
   });
   assert.deepEqual(missing, [],
     'these pages would render a severity with no definition behind it: ' + missing.join(', '));

@@ -145,7 +145,16 @@ test('a page that calls PND also loads portal.js', () => {
   const missing = [];
   for (const p of PAGES) {
     const s = read(p);
-    if (/\bPND\.[a-zA-Z]/.test(s) && !/portal\.js/.test(s)) missing.push(p);
+    /* Both sides of this check were wrong. It looked for the bare string
+       "portal.js", so a code comment naming the file satisfied it — and
+       home-v3.html called PND.matches with no portal.js loaded while this
+       test passed. It must match a script tag, and allow the cache-busting
+       query string that home.html and home-v2.html carry. And the calls must
+       be counted outside comments, or a page that only mentions PND in a
+       comment is reported as broken. */
+    const code = s.replace(/\/\*[\s\S]*?\*\//g, '');
+    const loads = /<script[^>]*\ssrc="\/portal\.js(\?[^"]*)?"/.test(s);
+    if (/\bPND\.[a-zA-Z]/.test(code) && !loads) missing.push(p);
   }
   assert.deepEqual(missing, [], 'these pages would throw on PND: ' + missing.join(', '));
 });

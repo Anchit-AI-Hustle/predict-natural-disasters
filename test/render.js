@@ -27,14 +27,34 @@ const enrichHandler = require(path.join(ROOT, 'api', 'event-enrichment.js'));
 /** Enough of Leaflet for the pages' map calls to run without the real library. */
 const LEAFLET_STUB = `
 (function(){
-  function chain(){ var o = {
-    addTo:function(){return o}, bindPopup:function(){return o}, openPopup:function(){return o},
-    setView:function(){return o}, clearLayers:function(){return o}, getLayers:function(){return []},
+  /* Markers record what they were given. The globe mirrors whatever a page
+     drew on its Leaflet map, reading it back through getLatLng/getPopup, so a
+     stub that forgets its arguments would let that mirroring pass untested. */
+  function chain(a, b){ var o = {
+    addTo:function(t){ if(t && t.__take){ t.__take(o); if (t.__map) o.__map = t.__map; } return o; },
+    bindPopup:function(h){ o.__popup = h; return o; },
+    openPopup:function(){return o}, setView:function(){return o},
+    /* Real Leaflet removes each child from the map, which fires layerremove
+       on it. Without that the globe never learns the page cleared its markers. */
+    clearLayers:function(){ o.__kids = []; if (o.__map) o.__map.fire('layerremove'); return o; },
+    getLayers:function(){ return o.__kids || []; },
     fitBounds:function(){return o}, getBounds:function(){return {pad:function(){return {}}}},
-    remove:function(){return o}, on:function(){return o}, addLayer:function(){return o},
+    remove:function(){return o}, on:function(){return o},
+    addLayer:function(l){ (o.__kids = o.__kids || []).push(l); return o; },
     setLatLng:function(){return o}, setStyle:function(){return o}, flyTo:function(){return o},
-    getZoom:function(){return 3}
+    getZoom:function(){return 3},
+    getPopup:function(){ return o.__popup === undefined ? null
+      : { getContent:function(){ return o.__popup; } }; },
+    __take:function(l){ (o.__kids = o.__kids || []).push(l); }
   }; return o; }
+  function markerStub(latlng, opts){
+    var o = chain();
+    o.options = opts || {};
+    if (Array.isArray(latlng)) o.__ll = { lat: latlng[0], lng: latlng[1] };
+    else if (latlng && typeof latlng === 'object') o.__ll = { lat: latlng.lat, lng: latlng.lng };
+    o.getLatLng = function(){ return o.__ll; };
+    return o;
+  }
   /* The map stub models the pieces map-setup.js drives: an event bus, a
      container, and a scrollWheelZoom handler whose state the tests inspect. */
   function mapStub(el, opts){
@@ -61,16 +81,122 @@ const LEAFLET_STUB = `
     m.invalidateSize = function(){ m.__invalidated = (m.__invalidated || 0) + 1; return m; };
     m.setView = function(c, z){ m.__view = { center: c, zoom: z }; return m; };
     m.getZoom = function(){ return m.__view ? m.__view.zoom : 3; };
-    m.on = function(name, fn){ (handlers[name] = handlers[name] || []).push(fn); return m; };
+    m.on = function(name, fn){
+      String(name).split(' ').forEach(function(n){ (handlers[n] = handlers[n] || []).push(fn); });
+      return m; };
+    m.off = function(name, fn){
+      String(name).split(' ').forEach(function(n){
+        handlers[n] = (handlers[n]||[]).filter(function(f){ return f !== fn; }); });
+      return m; };
     m.fire = function(name){ (handlers[name]||[]).forEach(function(fn){ fn({type:name}); }); return m; };
+    /* Layers added to the map, which is what the globe reads back. */
+    m.__layers = [];
+    m.__take = function(l){ l.__map = m; m.__layers.push(l); m.fire('layeradd'); };
+    m.addLayer = function(l){ m.__take(l); return m; };
+    m.eachLayer = function(fn){
+      m.__layers.forEach(function(l){
+        fn(l);
+        (l.__kids || []).forEach(fn);
+      });
+      return m; };
     window.__pndMaps = window.__pndMaps || [];
     window.__pndMaps.push(m);
     return m;
   }
   window.L = {
-    map: mapStub, tileLayer: chain, layerGroup: chain, circleMarker: chain,
-    circle: chain, marker: chain, featureGroup: chain, polygon: chain,
+    map: mapStub, tileLayer: chain, layerGroup: chain, circleMarker: markerStub,
+    circle: markerStub, marker: markerStub, featureGroup: chain, polygon: chain,
     geoJSON: chain, divIcon: chain, icon: chain, control: {layers: chain, scale: chain}
+  };
+})();
+`;
+
+/*
+ * Enough of Cesium, and of WebGL, for the globe to mount.
+ *
+ * jsdom has no WebGL at all, so PNDGlobe.webglOk() is false there and the
+ * globe would silently never be built — every assertion about it would pass
+ * against a page that had no globe. The canvas reports a context and Cesium is
+ * present before parse, so loadCesium() resolves without reaching a CDN.
+ */
+const CESIUM_STUB = `
+(function(){
+  var proto = window.HTMLCanvasElement && window.HTMLCanvasElement.prototype;
+  if (proto) {
+    var real = proto.getContext;
+    proto.getContext = function(kind){
+      if (kind === 'webgl' || kind === 'webgl2' || kind === 'experimental-webgl') {
+        return { drawingBufferWidth: 800, drawingBufferHeight: 460,
+          getExtension:function(){ return null; }, getParameter:function(){ return 0; } };
+      }
+      if (kind === '2d') {
+        /* jsdom has no 2d canvas without the canvas npm package, and merely
+           asking it for one raises "Not implemented" on the virtual console,
+           which the page-error test reads as a broken page. So this never
+           calls through: the globe paints the world into a canvas, and that
+           whole path — the palette, the antimeridian, the imagery layer it
+           produces — would otherwise go unexercised here. Both work in the
+           real browser; tools/globe-browser-check.js is what checks that. */
+        var ops = { fills: [], strokes: 0, paths: 0 };
+        this.__ops = ops;
+        /* Also on the window: the globe paints into a canvas it never appends
+           to the document, so there is no other way to reach what it drew. */
+        (window.__pndPaints = window.__pndPaints || []).push(ops);
+        return {
+          fillStyle: '', strokeStyle: '', lineWidth: 1,
+          fillRect: function () { ops.fills.push('rect:' + this.fillStyle); },
+          beginPath: function () { ops.paths++; },
+          moveTo: function () {}, lineTo: function () {}, closePath: function () {},
+          fill: function (rule) { ops.fills.push((rule || 'nonzero') + ':' + this.fillStyle); },
+          stroke: function () { ops.strokes++; },
+          drawImage: function () {},
+          getImageData: function () { return { data: [] }; }
+        };
+      }
+      return real ? real.apply(this, arguments) : null;
+    };
+    /* Overridden outright for the same reason: jsdom's own throws. */
+    proto.toDataURL = function () { return 'data:image/png;base64,c3R1Yg=='; };
+  }
+  if (!window.WebGLRenderingContext) window.WebGLRenderingContext = function(){};
+  function ok(v){ return Promise.resolve(v); }
+  window.__pndViewers = [];
+  window.Cesium = {
+    Viewer: function(host, opts){
+      var destroyed = false;
+      var ents = [];
+      this.__host = host; this.__opts = opts;
+      /* Faithful enough for the code paths that read it. The camera and the
+         canvas were missing, so the framing the globe does on every mount
+         threw, the mount was abandoned, and the tests reported no globe. */
+      this.camera = {
+        frustum: { fov: Math.PI / 3, aspectRatio: 2 },
+        positionWC: { x: 0, y: 0, z: 0 },
+        setView: function (o) { this.__view = o; }
+      };
+      this.scene = { skyAtmosphere: {}, globe: {}, camera: this.camera,
+        canvas: { clientWidth: 800, clientHeight: 400, width: 800, height: 400 } };
+      this.imageryLayers = { length: 0,
+        addImageryProvider: function(p){ this.length++; this.__added = p; return p; } };
+      this.creditDisplay = { addStaticCredit: function(c){ (window.__pndCredits = window.__pndCredits || []).push(c); } };
+      this.entities = {
+        values: ents,
+        add: function(e){ ents.push(e); return e; },
+        removeAll: function(){ ents.length = 0; }
+      };
+      this.terrainProvider = null;
+      this.isDestroyed = function(){ return destroyed; };
+      this.destroy = function(){ destroyed = true; };
+      window.__pndViewers.push(this);
+    },
+    Cartesian3: { fromDegrees: function(lon, lat){ return { lon: lon, lat: lat }; } },
+    Color: { fromCssColorString: function(c){ return { css: c }; } },
+    HeightReference: { CLAMP_TO_GROUND: 'clamp' },
+    Ellipsoid: { WGS84: 'wgs84' },
+    Credit: function(text){ this.text = text; },
+    ArcGisMapServerImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } },
+    SingleTileImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } },
+    CesiumTerrainProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } }
   };
 })();
 `;
@@ -152,8 +278,29 @@ async function renderPage(page, opts) {
           if (o.feedDown) return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
           return callApi(eventsHandler, url, o.mock);
         }
+        // The ledgers are static files the pages fetch like any other asset.
+        // They were not served here, so /accuracy — the page whose whole job is
+        // to report the verification record — could only ever render its
+        // "data unavailable" branch, and nothing tested what it publishes.
+        /* The ledgers under /data, and the root-level JSON the basemap is
+           built from. world-countries.json was not served either, so both
+           the flat map and the globe drew an empty world here and nothing
+           tested the countries, the palette or the antimeridian. */
+        const dataMatch = url.match(/\/data\/[\w.-]+\.json/) ||
+          url.match(/^(?:https?:\/\/[^/]+)?\/[\w.-]+\.json$/);
+        if (dataMatch) {
+          const file = path.join(ROOT, (dataMatch[0].replace(/^https?:\/\/[^/]+/, '')).replace(/^\//, ''));
+          if (file.startsWith(ROOT) && fs.existsSync(file)) {
+            const body = JSON.parse(fs.readFileSync(file, 'utf8'));
+            return { ok: true, status: 200, headers: { get: () => null },
+              json: async () => body, text: async () => JSON.stringify(body) };
+          }
+        }
         return { ok: false, status: 404, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
       };
+      /* beforeParse runs before there is a document, so this is evaluated
+         into the window rather than appended as a script element. */
+      if (o.cesium !== false) window.eval(CESIUM_STUB);
       window.addEventListener('error', e => errors.push(e.error || new Error(e.message)));
       window.addEventListener('unhandledrejection', e => errors.push(e.reason));
     }

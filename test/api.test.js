@@ -585,9 +585,13 @@ test('merging preserves the order of the feed it was given', () => {
 
 test('the live feed merges the cross-agency earthquake it is given', async () => {
   const res = await runEvents();
+  /* Selected by what the record is, not by the day it happened: the fixture
+     quakes are dated relative to the run so their aftershock windows stay
+     open, and a calendar-pinned filter would stop matching the moment they
+     moved. */
   const java = res.body.events.filter(e =>
     e.type === 'Earthquake' && Math.abs(e.magnitude - 6.5) < 0.01 &&
-    String(e.startedAt).startsWith('2026-09-11'));
+    /Teluknaga|JAVA/i.test(String(e.title)));
   assert.equal(java.length, 1,
     'the Teluknaga quake is reported by two agencies and must appear once, got ' +
       JSON.stringify(java.map(e => e.source + ' ' + e.title)));

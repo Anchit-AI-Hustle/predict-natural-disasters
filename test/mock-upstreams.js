@@ -1,4 +1,18 @@
 'use strict';
+
+/*
+ * Fixture quakes are dated relative to now, not to fixed days in September.
+ *
+ * They used to carry absolute timestamps, and an aftershock outlook runs seven
+ * days from its mainshock — so on 2026-09-20T22:00Z the last of the three
+ * windows closed, the outlooks stopped being generated, and "M5.5+ quakes
+ * should produce an aftershock-sequence outlook" began failing for everyone,
+ * on a suite nobody had touched. A fixture that expires is a test that reports
+ * the calendar rather than the code.
+ */
+function agoHours(h) { return Date.now() - h * 3600e3; }
+/* The same instant as an ISO string, for the feeds that publish text. */
+function isoAgoHours(h) { return new Date(agoHours(h)).toISOString().replace(/\.\d{3}Z$/, 'Z'); }
 /**
  * Deterministic fixtures for every upstream the API talks to, plus a fetch
  * mock that routes by URL. Lets the real handlers run end-to-end offline.
@@ -42,7 +56,9 @@ const FIXTURES = {
       eventid: 1105004, eventtype: 'EQ', name: 'Earthquake in West Java, Indonesia',
       country: 'Indonesia', location: 'West Java', alertlevel: 'Orange',
       latitude: -6.8, longitude: 107.1,
-      fromdate: '2026-09-12T11:30:00Z', todate: isoNow,
+      /* The same instant as the USGS Cianjur quake it merges with; both are
+         relative, so they cannot drift apart as the calendar moves. */
+      fromdate: isoAgoHours(48), todate: isoNow,
       description: 'Strong earthquake with reported casualties.',
       // GDACS reports the same event USGS catalogues as us7000mnop, with a
       // death toll that outranks the USGS copy in the seismic merge. GDACS
@@ -62,18 +78,18 @@ const FIXTURES = {
     features: [
       {
         id: 'us7000abcd',
-        properties: { place: '12 km NNE of Teluknaga, Indonesia', mag: 6.5, time: Date.parse('2026-09-11T04:12:00Z'), updated: Date.parse('2026-09-11T05:00:00Z'), title: 'M 6.5 - 12 km NNE of Teluknaga, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000abcd', tsunami: 0, alert: 'orange' },
+        properties: { place: '12 km NNE of Teluknaga, Indonesia', mag: 6.5, time: agoHours(60), updated: agoHours(59), title: 'M 6.5 - 12 km NNE of Teluknaga, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000abcd', tsunami: 0, alert: 'orange' },
         geometry: { coordinates: [106.6, -5.9, 22.4] }
       },
       {
         id: 'us7000efgh',
-        properties: { place: '40 km W of Concepcion, Chile', mag: 5.8, time: Date.parse('2026-09-13T22:00:00Z'), updated: Date.parse('2026-09-13T22:30:00Z'), title: 'M 5.8 - 40 km W of Concepcion, Chile', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000efgh', tsunami: 0 },
+        properties: { place: '40 km W of Concepcion, Chile', mag: 5.8, time: agoHours(24), updated: agoHours(23.5), title: 'M 5.8 - 40 km W of Concepcion, Chile', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000efgh', tsunami: 0 },
         geometry: { coordinates: [-73.5, -36.8, 30] }
       },
       {
         // The same earthquake GDACS reports as event 1105004, so the two merge.
         id: 'us7000mnop',
-        properties: { place: '8 km SW of Cianjur, Indonesia', mag: 5.6, time: Date.parse('2026-09-12T11:30:00Z'), updated: Date.parse('2026-09-12T12:00:00Z'), title: 'M 5.6 - 8 km SW of Cianjur, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000mnop', tsunami: 0, alert: 'yellow' },
+        properties: { place: '8 km SW of Cianjur, Indonesia', mag: 5.6, time: agoHours(48), updated: agoHours(47.5), title: 'M 5.6 - 8 km SW of Cianjur, Indonesia', url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us7000mnop', tsunami: 0, alert: 'yellow' },
         geometry: { coordinates: [107.1, -6.8, 11.0] }
       },
       {
@@ -193,11 +209,11 @@ const FIXTURES = {
 
   emsc: {
     features: [
-      { id: '20260913_0000123', properties: { unid: '20260913_0000123', mag: 5.2, magtype: 'mb', lat: 38.2, lon: 26.1, depth: 12, time: '2026-09-13T18:00:00Z', lastupdate: isoNow, flynn_region: 'AEGEAN SEA', auth: 'EMSC' }, geometry: { coordinates: [26.1, 38.2, 12] } },
+      { id: '20260913_0000123', properties: { unid: '20260913_0000123', mag: 5.2, magtype: 'mb', lat: 38.2, lon: 26.1, depth: 12, time: isoAgoHours(28), lastupdate: isoNow, flynn_region: 'AEGEAN SEA', auth: 'EMSC' }, geometry: { coordinates: [26.1, 38.2, 12] } },
       // The same earthquake the United States Geological Survey lists as
       // us7000abcd: a different solution for one event, not a second event.
       // Origin times differ by 23 seconds, epicentres by about 40 km.
-      { id: '20260911_0000279', properties: { unid: '20260911_0000279', mag: 6.5, magtype: 'mw', lat: -6.1, lon: 106.9, depth: 25, time: '2026-09-11T04:12:23Z', lastupdate: isoNow, flynn_region: 'JAVA, INDONESIA', auth: 'EMSC' }, geometry: { coordinates: [106.9, -6.1, 25] } }
+      { id: '20260911_0000279', properties: { unid: '20260911_0000279', mag: 6.5, magtype: 'mw', lat: -6.1, lon: 106.9, depth: 25, time: isoAgoHours(60 - 23 / 3600), lastupdate: isoNow, flynn_region: 'JAVA, INDONESIA', auth: 'EMSC' }, geometry: { coordinates: [106.9, -6.1, 25] } }
     ]
   },
 

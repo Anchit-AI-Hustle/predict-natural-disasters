@@ -12,7 +12,19 @@ const PND={
   fmtDate(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   fmtTime(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
-  riskClass(v=''){v=String(v).toLowerCase();return v.includes('red')||v.includes('critical')?'critical':v.includes('orange')||v.includes('high')?'high':v.includes('purple')||v.includes('very')?'veryhigh':'moderate';},
+  riskClass(v=''){const s=String(v).toLowerCase();
+    /* Word boundaries, not substrings: "yellow" contains "low", and a bare
+       includes() check would paint a yellow alert as routine. */
+    if(/\b(red|critical|extreme)\b/.test(s))return 'critical';
+    if(/\b(purple|very)\b/.test(s))return 'veryhigh';
+    if(/\b(orange|high|severe)\b/.test(s))return 'high';
+    if(/\b(moderate|yellow)\b/.test(s))return 'moderate';
+    if(/\b(watch|advisory|minor)\b/.test(s))return 'watch';
+    if(/\b(green|low|informational|routine)\b/.test(s))return 'routine';
+    /* An unrecognised level is not a warning. It used to fall through to the
+       amber "moderate" badge, so 732 Green records in the live feed were
+       painted as warnings while their own label read Green. */
+    return 'neutral';},
   slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
   enc(v=''){return encodeURIComponent(String(v))},
   eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;},
@@ -47,6 +59,76 @@ const PND={
   /* Sort on the displayed text. Titles are rendered with acronyms written out,
      so sorting the raw feed value put the list out of A-Z order on screen. */
   textOf(e,...keys){for(const k of keys){let v=e&&e[k];if(v){v=String(v);const g=typeof window!=='undefined'&&window.__pndGlossary;if(g&&g.expandAlways)v=g.expandAlways(v);return v.toLowerCase()}}return '￿'},
+  /* The matching rules live in search.js, so the pages that do not load this
+     file get exactly the same ones rather than a copy that drifts. A test
+     asserts every page calling these also loads it. */
+  matches(e,q){return window.PNDSearch.matches(e,q)},
+  matchesPlace(e,q){return window.PNDSearch.matchesPlace(e,q)},
+  searchText(e){return window.PNDSearch.searchText(e)},
+  searchParam(){return window.PNDSearch.searchParam()},
+  initSearch(id,draw){return window.PNDSearch.initSearch(id,draw)},
+  emptyHtml(q,pool,all,noun){return window.PNDSearch.emptyHtml(q,pool,all,noun)},
+  /* "Until when have predictions been made" had no answer anywhere on the
+     site: the horizon lived inside each record's own window and was never
+     stated. Phrased once here so every page says the same thing. */
+  horizonText(meta){
+    const h=meta&&meta.forecastHorizon;
+    if(!h||!h.furthestWindowEnds)return 'No outlook windows are open right now.';
+    const d=h.daysAhead;
+    const ahead=d>=1?Math.round(d)+' day'+(Math.round(d)===1?'':'s'):'less than a day';
+    return 'Forecasts currently run to '+this.fmtDate(h.furthestWindowEnds)+
+      ' — '+ahead+' ahead. Windows are '+
+      (h.windowLengthDays&&h.windowLengthDays.length
+        ? h.windowLengthDays.join(', ')+' day'+(h.windowLengthDays.length===1&&h.windowLengthDays[0]===1?'':'s')+' long'
+        : 'of varying length')+
+      '. Nothing here looks further ahead, and that is a limit of the method rather than a forecast of calm.';
+  },
+  /* "Has anything changed in the forecasts since I last looked" had no answer:
+     the ledger appends a re-issued outlook as a new row indistinguishable from
+     a new one, and an outlook that stopped being issued left no trace. */
+  changesHtml(meta){
+    const c=meta&&meta.forecastChanges;
+    if(!c)return '<p class="muted">No change record has been written yet.</p>';
+    const when=this.fmtDate(c.at)+' · '+this.age(c.at);
+    if(c.baseline)return '<p class="muted">First recorded check, '+this.esc(when)+
+      '. '+c.activeOutlooks+' outlooks are open; there is nothing earlier to compare them with yet.</p>';
+    const gap=typeof c.sinceHours==='number'&&c.sinceHours>0
+      ? ' (' + (c.sinceHours<1 ? Math.round(c.sinceHours*60)+' minutes' : c.sinceHours+' hours') + ' after the one before)'
+      : '';
+    /* An outage is not a change in the forecasts, so it is deliberately not
+       counted in total — but it still has to be shown. Returning on total
+       alone meant a run whose only exceptional result was an unreachable
+       source reported "nothing changed" and dropped the outage rows entirely,
+       which is the opposite of what recording them was for. */
+    const un=Number(c.unavailable)||0;
+    if(!c.total&&!un)return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+
+      '. None of the '+c.activeOutlooks+' open outlooks changed level, window or status.</p>';
+    const R=c.records||{};
+    const row=(label,list,fmt)=>(list&&list.length)
+      ? '<div><b>'+label+' ('+list.length+')</b>'+list.slice(0,8).map(x=>
+          '<p class="muted">'+this.esc(fmt(x))+'</p>').join('')+
+          (list.length>8?'<p class="muted">…and '+(list.length-8)+' more</p>':'')+'</div>'
+      : '';
+    const headline=c.total
+      ? c.total+' change'+(c.total===1?'':'s')+' across '+c.activeOutlooks+' open outlooks'
+      : 'no changes across '+c.activeOutlooks+' open outlooks';
+    const caveat=un?', and '+un+' that could not be checked':'';
+    return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+' · '+
+      this.esc(headline+caveat)+'.</p>'+
+      row('Newly issued',R.added,x=>x.title+' — '+x.alert)+
+      row('Raised',R.raised,x=>x.title+' — '+x.from+' → '+x.to)+
+      row('Lowered',R.lowered,x=>x.title+' — '+x.from+' → '+x.to)+
+      row('Window moved',R.windowMoved,x=>x.title+' — now ends '+this.fmtDate(x.toEnd))+
+      row('No longer issued',R.gone,x=>x.title+' — the signal behind it stopped')+
+      /* An outlook whose window simply ended did what it said it would. It
+         must not read as a withdrawal. */
+      row('Window closed as scheduled',R.expired,x=>x.title+' — its forecast window ended')+
+      /* Not a change in the forecasts at all — a gap in what could be seen.
+         Reporting it as a withdrawal would blame the forecast for our
+         outage, and blame it again as a new forecast on recovery. */
+      row('Could not be checked',R.unavailable,x=>x.title+
+        ' — its source was unreachable on this run, so it is unchanged rather than withdrawn');
+  },
   SORT_DEFS:{
     severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
     newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},

@@ -71,6 +71,7 @@
    */
   var IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   var PLACES = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+  var COUNTRIES = '/world-countries.json';
   var ESRI_CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
   var NE_CREDIT = 'Country outlines: Natural Earth (public domain)';
   var LABEL_PANE = 'pndLabels';
@@ -126,7 +127,7 @@
     if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
 
     var labels = L.layerGroup();
-    fetch('/world-countries.json').then(function (r) { return r.json(); }).then(function (data) {
+    fetch(COUNTRIES).then(function (r) { return r.json(); }).then(function (data) {
       L.geoJSON(data, {
         interactive: false,
         style: function (f) {
@@ -206,11 +207,26 @@
     'text-shadow:0 0 3px rgba(255,255,255,.95),0 1px 2px rgba(255,255,255,.95),0 -1px 2px rgba(255,255,255,.95)}'
   ].join('');
 
+  /* The globe/flat control. Deliberately a plain button rather than a Leaflet
+     control: it has to sit above the Cesium canvas, which Leaflet's control
+     panes know nothing about. */
+  var GLOBE_CSS = [
+    /* Above the globe host, which is itself above every Leaflet pane. */
+    '.pnd-view-toggle{position:absolute;top:10px;left:10px;z-index:1300;',
+    'display:inline-flex;gap:0;border:1px solid #2c5c4c;border-radius:8px;',
+    'overflow:hidden;font:600 11px/1 system-ui,sans-serif}',
+    '.pnd-view-toggle button{appearance:none;border:0;padding:7px 11px;cursor:pointer;',
+    'background:#07231b;color:#9db9ad;letter-spacing:.04em}',
+    '.pnd-view-toggle button[aria-pressed="true"]{background:#25e29c;color:#04120e}',
+    '.pnd-view-toggle button:focus-visible{outline:2px solid #25e29c;outline-offset:-2px}',
+    '.pnd-globe .cesium-widget-credits{font-size:10px;opacity:.75}'
+  ].join('');
+
   function injectStyle() {
     if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
     var tag = document.createElement('style');
     tag.id = STYLE_ID;
-    tag.textContent = CONTROL_CSS;
+    tag.textContent = CONTROL_CSS + GLOBE_CSS;
     (document.head || document.documentElement).appendChild(tag);
   }
 
@@ -236,7 +252,95 @@
         L.control.layers(views, null, { position: 'topright' }).addTo(map);
       }
     } catch (e) { /* stub layers in the test harness */ }
+    attachGlobe(map);
     return map;
+  }
+
+  /*
+   * The 3D globe over the flat map, on every page that has one.
+   *
+   * Hung off basemap() because that is the single call all sixteen map pages
+   * already make, so none of them needs to know the globe exists. The flat map
+   * underneath is never torn down: it is what the globe mirrors, it is what
+   * remains if WebGL or the CDN is unavailable, and it is what a reader gets
+   * back by pressing Flat.
+   */
+  function attachGlobe(map) {
+    try {
+      if (!window.PNDGlobe || !map || typeof map.getContainer !== 'function') return;
+      var container = map.getContainer();
+      if (!container || container.__pndGlobe) return;
+      container.__pndGlobe = true;
+      if (!PNDGlobe.webglOk()) return;
+
+      var handle = null, syncTimer = null;
+
+      function resync() {
+        if (!handle) return;
+        clearTimeout(syncTimer);
+        /* Pages redraw a whole layer group per keystroke; syncing on every
+           individual layeradd would rebuild the globe hundreds of times. */
+        syncTimer = setTimeout(function () { handle.sync(); }, 120);
+      }
+
+      function show() {
+        if (!handle) {
+          handle = PNDGlobe.mount(map, container);
+          if (!handle) return;
+          if (typeof map.on === 'function') map.on('layeradd layerremove', resync);
+          handle.ready.then(function () {
+            /* Revealed only now: until the viewer exists there is nothing to
+               show, and the flat map underneath is the better thing to be
+               looking at. */
+            if (PNDGlobe.prefers() !== 'flat') handle.reveal();
+            resync();
+          }).catch(function () {
+            /* Cesium never arrived. Drop back to the flat map rather than
+               leaving a dead panel over it. */
+            teardown();
+            setPressed('flat');
+          });
+        }
+        if (handle.viewer && handle.viewer()) handle.reveal();
+      }
+
+      function teardown() {
+        if (!handle) return;
+        if (typeof map.off === 'function') map.off('layeradd layerremove', resync);
+        handle.destroy();
+        handle = null;
+      }
+
+      var bar = document.createElement('div');
+      bar.className = 'pnd-view-toggle';
+      bar.setAttribute('role', 'group');
+      bar.setAttribute('aria-label', 'Map view');
+      var bGlobe = document.createElement('button');
+      bGlobe.type = 'button'; bGlobe.textContent = 'Globe';
+      var bFlat = document.createElement('button');
+      bFlat.type = 'button'; bFlat.textContent = 'Flat';
+      bar.appendChild(bGlobe); bar.appendChild(bFlat);
+      container.appendChild(bar);
+
+      function setPressed(view) {
+        bGlobe.setAttribute('aria-pressed', String(view === 'globe'));
+        bFlat.setAttribute('aria-pressed', String(view !== 'globe'));
+      }
+
+      function choose(view, persist) {
+        if (persist) PNDGlobe.remember(view);
+        setPressed(view);
+        if (view === 'globe') show();
+        else if (handle) handle.hide();
+      }
+
+      bGlobe.addEventListener('click', function () { choose('globe', true); });
+      bFlat.addEventListener('click', function () { choose('flat', true); });
+
+      /* Cesium is megabytes, so a reader who has chosen Flat never downloads
+         it; the globe is fetched on the first press instead. */
+      choose(PNDGlobe.prefers() === 'flat' ? 'flat' : 'globe', false);
+    } catch (e) { /* the flat map is already up; leave it alone */ }
   }
 
   var base = L.map;
@@ -303,5 +407,16 @@
   wrapped.__pndScrollGuard = true;
   L.map = wrapped;
 
-  window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD };
+  window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD,
+    /* Published so the globe can exclude exactly this pane rather than
+       guessing at the name or rejecting every layer that has one. */
+    LABEL_PANE: LABEL_PANE,
+    /* And published so the globe draws the same world this map does, from
+       the same file and the same colours, rather than keeping its own second
+       copy. It kept one: its own Esri URL, on a different host and through a
+       provider that asks for metadata first. That request was the only one it
+       ever made, so the globe carried no basemap at all. */
+    COUNTRIES: COUNTRIES, PALETTE: PALETTE, OCEAN: OCEAN, BORDER: BORDER,
+    IMAGERY: IMAGERY, PLACES: PLACES, ESRI_CREDIT: ESRI_CREDIT,
+    NE_CREDIT: NE_CREDIT };
 })();

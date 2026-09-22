@@ -21,6 +21,9 @@ try { HAZARD_MODEL = require('../hazard-model.js'); } catch (e) { HAZARD_MODEL =
 // hazard model: a missing file must not take the feed down.
 let OUTLOOK_LEDGER = null;
 try { OUTLOOK_LEDGER = require('../data/outlook-ledger.json'); } catch (e) { OUTLOOK_LEDGER = null; }
+let FORECAST_CHANGES;
+try { FORECAST_CHANGES = require('../data/forecast-changes.json'); }
+catch (e) { FORECAST_CHANGES = null; }
 
 const MAX_OUTLOOKS = 24;
 const OUTLOOK_HORIZON_HOURS = 72;
@@ -64,6 +67,113 @@ function tag(name, block) {
 }
 
 /** Mean of a GeoJSON geometry's coordinates — good enough to place an alert polygon. */
+/* A point guaranteed to lie inside the shape, which the mean of its vertices
+   is not: for a C-shaped or multipart warning area the mean lands in the gap.
+   That is tolerable for a map pin but not for the source link, which opens the
+   National Weather Service's point forecast for exactly that coordinate — from
+   outside the polygon it shows a location with no warning and omits the very
+   alert the reader clicked through from.
+
+   Rings are taken from the geometry, the centroid is used when it is actually
+   inside one, and otherwise a horizontal scanline is run through the middle of
+   the largest ring and the midpoint of its first crossed span taken, which is
+   interior for any simple polygon. */
+/* Polygons, each kept as its exterior ring plus its holes. The first version
+   of this flattened every ring into one list and accepted a point inside any
+   of them — so for a warning area with a hole, a point sitting in the hole
+   passed, because it is also inside the exterior. GeoJSON defines a hole as
+   outside the geometry, so that link could still open an unwarned location. */
+function polygonsOf(geometry) {
+  if (!geometry || !Array.isArray(geometry.coordinates)) return [];
+  const isRing = c => Array.isArray(c) && c.length > 2 &&
+    Array.isArray(c[0]) && typeof c[0][0] === 'number';
+  const isPolygon = c => Array.isArray(c) && c.length && isRing(c[0]);
+  const out = [];
+  const walk = c => {
+    if (!Array.isArray(c)) return;
+    if (isPolygon(c)) { out.push({ outer: c[0], holes: c.slice(1) }); return; }
+    c.forEach(walk);
+  };
+  walk(geometry.coordinates);
+  return out;
+}
+
+function inRing(lon, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if ((yi > lat) !== (yj > lat) &&
+        lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/* Inside the shape means inside an exterior ring and outside every one of that
+   polygon's holes. */
+function inPolygon(lon, lat, poly) {
+  if (!inRing(lon, lat, poly.outer)) return false;
+  return !poly.holes.some(h => inRing(lon, lat, h));
+}
+
+/* A horizontal scanline, with the holes cutting it as well as the exterior.
+   Sampling only the exterior's crossings meant a hole wider than the sampled
+   midpoints swallowed every candidate: an outer square from -10 to 10 with a
+   hole from -9 to 9 left a 1-unit rim that no sampled midpoint ever landed in.
+   Every ring contributes its crossings, so the spans between them alternate
+   correctly and the rim is found. */
+function crossings(ring, lat) {
+  const xs = [];
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const x1 = ring[j][0], y1 = ring[j][1], x2 = ring[i][0], y2 = ring[i][1];
+    if ((y1 > lat) !== (y2 > lat)) xs.push(x1 + (lat - y1) / (y2 - y1) * (x2 - x1));
+  }
+  return xs;
+}
+
+function scanlinePoint(poly) {
+  let lo = Infinity, hi = -Infinity;
+  for (const p of poly.outer) { if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1]; }
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) return null;
+  /* Several latitudes, because one line can graze a vertex or run along an
+     edge; each is checked span by span against the real shape. */
+  for (let k = 1; k < 16; k++) {
+    const lat = lo + (hi - lo) * (k / 16);
+    const xs = crossings(poly.outer, lat);
+    for (const h of poly.holes) xs.push(...crossings(h, lat));
+    xs.sort((a, b) => a - b);
+    for (let n = 0; n + 1 < xs.length; n++) {
+      const lon = (xs[n] + xs[n + 1]) / 2;
+      if (Number.isFinite(lon) && inPolygon(lon, lat, poly)) return { lat, lon };
+    }
+  }
+  return null;
+}
+
+function insidePoint(geometry, mean) {
+  const polys = polygonsOf(geometry);
+  if (!polys.length) return mean || null;
+  if (mean && polys.some(p => inPolygon(mean.lon, mean.lat, p))) return mean;
+  const ordered = polys.slice().sort((a, b) => boxArea(b.outer) - boxArea(a.outer));
+  for (const p of ordered) {
+    const pt = scanlinePoint(p);
+    if (pt) return pt;
+  }
+  /* No verified interior point. The mean has already been rejected, so
+     returning it would be handing back the coordinate this function exists to
+     avoid. Nothing is better than somewhere wrong: the caller sends the reader
+     to the agency's own front page instead. */
+  return null;
+}
+
+function boxArea(ring) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of ring) {
+    if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+    if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+  }
+  return (x1 - x0) * (y1 - y0);
+}
+
 function centroid(geometry) {
   if (!geometry) return null;
   const pts = [];
@@ -407,7 +517,13 @@ async function handler(req, res) {
       sourceCount: 0,
       coverage: 'Global terrestrial and coastal coverage; all countries and territories are supported by the UI, subject to upstream reporting.',
       forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
-      refreshTarget: '5 minutes'
+      /* The feed itself is recomputed from the upstream sources on every
+         request, so a page load is never serving a cached forecast. What runs
+         on a schedule is the written record — the ledger and the change log —
+         and that is described by refreshRecorded, measured rather than
+         declared. This field used to state a five-minute rate, which was the cron's
+         request and about a fortieth of what GitHub actually granted it. */
+      refreshTarget: 'recomputed on every request'
     },
     events: []
   };
@@ -580,7 +696,11 @@ async function handler(req, res) {
           startedAt: (geoms[0] && geoms[0].date) || null,
           updated: g.date || now.toISOString(),
           details: 'Open event tracked by NASA EONET · ' + cat,
-          sourceUrl: (v.sources && v.sources[0] && v.sources[0].url) || ('https://eonet.gsfc.nasa.gov/api/v3/events/' + v.id)
+          /* Falling back to the API URL would put raw JSON behind a link that
+             reads as a source. Every EONET record carries a page today; if one
+             ever does not, the reader gets the tracker, not a payload. */
+          sourceUrl: (v.sources && v.sources[0] && v.sources[0].url) || 'https://eonet.gsfc.nasa.gov/',
+          sourceApiUrl: 'https://eonet.gsfc.nasa.gov/api/v3/events/' + v.id
         });
         n++;
       }
@@ -661,13 +781,19 @@ async function handler(req, res) {
         });
         const zoneless = features.filter(f => !centroid(f.geometry)).slice(0, 12);
         const zoneCentroids = new Map();
+        /* The zone's shape, not only its middle. An alert with no inline
+           geometry still gets its point-forecast link from somewhere, and
+           passing a null geometry to insidePoint made it accept the mean
+           unchecked — so a concave or multipart forecast zone could still
+           send the reader to a place that is not under the warning. */
+        const zoneGeometry = new Map();
         await Promise.allSettled(zoneless.map(async f => {
           const zone = ((f.properties || {}).affectedZones || [])[0];
           if (!zone) return;
           try {
             const z = await timedFetch(zone, { timeout: 2500, headers: { accept: 'application/geo+json' } });
             const c = centroid(z.geometry);
-            if (c) zoneCentroids.set(f, c);
+            if (c) { zoneCentroids.set(f, c); zoneGeometry.set(f, z.geometry); }
           } catch (e) { /* leave this alert unplaced */ }
         }));
 
@@ -690,7 +816,24 @@ async function handler(req, res) {
             expiresAt: p.expires || p.ends || null,
             details: String(p.headline || p.description || '').slice(0, 600),
             instruction: String(p.instruction || '').slice(0, 600),
-            sourceUrl: p['@id'] || 'https://www.weather.gov/',
+            /* p['@id'] is the CAP record's API URL: opening it drops the reader
+               into raw GeoJSON. The point forecast page is the National Weather
+               Service's own human page for this location and lists the warnings
+               active there. The API URL is kept for provenance, under a name
+               that says what it is, and is never offered as a source to read. */
+            sourceUrl: (() => {
+              /* Linked from a point proven to be inside the warned area, not
+                 from the marker's coordinate, which for a concave, multipart
+                 or holed alert can sit outside it. When no such point can be
+                 established the reader goes to the agency's own front page
+                 rather than to a forecast for somewhere that is not warned. */
+              const link = insidePoint(f.geometry || zoneGeometry.get(f) || null, c);
+              return link && Number.isFinite(link.lat) && Number.isFinite(link.lon)
+                ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(link.lat).toFixed(4) +
+                  '&lon=' + Number(link.lon).toFixed(4)
+                : 'https://www.weather.gov/';
+            })(),
+            sourceApiUrl: p['@id'] || '',
             issuingAgency: p.senderName || 'NWS'
           });
           n++;
@@ -1161,6 +1304,43 @@ async function handler(req, res) {
       out.events.filter(e => e.forecast && Number(e.leadTimeHours) > 0).length;
   }
   out.meta.hazardModel = HAZARD_MODEL ? 'loaded' : 'unavailable';
+  /* What moved in the forecast set since the previous recorded run, and how
+     often that recording actually happens. Both are read from what the job
+     wrote, so neither can drift from the schedule the job really keeps. */
+  if (FORECAST_CHANGES && Array.isArray(FORECAST_CHANGES.runs) && FORECAST_CHANGES.runs.length) {
+    const last = FORECAST_CHANGES.runs[FORECAST_CHANGES.runs.length - 1];
+    const n = a => (Array.isArray(a) ? a.length : 0);
+    out.meta.forecastChanges = {
+      at: last.at,
+      sinceHours: last.sinceHours,
+      activeOutlooks: last.active,
+      baseline: !!last.baseline,
+      added: n(last.added),
+      raised: n(last.raised),
+      lowered: n(last.lowered),
+      windowMoved: n(last.windowMoved),
+      gone: n(last.gone),
+      expired: n(last.expired),
+      unavailable: n(last.unavailable),
+      sourcesDown: last.sourcesDown || [],
+      total: n(last.added) + n(last.raised) + n(last.lowered) +
+        n(last.windowMoved) + n(last.gone) + n(last.expired),
+      records: {
+        added: last.added || [], raised: last.raised || [],
+        lowered: last.lowered || [], windowMoved: last.windowMoved || [],
+        gone: last.gone || [], expired: last.expired || [],
+        unavailable: last.unavailable || []
+      }
+    };
+    out.meta.refreshRecorded = Object.assign(
+      { schedule: 'hourly', runsRecorded: FORECAST_CHANGES.runs.length },
+      FORECAST_CHANGES.observedCadenceHours || {},
+      { note: 'The written record is what runs on a schedule. The feed above ' +
+        'is recomputed from the upstream sources on every request.' });
+  } else {
+    out.meta.forecastChanges = null;
+  }
+
 
   // What has actually been written down, as opposed to what is live now.
   if (Array.isArray(OUTLOOK_LEDGER)) {
@@ -1191,6 +1371,29 @@ async function handler(req, res) {
   out.meta.activeForecastCount = out.events.filter(e => e.forecast && !e.windowClosed).length;
   out.meta.closedForecastCount = out.events.filter(e => e.windowClosed).length;
   out.meta.countryCount = new Set(out.events.map(e => e.country).filter(Boolean)).size;
+  /* How far ahead this site actually looks. The horizon was implicit in each
+     record's own window and stated nowhere, so "until when have predictions
+     been made" could only be answered by opening all thirty of them. */
+  const openWindows = out.events.filter(e => e.forecast && !e.windowClosed);
+  const ends = openWindows.map(e => Date.parse(e.targetEnd || ''))
+    .filter(Number.isFinite).sort((a, b) => a - b);
+  const lengths = [...new Set(openWindows.map(e => {
+    const a = Date.parse(e.targetStart || ''), b = Date.parse(e.targetEnd || '');
+    return Number.isFinite(a) && Number.isFinite(b)
+      ? Math.round((b - a) / 86400000 * 10) / 10 : null;
+  }).filter(v => v !== null))].sort((a, b) => a - b);
+  out.meta.forecastHorizon = ends.length ? {
+    nextWindowEnds: new Date(ends[0]).toISOString(),
+    furthestWindowEnds: new Date(ends[ends.length - 1]).toISOString(),
+    daysAhead: Math.round((ends[ends.length - 1] - now.getTime()) / 86400000 * 10) / 10,
+    windowLengthDays: lengths,
+    /* Said once, here, so no page has to phrase it for itself: nothing on this
+       site looks further ahead than this, and the absence of a forecast beyond
+       it is a limit of the method, not a forecast of calm. */
+    note: 'No outlook on this site extends past the furthest window end. ' +
+      'Beyond it there is no forecast at all — which is not the same as a forecast of no hazard.'
+  } : null;
+
   out.meta.hazardTypeCount = new Set(out.events.map(e => e.type).filter(Boolean)).size;
   out.meta.highRiskForecastCount =
     out.events.filter(e => e.forecast && !e.windowClosed && e.alert === 'High').length;
@@ -1220,4 +1423,8 @@ module.exports = handler;
 module.exports.default = handler;
 module.exports.normalizeType = normalizeType;
 module.exports.centroid = centroid;
+module.exports.insidePoint = insidePoint;
+module.exports.inRing = inRing;
+module.exports.polygonsOf = polygonsOf;
+module.exports.inPolygon = inPolygon;
 module.exports.mergeSeismicReports = mergeSeismicReports;
