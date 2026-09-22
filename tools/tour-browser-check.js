@@ -91,7 +91,34 @@ const PAGES = (process.env.PAGES || 'index,personal-risk').split(',').map(s => s
  * describe homepage furniture. That is the current state, recorded so it
  * cannot get worse without saying so -- not a claim that 2 is right.
  */
-const EXPECT_RINGS = { index: 5, 'personal-risk': 2 };
+/* personal-risk was pinned at 2. Those two were the tutorial highlighting
+   itself: draw() puts the step's fallback URL on the coach's own "Open
+   feature" anchor, and the step then searched the document for a link with
+   that href. On a phone, with the real header link display:none and skipped
+   as off-screen, the coach's anchor was the only match left - step 4 ringed
+   that button and step 5 ringed where it had been before the card moved,
+   both 120x71 at 390x844. Excluding the coach from target selection leaves
+   the true count, which is 0: the page has a map-less body and three of its
+   steps describe homepage furniture.
+
+   Recorded here so it cannot quietly get worse, and explicitly NOT endorsed -
+   a tour that highlights nothing on the page it is running on still needs
+   real targets. */
+const EXPECT_RINGS = {
+  index: () => 5,
+  /* Breakpoint-dependent, which is what Codex said in the first place and I
+     dismissed because I measured 2 at every size. Those 2 were the tutorial
+     ringing its own "Open feature" button, so the number was the same
+     everywhere for the wrong reason. With the coach excluded from target
+     selection the real counts appear, and they differ:
+
+       below 760px  `.top nav` is display:none, so neither the forecasts nor
+                    the accuracy step finds anything -> 0
+       768px        the nav is back, so the forecasts link is a real target;
+                    the accuracy link is still hidden by
+                    `.nav a:nth-child(n+7)` at <=1150px            -> 1 */
+  'personal-risk': w => (w >= 760 ? 1 : 0)
+};
 
 const measure = () => {
   const card = document.querySelector('.coach-card');
@@ -202,7 +229,8 @@ const measure = () => {
         if (step < 5) await page.click('.coach-card [data-a=next]');
       }
       if (errors.length) { bad++; lines.push('    page error: ' + errors[0].slice(0, 120)); }
-      const want = EXPECT_RINGS[page0];
+      const spec = EXPECT_RINGS[page0];
+      const want = typeof spec === 'function' ? spec(w) : spec;
       if (want !== undefined && rings !== want) {
         bad++;
         lines.push('    highlighted ' + rings + ' of 5 steps, expected ' + want +

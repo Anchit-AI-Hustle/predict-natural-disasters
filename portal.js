@@ -284,8 +284,18 @@ const PND={
        and the tour drew a 14px highlight in the top-left corner and pointed
        the card at it. Three of the five steps did this on an iPhone 14. */
     const onScreen=el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0};
+    /* And not the tutorial's own furniture. draw() puts the step's fallback
+       URL on the coach's "Open feature" anchor before place() goes looking,
+       so a step whose selector names a link -- a[href="/forecasts"] -- finds
+       that anchor sitting in the document with exactly that href. On a phone,
+       where the real header link is display:none and skipped as off-screen,
+       it was the only match left: on personal-risk step 4 ringed the coach's
+       own Open feature button, and step 5 ringed where that button had been
+       before put() moved the card. Measured at 390x844, both at 120x71.
+       A tour that highlights itself also hides that it found nothing, because
+       the missing-target retry never runs. */
     const pick=sel=>{const all=document.querySelectorAll(sel);
-      for(let k=0;k<all.length;k++)if(onScreen(all[k]))return all[k];
+      for(let k=0;k<all.length;k++)if(!root.contains(all[k])&&onScreen(all[k]))return all[k];
       return null};
     const place=()=>{const st=steps[i];target=pick(st.sel);
       /* The previous step's highlight comes down before the next one goes up.
