@@ -280,7 +280,13 @@
         clearTimeout(syncTimer);
         /* Pages redraw a whole layer group per keystroke; syncing on every
            individual layeradd would rebuild the globe hundreds of times. */
-        syncTimer = setTimeout(function () { handle.sync(); }, 120);
+        /* Re-checked when the timer fires, not only when it is set. The
+           globe tears itself down and nulls this handle when Cesium cannot
+           be fetched, and a sync already queued behind a layeradd then ran
+           against nothing: every unreachable-CDN load threw an uncaught
+           TypeError, on the one path that exists for the CDN being
+           unreachable. */
+        syncTimer = setTimeout(function () { if (handle) handle.sync(); }, 120);
       }
 
       function show() {
