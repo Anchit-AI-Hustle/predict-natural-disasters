@@ -116,9 +116,33 @@ const server = http.createServer(async (req, res) => {
       contentType: u.endsWith('.css') ? 'text/css' : 'text/javascript',
       body: fs.readFileSync(f) });
   });
-  /* Esri imagery and Re:Earth terrain are also blocked; the globe is supposed
-     to survive without them, so they are failed rather than faked. */
-  await page.route(/services\.arcgisonline\.com/, r => r.abort());
+  /* Esri is unreachable from here, so leaving it to fail could only ever
+     confirm the fallback - and that is exactly how the globe came to ship with
+     no imagery at all: a blocked host read as a broken provider. The imagery
+     host is answered from a stand-in instead, in a colour nothing else on the
+     globe uses, so "the satellite layer reached the screen" becomes something
+     the rendered pixels can be asked about rather than something a provider's
+     configuration is taken to imply.
+
+     The reference layer is answered transparent: it is real enough to be
+     requested and not so opaque that it hides what is underneath. */
+  const TILE_MAGENTA = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAACXklEQVR42u3UMQEAAAzCMPybZgZwsBwx0KNpWuCniAAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAYABiAAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAYABiAAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAYABCAEGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAYABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABAAYAGABgAIABgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAEABgAYAGAAgAGAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQAGABgAYACAAQDLASWaLNSb2rySAAAAAElFTkSuQmCC', 'base64');
+  const TILE_CLEAR = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAABFUlEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBPAAB2ClDBAAAAABJRU5ErkJggg==', 'base64');
+  let satTiles = 0, placeTiles = 0;
+  let esriBlocked = false;
+  /* IMAGERY and PLACES sit on different Esri hosts - server. and services. -
+     which is worth keeping straight: an earlier version of this routed only
+     services., so the satellite host was never stubbed at all. */
+  await page.route(/server\.arcgisonline\.com/, r => {
+    if (esriBlocked) return r.abort();
+    satTiles++;
+    r.fulfill({ status: 200, contentType: 'image/png', body: TILE_MAGENTA });
+  });
+  await page.route(/services\.arcgisonline\.com/, r => {
+    if (esriBlocked) return r.abort();
+    placeTiles++;
+    r.fulfill({ status: 200, contentType: 'image/png', body: TILE_CLEAR });
+  });
   await page.route(/terrain\.reearth\.land/, r => r.abort());
 
   /* Every map page, not just the one I happened to develop against. The globe
@@ -229,6 +253,40 @@ const server = http.createServer(async (req, res) => {
           out.edgeTB = tb; out.edgeLR = lr;
           out.edgeBright = tb + lr;
           out.centreLum = Math.round(lum(o.width >> 1, o.height >> 1));
+          /* Codex's point, and it was right: maximumLevel is what a provider
+             was configured to be capable of, not evidence that one tile ever
+             arrived. The places provider reports 18 whether or not its host
+             answers, so asking the providers made the check pass on a globe
+             whose satellite imagery had entirely failed. The stand-in serves
+             magenta, which no palette colour, ocean or marker here uses, so
+             the centre pixel answers the real question: did the satellite
+             layer reach the screen? Atmosphere lightens it towards white, so
+             this tests that red and blue lead green rather than an exact
+             value. */
+          const sat = (x, y) => {
+            const i = (Math.round(y) * o.width + Math.round(x)) * 4;
+            return (d[i] - d[i + 1] > 25) && (d[i + 2] - d[i + 1] > 25);
+          };
+          /* Sampled on a ring, not at the centre. The centre is exactly where
+             a detail page aims its camera, so the middle pixel is the hazard's
+             own marker: the first version of this read 239,38,57 on three
+             pages and called the imagery missing when it was looking at a red
+             dot. The radius is a fraction of the panel's short side, which is
+             the axis the globe is fitted to, so the ring stays on the globe on
+             a wide world view and clear of a 16px marker on a small one. */
+          const cx = o.width / 2, cy = o.height / 2;
+          const rad = Math.min(o.width, o.height) * 0.12;
+          let hits = 0, pts = 0;
+          for (let a = 0; a < 8; a++) {
+            const th = a * Math.PI / 4;
+            pts++;
+            if (sat(cx + Math.cos(th) * rad, cy + Math.sin(th) * rad)) hits++;
+          }
+          const ci = (Math.round(cy) * o.width + Math.round(cx)) * 4;
+          out.centreRGB = [d[ci], d[ci + 1], d[ci + 2]];
+          out.satHits = hits + '/' + pts;
+          /* A majority, so one sample landing on a marker cannot decide it. */
+          out.satOnScreen = hits * 2 > pts;
         } catch (e) { out.edgeBright = 'err'; }
       }
 
@@ -272,10 +330,11 @@ const server = http.createServer(async (req, res) => {
       /* A basemap, a globe that fits inside its panel, something actually lit
          at the centre, and a camera aimed where the flat map was looking. */
       r.imagery >= 1 && r.centreLum > 60 && r.aimOffDeg <= 2 &&
-      /* Imagery a reader can zoom into, and no borrowed branding on it. The
-         flat map offers its satellite view to zoom 18; a globe that stops at
-         0 has one picture of the planet and nothing to fly in to. */
-      r.detailLevel >= 18 && r.ionLogo === false &&
+      /* Imagery a reader can zoom into, actually on the screen, and no
+         borrowed branding on it. detailLevel is reported for the record but
+         never asserted on: it is the provider's configured ceiling, which a
+         globe fetching nothing still reports. */
+      r.satOnScreen === true && r.ionLogo === false &&
       /* Framed: space all round, or filled all round — never one and not the
          other. 38 samples per axis. */
       ((r.edgeTB <= 3 && r.edgeLR <= 3) || (r.edgeTB >= 30 && r.edgeLR >= 30)) &&
@@ -288,7 +347,8 @@ const server = http.createServer(async (req, res) => {
       ' cesium=' + r.cesium + ' host=' + r.host + ' visible=' + r.visible +
       ' canvas=' + r.canvas + ' markers=' + r.leafletMarkers +
       ' entities=' + r.entities + ' imagery=' + r.imagery +
-      ' detail=' + r.detailLevel + ' ionLogo=' + r.ionLogo +
+      ' detail=' + r.detailLevel + ' sat=' + r.satOnScreen +
+      ' satHits=' + r.satHits + ' ionLogo=' + r.ionLogo +
       ' edgeTB=' + r.edgeTB + ' edgeLR=' + r.edgeLR + ' centreLum=' + r.centreLum +
       ' aimOff=' + r.aimOffDeg + ' mapW=' + r.mapW + '/' + r.panelW +
       (errors.length ? ' ERRORS=' + JSON.stringify(errors.slice(0, 2)) : ''));
@@ -363,6 +423,54 @@ const server = http.createServer(async (req, res) => {
   }
   if (!readOk) failures++;
   console.log((readOk ? '  ok   ' : '  FAIL ') + 'click'.padEnd(16) + ' ' + readNote);
+
+  /* And the other half of it: the tile host actually unreachable, which is
+     the case for anyone behind a firewall that blocks Esri - and the case
+     this whole sweep used to run in without knowing. The globe must still be
+     a globe, with the painted world showing through and every hazard on it.
+     Asserted the opposite way round from the stage above: magenta must NOT be
+     on the screen, or the fallback is not what is being looked at. */
+  esriBlocked = true;
+  let fbOk = false, fbNote = 'not run';
+  try {
+    await page.goto('http://localhost:8099/' + PAGES[0], { waitUntil: 'load', timeout: 60000 });
+    await page.waitForFunction(() => {
+      const h = document.querySelector('.pnd-globe');
+      return h && h.__pndViewer && getComputedStyle(h).display !== 'none';
+    }, { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(6000);
+    const fb = await page.evaluate(() => {
+      const host = document.querySelector('.pnd-globe');
+      const v = host && host.__pndViewer;
+      if (!v) return { globe: false };
+      const cv = v.scene.canvas;
+      const o = document.createElement('canvas');
+      o.width = cv.width; o.height = cv.height;
+      o.getContext('2d').drawImage(cv, 0, 0);
+      const d = o.getContext('2d').getImageData(0, 0, o.width, o.height).data;
+      const cx = o.width / 2, cy = o.height / 2;
+      const rad = Math.min(o.width, o.height) * 0.12;
+      let hits = 0;
+      for (let a = 0; a < 8; a++) {
+        const th = a * Math.PI / 4;
+        const i = (Math.round(cy + Math.sin(th) * rad) * o.width +
+                   Math.round(cx + Math.cos(th) * rad)) * 4;
+        if ((d[i] - d[i + 1] > 25) && (d[i + 2] - d[i + 1] > 25)) hits++;
+      }
+      const ci = (Math.round(cy) * o.width + Math.round(cx)) * 4;
+      return {
+        globe: true,
+        entities: v.entities.values.length,
+        centreLum: Math.round((d[ci] + d[ci + 1] + d[ci + 2]) / 3),
+        magenta: hits * 2 > 8
+      };
+    });
+    fbOk = fb.globe && fb.entities > 0 && fb.centreLum > 60 && fb.magenta === false;
+    fbNote = 'globe=' + fb.globe + ' entities=' + fb.entities +
+      ' centreLum=' + fb.centreLum + ' magentaGone=' + (fb.magenta === false);
+  } catch (e) { fbNote = 'threw ' + e.message.slice(0, 60); }
+  if (!fbOk) failures++;
+  console.log((fbOk ? '  ok   ' : '  FAIL ') + 'esri-blocked'.padEnd(16) + ' ' + fbNote);
 
   console.log('\npages checked: ' + PAGES.length + ', failing: ' + failures);
   console.log('screenshots: ' + SHOTS);
