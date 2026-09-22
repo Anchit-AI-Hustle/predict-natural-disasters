@@ -28,7 +28,7 @@ test.after(closeAllWindows);
 
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
-const feed = async () => (await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events')).json();
+const feed = async (mock) => (await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events', mock)).json();
 
 const PRECISIONS = ['incident', 'polygon', 'admin2', 'admin1', 'regional', 'country', 'unknown'];
 /* Finest first. An outlook may be coarser than the signal it came from and
@@ -172,6 +172,31 @@ test('a hole in a warning area is not inside it', () => {
   assert.equal(H.geometryContains(g, 1, 1), true, 'a point in the ring was reported as uncovered');
 });
 
+test('one undecidable part makes a multipart shape undecidable', () => {
+  /* Also Codex, on the same round. A MultiPolygon with one ordinary part and
+     one antimeridian-wrapping part returned false: the decidable part said
+     "not in me", and that was reported as "outside the warning". Being unable
+     to decide a part is not evidence the point is not in it. */
+  const sq = (x0, y0, x1, y1) => [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]];
+  const wrap = [[[179, 0], [-179, 0], [-179, 2], [179, 2], [179, 0]]];
+  const mixed = { type: 'MultiPolygon', coordinates: [sq(0, 0, 2, 2), wrap] };
+  assert.equal(H.geometryContains(mixed, 10, 10), null,
+    'an undecidable part was rounded down to "outside"');
+  assert.equal(H.geometryContains(mixed, 1, 1), true,
+    'a point inside a decidable part is still inside');
+  // Control: when every part is decidable, "outside" is a real answer.
+  const decidable = { type: 'MultiPolygon', coordinates: [sq(0, 0, 2, 2), sq(20, 20, 22, 22)] };
+  assert.equal(H.geometryContains(decidable, 10, 10), false);
+
+  const gc = { type: 'GeometryCollection', geometries: [
+    { type: 'Polygon', coordinates: sq(0, 0, 2, 2) },
+    { type: 'Polygon', coordinates: wrap }] };
+  assert.equal(H.geometryContains(gc, 10, 10), null,
+    'a collection with an undecidable member was reported as outside');
+  assert.equal(H.geometryContains({ type: 'GeometryCollection',
+    geometries: [{ type: 'Polygon', coordinates: sq(0, 0, 2, 2) }] }, 10, 10), false);
+});
+
 test('an undecidable shape is undecidable, never "outside"', () => {
   const wrapped = { type: 'Polygon', coordinates: [[[179, 0], [-179, 0], [-179, 2], [179, 2], [179, 0]]] };
   assert.equal(H.geometryContains(wrapped, 1, 179.5), null, 'an antimeridian ring was ray-cast anyway');
@@ -200,6 +225,60 @@ test('a warning with no published area says its applicability is unestablished',
   assert.equal(row.band, 'B');
   assert.equal(row.claimDistance, false);
   assert.match(row.applicability, /has not been established/);
+});
+
+/* --------------------------- a warning covers every zone it was issued for */
+
+test('a warning issued for several zones covers all of them', async () => {
+  /* Found by Codex on the first round of this change. A warning with no
+     inline geometry routinely names several forecast zones; only the first
+     was resolved, and it was then published as the complete affected area.
+     A saved place in the second zone was tested against the first, found
+     outside, and told it was outside the warning area - a false negative on
+     the one question a warning exists to answer. */
+  const { events } = await feed();
+  const zoned = events.find(e => e.geometry && e.geometry.type === 'MultiPolygon' &&
+    /Weather Service/.test(String(e.source)));
+  assert.ok(zoned, 'the fixture no longer contains a warning resolved from several zones');
+  assert.ok(zoned.geometry.coordinates.length >= 2,
+    'only one zone of a multi-zone warning was published');
+
+  // A place in the first zone and a place in the second are both covered.
+  const inFirst = H.geometryContains(zoned.geometry, 33.4, -112.1);
+  const inSecond = H.geometryContains(zoned.geometry, 32.2, -110.9);
+  assert.equal(inFirst, true, 'a place in the first zone is not covered');
+  assert.equal(inSecond, true, 'a place in a later zone is reported as outside the warning');
+
+  // And the band follows: inside the area, not merely near it.
+  const row = H.riskRow(zoned, { id: 'p', name: 'Home', lat: 32.2, lon: -110.9 });
+  assert.ok(row, 'a place inside the warned area produced no row at all');
+  assert.equal(row.band, 'B');
+  assert.equal(row.containment, true,
+    'a place inside a later zone of the warning was not treated as inside it');
+});
+
+test('a partial area is never published as the whole area', async () => {
+  /* When one zone of a multi-zone warning cannot be resolved, publishing what
+     did resolve would assert a boundary the agency did not draw. The record
+     keeps its zone centre and says applicability is not established. */
+  const { events, meta } = await feed({ nwsZonesDown: ['AZZ554'] });
+  const alert = events.find(e => /Excessive Heat Warning/.test(String(e.title)));
+  assert.ok(alert, 'the fixture should still contain the multi-zone warning');
+  assert.ok(!alert.geometry,
+    'a partial affected area was published as the whole one: ' + JSON.stringify(alert.geometry));
+  assert.equal(alert.locationPrecision, 'admin2',
+    'without a complete area the record should fall back to its zone centre');
+  assert.ok(Number.isFinite(+alert.lat),
+    'the alert was dropped from the map entirely rather than falling back');
+  assert.equal(meta.sources.nws.areaWithheldIncompleteZones, 1,
+    'withholding an incomplete area is not reported in source health');
+
+  // And the interface says so rather than claiming the place is outside.
+  const row = H.riskRow(alert, { id: 'p', name: 'Home', lat: 32.2, lon: -110.9 });
+  if (row) {
+    assert.notEqual(row.applicability, H.APPLICABILITY.outsideWarning,
+      'a place was told it is outside a warning whose area could not be established');
+  }
 });
 
 /* ------------------------------------------------------ what the page shows */

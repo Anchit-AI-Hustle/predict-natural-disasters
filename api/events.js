@@ -818,14 +818,61 @@ async function handler(req, res) {
            unchecked — so a concave or multipart forecast zone could still
            send the reader to a place that is not under the warning. */
         const zoneGeometry = new Map();
-        await Promise.allSettled(zoneless.map(async f => {
-          const zone = ((f.properties || {}).affectedZones || [])[0];
-          if (!zone) return;
-          try {
-            const z = await timedFetch(zone, { timeout: 2500, headers: { accept: 'application/geo+json' } });
-            const c = centroid(z.geometry);
-            if (c) { zoneCentroids.set(f, c); zoneGeometry.set(f, z.geometry); }
-          } catch (e) { /* leave this alert unplaced */ }
+        /*
+         * All of the zones, or none of them.
+         *
+         * A warning routinely names several forecast zones, and resolving only
+         * the first one and publishing it as the affected area is worse than
+         * publishing nothing: a saved place in the second zone is tested
+         * against the first, found outside, and told it is outside the warning
+         * area. That is a false negative on the one question a warning exists
+         * to answer.
+         *
+         * So the polygon is only published when every zone resolved. The
+         * centroid still comes from the first zone, because it is a weaker
+         * claim that is already labelled a zone centre rather than an
+         * incident, and it is what keeps the alert on the map at all.
+         */
+        const ZONE_FETCH_BUDGET = 40;
+        let zoneBudget = ZONE_FETCH_BUDGET;
+        const zonePlan = zoneless.map(f => {
+          const zones = ((f.properties || {}).affectedZones || []).filter(Boolean);
+          /* Reserve the whole alert or none of it, so a partly-funded alert
+             never ends up with a partial area. */
+          const affordable = zones.length > 0 && zones.length <= zoneBudget;
+          if (affordable) zoneBudget -= zones.length;
+          return { f, zones, complete: affordable };
+        });
+        let zonePartialArea = 0;
+
+        const combinePolygons = geoms => {
+          const parts = [];
+          for (const g of geoms) {
+            if (!g) return null;
+            if (g.type === 'Polygon') parts.push(g.coordinates);
+            else if (g.type === 'MultiPolygon') { for (const q of g.coordinates) parts.push(q); }
+            else return null;   // a shape this cannot combine is not combined
+          }
+          return parts.length ? { type: 'MultiPolygon', coordinates: parts } : null;
+        };
+
+        await Promise.allSettled(zonePlan.map(async plan => {
+          const { f, zones, complete } = plan;
+          if (!zones.length) return;
+          const wanted = complete ? zones : zones.slice(0, 1);
+          const got = await Promise.all(wanted.map(async url => {
+            try {
+              const z = await timedFetch(url, { timeout: 2500, headers: { accept: 'application/geo+json' } });
+              return z.geometry || null;
+            } catch (e) { return null; }
+          }));
+          const first = got[0];
+          const c = first ? centroid(first) : null;
+          if (c) zoneCentroids.set(f, c);
+          if (!complete) { if (zones.length > 1) zonePartialArea++; return; }
+          if (got.some(g => !g)) { zonePartialArea++; return; }
+          const all = combinePolygons(got);
+          if (all) zoneGeometry.set(f, all); else zonePartialArea++;
         }));
 
         let n = 0, skipped = 0, viaZone = 0, withArea = 0, overBudget = 0;
@@ -881,6 +928,7 @@ async function handler(req, res) {
         mark('nws', true, {
           records: n, placedViaZoneLookup: viaZone, unplaceable: skipped,
           withAffectedArea: withArea, areaOverBudget: overBudget,
+          areaWithheldIncompleteZones: zonePartialArea,
           query: query || '(no filters)'
         });
         return;

@@ -528,24 +528,29 @@
   function geometryContains(g, lat, lon) {
     if (!g || !isFinite(lat) || !isFinite(lon)) return null;
     if (g.type === 'Polygon') return inPolygon(lon, lat, g.coordinates);
+    /* "Outside" means outside every part. One part that could not be decided
+       - an antimeridian-wrapping ring, a degenerate one - is not evidence that
+       the point is not in it, and reporting false here told a reader they were
+       outside a warning area on the strength of the parts that happened to be
+       decidable. Any undecidable part makes the whole undecidable. */
     if (g.type === 'MultiPolygon') {
       if (!Array.isArray(g.coordinates)) return null;
-      var decided = false;
+      var undecidable = false;
       for (var i = 0; i < g.coordinates.length; i++) {
         var r = inPolygon(lon, lat, g.coordinates[i]);
         if (r === true) return true;
-        if (r === false) decided = true;
+        if (r === null) undecidable = true;
       }
-      return decided ? false : null;
+      return undecidable ? null : false;
     }
     if (g.type === 'GeometryCollection' && Array.isArray(g.geometries)) {
-      var any = null;
+      var unknown = false;
       for (var k = 0; k < g.geometries.length; k++) {
         var c = geometryContains(g.geometries[k], lat, lon);
         if (c === true) return true;
-        if (c === false) any = false;
+        if (c === null) unknown = true;
       }
-      return any;
+      return unknown ? null : false;
     }
     return null;
   }
