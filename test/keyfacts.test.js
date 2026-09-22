@@ -283,8 +283,12 @@ test('an event near two saved places is listed once for each of them', async () 
   // mapping back by identity returned the first matching row twice, so one
   // place was duplicated and the other silently dropped.
   const { events } = await feed();
-  const anchor = events.find(e => !e.forecast && Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
-  assert.ok(anchor, 'fixture should include a placed record');
+  // Band A is the only band that states a distance, so the anchor has to be a
+  // record whose coordinate is the incident. Picking any placed record used to
+  // work only because every record was treated as one.
+  const anchor = events.find(e => e.proximityEligible && !e.forecast &&
+    Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
+  assert.ok(anchor, 'fixture should include an incident-located record');
   const places = JSON.stringify([
     { id: 'p1', kind: 'Home', name: 'Nearer place', lat: +anchor.lat + 0.2, lon: +anchor.lon },
     { id: 'p2', kind: 'Family', name: 'Farther place', lat: +anchor.lat + 1.2, lon: +anchor.lon }

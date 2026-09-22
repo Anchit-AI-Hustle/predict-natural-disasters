@@ -1,0 +1,331 @@
+'use strict';
+/*
+ * What a coordinate is allowed to say about a place.
+ *
+ * The Personal Risk page carried the sentence "Only incident-level coordinates
+ * qualify as nearby risks; country/regional centroids and forecasts are
+ * excluded" above a filter that read a `precision` field the API set in
+ * exactly one branch. Every other record - GDACS, USGS, EONET, NHC, NWS, EMSC
+ * - arrived with no precision at all and sailed through the test, so a drought
+ * spanning the Horn of Africa, a wildfire covering Attica and a county-wide
+ * flash-flood warning were each reported as a hazard a handful of kilometres
+ * from someone's home, and the page said so in bold.
+ *
+ * These tests are written as rules over the whole served feed rather than as
+ * assertions about particular fixtures, because the defect was never in one
+ * record: it was that nothing checked the class of any of them. Several carry
+ * their own negative control, showing what the shipped rule produced for the
+ * same input.
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const H = require('../hazard-model.js');
+const { renderPage, callApi, closeAllWindows } = require('./render.js');
+
+test.after(closeAllWindows);
+
+const ROOT = path.join(__dirname, '..');
+const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+const feed = async () => (await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events')).json();
+
+const PRECISIONS = ['incident', 'polygon', 'admin2', 'admin1', 'regional', 'country', 'unknown'];
+/* Finest first. An outlook may be coarser than the signal it came from and
+   must never be finer. */
+const FINENESS = PRECISIONS.reduce((m, k, i) => { m[k] = i; return m; }, {});
+
+const placed = ev => ev.filter(e => Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
+/* A saved place a few kilometres from the record's own coordinate: the best
+   case for the record, and the case the old rule got wrong. */
+const beside = e => ({ id: 'probe', name: 'Probe', lat: +e.lat + 0.05, lon: +e.lon });
+
+/* ------------------------------------------------ every record is classified */
+
+test('every served record says what its coordinate means', async () => {
+  const { events } = await feed();
+  assert.ok(events.length > 10, 'feed should have records to classify');
+  const bad = events.filter(e => !PRECISIONS.includes(e.locationPrecision));
+  assert.deepEqual(bad.map(e => e.title + ' -> ' + e.locationPrecision), [],
+    'these records carry no recognised location precision');
+  const noReason = events.filter(e => !e.proximityReason);
+  assert.deepEqual(noReason.map(e => e.title), [], 'these records explain nothing about their coordinate');
+});
+
+test('only an incident coordinate is eligible to carry a distance', async () => {
+  const { events } = await feed();
+  // Without this the test passes on a feed that has no such field at all,
+  // which is the state it was written against.
+  assert.ok(events.some(e => e.proximityEligible === true), 'nothing in the feed is proximity-eligible');
+  assert.ok(events.some(e => e.proximityEligible === false), 'everything in the feed is proximity-eligible');
+  const wrong = events.filter(e => e.proximityEligible && e.locationPrecision !== 'incident');
+  assert.deepEqual(wrong.map(e => e.title + ' (' + e.locationPrecision + ')'), [],
+    'a record that is not at an incident was marked proximity-eligible');
+  const missed = events.filter(e => !e.proximityEligible && e.locationPrecision === 'incident');
+  assert.deepEqual(missed.map(e => e.title), [], 'an incident record was refused a distance');
+});
+
+test('the published counts describe the records actually served', async () => {
+  const { events, meta } = await feed();
+  const rollup = events.reduce((m, e) => { m[e.locationPrecision] = (m[e.locationPrecision] || 0) + 1; return m; }, {});
+  assert.deepEqual(meta.locationPrecision, rollup, 'meta counts a different set than it serves');
+  assert.equal(meta.proximityEligible, events.filter(e => e.proximityEligible).length);
+  assert.equal(Object.values(meta.locationPrecision).reduce((a, b) => a + b, 0), events.length,
+    'the precision rollup does not add up to the feed');
+});
+
+/* --------------------------------- no area record may ever state a distance */
+
+test('no record placed at an area centre can state a distance to a saved place', async () => {
+  const { events } = await feed();
+  const offenders = [];
+  const controls = [];
+  for (const e of placed(events)) {
+    const row = H.riskRow(e, beside(e));
+    if (row && row.claimDistance && e.locationPrecision !== 'incident') {
+      offenders.push(e.title + ' (' + e.locationPrecision + ')');
+    }
+    // What shipped: precision was set only by the ReliefWeb branch, so every
+    // other record passed the page's "incident-level only" test.
+    const asShipped = /reliefweb/i.test(String(e.source || '')) ? 'country' : undefined;
+    const oldPrecise = asShipped !== 'country' && asShipped !== 'regional' && !e.forecast;
+    if (oldPrecise && e.locationPrecision !== 'incident') controls.push(e.title);
+  }
+  assert.deepEqual(offenders, [], 'these records would be reported as a distance from a home');
+  assert.ok(controls.length > 0,
+    'negative control is inert: the fixture no longer contains a record the shipped rule mislocalised');
+});
+
+test('a country-level humanitarian record near a city is context, not a nearby hazard', () => {
+  /* The shape a ReliefWeb record arrives in: one country, one centroid, no
+     incident anywhere in it. A saved place in Noida is a few hundred km from
+     the centroid of India and is not thereby a few hundred km from a flood. */
+  const record = {
+    id: 'rw-test', title: 'India: Floods - Sep 2026', type: 'Flood',
+    source: 'ReliefWeb (UN OCHA)', sourceType: 'official',
+    lat: 22.0, lon: 79.0,
+    locationPrecision: 'country', precision: 'country',
+    evidenceState: 'observed', proximityEligible: false,
+    proximityReason: 'Placed at a country centroid, not at an incident.'
+  };
+  const noidaish = { id: 'home', name: 'Home', lat: 24.5, lon: 79.0 };   // ~278 km north
+
+  const row = H.riskRow(record, noidaish);
+  assert.ok(row, 'the record should still be shown as regional context');
+  assert.equal(row.band, 'D', 'a country centroid is not a nearby incident');
+  assert.equal(row.claimDistance, false, 'a country centroid was given a distance');
+  assert.match(row.applicability, /has not been established/,
+    'the row must say that containment was not established');
+
+  // Negative control: the rule this replaces.
+  const shipped = record.precision !== 'country' && record.precision !== 'regional' && !record.forecast;
+  const d = H.distanceKm(noidaish.lat, noidaish.lon, record.lat, record.lon);
+  assert.ok(d > 150 && d < 500, 'control distance should be inside the old 500 km window');
+  assert.equal(shipped, false,
+    'this record is the one case the shipped rule did catch - the sweep above covers the rest');
+});
+
+/* --------------------------------------- a derived outlook inherits nothing */
+
+test('an outlook is never more precisely located than the signal it came from', async () => {
+  const { events } = await feed();
+  const byId = new Map(events.map(e => [e.id, e]));
+  const derived = events.filter(e => e.forecast && e.forecastOf && byId.has(e.forecastOf));
+  assert.ok(derived.length > 0, 'fixture should contain derived outlooks');
+  // undefined < undefined is false, so an unclassified feed would sail through.
+  for (const o of derived) {
+    assert.ok(PRECISIONS.includes(o.locationPrecision), 'unclassified outlook: ' + o.title);
+    assert.ok(PRECISIONS.includes(byId.get(o.forecastOf).locationPrecision),
+      'unclassified signal behind: ' + o.title);
+  }
+  const finer = derived.filter(o =>
+    FINENESS[o.locationPrecision] < FINENESS[byId.get(o.forecastOf).locationPrecision]);
+  assert.deepEqual(finer.map(o => o.title), [], 'an outlook claims a finer location than its own signal');
+});
+
+test('an outlook issued for a country is located at a country', async () => {
+  const { events } = await feed();
+  const countryWide = events.filter(e => e.forecast && e.forecastScope === 'country');
+  assert.ok(countryWide.length > 0, 'fixture should contain a country-scope outlook');
+  const wrong = countryWide.filter(e => e.proximityEligible);
+  assert.deepEqual(wrong.map(e => e.title), [],
+    'a country-wide outlook was reported as an incident location');
+});
+
+/* ------------------------------------- containment is answered by the shape */
+
+test('a place at the centre of a concave warning zone is not inside it', () => {
+  // A U-shaped forecast zone. Its centre point sits in the gap between the
+  // arms, so distance-to-centroid calls it the most exposed place on the map
+  // while the agency has not warned it at all.
+  const u = { type: 'Polygon', coordinates: [[[0, 0], [10, 0], [10, 10], [8, 10], [8, 2], [2, 2], [2, 10], [0, 10], [0, 0]]] };
+  assert.equal(H.geometryContains(u, 5, 5), false, 'the gap in the U was reported as warned');
+  assert.equal(H.geometryContains(u, 5, 1), true, 'the left arm of the U was reported as unwarned');
+  assert.equal(H.distanceKm(5, 5, 5, 5), 0, 'control: the unwarned point is 0 km from the centroid');
+});
+
+test('a hole in a warning area is not inside it', () => {
+  const ring = [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
+  const hole = [[4, 4], [6, 4], [6, 6], [4, 6], [4, 4]];
+  const g = { type: 'Polygon', coordinates: [ring, hole] };
+  assert.equal(H.geometryContains(g, 5, 5), false, 'a point in the hole was reported as covered');
+  assert.equal(H.geometryContains(g, 1, 1), true, 'a point in the ring was reported as uncovered');
+});
+
+test('an undecidable shape is undecidable, never "outside"', () => {
+  const wrapped = { type: 'Polygon', coordinates: [[[179, 0], [-179, 0], [-179, 2], [179, 2], [179, 0]]] };
+  assert.equal(H.geometryContains(wrapped, 1, 179.5), null, 'an antimeridian ring was ray-cast anyway');
+  assert.equal(H.geometryContains(null, 1, 1), null);
+  assert.equal(H.geometryContains({ type: 'Point', coordinates: [1, 1] }, 1, 1), null);
+  assert.equal(H.geometryContains({ type: 'Polygon', coordinates: [ [[0,0],[1,1]] ] }, 0.5, 0.5), null,
+    'a degenerate ring was treated as a decision');
+});
+
+test('a warning with an area is decided by the area, not by the distance', async () => {
+  const { events } = await feed();
+  const withArea = events.filter(e => e.geometry && e.evidenceState === 'official-warning');
+  assert.ok(withArea.length > 0, 'fixture should contain a warning that published its area');
+  for (const e of withArea) {
+    const row = H.riskRow(e, beside(e));
+    assert.ok(row, e.title + ' produced no row at all');
+    assert.equal(row.claimDistance, false, e.title + ' stated a distance from a warning-zone centre');
+    assert.ok(['B', 'D'].includes(row.band), e.title + ' landed in band ' + row.band);
+  }
+});
+
+test('a warning with no published area says its applicability is unestablished', () => {
+  const row = H.riskRow(
+    { evidenceState: 'official-warning', lat: 0.5, lon: 0.5, type: 'Flood' },
+    { id: 'h', name: 'Home', lat: 1.5, lon: 0.5 });
+  assert.equal(row.band, 'B');
+  assert.equal(row.claimDistance, false);
+  assert.match(row.applicability, /has not been established/);
+});
+
+/* ------------------------------------------------------ what the page shows */
+
+test('the page no longer claims a filter it does not implement', () => {
+  const page = read('personal-risk.html');
+  assert.equal(/Only incident-level coordinates qualify/.test(page), false,
+    'the page still carries the claim the code did not implement');
+  assert.equal(/e\.precision!==/.test(page), false,
+    'the page still filters on the field that was almost never set');
+});
+
+test('the page renders every evidence band, including the one with no data', async () => {
+  const anchor = { id: 'p1', kind: 'Home', name: 'Probe place', lat: 27.75, lon: 85.3 };
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([anchor]) },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  const text = r.text();
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  for (const b of H.RISK_BANDS) {
+    assert.ok(text.includes(b.key + ' · ' + b.title), 'band ' + b.key + ' is missing from the page');
+  }
+  assert.ok(/No per-location event history is published/.test(text),
+    'the historical band should say plainly that it has no data rather than look empty');
+  r.close();
+});
+
+test('a place inside a regional hazard is shown without a distance to it', async () => {
+  const { events } = await feed();
+  // Kathmandu sits inside the GDACS flood record for Bagmati Province, whose
+  // coordinate is the middle of the province. The shipped page read that as a
+  // hazard 0 km away.
+  const regional = events.find(e => e.locationPrecision === 'regional' && Number.isFinite(+e.lat));
+  assert.ok(regional, 'fixture should contain a region-wide record');
+  const place = { id: 'p1', kind: 'Home', name: 'Probe place', lat: +regional.lat, lon: +regional.lon };
+
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([place]) },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  const cards = [...r.document.querySelectorAll('#risks .card')].map(c => c.textContent);
+  const row = cards.find(t => t.includes(regional.title));
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  assert.ok(row, 'the regional record should still be listed as context');
+  assert.equal(/\d+\s*km from Probe place/.test(row), false,
+    'the regional record was reported as a distance from the saved place: ' + row);
+
+  // And the place's own summary must not be banded off it either.
+  const savedCard = r.document.querySelector('#saved .card');
+  assert.equal(/nearest incident/.test(savedCard.textContent), false,
+    'a region-wide record was counted as the nearest incident: ' + savedCard.textContent);
+  r.close();
+});
+
+test('a multi-country drought is not a hazard at the door', async () => {
+  /* Deliberately written without naming anything this change introduced, so it
+     runs against the page as it shipped as well as against the page now. The
+     record is a GDACS drought alert covering the Horn of Africa; its
+     coordinate is the middle of that area. Saving a home on that exact point
+     made the shipped page print "0 km from Home" and band the place HIGH. */
+  const { events } = await feed();
+  const drought = events.find(e => /Drought in Horn of Africa/.test(String(e.title)));
+  assert.ok(drought, 'fixture should contain the multi-country drought');
+  const place = { id: 'p1', kind: 'Home', name: 'Probe place', lat: +drought.lat, lon: +drought.lon };
+
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([place]) },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  const page = r.text();
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  assert.equal(/\d+\s*km from Probe place/.test(page), false,
+    'the page states a distance to a hazard that spans several countries');
+  assert.equal(/HIGH · nearest/.test(page), false,
+    'the place was banded HIGH off the middle of a multi-country drought');
+  assert.ok(page.includes(drought.title), 'the drought should still be listed as context');
+  r.close();
+});
+
+/* --------------------------------------------------------- what it notifies */
+
+test('a browser notification never fires off an area centroid', async () => {
+  const { events } = await feed();
+  const regional = events.find(e => e.locationPrecision === 'regional' && Number.isFinite(+e.lat));
+  assert.ok(regional, 'fixture should contain a region-wide record');
+  const place = { id: 'p1', kind: 'Home', name: 'Probe place', lat: +regional.lat, lon: +regional.lon };
+  const fired = [];
+
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([place]) },
+    beforeParse(w) {
+      function N(title, opts) { fired.push(title + ' :: ' + ((opts || {}).body || '')); }
+      N.permission = 'granted';
+      N.requestPermission = async () => 'granted';
+      w.Notification = N;
+    },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const fromCentroid = fired.filter(t => /\d+ km away/.test(t));
+  assert.deepEqual(fromCentroid, [],
+    'a notification stated a distance derived from the middle of a hazard area');
+  r.close();
+});
+
+test('a browser notification does fire for an incident next door', async () => {
+  const { events } = await feed();
+  const incident = events.find(e => e.proximityEligible && !e.forecast &&
+    /red|orange/i.test(String(e.alert || '')) && Number.isFinite(+e.lat));
+  assert.ok(incident, 'fixture should contain a red or orange incident');
+  const place = { id: 'p1', kind: 'Home', name: 'Probe place', lat: +incident.lat + 0.05, lon: +incident.lon };
+  const fired = [];
+
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([place]) },
+    beforeParse(w) {
+      function N(title, opts) { fired.push(title + ' :: ' + ((opts || {}).body || '')); }
+      N.permission = 'granted';
+      N.requestPermission = async () => 'granted';
+      w.Notification = N;
+    },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  assert.ok(fired.some(t => /km away/.test(t)),
+    'gating the notifications silenced the case they exist for: ' + JSON.stringify(fired));
+  r.close();
+});
