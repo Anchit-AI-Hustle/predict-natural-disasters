@@ -278,7 +278,13 @@ const PND={
       for(let k=0;k<all.length;k++)if(onScreen(all[k]))return all[k];
       return null};
     const place=()=>{const st=steps[i];target=pick(st.sel);
-      if(!target){ring.style.display='none';put(null);if(tries++<12)setTimeout(place,250);return}
+      /* The previous step's highlight comes down before the next one goes up.
+         It used to stay on screen for the whole scroll to the next target,
+         ringing whatever happened to be underneath on the way -- and it left
+         the tour with no state that says "this step is placed", so a checker
+         waiting for a highlight saw the old one and measured mid-flight. */
+      ring.style.display='none';
+      if(!target){put(null);if(tries++<12)setTimeout(place,250);return}
       tries=0;
       /* A target taller than about half the screen is scrolled to the top
          rather than the middle, because centring it leaves no room either side
