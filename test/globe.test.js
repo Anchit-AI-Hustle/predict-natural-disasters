@@ -386,23 +386,37 @@ test('the basemap it draws is the flat map\'s, and is credited', async () => {
   const g = read('globe.js');
   assert.match(g, /gods-eye-view \(MIT/, 'the MIT source it is adapted from is not credited');
   assert.match(g, /CC BY 4\.0/, 'Re:Earth terrain is CC BY 4.0 and must be credited');
-  /* Esri used to be credited here for satellite imagery. A browser check
-     found the globe never received any: the provider it used asks a MapServer
-     for metadata before any tile, that one request was the only one it ever
-     made, and the viewer carried zero imagery layers — a blank blue sphere.
-     So the globe draws the same world the flat map does, from the same file,
-     and this asserts the credit follows the data rather than the other way
-     round. */
-  assert.ok(!/Powered by Esri/.test(g),
-    'the globe still credits Esri for imagery it no longer fetches');
+  /* This used to assert the opposite - that the globe must NOT credit Esri,
+     because it had stopped fetching Esri imagery. The reason it stopped was a
+     browser check finding that its provider asked a MapServer for metadata
+     and never requested a tile. That check ran on a machine where
+     server.arcgisonline.com is unreachable, where a blocked host and a broken
+     provider look exactly alike, and the globe lost its imagery to a
+     firewall. Re-measured against a stand-in MapServer on localhost serving
+     real metadata and real tiles, the tiled provider issued 128 tile requests
+     and 0 metadata requests. So Esri is fetched again, and credited because
+     it is fetched. */
+  assert.match(g, /ESRI_CREDIT/,
+    'the globe fetches Esri imagery and must carry its credit');
 
   const r = await renderPage('live-map.html', { timeoutMs: 18000,
     waitFor: (d, w) => (w.__pndViewers || []).length &&
       w.__pndViewers[0].imageryLayers.length });
   const layers = r.window.__pndViewers[0].imageryLayers;
-  assert.equal(layers.length, 1, 'the globe added no basemap at all');
-  assert.match(String(layers.__added && layers.__added.opts && layers.__added.opts.credit),
+  /* Three, in this order: the painted world underneath so an unreachable tile
+     host costs detail rather than the globe, then the satellite imagery, then
+     the reference layer that names what you are looking at. */
+  assert.equal(layers.length, 3,
+    'the globe carries ' + layers.length + ' imagery layers, not the painted world + satellite + places');
+  const added = layers.__all || [];
+  assert.match(String(added[0] && added[0].opts && added[0].opts.credit),
     /Natural Earth/, 'the outlines the globe draws are not credited to Natural Earth');
+  assert.equal(added[0] && added[0].tileWidth, 2048,
+    'the painted world is not the bottom layer');
+  assert.ok(added[1] && added[1].url && /arcgisonline/.test(String(added[1].url)),
+    'the satellite layer is not the Esri imagery the flat map uses');
+  assert.equal(added[1] && added[1].maximumLevel, 18,
+    'the satellite layer stops short of the zoom the flat map offers');
   r.window.close();
 });
 

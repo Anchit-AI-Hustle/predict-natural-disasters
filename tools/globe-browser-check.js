@@ -176,6 +176,20 @@ const server = http.createServer(async (req, res) => {
         leafletMarkers: leaflet,
         entities: viewer ? viewer.entities.values.length : null,
         imagery: viewer ? viewer.imageryLayers.length : null,
+        /* Counting layers said "yes, a basemap" while the globe carried a
+           single 2048x1024 picture of the whole planet - about 20km a pixel.
+           A detail page flies to 721km over its event and magnifies that
+           roughly fifteen times, which is how a flood in Nepal came to be an
+           orange smear. So the zoom the imagery actually holds is measured,
+           not just its presence. */
+        detailLevel: viewer ? Math.max(0, ...[...Array(viewer.imageryLayers.length).keys()]
+          .map(i => Number(viewer.imageryLayers.get(i).imageryProvider.maximumLevel) || 0)) : null,
+        /* Cesium brands every viewer with its ion logo whether or not ion is
+           used, and nothing here uses ion. */
+        ionLogo: (() => {
+          const lg = document.querySelector('.cesium-credit-logoContainer');
+          return !!(lg && lg.offsetParent !== null && getComputedStyle(lg).display !== 'none');
+        })(),
         controlsHidden: controls.length
           ? controls.every(c => getComputedStyle(c).display === 'none') : 'n/a',
         edgeTB: null, edgeLR: null, edgeBright: null, centreLum: null, aimOffDeg: null
@@ -258,6 +272,10 @@ const server = http.createServer(async (req, res) => {
       /* A basemap, a globe that fits inside its panel, something actually lit
          at the centre, and a camera aimed where the flat map was looking. */
       r.imagery >= 1 && r.centreLum > 60 && r.aimOffDeg <= 2 &&
+      /* Imagery a reader can zoom into, and no borrowed branding on it. The
+         flat map offers its satellite view to zoom 18; a globe that stops at
+         0 has one picture of the planet and nothing to fly in to. */
+      r.detailLevel >= 18 && r.ionLogo === false &&
       /* Framed: space all round, or filled all round — never one and not the
          other. 38 samples per axis. */
       ((r.edgeTB <= 3 && r.edgeLR <= 3) || (r.edgeTB >= 30 && r.edgeLR >= 30)) &&
@@ -270,6 +288,7 @@ const server = http.createServer(async (req, res) => {
       ' cesium=' + r.cesium + ' host=' + r.host + ' visible=' + r.visible +
       ' canvas=' + r.canvas + ' markers=' + r.leafletMarkers +
       ' entities=' + r.entities + ' imagery=' + r.imagery +
+      ' detail=' + r.detailLevel + ' ionLogo=' + r.ionLogo +
       ' edgeTB=' + r.edgeTB + ' edgeLR=' + r.edgeLR + ' centreLum=' + r.centreLum +
       ' aimOff=' + r.aimOffDeg + ' mapW=' + r.mapW + '/' + r.panelW +
       (errors.length ? ' ERRORS=' + JSON.stringify(errors.slice(0, 2)) : ''));

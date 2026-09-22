@@ -176,8 +176,12 @@ const CESIUM_STUB = `
       };
       this.scene = { skyAtmosphere: {}, globe: {}, camera: this.camera,
         canvas: { clientWidth: 800, clientHeight: 400, width: 800, height: 400 } };
-      this.imageryLayers = { length: 0,
-        addImageryProvider: function(p){ this.length++; this.__added = p; return p; } };
+      /* Every layer, in the order it went on, not just the last one. The
+         globe now stacks the painted world, the satellite imagery and the
+         reference layer, and which sits under which is the whole fallback:
+         keeping only __added could not tell them apart. */
+      this.imageryLayers = { length: 0, __all: [],
+        addImageryProvider: function(p){ this.length++; this.__added = p; this.__all.push(p); return p; } };
       this.creditDisplay = { addStaticCredit: function(c){ (window.__pndCredits = window.__pndCredits || []).push(c); } };
       this.entities = {
         values: ents,
@@ -195,7 +199,15 @@ const CESIUM_STUB = `
     Ellipsoid: { WGS84: 'wgs84' },
     Credit: function(text){ this.text = text; },
     ArcGisMapServerImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } },
-    SingleTileImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } },
+    SingleTileImageryProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o, tileWidth: 2048, tileHeight: 1024, maximumLevel: 0 }); } },
+    /* Constructed, not fetched: the tiled provider takes its template as-is
+       and asks for tiles from it, which is the reason the globe uses it. */
+    UrlTemplateImageryProvider: function(o){
+      this.url = o && o.url; this.opts = o;
+      this.tileWidth = 256; this.tileHeight = 256;
+      this.maximumLevel = o && o.maximumLevel;
+      this.credit = o && o.credit;
+    },
     CesiumTerrainProvider: { fromUrl: function(u, o){ return ok({ url: u, opts: o }); } }
   };
 })();

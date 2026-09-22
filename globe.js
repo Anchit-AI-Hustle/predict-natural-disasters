@@ -149,18 +149,16 @@
   /*
    * The flat map's own world, painted once into a texture for the globe.
    *
-   * The globe used to ask Esri for satellite imagery through
-   * ArcGisMapServerImageryProvider.fromUrl, on a different host from the one
-   * the flat map uses. That provider fetches MapServer metadata before any
-   * tile, and in a browser check that request was the only one it ever made:
-   * no tile was requested even when tiles were answered, and the viewer ended
-   * up with zero imagery layers — a featureless blue sphere.
+   * This is the globe's floor, not its picture. It is one 2048x1024 image
+   * for the whole planet - about 20km per pixel at the equator - so it holds
+   * up at world view and falls apart the moment the camera comes in. A
+   * detail page flies to 721km over its event, where that texture gives
+   * roughly forty pixels stretched across the panel: the flood in Nepal was
+   * a smear of orange and green with a jagged edge where a border should be.
    *
-   * So the globe now draws what the flat map draws, from the same
-   * world-countries.json and the same palette: every country in its own
-   * colour, borders, ocean. It is one texture and one request to this app's
-   * own origin, which is the whole reason the flat map is drawn that way
-   * rather than from tiles.
+   * So it is now the fallback underneath real imagery rather than the only
+   * thing on the globe. Drawn first, it means an unreachable tile host costs
+   * detail, not the globe.
    */
   function worldTexture(data) {
     var W = 2048, H = 1024;
@@ -289,6 +287,46 @@
     });
   }
 
+  /*
+   * The imagery the flat map already uses, on the globe.
+   *
+   * Every page offers a Satellite view built from Esri's World_Imagery tiles,
+   * so that host and that URL are already the ones this app relies on. The
+   * globe asked for the same pictures a different way - through
+   * ArcGisMapServerImageryProvider.fromUrl, which fetches a MapServer
+   * metadata document before it will request a single tile. Measured here,
+   * that metadata request was the only one it ever made, and the conclusion
+   * drawn was that the provider does not work.
+   *
+   * It was the wrong conclusion. server.arcgisonline.com is unreachable from
+   * the machine that measurement was taken on, so a blocked host and a broken
+   * provider produce identical evidence, and the globe lost its imagery to a
+   * firewall. It is requested here from the same {z}/{y}/{x} template the
+   * flat map's Satellite layer uses, which needs no metadata document at all:
+   * there is no request that can succeed while the tiles stay unasked for.
+   */
+  function tiled(Cesium, url, credit, maxLevel) {
+    if (!Cesium.UrlTemplateImageryProvider || !url) return null;
+    try {
+      return new Cesium.UrlTemplateImageryProvider({
+        url: url, maximumLevel: maxLevel, credit: credit || undefined
+      });
+    } catch (e) { return null; }
+  }
+
+  /* Cesium puts its ion logo in every viewer, whether or not ion is used, and
+     nothing here uses it: there is no token, no ion asset and no ion request.
+     On a 600x300 detail panel that mark is 140px wide against a 240px globe.
+     Only the logo goes - the text credits beside it carry Esri's and Natural
+     Earth's attribution, which are terms of use rather than decoration. */
+  function dropIonLogo(viewer) {
+    try {
+      var box = viewer.cesiumWidget && viewer.cesiumWidget.creditContainer;
+      var logo = box && box.querySelector('.cesium-credit-logoContainer');
+      if (logo) logo.style.display = 'none';
+    } catch (e) { /* older widget */ }
+  }
+
   function mount(map, container) {
     if (!map || !container) return null;
     var host = document.createElement('div');
@@ -367,6 +405,7 @@
         infoBox: true, selectionIndicator: true, baseLayer: false, msaaSamples: 4,
         contextOptions: { webgl: { preserveDrawingBuffer: true } }
       });
+      dropIonLogo(viewer);
       viewer.scene.skyAtmosphere.show = true;
       viewer.scene.skyAtmosphere.atmosphereLightIntensity = 18;
       viewer.scene.skyAtmosphere.saturationShift = -0.12;
@@ -389,6 +428,11 @@
           Cesium.Color.fromCssColorString(shared('OCEAN', '#a9d5e8'));
       } catch (e) { /* older Globe */ }
 
+      /* Order is the fallback. The painted world goes on first, so the globe
+         is readable from the first frame and stays readable if the tile host
+         never answers; the satellite imagery is laid over it, and a tile that
+         does not arrive simply leaves the country colours showing through.
+         Nothing has to detect the failure for the globe to survive it. */
       fetch(shared('COUNTRIES', '/world-countries.json'))
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -402,7 +446,20 @@
             viewer.imageryLayers.addImageryProvider(p);
           });
         })
-        .catch(function () { /* the ocean base colour still orients nothing, but the globe stands */ });
+        .catch(function () { /* the ocean base colour still orients nothing, but the globe stands */ })
+        .then(function () {
+          if (disposed || !viewer || viewer.isDestroyed()) return;
+          var esri = shared('ESRI_CREDIT', '');
+          var sat = tiled(Cesium, shared('IMAGERY', ''), esri, 18);
+          if (sat) viewer.imageryLayers.addImageryProvider(sat);
+          /* Borders and place names, the same reference layer the flat map
+             draws over its own satellite view. Without it the globe is
+             photography with nothing named on it, and a reader zoomed in on a
+             flood cannot tell which country they are looking at. */
+          var places = tiled(Cesium, shared('PLACES', ''), null, 18);
+          if (places) viewer.imageryLayers.addImageryProvider(places);
+        })
+        .catch(function () { /* the painted world is still underneath */ });
 
       Promise.resolve(Cesium.CesiumTerrainProvider.fromUrl(TERRAIN, {
         requestVertexNormals: true, ellipsoid: Cesium.Ellipsoid.WGS84
