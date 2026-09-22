@@ -314,6 +314,13 @@ async function renderPage(page, opts) {
     await new Promise(r => setTimeout(r, 60));
     try { if (ready(window.document, window)) break; } catch (e) { /* keep waiting */ }
   }
+  /* ready() can go true in the same turn the page's own scripts ran in: every
+     fetch here resolves from memory, so a whole load chain can complete in
+     microtasks without the event loop ever coming back round. Anything the
+     page deferred to a timer - a dropdown it fills on the next tick - has not
+     run at that point, and reading the DOM now reports an instant no reader
+     ever sees. Give the window's own timers their turn first. */
+  for (let i = 0; i < 3; i++) await new Promise(r => setTimeout(r, 0));
 
   OPEN_WINDOWS.add(window);
   return {
