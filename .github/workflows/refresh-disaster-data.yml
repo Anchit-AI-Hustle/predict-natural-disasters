@@ -53,17 +53,25 @@ jobs:
       - name: Record what changed in the forecast set
         run: node tools/record-changes.js /tmp/events.json data/forecast-changes.json
 
+      # Which providers were actually evaluated this run, and how completely.
+      # Without it, "nothing forecast this disaster" cannot be told apart from
+      # "nothing ever looked there", and the accuracy page has to guess which
+      # of the two it is reporting.
+      - name: Record what was scanned in the coverage ledger
+        run: node tools/record-scan.js /tmp/events.json data/scan-ledger.json
+
       - name: Commit the ledger when it changed
         run: |
           set -euo pipefail
-          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json; then
+          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json; then
             echo "ledger unchanged"
             exit 0
           fi
           total=$(node -e "console.log(require('./data/outlook-ledger.json').length)")
+          scans=$(node -e "console.log((require('./data/scan-ledger.json').scans||[]).length)")
           git config user.name "disaster-refresh"
           git config user.email "noreply@anthropic.com"
-          git add data/outlook-ledger.json data/forecast-changes.json
+          git add data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json
           # Every run deploys, including the quiet ones.
           #
           # These used to be tagged "[ledger]" so vercel.json's ignoreCommand
@@ -78,7 +86,7 @@ jobs:
           # That marker was introduced when this ran every five minutes, which
           # would have been 288 deployments a day against a limit of 100. At
           # hourly it is at most 24, so the saving it existed for is gone.
-          git commit -m "Record outlooks and forecast changes ($total recorded)"
+          git commit -m "Record outlooks, forecast changes and coverage ($total outlooks, $scans scans)"
           git push
 
       - name: Refresh live feed and warm every event's enrichment record

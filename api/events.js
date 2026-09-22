@@ -1551,6 +1551,190 @@ async function handler(req, res) {
   }, {});
   out.meta.headlineEligibleForecasts = out.events.filter(e => e.countsTowardHeadlineAccuracy).length;
 
+  /* ------------------------------------------------------- scan provenance */
+
+  /*
+   * What was actually looked at, and what it can and cannot cover.
+   *
+   * The app reported which upstreams answered, and nothing else. That is
+   * enough to say a provider was reachable and not nearly enough to say a
+   * disaster would have been seen: a flood in a country ReliefWeb has not
+   * declared, an earthquake below USGS's 2.5 threshold, or a storm outside the
+   * two basins the National Hurricane Center publishes are all invisible here,
+   * and the absence of a record for them says nothing about the world.
+   *
+   * That distinction is what separates a missed forecast from an unscanned
+   * place, so each provider states its own reach in terms the code can be held
+   * to, and the scan records which of them were actually evaluated on this
+   * run. There is no global cell-level scan and this never claims one.
+   */
+  const ENGINE_VERSION = 'scan-1.0.0';
+
+  const COVERAGE_STATUS = {
+    SCANNED: 'SCANNED',                 // evaluated, within the reach stated below
+    INCOMPLETE_SCAN: 'INCOMPLETE_SCAN', // evaluated, but the run is known to have missed part of it
+    NOT_SCANNED: 'NOT_SCANNED',         // not attempted on this run
+    DATA_UNAVAILABLE: 'DATA_UNAVAILABLE'// attempted and the provider did not answer
+  };
+
+  const PROVIDERS = {
+    gdacs: {
+      label: 'GDACS (Global Disaster Alert and Coordination System)',
+      hazards: ['Earthquake', 'Tropical Cyclone', 'Flood', 'Drought', 'Wildfire', 'Volcano'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'Only events GDACS itself raises to an alert level. Flood, drought and wildfire records describe alert areas, not incident points.',
+      endpoint: 'https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP'
+    },
+    usgs: {
+      label: 'USGS Earthquake Hazards Program',
+      hazards: ['Earthquake'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'Every earthquake of magnitude 2.5 or above in the past seven days, at its epicentre. Anything smaller, or older, is outside this feed.',
+      endpoint: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson'
+    },
+    emsc: {
+      label: 'EMSC (European-Mediterranean Seismological Centre)',
+      hazards: ['Earthquake'],
+      geographicCoverage: 'Global, with the densest network in Europe and the Mediterranean',
+      coverageResolution: 'Earthquakes of magnitude 4.5 or above, at epicentre.',
+      endpoint: 'https://www.emsc-csem.org/'
+    },
+    eonet: {
+      label: 'NASA EONET',
+      hazards: ['Wildfire', 'Volcano', 'Severe Storm', 'Ice', 'Landslide'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.',
+      endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events'
+    },
+    nhc: {
+      label: 'NOAA National Hurricane Center',
+      hazards: ['Tropical Cyclone'],
+      geographicCoverage: 'Atlantic, eastern Pacific and central Pacific basins only',
+      coverageResolution: 'Active tropical cyclones, at storm centre. Storms in the western Pacific, Indian Ocean and southern hemisphere are outside this provider entirely.',
+      endpoint: 'https://www.nhc.noaa.gov/CurrentStorms.json'
+    },
+    nws: {
+      label: 'NOAA / National Weather Service',
+      hazards: ['Flood', 'Severe Weather', 'Extreme Heat', 'Winter Storm', 'Tornado'],
+      geographicCoverage: 'United States and its territories only',
+      coverageResolution: 'Alerts at severe or extreme severity, carrying the affected-area polygon where the agency published one and a forecast-zone centre where it did not.',
+      endpoint: 'https://api.weather.gov/alerts/active'
+    },
+    reliefweb: {
+      label: 'ReliefWeb (UN OCHA)',
+      hazards: ['Flood', 'Drought', 'Earthquake', 'Tropical Cyclone', 'Complex Emergency'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.',
+      endpoint: 'https://reliefweb.int/disasters/feed'
+    },
+    usgs_volcano: {
+      label: 'USGS Volcano Hazards Program',
+      hazards: ['Volcano'],
+      geographicCoverage: 'Volcanoes monitored by the United States volcano observatories',
+      coverageResolution: 'Volcanoes currently at an elevated alert level. Volcanoes outside the US observatory network are not covered by this provider.',
+      endpoint: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes'
+    }
+  };
+
+  /* Which provider a served record came from, decided once from the source
+     label so the freshness and record counts below cannot drift from the
+     events themselves. Volcano is tested before the general USGS pattern,
+     since its label contains both. */
+  const PROVIDER_OF_SOURCE = [
+    [/USGS Volcano/i, 'usgs_volcano'],
+    [/GDACS/i, 'gdacs'],
+    [/USGS/i, 'usgs'],
+    [/EMSC/i, 'emsc'],
+    [/EONET/i, 'eonet'],
+    [/Hurricane Center/i, 'nhc'],
+    [/Weather Service/i, 'nws'],
+    [/ReliefWeb/i, 'reliefweb']
+  ];
+
+  function providerOf(source) {
+    const s = String(source || '');
+    /* A derived outlook names the signal it came from inside its own source
+       string. It is this engine's own record, not the provider's, and counting
+       it as one would inflate what the provider was seen to deliver. */
+    if (/^Predict Natural Disasters/i.test(s)) return null;
+    for (const [re, key] of PROVIDER_OF_SOURCE) if (re.test(s)) return key;
+    return null;
+  }
+
+  /* A run that fell back to a thinner feed, or dropped records it could not
+     place, scanned less than the provider covers, and says so rather than
+     reporting a clean sweep. */
+  function scanStatusOf(key, s) {
+    if (!s) return { status: COVERAGE_STATUS.NOT_SCANNED, reason: 'Not attempted on this run.' };
+    if (!s.ok) {
+      return { status: COVERAGE_STATUS.DATA_UNAVAILABLE,
+        reason: s.error ? String(s.error) : 'The provider did not answer.' };
+    }
+    if (key === 'gdacs' && s.endpoint === 'rss') {
+      return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+        reason: 'The JSON endpoints did not answer and the RSS fallback carries fewer fields per event.' };
+    }
+    if (key === 'nws') {
+      if (s.query && s.query !== 'status=actual&message_type=alert&severity=Extreme,Severe') {
+        return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+          reason: 'The full alert query was rejected and a broader fallback was used: ' + s.query };
+      }
+      if (s.unplaceable > 0) {
+        return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+          reason: s.unplaceable + ' alert(s) could not be placed and were left out.' };
+      }
+    }
+    if (key === 'reliefweb' && s.unplacedCountries > 0) {
+      return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+        reason: s.unplacedCountries + ' declaration(s) named a country that could not be resolved and were left out.' };
+    }
+    return { status: COVERAGE_STATUS.SCANNED, reason: '' };
+  }
+
+  const scanId = 'scan-' + now.toISOString().replace(/[:.]/g, '-');
+  const freshest = {};
+  const served = {};
+  for (const e of out.events) {
+    const key = providerOf(e.source);
+    if (!key) continue;
+    served[key] = (served[key] || 0) + 1;
+    const t = Date.parse(e.updated || '');
+    if (Number.isFinite(t) && (!freshest[key] || t > freshest[key])) freshest[key] = t;
+  }
+
+  out.meta.scan = {
+    scanId: scanId,
+    scanTimestamp: now.toISOString(),
+    engineVersion: ENGINE_VERSION,
+    /* Said once, plainly, so nothing downstream has to infer it: this engine
+       evaluates what these providers publish. It does not sweep the world. */
+    coverageLimitation: 'This engine evaluates what the providers below publish. There is no global cell-by-cell scan, ' +
+      'and no claim is made about hazards outside each provider’s stated reach. A place absent from every provider ' +
+      'was not examined and must not be read as quiet.',
+    providers: Object.keys(PROVIDERS).map(key => {
+      const s = out.meta.sources[key];
+      const st = scanStatusOf(key, s);
+      return {
+        provider: key,
+        label: PROVIDERS[key].label,
+        hazards: PROVIDERS[key].hazards,
+        geographicCoverage: PROVIDERS[key].geographicCoverage,
+        coverageResolution: PROVIDERS[key].coverageResolution,
+        endpoint: PROVIDERS[key].endpoint,
+        status: st.status,
+        success: !!(s && s.ok),
+        failureReason: st.reason || null,
+        recordsEvaluated: (s && typeof s.records === 'number') ? s.records : (served[key] || 0),
+        recordsServed: served[key] || 0,
+        dataFreshness: freshest[key] ? new Date(freshest[key]).toISOString() : null,
+        checkedAt: (s && s.checkedAt) || null
+      };
+    })
+  };
+  out.meta.scan.coverage = out.meta.scan.providers.reduce((m, p) => {
+    m[p.status] = (m[p.status] || 0) + 1; return m;
+  }, {});
+
   // Severity is comparable across hazards; alert level is not, because each
   // agency publishes its own scale. Lead time says whether a forecast was
   // issued ahead of its window or merely restates something already under way.
