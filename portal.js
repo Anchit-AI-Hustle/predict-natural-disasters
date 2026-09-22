@@ -203,22 +203,130 @@ const PND={
   startTour(force=false){
     if(!force&&localStorage.getItem('pnd_tour_done'))return;
     const steps=[
-      {sel:'#map',title:'Global Live Hazard Map',text:'See active hazards worldwide. Pan, zoom and select a marker for the underlying event.',fallback:'/live-map'},
+      {sel:'#leafletMap,#map',title:'Global Live Hazard Map',text:'See active hazards worldwide. Pan, zoom and select a marker for the underlying event.',fallback:'/live-map'},
       {sel:'button[onclick*="personal-risk"],.side-item[onclick*="personal-risk"]',title:'Personal Risk',text:'Save Home, Office, Family or Travel locations and monitor hazards relevant to those places.',fallback:'/personal-risk'},
       {sel:'.utility-home-grid button:nth-child(2)',title:'What should I do now?',text:'Open an active event to see severity, evidence, official sources and immediate safety priorities.',fallback:'/events'},
       {sel:'button[onclick*="forecasts"],a[href="/forecasts"]',title:'Forecasts + provenance',text:'See what may happen next and whether the information is an official warning, observed event or model outlook.',fallback:'/forecasts'},
       {sel:'button[onclick*="accuracy"],a[href="/accuracy"]',title:'Verification & Track Record',text:'Audit verified predictions, partials, false alarms, missed events and coverage failures.',fallback:'/accuracy'}
     ];
     let i=0,old=document.activeElement,scrollY=window.scrollY;
+    /* The frame callback is optional too, for the same reason as the
+       scrolling calls above: a harness with no visual loop has none. */
+    const raf=typeof requestAnimationFrame==='function'?requestAnimationFrame:(fn=>setTimeout(fn,16));
     const root=document.createElement('div');root.className='pnd-coach';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');
     root.innerHTML='<div class="coach-shade"></div><div class="coach-ring" aria-hidden="true"></div><div class="coach-card"><div class="coach-top"><span class="coach-progress"></span><button class="coach-x" data-a="skip" aria-label="Close tour">×</button></div><h2></h2><p></p><div class="coach-actions"><button data-a="skip">Skip tour</button><button data-a="back">Back</button><a data-a="open">Open feature</a><button data-a="next">Next</button></div><div class="coach-arrow" aria-hidden="true"></div></div>';
     document.body.appendChild(root);const card=root.querySelector('.coach-card'),ring=root.querySelector('.coach-ring');let target=null;
-    const place=()=>{const st=steps[i];target=document.querySelector(st.sel);if(!target){ring.style.display='none';card.style.left='50%';card.style.top='50%';card.style.transform='translate(-50%,-50%)';return}target.scrollIntoView({block:'center',inline:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});requestAnimationFrame(()=>setTimeout(()=>{const r=target.getBoundingClientRect(),pad=7;ring.style.display='block';ring.style.left=(r.left-pad)+'px';ring.style.top=(r.top-pad)+'px';ring.style.width=(r.width+pad*2)+'px';ring.style.height=(r.height+pad*2)+'px';const cw=Math.min(390,innerWidth-24),below=r.bottom+16,above=r.top-210;card.style.width=cw+'px';card.style.transform='none';card.style.left=Math.max(12,Math.min(innerWidth-cw-12,r.left+r.width/2-cw/2))+'px';card.style.top=((below+190<innerHeight)?below:Math.max(12,above))+'px'},80),0)};
+    const clamp=(v,lo,hi)=>Math.max(lo,Math.min(Math.max(lo,hi),v));
+    /*
+     * Where the card goes.
+     *
+     * Everything here is in pixels the script has measured, and the card is
+     * never moved by a percentage translate. It used to be: with no target the
+     * card was centred with left:50% and translate(-50%,-50%), which is fine
+     * until a stylesheet has an opinion about left. The phone breakpoint did --
+     * it forced left:12px!important -- and nothing overrode the translate, so
+     * the card sat 12px from the edge and was then dragged half its own width
+     * off the left of the screen. On a 390px phone that put its Back and Open
+     * buttons at -154px and -41px: the tutorial was unreadable and unusable on
+     * every phone, and only on phones.
+     */
+    const put=(r)=>{
+      const cw=Math.min(390,innerWidth-24);
+      card.style.width=cw+'px';
+      card.style.transform='none';
+      /* Measured, not assumed: the old code tested against a hard-coded 190 and
+         190 is not what the card is once its text wraps on a narrow screen. */
+      const ch=card.offsetHeight||190;
+      const maxL=innerWidth-cw-12,maxT=innerHeight-ch-12;
+      let left,top,above=false;
+      if(r){
+        left=clamp(r.left+r.width/2-cw/2,12,maxL);
+        const under=r.bottom+16,over=r.top-ch-16;
+        if(under+ch+12<=innerHeight)top=under;
+        else if(over>=12){top=over;above=true}
+        /* Neither side has room -- a target taller than the screen minus the
+           card. Pinned to whichever edge has more space, so it covers as
+           little of the thing it describes as possible, rather than landing
+           dead centre on top of it. */
+        else if(innerHeight-r.bottom>=r.top)top=innerHeight-ch-12;
+        else top=12;
+      } else {
+        left=(innerWidth-cw)/2;
+        top=(innerHeight-ch)/2;
+      }
+      card.style.left=clamp(left,12,maxL)+'px';
+      card.style.top=clamp(top,12,maxT)+'px';
+      card.classList.toggle('above',above);
+      /* The arrow points at what is being described, rather than at whatever
+         happens to be under the middle of the card once it has been clamped. */
+      card.classList.toggle('no-arrow',!r);
+      if(r){const ax=clamp(r.left+r.width/2-clamp(left,12,maxL)-8,10,cw-24);card.style.setProperty('--arrow-x',ax+'px')}
+    };
+    /* A step whose target has not rendered yet is retried before it is given up
+       on: the tour opens 650ms after load and the map it describes first is
+       drawn from the feed, so on a slow connection every step fell through to
+       the centred card with no highlight at all. */
+    let tries=0;
+    const place=()=>{const st=steps[i];target=document.querySelector(st.sel);
+      if(!target){ring.style.display='none';put(null);if(tries++<12)setTimeout(place,250);return}
+      tries=0;
+      /* A target taller than about half the screen is scrolled to the top
+         rather than the middle, because centring it leaves no room either side
+         for the card that describes it. */
+      const r0=target.getBoundingClientRect();
+      /* Centring a target only works if what is left either side can hold the
+         card. A 300px map centred on a 667px phone leaves 183px a side and the
+         card is 210, so it had nowhere to go but on top of the map. When
+         centring would not leave room, the target goes to the top instead and
+         the card sits under it. */
+      const roomIfCentred=(innerHeight-r0.height)/2;
+      /* matchMedia is not guaranteed: it is absent in the test harness, and
+         asking for it unguarded threw a ReferenceError that took the whole
+         tour down. A missing media-query API is not a reason to lose the
+         tutorial; it just means the motion preference is unknown. */
+      const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const smooth=reduced?'auto':'smooth';
+      /* Scrolled by hand rather than with block:'start', which aligns the
+         target flush to the top edge and leaves the highlight's own 7px
+         outline above the screen. */
+      /* Both scrolling calls are optional: neither exists in the test harness,
+         and an environment without them should still get a placed card rather
+         than a TypeError that kills the tour. Nothing below depends on the
+         scroll having happened -- the position is measured afterwards either
+         way. */
+      try{
+        if(roomIfCentred<246){if(typeof scrollTo==='function')scrollTo({top:Math.max(0,scrollY+r0.top-16),behavior:smooth})}
+        else if(typeof target.scrollIntoView==='function')target.scrollIntoView({block:'center',inline:'center',behavior:smooth});
+      }catch(e){ /* a harness without a scrolling view */ }
+      /* Measured once the scroll has stopped, not 80ms after it started. A
+         smooth scroll is still moving at 80ms, so the highlight was drawn
+         around wherever the target happened to be mid-flight: on a 667px phone
+         it landed at y=861, entirely below the screen, with the card dutifully
+         positioned against it. */
+      let lastY=null,still=0,frames=0;
+      const settle=()=>{
+        if(!target||!target.isConnected||!root.isConnected)return;
+        frames++;
+        const y=window.scrollY;
+        if(lastY!==null&&Math.abs(y-lastY)<0.5)still++;else still=0;
+        lastY=y;
+        /* A smooth scroll has not necessarily started moving on the first
+           frames, so an early run of identical positions is the page sitting
+           still before the animation begins, not the animation having
+           finished. Believing it put the highlight 865px down a 915px screen.
+           Stability counts only after the scroll has had time to start. */
+        if((frames<12||still<3)&&frames<90){raf(settle);return}
+        const r=target.getBoundingClientRect(),pad=7;ring.style.display='block';ring.style.left=(r.left-pad)+'px';ring.style.top=(r.top-pad)+'px';ring.style.width=(r.width+pad*2)+'px';ring.style.height=(r.height+pad*2)+'px';put(r);
+      };
+      raf(settle);};
     const draw=()=>{const st=steps[i];root.querySelector('.coach-progress').textContent=`${i+1} of ${steps.length}`;root.querySelector('h2').textContent=st.title;root.querySelector('p').textContent=st.text;root.querySelector('[data-a=open]').href=st.fallback;root.querySelector('[data-a=back]').disabled=i===0;root.querySelector('[data-a=next]').textContent=i===steps.length-1?'Done':'Next';place()};
-    const close=done=>{if(done)localStorage.setItem('pnd_tour_done','1');root.remove();window.scrollTo({top:scrollY,behavior:'auto'});old&&old.focus&&old.focus()};
+    const close=done=>{if(done)localStorage.setItem('pnd_tour_done','1');removeEventListener('resize',onResize);removeEventListener('orientationchange',onResize);root.remove();window.scrollTo({top:scrollY,behavior:'auto'});old&&old.focus&&old.focus()};
     root.addEventListener('click',e=>{const x=e.target.dataset.a;if(x==='skip')close(true);if(x==='back'&&i){i--;draw()}if(x==='next'){if(i===steps.length-1)close(true);else{i++;draw()}}});
     root.addEventListener('keydown',e=>{if(e.key==='Escape')close(true);if(e.key==='Tab'){const f=[...root.querySelectorAll('button:not([disabled]),a')];const n=f.indexOf(document.activeElement);if(e.shiftKey&&n<=0){e.preventDefault();f.at(-1).focus()}else if(!e.shiftKey&&n===f.length-1){e.preventDefault();f[0].focus()}}});
-    addEventListener('resize',place,{once:true});draw();setTimeout(()=>root.querySelector('[data-a=next]').focus(),100)
+    /* Rotating the phone changes every number above, so this is not a
+       one-shot listener any more; it is removed when the tour closes. */
+    const onResize=()=>place();addEventListener('resize',onResize);addEventListener('orientationchange',onResize);
+    draw();setTimeout(()=>root.querySelector('[data-a=next]').focus(),100)
   },
   replayTour(){localStorage.removeItem('pnd_tour_done');this.startTour(true)},
   nav(active=''){setTimeout(()=>this.initTimezonePicker(),0);return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Personal Risk','/personal-risk'],['Verification','/accuracy'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px"></select><a class="live" href="/events">● Live</a></header>`;},
