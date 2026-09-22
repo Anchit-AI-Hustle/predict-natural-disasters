@@ -21,13 +21,21 @@
  *   npm install playwright@1.49.1 leaflet@1.9.4
  *   SITE_ROOT=/path/to/repo LEAFLET_DIST=$PWD/node_modules/leaflet/dist \
  *     PLAYWRIGHT=$PWD/node_modules/playwright node /path/to/repo/tools/tour-browser-check.js
+ *
+ * Set CHROMIUM=/path/to/chrome if Playwright's own browser download was skipped.
  */
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { chromium } = require(process.env.PLAYWRIGHT || 'playwright');
 
 const ROOT = process.env.SITE_ROOT || path.resolve(__dirname, '..');
+/* Screenshots go somewhere of their own. Written to the working directory they
+   landed in the repo root, so every run left twelve untracked PNGs behind and
+   a clean checkout stopped being clean. Set SHOTS_DIR to put them elsewhere. */
+const SHOTS = process.env.SHOTS_DIR || path.join(os.tmpdir(), 'tour-shots');
+fs.mkdirSync(SHOTS, { recursive: true });
 const LEAFLET = process.env.LEAFLET_DIST;
 if (!LEAFLET) {
   console.error('set LEAFLET_DIST (and PLAYWRIGHT) — see the header of this file');
@@ -83,7 +91,34 @@ const PAGES = (process.env.PAGES || 'index,personal-risk').split(',').map(s => s
  * describe homepage furniture. That is the current state, recorded so it
  * cannot get worse without saying so -- not a claim that 2 is right.
  */
-const EXPECT_RINGS = { index: 5, 'personal-risk': 2 };
+/* personal-risk was pinned at 2. Those two were the tutorial highlighting
+   itself: draw() puts the step's fallback URL on the coach's own "Open
+   feature" anchor, and the step then searched the document for a link with
+   that href. On a phone, with the real header link display:none and skipped
+   as off-screen, the coach's anchor was the only match left - step 4 ringed
+   that button and step 5 ringed where it had been before the card moved,
+   both 120x71 at 390x844. Excluding the coach from target selection leaves
+   the true count, which is 0: the page has a map-less body and three of its
+   steps describe homepage furniture.
+
+   Recorded here so it cannot quietly get worse, and explicitly NOT endorsed -
+   a tour that highlights nothing on the page it is running on still needs
+   real targets. */
+const EXPECT_RINGS = {
+  index: () => 5,
+  /* Breakpoint-dependent, which is what Codex said in the first place and I
+     dismissed because I measured 2 at every size. Those 2 were the tutorial
+     ringing its own "Open feature" button, so the number was the same
+     everywhere for the wrong reason. With the coach excluded from target
+     selection the real counts appear, and they differ:
+
+       below 760px  `.top nav` is display:none, so neither the forecasts nor
+                    the accuracy step finds anything -> 0
+       768px        the nav is back, so the forecasts link is a real target;
+                    the accuracy link is still hidden by
+                    `.nav a:nth-child(n+7)` at <=1150px            -> 1 */
+  'personal-risk': w => (w >= 760 ? 1 : 0)
+};
 
 const measure = () => {
   const card = document.querySelector('.coach-card');
@@ -106,10 +141,14 @@ const measure = () => {
 
 (async () => {
   await new Promise(r => server.listen(8097, r));
-  const browser = await chromium.launch({
-    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-    args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader']
-  });
+  /* Playwright finds its own browser; CHROMIUM overrides that for a machine
+     where the download was skipped and one is installed elsewhere. Hard-coding
+     this environment's path broke the standalone workflow in the header above,
+     which installs Playwright and expects its own Chromium. */
+  const browser = await chromium.launch(Object.assign(
+    { args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'] },
+    process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}
+  ));
   let failures = 0, checked = 0;
 
   for (const page0 of PAGES) {
@@ -139,8 +178,28 @@ const measure = () => {
          the card against a different target, and one of them being off-screen
          is exactly the failure this exists to catch. */
       let step = 0, bad = 0, lines = [], rings = 0;
+      /* Waits for the step to settle rather than for a fixed interval. The tour
+         retries a missing target for about three seconds, and a page whose body
+         is built from the feed can produce that target part-way through — on
+         personal-risk the forecast and verification steps find nothing at 3s
+         and a visible card by 9s. A fixed wait made the highlight count depend
+         on how fast the page happened to load, which is not something to pin an
+         expectation on. This returns as soon as a highlight is up and otherwise
+         waits out the tour's retry window. */
+      const settle = async () => {
+        const deadline = Date.now() + 4500;
+        while (Date.now() < deadline) {
+          if (await page.evaluate(() => {
+            const el = document.querySelector('.coach-ring');
+            return !!el && getComputedStyle(el).display !== 'none';
+          })) return;
+          await page.waitForTimeout(250);
+        }
+      };
       while (step < 5) {
-        await page.waitForTimeout(2200);
+        await settle();
+        /* and a beat for the card to finish being placed against it */
+        await page.waitForTimeout(600);
         const m = await page.evaluate(measure);
         if (m.missing) { lines.push('    step ' + (step + 1) + ': card vanished'); bad++; break; }
         checked++;
@@ -149,8 +208,13 @@ const measure = () => {
         const g = m.ring;
         const ringOff = g ? (g.l < -8 || g.t < -8 || g.r > m.vw + 8 || g.b > m.vh + 8) : false;
         const covers = g ? !(m.r <= g.l || m.l >= g.r || m.bo <= g.t || m.t >= g.b) : false;
-        if (g) rings++;
-        const ok = !offL && !offR && !offT && !offB && !btn.length && !ringOff && !covers;
+        /* A ring has to be big enough to be a highlight. A hidden element has a
+           0x0 rectangle at the origin, which draws a 14px ring at (-7,-7) --
+           inside the tolerance below, and counted as a highlight. That is the
+           stale-or-hidden selector this checker exists to catch, passing. */
+        const tiny = g ? (g.r - g.l < 24 || g.b - g.t < 24) : false;
+        if (g && !tiny) rings++;
+        const ok = !offL && !offR && !offT && !offB && !btn.length && !ringOff && !covers && !tiny;
         if (!ok) {
           bad++;
           lines.push('    ' + (m.step || 'step ' + (step + 1)) + ': card ' +
@@ -158,13 +222,15 @@ const measure = () => {
             (offL ? ' OFF-LEFT' : '') + (offR ? ' OFF-RIGHT' : '') +
             (offT ? ' OFF-TOP' : '') + (offB ? ' OFF-BOTTOM' : '') +
             (ringOff ? ' RING-OFFSCREEN' : '') + (covers ? ' CARD-COVERS-RING' : '') +
+            (tiny ? ' RING-TOO-SMALL(' + (g.r - g.l) + 'x' + (g.b - g.t) + ') — a hidden target' : '') +
             btn.map(b => ' BUTTON-CLIPPED("' + b.t + '" ' + b.l + '..' + b.r + ')').join(''));
         }
         step++;
         if (step < 5) await page.click('.coach-card [data-a=next]');
       }
       if (errors.length) { bad++; lines.push('    page error: ' + errors[0].slice(0, 120)); }
-      const want = EXPECT_RINGS[page0];
+      const spec = EXPECT_RINGS[page0];
+      const want = typeof spec === 'function' ? spec(w) : spec;
       if (want !== undefined && rings !== want) {
         bad++;
         lines.push('    highlighted ' + rings + ' of 5 steps, expected ' + want +
@@ -174,12 +240,13 @@ const measure = () => {
       console.log((bad ? '  FAIL ' : '  ok   ') + (page0 + ' / ' + name).padEnd(30) +
         ' ' + w + 'x' + h + ' — ' + step + ' steps, ' + rings + ' highlighted');
       lines.forEach(l => console.log(l));
-      await page.screenshot({ path: 'tour-' + page0 + '-' + name.replace(/\s+/g, '-') + '.png' });
+      await page.screenshot({ path: path.join(SHOTS, 'tour-' + page0 + '-' + name.replace(/\s+/g, '-') + '.png') });
       await ctx.close();
     }
   }
   console.log('\nchecks: ' + checked + ' across ' + (PAGES.length * SIZES.length) +
     ' page/size combinations, failing combinations: ' + failures);
+  console.log('screenshots: ' + SHOTS);
   await browser.close();
   server.close();
   /* A checker that reports failures and exits 0 reads as green to anything

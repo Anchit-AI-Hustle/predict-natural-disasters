@@ -193,7 +193,17 @@ const PND={
   inferCollection(text=''){const t=String(text).toLowerCase();if(/map/.test(t))return 'map';if(/calamit/.test(t))return 'calamities';if(/forecast|prediction|outlook/.test(t))return 'forecasts';if(/warning|alert/.test(t))return 'alerts';if(/region|country|location/.test(t))return 'regions';if(/histor/.test(t))return 'historical';if(/hazard|disaster type/.test(t))return 'hazards';if(/source/.test(t))return 'sources';if(/verif/.test(t))return 'verification';if(/calendar/.test(t))return 'calendar';if(/compare/.test(t))return 'compare';if(/notification/.test(t))return 'notifications';return 'events';},
   routeFromDataset(el){if(!el||!el.dataset)return '';const d=el.dataset;if(d.href)return this.canonicalDetailUrl(d.href);if(d.eventId)return '/disasters/'+this.enc(d.eventId);if(d.calamityId)return '/calamities/'+this.enc(d.calamityId);if(d.forecastId)return '/forecasts/'+this.enc(d.forecastId);if(d.alertId)return '/alerts/'+this.enc(d.alertId);if(d.historicalId)return '/history/'+this.enc(d.historicalId);if(d.region)return this.regionUrl(d.region);if(d.location)return this.locationUrl(d.location);if(d.hazard)return this.hazardUrl(d.hazard,d.region||'');if(d.source)return this.sourceDetailUrl(d.source);if(d.kind&&d.id)return this.detailUrl(d.kind,{id:d.id,name:d.name||d.id,type:d.type||d.id,source:d.source||d.id});return '';},
   setTimezone(tz){this.timezone=tz||'Asia/Kolkata';localStorage.setItem('pnd_timezone',this.timezone);location.reload();},
-  initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s)return;const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);s.innerHTML=preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'?'IST · India':z)}</option>`).join('');},
+  /* The options are built into the markup nav() returns rather than injected
+     into it afterwards. Filling the picker from a timer meant the header could
+     be in the page with an empty dropdown in it for as long as the timer took
+     to run - on a busy machine the whole parse, every script and the entire
+     promise-driven data load can complete in one turn, so that "moment" lasted
+     over a second and anything looking at the page in it saw a dropdown with
+     nothing to pick. */
+  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'?'IST · India':z)}</option>`).join('');},
+  /* Still here for a header put into the page some other way; a no-op once the
+     markup already carries its own options. */
+  initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s||s.options.length)return;s.innerHTML=this.timezoneOptions();},
   provenance(e){if(e&&e.sourceType==='official')return e.alert&&['Red','Orange'].includes(e.alert)?'OFFICIAL WARNING':'OBSERVED EVENT';if(e&&e.forecastKind==='frozen-benchmark')return 'EXPERIMENTAL PREDICTION';if(e&&e.forecast)return 'MODEL-DERIVED OUTLOOK';return 'OBSERVED EVENT';},
   savedLocations(){try{return JSON.parse(localStorage.getItem('pnd_saved_locations')||'[]')}catch(e){return[]}},
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
@@ -267,8 +277,34 @@ const PND={
        drawn from the feed, so on a slow connection every step fell through to
        the centred card with no highlight at all. */
     let tries=0;
-    const place=()=>{const st=steps[i];target=document.querySelector(st.sel);
-      if(!target){ring.style.display='none';put(null);if(tries++<12)setTimeout(place,250);return}
+    /* The first match that is actually on the page, not merely in the DOM.
+       Several steps name both a header link and a card that do the same thing,
+       and the header nav is display:none below 760px -- so on a phone
+       querySelector handed back a hidden link, its rectangle was 0x0 at 0,0,
+       and the tour drew a 14px highlight in the top-left corner and pointed
+       the card at it. Three of the five steps did this on an iPhone 14. */
+    const onScreen=el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0};
+    /* And not the tutorial's own furniture. draw() puts the step's fallback
+       URL on the coach's "Open feature" anchor before place() goes looking,
+       so a step whose selector names a link -- a[href="/forecasts"] -- finds
+       that anchor sitting in the document with exactly that href. On a phone,
+       where the real header link is display:none and skipped as off-screen,
+       it was the only match left: on personal-risk step 4 ringed the coach's
+       own Open feature button, and step 5 ringed where that button had been
+       before put() moved the card. Measured at 390x844, both at 120x71.
+       A tour that highlights itself also hides that it found nothing, because
+       the missing-target retry never runs. */
+    const pick=sel=>{const all=document.querySelectorAll(sel);
+      for(let k=0;k<all.length;k++)if(!root.contains(all[k])&&onScreen(all[k]))return all[k];
+      return null};
+    const place=()=>{const st=steps[i];target=pick(st.sel);
+      /* The previous step's highlight comes down before the next one goes up.
+         It used to stay on screen for the whole scroll to the next target,
+         ringing whatever happened to be underneath on the way -- and it left
+         the tour with no state that says "this step is placed", so a checker
+         waiting for a highlight saw the old one and measured mid-flight. */
+      ring.style.display='none';
+      if(!target){put(null);if(tries++<12)setTimeout(place,250);return}
       tries=0;
       /* A target taller than about half the screen is scrolled to the top
          rather than the middle, because centring it leaves no room either side
@@ -329,7 +365,7 @@ const PND={
     draw();setTimeout(()=>root.querySelector('[data-a=next]').focus(),100)
   },
   replayTour(){localStorage.removeItem('pnd_tour_done');this.startTour(true)},
-  nav(active=''){setTimeout(()=>this.initTimezonePicker(),0);return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Personal Risk','/personal-risk'],['Verification','/accuracy'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px"></select><a class="live" href="/events">● Live</a></header>`;},
+  nav(active=''){return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Personal Risk','/personal-risk'],['Verification','/accuracy'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
   sourceBadge(e){return `<span class="source" data-source="${this.esc(e&&e.source||'Source')}">${this.esc(e&&e.source||'Source')}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
      a date range: a joined pair of dates reads as one continuous event, and a second
