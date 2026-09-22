@@ -18,6 +18,12 @@
  * Exits 0 whether or not anything was added; the caller checks git for a diff.
  */
 const fs = require('fs');
+const path = require('path');
+/* Same classifier the API and the pages use, so the ledger cannot drift into
+   its own opinion of what a forecast is. */
+let HAZARDS = null;
+try { HAZARDS = require(path.join(__dirname, '..', 'hazard-model.js')); }
+catch (e) { HAZARDS = null; }
 
 const [, , eventsPath, ledgerPath] = process.argv;
 if (!eventsPath || !ledgerPath) {
@@ -43,11 +49,15 @@ const key = o => String(o.id) + '@' + String(o.targetStart);
 const seen = new Set(ledger.map(key));
 
 const FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region', 'lat', 'lon',
-  'alert', 'severity', 'severityRank', 'issuedAt', 'targetStart', 'targetEnd',
-  'forecastKind', 'forecastOf', 'source', 'sourceUrl', 'confidence', 'evidence',
-  'verificationRule'];
+  'alert', 'severity', 'severityRank', 'issuedAt', 'sourceIssuedAt', 'targetStart',
+  'targetEnd', 'forecastKind', 'forecastClass', 'classificationReason',
+  'effectiveForecastStart', 'forecastOf', 'source', 'sourceUrl', 'confidence',
+  'evidence', 'verificationRule'];
 
 const recordedAt = new Date().toISOString();
+/* The signal a derived outlook came from, needed to tell a forecast derived
+   from an official warning apart from one derived from an observation. */
+const byId = new Map(events.map(e => [e.id, e]));
 const added = [];
 
 for (const e of events) {
@@ -57,6 +67,33 @@ for (const e of events) {
   seen.add(key(e));
   const row = { recordedAt };
   for (const f of FIELDS) if (e[f] !== undefined) row[f] = e[f];
+  /* Writing this row is itself the proof that the forecast existed, so unless
+     the feed can already point at something earlier in the repository - the
+     commit behind a hand-frozen record - this row's own timestamp is the
+     freeze. Taking the earlier of the two keeps the ledger consistent with
+     what the repository can show, rather than with when the job happened to
+     run. Once written it is never revisited: rows already present are not
+     touched by this tool. */
+  const claimed = Date.parse(e.freezeTimestamp || '');
+  const evidenced = e.freezeEvidenced === true &&
+    Number.isFinite(claimed) && claimed < Date.parse(recordedAt);
+  row.freezeTimestamp = evidenced ? e.freezeTimestamp : recordedAt;
+  row.freezeBasis = evidenced
+    ? (e.freezeBasis || 'Earlier repository record carried by the feed.')
+    : 'First row recorded for this forecast in the append-only ledger.';
+  /* The feed worked from a freeze that had not happened yet - this row is the
+     thing that makes it happen - so the class and the effective window are
+     settled here, against the row as it is about to be written. Otherwise a
+     row could carry a window start a few milliseconds before the timestamp it
+     stores as its own proof, and a verifier reading the ledger alone would
+     find it inconsistent with itself. */
+  if (HAZARDS) {
+    row.freezeEvidenced = true;
+    const c = HAZARDS.classifyForecast(row, byId.get(row.forecastOf));
+    if (c) { row.forecastClass = c.forecastClass; row.classificationReason = c.classificationReason; }
+    const start = HAZARDS.effectiveForecastStart(row);
+    if (start) row.effectiveForecastStart = start;
+  }
   // Graded later, once the window has closed and evidence can be gathered.
   row.outcome = null;
   added.push(row);

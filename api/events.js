@@ -1466,6 +1466,91 @@ async function handler(req, res) {
     m[e.evidenceState] = (m[e.evidenceState] || 0) + 1; return m;
   }, {});
 
+  /* ------------------------------------------------- forecast causality */
+
+  /*
+   * When can this application prove it held a forecast?
+   *
+   * Not from issuedAt. For a derived outlook, issuedAt is the anchor time of
+   * the upstream signal - the moment the hazard was reported, which is before
+   * the outlook existed at all. Grading a window from there credits the system
+   * for the stretch between the hazard appearing and anything being written
+   * down about it.
+   *
+   * The defensible timestamp is the earliest immutable record: a row in the
+   * append-only outlook ledger, which lives in git. Where a record documents
+   * its own repository provenance - the frozen benchmark names the commit that
+   * introduced it - that stands. Failing both, the forecast is not known to
+   * have existed before this response computed it, and says so.
+   */
+  const ledgerFreeze = new Map();
+  if (Array.isArray(OUTLOOK_LEDGER)) {
+    for (const row of OUTLOOK_LEDGER) {
+      const k = String(row.id) + '@' + String(row.targetStart);
+      const at = row.freezeTimestamp || row.recordedAt;
+      /* Append-only, but a row can only ever have been written once; if two
+         carry the same key the earlier one is the one that proves existence. */
+      if (at && (!ledgerFreeze.has(k) || at < ledgerFreeze.get(k))) ledgerFreeze.set(k, at);
+    }
+  }
+
+  const byIdForClass = new Map(out.events.map(e => [e.id, e]));
+  const generatedAt = now.toISOString();
+
+  for (const e of out.events) {
+    if (!e.forecast) continue;
+    e.generatedAt = generatedAt;
+    /* What the upstream signal said about itself, kept under a name that says
+       whose claim it is. issuedAt stays put so older readers are unaffected. */
+    if (e.issuedAt && e.sourceIssuedAt === undefined) e.sourceIssuedAt = e.issuedAt;
+
+    /* The EARLIEST proof, not the first one looked at. A record can be backed
+       by more than one immutable artefact - the frozen benchmark names the
+       commit that introduced it and was also written to the ledger two days
+       later - and taking whichever came to hand would move a freeze later than
+       the repository can already show. Later is the safer direction, but it is
+       still not what the evidence says. */
+    const k = String(e.id) + '@' + String(e.targetStart);
+    const proofs = [];
+    if (ledgerFreeze.has(k)) {
+      proofs.push({ at: ledgerFreeze.get(k), basis: 'Earliest row in the append-only outlook ledger in the repository.' });
+    }
+    if (e.issuedAtBasis && e.issuedAt) {
+      proofs.push({ at: e.issuedAt, basis: e.issuedAtBasis });
+    }
+    proofs.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+    if (proofs.length) {
+      e.freezeTimestamp = proofs[0].at;
+      e.freezeBasis = proofs[0].basis;
+      e.freezeEvidenced = true;
+    } else {
+      /* A timestamp, but not a proof: this is when the response ran, which
+         nothing outside the response can check. Readers downstream - the
+         ledger writer, the classifier - need to be able to tell the two
+         apart, so the difference is stated rather than left to be inferred
+         from the wording. */
+      e.freezeTimestamp = generatedAt;
+      e.freezeBasis = 'Nothing in the repository records this forecast yet, so it is not established before the moment this response computed it.';
+      e.freezeEvidenced = false;
+    }
+
+    if (HAZARD_MODEL && HAZARD_MODEL.classifyForecast) {
+      const c = HAZARD_MODEL.classifyForecast(e, byIdForClass.get(e.forecastOf));
+      if (c) { e.forecastClass = c.forecastClass; e.classificationReason = c.classificationReason; }
+      e.effectiveForecastStart = HAZARD_MODEL.effectiveForecastStart(e);
+      const credited = HAZARD_MODEL.creditedWindowHours(e);
+      if (credited !== null) e.creditedWindowHours = Math.round(credited * 10) / 10;
+      const cls = HAZARD_MODEL.FORECAST_CLASSES[e.forecastClass];
+      e.countsTowardHeadlineAccuracy = !!(cls && cls.headline);
+    }
+  }
+
+  out.meta.forecastClass = out.events.reduce((m, e) => {
+    if (e.forecastClass) m[e.forecastClass] = (m[e.forecastClass] || 0) + 1;
+    return m;
+  }, {});
+  out.meta.headlineEligibleForecasts = out.events.filter(e => e.countsTowardHeadlineAccuracy).length;
+
   // Severity is comparable across hazards; alert level is not, because each
   // agency publishes its own scale. Lead time says whether a forecast was
   // issued ahead of its window or merely restates something already under way.

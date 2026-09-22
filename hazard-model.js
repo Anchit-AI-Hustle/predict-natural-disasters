@@ -639,6 +639,141 @@
     if (contains === false) return near ? out('D', APPLICABILITY.outsideWarning, false) : null;
     return near ? out('D', APPLICABILITY.areaLevel, false) : null;
   }
+  /* ------------------------------------------- what kind of forecast it is */
+
+  /*
+   * Not every forecast is a prediction.
+   *
+   * This project publishes outlooks derived from hazards that are already
+   * happening, aftershock outlooks that follow an observed mainshock, and one
+   * frozen benchmark written after its own window had opened. Grading all of
+   * them together and calling the result an accuracy figure credits the system
+   * for describing the present.
+   *
+   * So each forecast is placed in one of six classes, and only one of them -
+   * independent-prospective - may reach a headline prediction figure. The
+   * others are real forecasts and are graded, under their own labels.
+   */
+  var FORECAST_CLASSES = {
+    'independent-prospective': {
+      label: 'Independent prospective',
+      definition: 'Frozen before the qualifying hazard was observed.',
+      headline: true
+    },
+    'warning-derived': {
+      label: 'Warning-derived',
+      definition: 'Derived from an official warning that had already been issued.',
+      headline: false
+    },
+    'continuation-outlook': {
+      label: 'Continuation outlook',
+      definition: 'Written after the hazard existed, forecasting that it continues or escalates.',
+      headline: false
+    },
+    'post-event-conditional': {
+      label: 'Post-event conditional',
+      definition: 'Conditional on an event already observed, such as an aftershock sequence following a mainshock.',
+      headline: false
+    },
+    'retrospective-benchmark': {
+      label: 'Retrospective benchmark',
+      definition: 'A benchmark or backtest, not issued prospectively.',
+      headline: false
+    },
+    'invalid-post-event': {
+      label: 'Invalid post-event',
+      definition: 'Offered as prospective although nothing shows it existed before the window it claims.',
+      headline: false
+    }
+  };
+
+  function ms(v) { var t = Date.parse(v || ''); return isFinite(t) ? t : null; }
+
+  /**
+   * The class of one forecast, given the signal it was derived from where
+   * there is one. `parent` is the feed record named by forecastOf.
+   *
+   * Returns an object rather than a bare string, because a classification
+   * nobody can check is not much better than no classification: the reason is
+   * what a reader or an auditor needs.
+   */
+  function classifyForecast(f, parent) {
+    f = f || {};
+    if (!(f.forecast || f.isForecast)) return null;
+    var say = function (k, why) { return { forecastClass: k, classificationReason: why }; };
+
+    if (f.forecastKind === 'frozen-benchmark') {
+      return say('retrospective-benchmark',
+        'Recorded as a frozen benchmark rather than as a forecast issued ahead of its window.');
+    }
+    if (f.forecastKind === 'aftershock-sequence') {
+      return say('post-event-conditional',
+        'Conditional on an earthquake that had already been observed when this was written.');
+    }
+    if (f.forecastOf) {
+      if (parent && parent.evidenceState === 'official-warning') {
+        return say('warning-derived',
+          'Derived from an official warning that the issuing agency had already published.');
+      }
+      return say('continuation-outlook',
+        'Derived from a hazard already present in the feed, forecasting that it continues.');
+    }
+
+    /* Nothing declares where this came from, so it stands as its own claim and
+       has to be able to show it existed first. */
+    var freeze = ms(f.freezeTimestamp), start = ms(f.targetStart);
+    /* A freeze that nothing outside the running process can check is not a
+       freeze. Being unable to prove a forecast came first is the whole reason
+       this class exists, so an unevidenced one is never counted as one that
+       did. */
+    if (freeze === null || f.freezeEvidenced === false) {
+      return say('invalid-post-event',
+        'No immutable record establishes that this forecast existed before the window it claims, so it cannot be counted as a prediction.');
+    }
+    if (start === null) {
+      return say('invalid-post-event',
+        'The forecast names no window, so nothing can establish that it preceded one.');
+    }
+    if (freeze > start) {
+      return say('invalid-post-event',
+        'The earliest record of this forecast is later than the start of the window it claims.');
+    }
+    return say('independent-prospective',
+      'Frozen at ' + f.freezeTimestamp + ', before the window opening at ' + f.targetStart + '.');
+  }
+
+  /**
+   * The earliest moment an observation may be used to verify a forecast.
+   *
+   * An upstream issuedAt is what a provider says about itself; it is not proof
+   * this application held the forecast then. The defensible timestamp is the
+   * earliest immutable record of it - the append-only ledger in the repository
+   * - and a window cannot be credited from before the forecast is known to
+   * have existed.
+   */
+  function effectiveForecastStart(f) {
+    f = f || {};
+    var start = ms(f.targetStart), freeze = ms(f.freezeTimestamp);
+    if (start === null && freeze === null) return null;
+    if (start === null) return f.freezeTimestamp;
+    if (freeze === null) return f.targetStart;
+    return freeze > start ? f.freezeTimestamp : f.targetStart;
+  }
+
+  /** May an observation at this time be used to verify this forecast? */
+  function observationCanVerify(f, observedAt) {
+    var from = ms(effectiveForecastStart(f)), end = ms((f || {}).targetEnd), at = ms(observedAt);
+    if (at === null || from === null) return false;
+    if (at < from) return false;
+    return end === null ? true : at <= end;
+  }
+
+  /** How much of a claimed window the application can actually be credited for. */
+  function creditedWindowHours(f) {
+    var from = ms(effectiveForecastStart(f)), end = ms((f || {}).targetEnd);
+    if (from === null || end === null) return null;
+    return Math.max(0, (end - from) / H);
+  }
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
@@ -648,7 +783,11 @@
     keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,
     geometryContains: geometryContains, distanceKm: distanceKm,
     riskRow: riskRow, RISK_BANDS: RISK_BANDS, RISK_RADIUS_KM: RISK_RADIUS_KM,
-    APPLICABILITY: APPLICABILITY
+    APPLICABILITY: APPLICABILITY,
+    FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
+    effectiveForecastStart: effectiveForecastStart,
+    observationCanVerify: observationCanVerify,
+    creditedWindowHours: creditedWindowHours
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PNDHazards = api;

@@ -74,6 +74,62 @@ function stateOf(record, now) {
   return end > (now == null ? Date.now() : now) ? 'OPEN' : 'AWAITING';
 }
 
+/* The hazard model, wherever this file is running. The page loads it as a
+   script; node requires it. Looked up when asked rather than at load time,
+   because in the browser this file is parsed before it. */
+function hazards() {
+  if (typeof PNDHazards !== 'undefined' && PNDHazards) return PNDHazards;
+  if (typeof globalThis !== 'undefined' && globalThis.PNDHazards) return globalThis.PNDHazards;
+  if (typeof require === 'function') {
+    try { return require('./hazard-model.js'); } catch (e) { /* not available here */ }
+  }
+  return null;
+}
+
+/* What kind of forecast a ledger row holds.
+ *
+ * Rows written before the taxonomy existed carry only forecastKind, so the
+ * class is derived on read rather than written back: the ledger is
+ * append-only and a recorded claim is not edited to suit a later scheme.
+ *
+ * An unclassifiable row returns null and counts toward no headline. Being
+ * unable to establish that a forecast came first is exactly the case that
+ * must not be credited as one that did.
+ */
+function forecastClassOf(r) {
+  if (r && r.forecastClass) return r.forecastClass;
+  const H = hazards();
+  if (!H || !H.classifyForecast) return null;
+  const c = H.classifyForecast(Object.assign({ forecast: true }, r || {}));
+  return c ? c.forecastClass : null;
+}
+
+/* May this record count toward a headline "we predicted this" figure? */
+function headlineEligible(r) {
+  const H = hazards(), k = forecastClassOf(r);
+  if (!k || !H || !H.FORECAST_CLASSES) return false;
+  const def = H.FORECAST_CLASSES[k];
+  return !!(def && def.headline);
+}
+
+/* The same records split by what they are allowed to claim. Conditional
+   forecasts are graded too - they are simply graded under their own name. */
+function partitionByClass(records) {
+  const out = { headline: [], conditional: [], unclassified: [], byClass: {} };
+  for (const r of records || []) {
+    /* An observed event with no forecast behind it is a miss, not a forecast;
+       it belongs to recall on both sides of the split. */
+    const isForecastRow = !!(r && (r.targetStart || r.targetEnd || r.forecastKind || r.forecastClass));
+    const k = isForecastRow ? forecastClassOf(r) : null;
+    if (k) (out.byClass[k] = out.byClass[k] || []).push(r);
+    if (!isForecastRow) { out.headline.push(r); out.conditional.push(r); continue; }
+    if (!k) out.unclassified.push(r);
+    else if (headlineEligible(r)) out.headline.push(r);
+    else out.conditional.push(r);
+  }
+  return out;
+}
+
 /* Counts, plus every rate with the denominator it was computed from. A rate
    printed without its denominator hides that it came from three records. */
 function tally(records, now) {
@@ -114,8 +170,10 @@ function rate(hit, total) {
 /* What the ledger froze: exactly the fields tools/record-outlooks.js writes.
    A verdict may add to a record but never change any of these. */
 const CLAIM_FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region',
-  'lat', 'lon', 'alert', 'severity', 'severityRank', 'issuedAt', 'targetStart',
-  'targetEnd', 'forecastKind', 'forecastOf', 'source', 'sourceUrl',
+  'lat', 'lon', 'alert', 'severity', 'severityRank', 'issuedAt', 'sourceIssuedAt',
+  'targetStart', 'targetEnd', 'forecastKind', 'forecastClass',
+  'classificationReason', 'effectiveForecastStart', 'freezeTimestamp',
+  'freezeBasis', 'forecastOf', 'source', 'sourceUrl',
   'confidence', 'evidence', 'verificationRule'];
 
 /* Attaching a verdict to the window it judged.
@@ -182,7 +240,8 @@ function joinVerdicts(rows, verifications) {
 }
 
 const V = { VERDICTS, OCCURRED, LABELS, CSS, normalise, stateOf, tally, rate,
-  windowKey, joinVerdicts, CLAIM_FIELDS };
+  windowKey, joinVerdicts, CLAIM_FIELDS,
+  forecastClassOf, headlineEligible, partitionByClass };
 if (typeof window !== 'undefined') window.PNDVerdicts = V;
 if (typeof module !== 'undefined' && module.exports) module.exports = V;
 })();
