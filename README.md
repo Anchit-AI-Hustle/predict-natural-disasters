@@ -17,10 +17,18 @@ provider outage degrades coverage instead of emptying the feed:
 | USGS Earthquake Hazards Program | Earthquakes, M2.5+ over 7 days |
 | EMSC / seismicportal | Independent seismic cross-check, M4.5+ |
 | NASA EONET | Satellite-observed open natural events |
-| NOAA National Hurricane Center | Active tropical cyclones |
+| NOAA National Hurricane Center | Active tropical cyclones, Atlantic and eastern/central Pacific basins only |
 | NOAA / National Weather Service | Active Extreme and Severe US warnings with mapped geometry |
 | ReliefWeb (UN OCHA) | Listed humanitarian disasters, from the public RSS feed |
-| USGS Volcano Hazards Program | Volcanoes at elevated alert level |
+| USGS Volcano Hazards Program | Volcanoes at elevated alert level, US observatory network only |
+
+These providers define the coverage. There is no global cell-by-cell scan: a
+hazard below a provider's threshold, or outside the region it publishes for, is
+not seen here, and an absence of records for a place is not evidence that the
+place is quiet. What each run actually evaluated is recorded in
+`data/scan-ledger.json`, with a status per provider, and the verification page
+reports a disaster whose coverage cannot be established as exactly that rather
+than as a forecasting failure.
 
 Per-source status, record counts and failure reasons (including the upstream's
 own error body) are returned in `meta.sources`.
