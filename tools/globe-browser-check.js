@@ -19,6 +19,8 @@
  *   CESIUM_BUILD=$PWD/package/Build/Cesium LEAFLET_DIST=$PWD/node_modules/leaflet/dist \
  *     node /path/to/repo/tools/globe-browser-check.js
  *
+ * Set CHROMIUM=/path/to/chrome if Playwright's own browser download was skipped.
+ *
  * unpkg is unreachable from this environment, so the two CDN libraries the
  * pages load are intercepted and fulfilled from those local copies. Esri
  * imagery and Re:Earth terrain are deliberately left to fail: the globe is
@@ -76,11 +78,14 @@ const server = http.createServer(async (req, res) => {
 
 (async () => {
   await new Promise(r => server.listen(8099, r));
-  const browser = await chromium.launch({
-    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-    args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader',
-           '--ignore-gpu-blocklist', '--enable-webgl']
-  });
+  /* Playwright finds its own browser; CHROMIUM overrides that where the
+     download was skipped and one is installed elsewhere. Pinning this
+     environment's path broke the standalone workflow in the header above. */
+  const browser = await chromium.launch(Object.assign(
+    { args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader',
+             '--ignore-gpu-blocklist', '--enable-webgl'] },
+    process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}
+  ));
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));

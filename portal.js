@@ -267,7 +267,17 @@ const PND={
        drawn from the feed, so on a slow connection every step fell through to
        the centred card with no highlight at all. */
     let tries=0;
-    const place=()=>{const st=steps[i];target=document.querySelector(st.sel);
+    /* The first match that is actually on the page, not merely in the DOM.
+       Several steps name both a header link and a card that do the same thing,
+       and the header nav is display:none below 760px -- so on a phone
+       querySelector handed back a hidden link, its rectangle was 0x0 at 0,0,
+       and the tour drew a 14px highlight in the top-left corner and pointed
+       the card at it. Three of the five steps did this on an iPhone 14. */
+    const onScreen=el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0};
+    const pick=sel=>{const all=document.querySelectorAll(sel);
+      for(let k=0;k<all.length;k++)if(onScreen(all[k]))return all[k];
+      return null};
+    const place=()=>{const st=steps[i];target=pick(st.sel);
       if(!target){ring.style.display='none';put(null);if(tries++<12)setTimeout(place,250);return}
       tries=0;
       /* A target taller than about half the screen is scrolled to the top

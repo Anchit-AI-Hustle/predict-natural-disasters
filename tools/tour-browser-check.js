@@ -21,6 +21,8 @@
  *   npm install playwright@1.49.1 leaflet@1.9.4
  *   SITE_ROOT=/path/to/repo LEAFLET_DIST=$PWD/node_modules/leaflet/dist \
  *     PLAYWRIGHT=$PWD/node_modules/playwright node /path/to/repo/tools/tour-browser-check.js
+ *
+ * Set CHROMIUM=/path/to/chrome if Playwright's own browser download was skipped.
  */
 const http = require('http');
 const fs = require('fs');
@@ -106,10 +108,14 @@ const measure = () => {
 
 (async () => {
   await new Promise(r => server.listen(8097, r));
-  const browser = await chromium.launch({
-    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-    args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader']
-  });
+  /* Playwright finds its own browser; CHROMIUM overrides that for a machine
+     where the download was skipped and one is installed elsewhere. Hard-coding
+     this environment's path broke the standalone workflow in the header above,
+     which installs Playwright and expects its own Chromium. */
+  const browser = await chromium.launch(Object.assign(
+    { args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'] },
+    process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}
+  ));
   let failures = 0, checked = 0;
 
   for (const page0 of PAGES) {
@@ -149,8 +155,13 @@ const measure = () => {
         const g = m.ring;
         const ringOff = g ? (g.l < -8 || g.t < -8 || g.r > m.vw + 8 || g.b > m.vh + 8) : false;
         const covers = g ? !(m.r <= g.l || m.l >= g.r || m.bo <= g.t || m.t >= g.b) : false;
-        if (g) rings++;
-        const ok = !offL && !offR && !offT && !offB && !btn.length && !ringOff && !covers;
+        /* A ring has to be big enough to be a highlight. A hidden element has a
+           0x0 rectangle at the origin, which draws a 14px ring at (-7,-7) --
+           inside the tolerance below, and counted as a highlight. That is the
+           stale-or-hidden selector this checker exists to catch, passing. */
+        const tiny = g ? (g.r - g.l < 24 || g.b - g.t < 24) : false;
+        if (g && !tiny) rings++;
+        const ok = !offL && !offR && !offT && !offB && !btn.length && !ringOff && !covers && !tiny;
         if (!ok) {
           bad++;
           lines.push('    ' + (m.step || 'step ' + (step + 1)) + ': card ' +
@@ -158,6 +169,7 @@ const measure = () => {
             (offL ? ' OFF-LEFT' : '') + (offR ? ' OFF-RIGHT' : '') +
             (offT ? ' OFF-TOP' : '') + (offB ? ' OFF-BOTTOM' : '') +
             (ringOff ? ' RING-OFFSCREEN' : '') + (covers ? ' CARD-COVERS-RING' : '') +
+            (tiny ? ' RING-TOO-SMALL(' + (g.r - g.l) + 'x' + (g.b - g.t) + ') — a hidden target' : '') +
             btn.map(b => ' BUTTON-CLIPPED("' + b.t + '" ' + b.l + '..' + b.r + ')').join(''));
         }
         step++;
