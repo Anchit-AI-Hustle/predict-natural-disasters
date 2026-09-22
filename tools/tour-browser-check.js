@@ -26,10 +26,16 @@
  */
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { chromium } = require(process.env.PLAYWRIGHT || 'playwright');
 
 const ROOT = process.env.SITE_ROOT || path.resolve(__dirname, '..');
+/* Screenshots go somewhere of their own. Written to the working directory they
+   landed in the repo root, so every run left twelve untracked PNGs behind and
+   a clean checkout stopped being clean. Set SHOTS_DIR to put them elsewhere. */
+const SHOTS = process.env.SHOTS_DIR || path.join(os.tmpdir(), 'tour-shots');
+fs.mkdirSync(SHOTS, { recursive: true });
 const LEAFLET = process.env.LEAFLET_DIST;
 if (!LEAFLET) {
   console.error('set LEAFLET_DIST (and PLAYWRIGHT) — see the header of this file');
@@ -206,12 +212,13 @@ const measure = () => {
       console.log((bad ? '  FAIL ' : '  ok   ') + (page0 + ' / ' + name).padEnd(30) +
         ' ' + w + 'x' + h + ' — ' + step + ' steps, ' + rings + ' highlighted');
       lines.forEach(l => console.log(l));
-      await page.screenshot({ path: 'tour-' + page0 + '-' + name.replace(/\s+/g, '-') + '.png' });
+      await page.screenshot({ path: path.join(SHOTS, 'tour-' + page0 + '-' + name.replace(/\s+/g, '-') + '.png') });
       await ctx.close();
     }
   }
   console.log('\nchecks: ' + checked + ' across ' + (PAGES.length * SIZES.length) +
     ' page/size combinations, failing combinations: ' + failures);
+  console.log('screenshots: ' + SHOTS);
   await browser.close();
   server.close();
   /* A checker that reports failures and exits 0 reads as green to anything

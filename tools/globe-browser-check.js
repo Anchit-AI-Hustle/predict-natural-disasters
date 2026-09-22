@@ -33,10 +33,16 @@
  */
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { chromium } = require(process.env.PLAYWRIGHT || 'playwright');
 
 const ROOT = process.env.SITE_ROOT || path.resolve(__dirname, '..');
+/* Screenshots go somewhere of their own rather than into the working directory,
+   which was the repo root: every run left untracked PNGs in the checkout.
+   Set SHOTS_DIR to put them elsewhere. */
+const SHOTS = process.env.SHOTS_DIR || path.join(os.tmpdir(), 'globe-shots');
+fs.mkdirSync(SHOTS, { recursive: true });
 const CESIUM = process.env.CESIUM_BUILD;
 const LEAFLET = process.env.LEAFLET_DIST;
 if (!CESIUM || !LEAFLET) {
@@ -267,7 +273,7 @@ const server = http.createServer(async (req, res) => {
       ' edgeTB=' + r.edgeTB + ' edgeLR=' + r.edgeLR + ' centreLum=' + r.centreLum +
       ' aimOff=' + r.aimOffDeg + ' mapW=' + r.mapW + '/' + r.panelW +
       (errors.length ? ' ERRORS=' + JSON.stringify(errors.slice(0, 2)) : ''));
-    await page.screenshot({ path: 'globe-' + label + '.png' });
+    await page.screenshot({ path: path.join(SHOTS, 'globe-' + label + '.png') });
   }
 
   /* The toggle, in a real browser, on the first page swept: Flat must hide the
@@ -340,6 +346,7 @@ const server = http.createServer(async (req, res) => {
   console.log((readOk ? '  ok   ' : '  FAIL ') + 'click'.padEnd(16) + ' ' + readNote);
 
   console.log('\npages checked: ' + PAGES.length + ', failing: ' + failures);
+  console.log('screenshots: ' + SHOTS);
 
   await browser.close();
   server.close();
