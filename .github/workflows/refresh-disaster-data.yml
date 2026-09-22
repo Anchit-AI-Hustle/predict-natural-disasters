@@ -60,18 +60,26 @@ jobs:
       - name: Record what was scanned in the coverage ledger
         run: node tools/record-scan.js /tmp/events.json data/scan-ledger.json
 
+      # One physical disaster, however many providers reported it. Recall needs
+      # a denominator of real-world events, and the feed only has provider
+      # records: the same flood arrives as a GDACS alert and a ReliefWeb
+      # country declaration, and three records is not three disasters.
+      - name: Record significant observed disasters
+        run: node tools/record-observed.js /tmp/events.json data/observed-disasters.json
+
       - name: Commit the ledger when it changed
         run: |
           set -euo pipefail
-          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json; then
+          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json data/observed-disasters.json; then
             echo "ledger unchanged"
             exit 0
           fi
           total=$(node -e "console.log(require('./data/outlook-ledger.json').length)")
           scans=$(node -e "console.log((require('./data/scan-ledger.json').scans||[]).length)")
+          obs=$(node -e "console.log((require('./data/observed-disasters.json').events||[]).length)")
           git config user.name "disaster-refresh"
           git config user.email "noreply@anthropic.com"
-          git add data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json
+          git add data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json data/observed-disasters.json
           # Every run deploys, including the quiet ones.
           #
           # These used to be tagged "[ledger]" so vercel.json's ignoreCommand
@@ -86,7 +94,7 @@ jobs:
           # That marker was introduced when this ran every five minutes, which
           # would have been 288 deployments a day against a limit of 100. At
           # hourly it is at most 24, so the saving it existed for is gone.
-          git commit -m "Record outlooks, forecast changes and coverage ($total outlooks, $scans scans)"
+          git commit -m "Record outlooks, coverage and observed disasters ($total outlooks, $scans scans, $obs disasters)"
           git push
 
       - name: Refresh live feed and warm every event's enrichment record

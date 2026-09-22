@@ -1,0 +1,221 @@
+'use strict';
+/*
+ * One physical disaster, however many providers reported it.
+ *
+ * Recall — "of the disasters that happened, how many did anything forecast?" —
+ * needs a denominator of real-world events, and this project had none. It had
+ * a feed of provider records, in which the same flood arrives as a GDACS alert
+ * and a ReliefWeb country declaration. Counting those as two disasters
+ * inflates the denominator; merging two genuinely different events hides one
+ * completely. The two mistakes are not symmetric, so the matching here is
+ * deliberately conservative and these tests hold it to that in both
+ * directions.
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const OBS = require('../observed-model.js');
+const { callApi, closeAllWindows } = require('./render.js');
+
+test.after(closeAllWindows);
+
+const ROOT = path.join(__dirname, '..');
+const feed = async () => (await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events')).json();
+const observedOf = events => events.filter(e => !e.forecast && e.evidenceState !== 'forecast');
+
+/* ------------------------------------------------------------- deduping */
+
+test('one disaster reported by two providers is one disaster', async () => {
+  const { events } = await feed();
+  const canon = OBS.canonicalise(observedOf(events));
+  const merged = canon.filter(c => c.evidence.length > 1);
+  assert.ok(merged.length > 0,
+    'the fixture no longer contains the same disaster from two providers, so this proves nothing');
+  for (const c of merged) {
+    assert.equal(c.mergeReasons.length, c.evidence.length - 1,
+      c.canonicalEventId + ' merged records without recording why');
+    for (const why of c.mergeReasons) {
+      assert.ok(why.length > 30, 'a merge reason that explains nothing: ' + why);
+    }
+  }
+  // Every provider record still belongs to exactly one disaster.
+  const seen = new Set();
+  for (const c of canon) for (const ev of c.evidence) {
+    assert.equal(seen.has(ev.id), false, ev.id + ' was counted under two disasters');
+    seen.add(ev.id);
+  }
+  assert.equal(seen.size, observedOf(events).length, 'a provider record was dropped entirely');
+});
+
+test('two different earthquakes are two disasters', async () => {
+  const { events } = await feed();
+  const quakes = observedOf(events).filter(e => OBS.familyOf(e.type, e.title) === 'earthquake');
+  const indo = quakes.filter(e => /Indonesia/i.test(String(e.country) + String(e.title)));
+  assert.ok(indo.length >= 2, 'fixture should contain two Indonesian earthquakes');
+  /* 114 km and 12 hours apart: two separate events, whatever they share.
+     Merging them would delete one disaster from the recall denominator. */
+  const [a, b] = indo;
+  const apartH = Math.abs(Date.parse(a.startedAt || a.updated) - Date.parse(b.startedAt || b.updated)) / 3600e3;
+  assert.ok(apartH > 2, 'control: these two should be further apart than the earthquake window');
+  assert.equal(OBS.sameEvent(a, b), null, 'two separate earthquakes were merged into one');
+});
+
+test('a canonical id identifies exactly one disaster', async () => {
+  const { events } = await feed();
+  const canon = OBS.canonicalise(observedOf(events));
+  const ids = canon.map(c => c.canonicalEventId);
+  const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+  assert.deepEqual(dup, [],
+    'these ids name more than one disaster, which silently merges them everywhere downstream');
+  for (const id of ids) assert.match(id, /^OBS-[a-z-]+-[A-Z]{2,3}-/, 'unreadable canonical id: ' + id);
+});
+
+test('an area-level record is never matched to another by distance', () => {
+  /* Two floods a thousand kilometres apart, one placed at a country centroid.
+     The kilometres between them are a fact about the centroid, not the flood,
+     so the only thing left to match on is the country — and these differ. */
+  const a = { id: 'a', type: 'Flood', country: 'India', lat: 22, lon: 79,
+    locationPrecision: 'country', updated: '2026-09-10T00:00:00Z', startedAt: '2026-09-10T00:00:00Z' };
+  const b = { id: 'b', type: 'Flood', country: 'Nepal', lat: 28, lon: 84,
+    locationPrecision: 'country', updated: '2026-09-10T06:00:00Z', startedAt: '2026-09-10T06:00:00Z' };
+  assert.equal(OBS.sameEvent(a, b), null, 'two countries\' floods were merged into one disaster');
+  const c = Object.assign({}, b, { country: 'India', id: 'c' });
+  assert.ok(OBS.sameEvent(a, c), 'the same country\'s flood, hours apart, should be one disaster');
+  assert.match(OBS.sameEvent(a, c), /area-level/, 'the reason does not say how the match was made');
+});
+
+/* -------------------------------------------------- what counts as a disaster */
+
+test('a hazard record is not automatically a disaster', async () => {
+  const { events } = await feed();
+  const canon = OBS.canonicalise(observedOf(events));
+  const below = canon.filter(c => !c.significant);
+  assert.ok(below.length > 0, 'nothing in the fixture falls below the bar, so the bar is untested');
+  for (const c of below) {
+    assert.ok(c.significanceReason.length > 30, c.canonicalEventId + ' is excluded without a stated reason');
+    assert.equal(c.deaths === null || c.deaths === 0, true,
+      c.canonicalEventId + ' reports deaths and was still excluded');
+  }
+  const above = canon.filter(c => c.significant);
+  assert.ok(above.length > 0, 'nothing qualifies, so the bar excludes everything');
+  for (const c of above) assert.ok(c.significanceReason.length > 10, c.canonicalEventId + ' qualifies for no stated reason');
+});
+
+test('a small tremor and a prescribed burn are not disasters', async () => {
+  const { events } = await feed();
+  const obs = observedOf(events);
+  const canon = OBS.canonicalise(obs);
+  /* Provider ids are opaque, so these are found by what the record says it
+     is, then followed into the disaster it was grouped under. */
+  const groupFor = re => {
+    const rec = obs.find(e => re.test(String(e.title)));
+    assert.ok(rec, 'the fixture no longer contains a record matching ' + re);
+    return canon.find(c => c.evidence.some(ev => ev.id === rec.id));
+  };
+
+  const tremor = groupFor(/M 3\.1 .*Ridgecrest/i);
+  assert.equal(tremor.significant, false,
+    'a magnitude-3.1 tremor with no reported impact was counted as a disaster nobody predicted');
+  const burn = groupFor(/Prescribed Fire/i);
+  assert.equal(burn.significant, false, 'a deliberately lit prescribed burn was counted as a disaster');
+
+  // And the bar is not simply excluding everything of that kind: a real
+  // wildfire and a real earthquake in the same fixture do qualify.
+  const realQuake = groupFor(/M 6\.5 /);
+  assert.equal(realQuake.significant, true, 'a magnitude-6.5 earthquake was not counted as a disaster');
+});
+
+/* ------------------------------------------- figures nobody published */
+
+test('an impact figure nobody reported is not zero', async () => {
+  const { events } = await feed();
+  const canon = OBS.canonicalise(observedOf(events));
+  const fields = ['deaths', 'injuries', 'missing', 'affected', 'displaced', 'evacuated'];
+  let sawNull = false;
+  for (const c of canon) {
+    for (const f of fields) {
+      assert.ok(c[f] === null || typeof c[f] === 'number', c.canonicalEventId + '.' + f + ' is neither a number nor null');
+      if (c[f] === null) sawNull = true;
+    }
+  }
+  assert.ok(sawNull,
+    'every figure came back as a number, which means an unreported one is being written as zero');
+  // None of these providers publishes an injured or evacuated count, so those
+  // must be null across the board rather than a fabricated zero.
+  assert.ok(canon.every(c => c.injuries === null),
+    'an injured count appeared from providers that do not publish one');
+});
+
+/* --------------------------------------------------------------- the ledger */
+
+test('an event\'s identity is frozen and its impact is not', async () => {
+  const { events } = await feed();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-obs-'));
+  const eventsPath = path.join(dir, 'events.json');
+  const ledgerPath = path.join(dir, 'observed.json');
+  fs.writeFileSync(eventsPath, JSON.stringify({ events }));
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, events: [] }));
+  const run = p => require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-observed.js'), p, ledgerPath], { stdio: 'pipe' }).toString();
+
+  run(eventsPath);
+  const first = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  assert.ok(first.events.length > 0, 'nothing was recorded');
+  const target = first.events.find(e => e.deaths !== null);
+  assert.ok(target, 'fixture should include a disaster with a reported death toll');
+
+  // The toll rises, as tolls do.
+  const raised = JSON.parse(JSON.stringify({ events }));
+  for (const e of raised.events) {
+    if (target.evidence.some(ev => ev.id === e.id) && e.deaths !== undefined && e.deaths !== null) {
+      e.deaths = Number(e.deaths) + 15;
+    }
+  }
+  const raisedPath = path.join(dir, 'events2.json');
+  fs.writeFileSync(raisedPath, JSON.stringify(raised));
+  run(raisedPath);
+
+  const second = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  assert.equal(second.events.length, first.events.length, 'the same disaster was recorded twice');
+  const after = second.events.find(e => e.canonicalEventId === target.canonicalEventId);
+  assert.equal(after.deaths, target.deaths + 15, 'the revised death toll was not taken up');
+  assert.equal(after.onset, target.onset, 'a frozen field moved');
+  assert.equal(after.firstRecordedAt, target.firstRecordedAt, 'the first-recorded time was rewritten');
+  assert.deepEqual(after.geographyAtFirstRecord, target.geographyAtFirstRecord, 'the original geography was rewritten');
+  const rev = (after.revisions || []).find(r => r.field === 'deaths');
+  assert.ok(rev, 'the death toll changed with no revision recorded');
+  assert.equal(rev.from, target.deaths);
+  assert.equal(rev.to, target.deaths + 15);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('the ledger states how it decides what it holds', () => {
+  const led = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
+  assert.ok(Array.isArray(led.events), 'the observed ledger has no events array');
+  for (const e of led.events) {
+    assert.match(e.canonicalEventId, /^OBS-/, 'a hand-made id in the committed ledger: ' + e.canonicalEventId);
+  }
+});
+
+test('a forecast never enters the observed ledger', async () => {
+  const { events } = await feed();
+  const canon = OBS.canonicalise(observedOf(events));
+  const ids = new Set(canon.flatMap(c => c.evidence.map(e => e.id)));
+  const forecasts = events.filter(e => e.forecast);
+  assert.ok(forecasts.length > 0, 'control: the fixture should contain forecasts');
+  for (const f of forecasts) {
+    assert.equal(ids.has(f.id), false, 'a forecast was recorded as an observed disaster: ' + f.id);
+  }
+});
+
+test('the hourly run records and commits observed disasters', () => {
+  const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh-disaster-data.yml'), 'utf8');
+  assert.match(wf, /node tools\/record-observed\.js .*data\/observed-disasters\.json/,
+    'the refresh job does not record observed disasters');
+  assert.match(wf, /git add[^\n]*data\/observed-disasters\.json/,
+    'the observed ledger is written but never committed');
+  assert.match(wf, /git diff --quiet[^\n]*data\/observed-disasters\.json/,
+    'a run whose only change is the observed ledger would be treated as no change');
+});
