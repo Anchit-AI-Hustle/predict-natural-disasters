@@ -174,6 +174,37 @@ function boxArea(ring) {
   return (x1 - x0) * (y1 - y0);
 }
 
+/*
+ * A warning polygon is carried to the browser so a saved place can be tested
+ * against it. Some National Weather Service forecast zones are drawn in fine
+ * detail - coastlines, river banks - and a day of widespread severe weather
+ * puts hundreds of alerts in one response, so the shapes are budgeted.
+ *
+ * Over budget the shape is dropped, not simplified. A simplified boundary
+ * moves the edge of a warned area, which would let this file tell someone
+ * they are covered by a warning that does not cover them. Without the shape
+ * the record falls back to its zone centroid and the interface says that
+ * applicability could not be established, which is true.
+ */
+const GEOMETRY_VERTEX_BUDGET = 3000;
+
+function countVertices(g) {
+  if (!g) return 0;
+  if (g.type === 'GeometryCollection') {
+    return (g.geometries || []).reduce((n, x) => n + countVertices(x), 0);
+  }
+  const walk = a => (Array.isArray(a)
+    ? (typeof a[0] === 'number' ? 1 : a.reduce((n, x) => n + walk(x), 0))
+    : 0);
+  return walk(g.coordinates);
+}
+
+function boundedGeometry(g) {
+  if (!g) return null;
+  const n = countVertices(g);
+  return (n > 0 && n <= GEOMETRY_VERTEX_BUDGET) ? g : null;
+}
+
 function centroid(geometry) {
   if (!geometry) return null;
   const pts = [];
@@ -797,12 +828,14 @@ async function handler(req, res) {
           } catch (e) { /* leave this alert unplaced */ }
         }));
 
-        let n = 0, skipped = 0, viaZone = 0;
+        let n = 0, skipped = 0, viaZone = 0, withArea = 0, overBudget = 0;
         for (const f of features) {
           const p = f.properties || {};
           let c = centroid(f.geometry);
           if (!c && zoneCentroids.has(f)) { c = zoneCentroids.get(f); viaZone++; }
           if (!c) { skipped++; continue; }
+          const raw = f.geometry || zoneGeometry.get(f) || null;
+          if (raw) { if (boundedGeometry(raw)) withArea++; else overBudget++; }
           push({
             id: 'nws-' + (p.id || f.id),
             source: 'NOAA / National Weather Service', sourceType: 'official',
@@ -811,6 +844,13 @@ async function handler(req, res) {
             country: 'United States', region: spellUsPlaces(p.areaDesc || ''),
             alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
             lat: c.lat, lon: c.lon,
+            /* The affected area, not just its middle. It was already fetched -
+               resolved from the zone where the alert carries no polygon of its
+               own - and then thrown away, which left the app with a centroid it
+               could only compare by distance. Carrying it means a saved
+               location can be tested for containment, which is the question
+               a warning actually answers. */
+            geometry: boundedGeometry(f.geometry || zoneGeometry.get(f) || null),
             startedAt: p.onset || p.effective || null,
             updated: p.sent || p.effective || now.toISOString(),
             expiresAt: p.expires || p.ends || null,
@@ -840,6 +880,7 @@ async function handler(req, res) {
         }
         mark('nws', true, {
           records: n, placedViaZoneLookup: viaZone, unplaceable: skipped,
+          withAffectedArea: withArea, areaOverBudget: overBudget,
           query: query || '(no filters)'
         });
         return;
@@ -1142,6 +1183,9 @@ async function handler(req, res) {
     targetStart: '2026-09-13T00:00:00Z', targetEnd: '2026-09-16T23:59:59Z',
     details: 'Starts 13 Sep 2026; expected duration 4 days. Written 19 hours after the window opened, so it carries no lead time; it is still graded against independently observed impact rather than against rainfall or a warning alone.',
     forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen, but not issued in advance',
+    /* The record already names a corridor. Saying so keeps its coordinate
+       from being read as the point where the flooding was expected. */
+    forecastScope: 'regional',
     evidence: 'Frozen as the platform’s first graded benchmark. The record was committed at 2026-09-13T19:20:03Z against a window that opened at 2026-09-13T00:00:00Z, so it did not anticipate the onset.',
     verificationRule: 'Counts as correct only if meaningful flood or landslide impact is independently observed inside the frozen geography and window.',
     sourceUrl: '/verification'
@@ -1205,6 +1249,13 @@ async function handler(req, res) {
       details: 'Experimental ' + windowText(horizonFor(e.type)) + ' outlook derived from an active ' + e.source +
         ' signal, over a window matched to how this hazard develops rather than a fixed three days. Outlook: ' +
         mechanism(e.type) + '. This is not a deterministic prediction and must not replace official warnings.',
+      /* An outlook is no more precise than the area it is issued for, and
+         the title above names that area: the signal's country where it has
+         one, else its region, else the single event itself. Without this the
+         outlook inherited the parent's coordinate meaning through the source
+         string - so a wildfire outlook headed "United States" was read as an
+         incident and could be reported as kilometres from a saved home. */
+      forecastScope: e.country ? 'country' : (e.region ? 'regional' : 'event'),
       forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: e.id,
       confidence: e.alert === 'Red' ? 'Elevated — driven by a red-level official signal'
         : e.alert === 'Orange' ? 'Moderate — driven by an orange-level official signal'
@@ -1250,6 +1301,9 @@ async function handler(req, res) {
          read as a forecast of a quake that size. The narrative already states
          it, so leaving the field off made the page contradict its own text. */
       ...(num(e.magnitude) !== null ? { mainshockMagnitude: num(e.magnitude) } : {}),
+      /* Aftershocks occur around the mainshock, so this one really is as
+         localised as the epicentre it is derived from. */
+      forecastScope: 'event',
       forecast: true, forecastKind: 'aftershock-sequence', forecastOf: e.id,
       confidence: 'Sequence-based — derived from observed mainshock magnitude and standard aftershock decay behaviour',
       evidence: 'Observed ' + e.source + ' event “' + e.title + '” at ' + e.updated + '.',
@@ -1285,6 +1339,132 @@ async function handler(req, res) {
   out.events = mergeSeismicReports(out.events).sort(byAlertThenTime);
   out.meta.mergedSeismicReports =
     out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
+
+  /* ------------------------------------------------- location precision */
+
+  /*
+   * What a record's coordinate actually means.
+   *
+   * Every source here hands back a single lat/lon, and until now the app
+   * treated them all alike. They are not alike. A USGS epicentre is a measured
+   * point for the phenomenon itself; a GDACS flood coordinate is the centroid
+   * of an alert area that can span a basin; a ReliefWeb record is a country.
+   * Personal Risk reads "only incident-level coordinates qualify as nearby
+   * risks" off a `precision` field that was set in exactly one branch of this
+   * file, so every unlabelled record - which was all of them but ReliefWeb -
+   * passed as incident-level and got banded HIGH/ELEVATED by distance. A
+   * drought spanning the Horn of Africa could be reported as a hazard 40 km
+   * from someone's saved home.
+   *
+   * Two different questions fall out of this, and conflating them is what
+   * went wrong the first time:
+   *
+   *   proximityEligible - may this record's point carry "N km from you"?
+   *                       Only when the point is the incident itself.
+   *   areaEligible      - may this record be tested for containment?
+   *                       Only when a real affected-area polygon travels
+   *                       with it.
+   *
+   * A National Weather Service warning has both a polygon and a centroid. It
+   * is area-eligible and NOT proximity-eligible: whether the warning covers a
+   * given place is answerable, while the distance to the middle of a warning
+   * zone is a fact about the zone's shape, not about the hazard.
+   *
+   * This runs after dedupe and seismic merging so the counts published in meta
+   * describe the records actually served, not the longer pre-merge list.
+   */
+  const PRECISION = {
+    INCIDENT: 'incident',   // measured point for the phenomenon itself
+    POLYGON: 'polygon',     // a real affected-area polygon travels with it
+    ADMIN2: 'admin2',       // placed at a county / district
+    ADMIN1: 'admin1',       // placed at a state / province
+    REGIONAL: 'regional',   // basin, hazard area, multi-admin region
+    COUNTRY: 'country',     // country centroid
+    UNKNOWN: 'unknown'      // provenance cannot establish any of the above
+  };
+
+  /* GDACS publishes one representative point per event and its meaning depends
+     on the hazard: EQ is an epicentre, TC a storm centre, VO the volcano. FL,
+     DR and WF are alert areas whose point is a centroid, not an incident. */
+  const GDACS_INCIDENT = /^(EQ|TC|VO)$/i;
+
+  /* Derived records by id, so an outlook can be read against the signal it was
+     derived from rather than against the sentence describing that derivation. */
+  const byId = new Map(out.events.map(e => [e.id, e]));
+
+  function classifyPrecision(e, depth) {
+    if (e.precision) return e.precision;           // a source that already said
+    if (e.geometry) return PRECISION.POLYGON;      // carries its own area
+    /* A forecast's source reads "derived from USGS", which the tests below
+       would match as an epicentre. It is not one: an outlook is exactly as
+       localised as the area it was issued for, which is recorded when it is
+       built. Only an outlook tied to one signal may inherit that signal's
+       precision, and only by looking the signal up. */
+    if (e.forecast) {
+      if (e.forecastScope === 'country') return PRECISION.COUNTRY;
+      if (e.forecastScope === 'regional') return PRECISION.REGIONAL;
+      if (e.forecastScope === 'event' && e.forecastOf && !(depth > 0)) {
+        const parent = byId.get(e.forecastOf);
+        if (parent) return classifyPrecision(parent, 1);
+      }
+      return PRECISION.UNKNOWN;
+    }
+    const src = String(e.source || '');
+    if (/USGS/i.test(src) || /EMSC/i.test(src)) return PRECISION.INCIDENT;
+    if (/Hurricane Center/i.test(src)) return PRECISION.INCIDENT;
+    if (/EONET/i.test(src)) return PRECISION.INCIDENT;
+    if (/Weather Service/i.test(src)) return PRECISION.ADMIN2;  // zone centroid
+    if (/GDACS/i.test(src)) {
+      const t = String(e.rawType || e.gdacsType || '');
+      return GDACS_INCIDENT.test(t) ? PRECISION.INCIDENT : PRECISION.REGIONAL;
+    }
+    return PRECISION.UNKNOWN;
+  }
+
+  /* Said in the interface wherever a record is shown against a saved place, so
+     the reader is told what the number in front of them is derived from. */
+  const PROXIMITY_REASON = {
+    incident: 'Incident-level coordinate from the reporting authority.',
+    polygon: 'Published with an affected-area polygon: whether a place is covered is decided by containment, not by distance.',
+    admin2: 'Placed at the centre of a warning zone, not at an incident.',
+    admin1: 'Placed at the centre of a state or province, not at an incident.',
+    regional: 'Placed at the centre of a hazard area that can span a region.',
+    country: 'Placed at a country centroid, not at an incident.',
+    unknown: 'The record does not establish what its coordinate refers to.'
+  };
+
+  /* What KIND of evidence a record is, kept separate from where it is. A
+     forecast can carry an incident-grade coordinate and still must never be
+     listed among things that have happened; a country-level humanitarian
+     record is an observation even though it cannot carry a distance.
+     Conflating the two axes is what let outlooks and warnings read as
+     incidents. */
+  function classifyEvidence(e) {
+    if (e.forecast) return 'forecast';
+    if (/Weather Service/i.test(String(e.source || ''))) return 'official-warning';
+    if (e.expiresAt && e.sourceType === 'official') return 'official-warning';
+    if (e.sourceType === 'official' || e.sourceType === 'observed') return 'observed';
+    return 'unknown';
+  }
+
+  for (const e of out.events) {
+    const p = classifyPrecision(e);
+    e.evidenceState = classifyEvidence(e);
+    e.isForecast = !!e.forecast;
+    e.locationPrecision = p;
+    e.precision = p;                               // back-compat for older reads
+    e.proximityEligible = (p === PRECISION.INCIDENT);
+    e.areaEligible = !!e.geometry;
+    e.proximityReason = PROXIMITY_REASON[p] || PROXIMITY_REASON.unknown;
+  }
+  out.meta.locationPrecision = out.events.reduce((m, e) => {
+    m[e.locationPrecision] = (m[e.locationPrecision] || 0) + 1; return m;
+  }, {});
+  out.meta.proximityEligible = out.events.filter(e => e.proximityEligible).length;
+  out.meta.areaEligible = out.events.filter(e => e.areaEligible).length;
+  out.meta.evidenceState = out.events.reduce((m, e) => {
+    m[e.evidenceState] = (m[e.evidenceState] || 0) + 1; return m;
+  }, {});
 
   // Severity is comparable across hazards; alert level is not, because each
   // agency publishes its own scale. Lead time says whether a forecast was

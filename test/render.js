@@ -315,6 +315,10 @@ async function renderPage(page, opts) {
       if (o.cesium !== false) window.eval(CESIUM_STUB);
       window.addEventListener('error', e => errors.push(e.error || new Error(e.message)));
       window.addEventListener('unhandledrejection', e => errors.push(e.reason));
+      /* A last word for the test, after fetch and the stubs are in place and
+         still before any page script runs. Browser APIs jsdom does not
+         implement - Notification among them - can only be stood up here. */
+      if (typeof o.beforeParse === 'function') o.beforeParse(window);
     }
   });
 

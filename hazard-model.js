@@ -461,13 +461,194 @@
     return '';
   }
 
+  /* ------------------------------------------ where a record applies */
+
+  /*
+   * Personal Risk asks one question: does this record say anything about a
+   * place I saved? There are three ways to answer it and only one of them is
+   * a distance.
+   *
+   * A warning published with a polygon answers by containment. The place is
+   * inside the warned area or it is not, and the kilometres between the place
+   * and the polygon's middle are a fact about the polygon's shape, not about
+   * the hazard. A record placed at an incident - an epicentre, a storm centre,
+   * a volcano - answers by distance, because there the coordinate IS the
+   * hazard. A record placed at a country or basin centroid answers neither: it
+   * says a hazard is active in an area containing the place, which is worth
+   * showing and is not worth a number.
+   *
+   * These functions keep the three apart and never invent the answer a record
+   * does not carry. Where applicability cannot be established, the row says
+   * so instead of falling back to distance.
+   */
+
+  var RISK_RADIUS_KM = 500;
+
+  /** A ring that wraps the antimeridian cannot be ray-cast in raw longitude. */
+  function ringWraps(ring) {
+    for (var i = 1; i < ring.length; i++) {
+      if (Math.abs(ring[i][0] - ring[i - 1][0]) > 180) return true;
+    }
+    return false;
+  }
+
+  /* Ray casting against one ring in raw lon/lat. The areas this runs on are
+     warning polygons a few degrees across, where treating degrees as a plane
+     is wrong by far less than the polygon's own resolution. */
+  function inRing(lon, lat, ring) {
+    var inside = false;
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (!isFinite(xi) || !isFinite(yi) || !isFinite(xj) || !isFinite(yj)) return false;
+      if (((yi > lat) !== (yj > lat)) &&
+          (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+
+  function okRing(r) { return Array.isArray(r) && r.length > 2 && Array.isArray(r[0]); }
+
+  /* A polygon is its outer ring minus its holes. */
+  function inPolygon(lon, lat, rings) {
+    if (!Array.isArray(rings) || !okRing(rings[0])) return null;
+    for (var r = 0; r < rings.length; r++) {
+      if (!okRing(rings[r])) return null;
+      if (ringWraps(rings[r])) return null;
+    }
+    if (!inRing(lon, lat, rings[0])) return false;
+    for (var h = 1; h < rings.length; h++) if (inRing(lon, lat, rings[h])) return false;
+    return true;
+  }
+
+  /**
+   * Does a GeoJSON geometry contain the point?
+   * true / false when it can be decided, null when the geometry is absent,
+   * unsupported or wraps the antimeridian. Null is never read as "outside".
+   */
+  function geometryContains(g, lat, lon) {
+    if (!g || !isFinite(lat) || !isFinite(lon)) return null;
+    if (g.type === 'Polygon') return inPolygon(lon, lat, g.coordinates);
+    if (g.type === 'MultiPolygon') {
+      if (!Array.isArray(g.coordinates)) return null;
+      var decided = false;
+      for (var i = 0; i < g.coordinates.length; i++) {
+        var r = inPolygon(lon, lat, g.coordinates[i]);
+        if (r === true) return true;
+        if (r === false) decided = true;
+      }
+      return decided ? false : null;
+    }
+    if (g.type === 'GeometryCollection' && Array.isArray(g.geometries)) {
+      var any = null;
+      for (var k = 0; k < g.geometries.length; k++) {
+        var c = geometryContains(g.geometries[k], lat, lon);
+        if (c === true) return true;
+        if (c === false) any = false;
+      }
+      return any;
+    }
+    return null;
+  }
+
+  /** Great-circle kilometres between two points. */
+  function distanceKm(aLat, aLon, bLat, bLon) {
+    var r = Math.PI / 180, R = 6371;
+    var x = (bLat - aLat) * r, y = (bLon - aLon) * r;
+    var z = Math.sin(x / 2) * Math.sin(x / 2) +
+            Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(y / 2) * Math.sin(y / 2);
+    return 2 * R * Math.asin(Math.sqrt(z));
+  }
+
+  /**
+   * The evidence bands, strongest claim first. Each one states what it is
+   * allowed to assert, because that is what decides which records may enter
+   * it — not how alarming they look.
+   */
+  var RISK_BANDS = [
+    { key: 'A', title: 'Confirmed nearby incidents',
+      blurb: 'Reported by an authority at an incident location, within 500 km of a place you saved.',
+      empty: 'No incident-located hazard within 500 km of a saved place.' },
+    { key: 'B', title: 'Official warnings affecting this location',
+      blurb: 'Warnings in force. Where the issuing agency published an affected area, your place was tested against that area rather than against a distance.',
+      empty: 'No official warning currently reaches a saved place.' },
+    { key: 'C', title: 'Forecast outlooks',
+      blurb: 'Windows this project is watching. Nothing here is a report that an event has occurred, and nothing here is an official warning.',
+      empty: 'No outlook currently covers a saved place.' },
+    { key: 'D', title: 'Broader regional signals',
+      blurb: 'Records whose coordinate marks an area rather than an incident. Listed because that area\u2019s centre point is within range \u2014 not because this place has been shown to fall inside it.',
+      empty: 'No area-level record currently sits within range of a saved place.' },
+    /* Kept in the list and kept empty. The band is a real part of the answer
+       to "how exposed is this place", and this project publishes no
+       per-location history to fill it with - so it says that, rather than
+       being quietly dropped or filled with something that looks like one. */
+    { key: 'E', title: 'Historical susceptibility',
+      blurb: 'What a place has experienced before.',
+      dataAvailable: false,
+      empty: 'No per-location event history is published by this project, so nothing can be shown here. Your national or regional hazard agency holds the authoritative record for a location\u2019s past events.' }
+  ];
+
+  var APPLICABILITY = {
+    insideIncident: 'Your saved place is inside the reported affected area.',
+    insideWarning: 'Your saved place is inside the published warning area.',
+    outsideWarning: 'Your saved place is outside the published warning area.',
+    undetermined: 'Regional warning — exact applicability to this location has not been established.',
+    forecast: 'A window being watched, not a report that anything has happened.',
+    outsideForecast: 'Your saved place is outside the published outlook area.',
+    areaLevel: 'Area-level record: its coordinate marks an area centre, not an incident. Whether this place falls inside the affected area has not been established.'
+  };
+
+  /**
+   * Which band a feed record falls in for one saved place, or null when the
+   * record says nothing about it.
+   *
+   * distanceKm is always computed where both points exist, but claimDistance
+   * says whether it may be shown to the reader as a distance to the hazard.
+   */
+  function riskRow(e, place, radiusKm) {
+    e = e || {}; place = place || {};
+    var R = isFinite(radiusKm) ? Number(radiusKm) : RISK_RADIUS_KM;
+    var pLat = Number(place.lat), pLon = Number(place.lon);
+    var eLat = Number(e.lat), eLon = Number(e.lon);
+    if (!isFinite(pLat) || !isFinite(pLon)) return null;
+
+    var contains = geometryContains(e.geometry, pLat, pLon);
+    var d = (isFinite(eLat) && isFinite(eLon)) ? distanceKm(pLat, pLon, eLat, eLon) : null;
+    var near = d !== null && d <= R;
+    var out = function (band, note, claim) {
+      return {
+        band: band, distanceKm: d, claimDistance: !!claim,
+        containment: contains, applicability: note,
+        reason: e.proximityReason || ''
+      };
+    };
+
+    if (e.isForecast || e.forecast) {
+      if (contains === true) return out('C', APPLICABILITY.forecast, false);
+      if (contains === false) return near ? out('D', APPLICABILITY.outsideForecast, false) : null;
+      return near ? out('C', APPLICABILITY.forecast, !!e.proximityEligible) : null;
+    }
+
+    if (e.evidenceState === 'official-warning') {
+      if (contains === true) return out('B', APPLICABILITY.insideWarning, false);
+      if (contains === false) return near ? out('D', APPLICABILITY.outsideWarning, false) : null;
+      return near ? out('B', APPLICABILITY.undetermined, false) : null;
+    }
+
+    if (contains === true) return out('A', APPLICABILITY.insideIncident, false);
+    if (e.proximityEligible && near) return out('A', '', true);
+    if (contains === false) return near ? out('D', APPLICABILITY.outsideWarning, false) : null;
+    return near ? out('D', APPLICABILITY.areaLevel, false) : null;
+  }
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
     severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
     impactRank: impactRank, alertRank: alertRank,
     leadTimeHours: leadTimeHours, leadTimeText: leadTimeText,
-    keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS
+    keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,
+    geometryContains: geometryContains, distanceKm: distanceKm,
+    riskRow: riskRow, RISK_BANDS: RISK_BANDS, RISK_RADIUS_KM: RISK_RADIUS_KM,
+    APPLICABILITY: APPLICABILITY
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PNDHazards = api;

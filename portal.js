@@ -204,12 +204,25 @@ const PND={
   /* Still here for a header put into the page some other way; a no-op once the
      markup already carries its own options. */
   initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s||s.options.length)return;s.innerHTML=this.timezoneOptions();},
-  provenance(e){if(e&&e.sourceType==='official')return e.alert&&['Red','Orange'].includes(e.alert)?'OFFICIAL WARNING':'OBSERVED EVENT';if(e&&e.forecastKind==='frozen-benchmark')return 'EXPERIMENTAL PREDICTION';if(e&&e.forecast)return 'MODEL-DERIVED OUTLOOK';return 'OBSERVED EVENT';},
+  /* The record's own evidence class, which the feed now states. Deciding it
+     here from sourceType plus alert colour meant every red-level observation
+     read as a warning: a USGS earthquake that had already happened was
+     labelled OFFICIAL WARNING and sat in the same list as the warnings. Where
+     the feed says nothing, this falls to the weaker claim rather than
+     inventing a warning nobody issued. */
+  provenance(e){const s=e&&e.evidenceState;
+    if(s==='forecast'||(!s&&e&&e.forecast))return e.forecastKind==='frozen-benchmark'?'EXPERIMENTAL PREDICTION':'MODEL-DERIVED OUTLOOK';
+    if(s==='official-warning')return 'OFFICIAL WARNING';
+    return 'OBSERVED EVENT';},
   savedLocations(){try{return JSON.parse(localStorage.getItem('pnd_saved_locations')||'[]')}catch(e){return[]}},
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   distanceKm(a,b,c,d){const r=Math.PI/180,R=6371,x=(c-a)*r,y=(d-b)*r,z=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(z))},
-  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;const locs=this.savedLocations(),seen=JSON.parse(localStorage.getItem('pnd_notified')||'{}'),now=Date.now();locs.forEach(x=>events.forEach(e=>{if(!Number.isFinite(+e.lat)||!Number.isFinite(+e.lon)||e.precision==='country'||e.precision==='regional'||e.forecast)return;const d=this.distanceKm(+x.lat,+x.lon,+e.lat,+e.lon),ser=String(e.alert||e.severity||'').toLowerCase(),urgent=d<=100&&(/red|orange|severe|extreme|catastrophic/.test(ser)||d<=30),key=x.id+'|'+e.id+'|'+ser;if(urgent&&(!seen[key]||now-seen[key]>21600000)){new Notification('Hazard near '+x.name,{body:(e.type||'Hazard')+' · '+Math.round(d)+' km away · '+(e.alert||e.severity||'active')});seen[key]=now}}));localStorage.setItem('pnd_notified',JSON.stringify(seen))},
+  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;/* Same banding as the page, from the same model. A notification is the
+     most intrusive claim this app makes, so it fires only where the record
+     places the hazard at this place - inside a published area, or at an
+     incident coordinate close by - and never off an area centroid. */
+    const H=typeof PNDHazards!=='undefined'?PNDHazards:null;if(!H)return;const locs=this.savedLocations(),seen=JSON.parse(localStorage.getItem('pnd_notified')||'{}'),now=Date.now();locs.forEach(x=>events.forEach(e=>{const r=H&&H.riskRow(e,x);if(!r)return;const ser=String(e.alert||e.severity||'').toLowerCase(),key=x.id+'|'+e.id+'|'+ser;let body='';if(r.band==='B'&&r.containment===true)body=(e.type||'Hazard')+' · your saved place is inside the warned area · '+(e.alert||e.severity||'active');else if(r.band==='A'&&r.containment===true)body=(e.type||'Hazard')+' · your saved place is inside the reported affected area · '+(e.alert||e.severity||'active');else if(r.band==='A'&&r.claimDistance&&r.distanceKm<=100&&(/red|orange|severe|extreme|catastrophic/.test(ser)||r.distanceKm<=30))body=(e.type||'Hazard')+' · '+Math.round(r.distanceKm)+' km away · '+(e.alert||e.severity||'active');if(body&&(!seen[key]||now-seen[key]>21600000)){new Notification('Hazard near '+x.name,{body:body});seen[key]=now}}));localStorage.setItem('pnd_notified',JSON.stringify(seen))},
   startTour(force=false){
     if(!force&&localStorage.getItem('pnd_tour_done'))return;
     const steps=[
