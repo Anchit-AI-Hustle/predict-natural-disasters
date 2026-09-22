@@ -228,18 +228,22 @@ test('the published hit rate is not a prediction hit rate', async () => {
 
 test('the accuracy page separates predictions from conditional forecasts', async () => {
   const r = await renderPage('accuracy.html', {
-    waitFor: d => (d.getElementById('hGraded') || {}).textContent !== '—'
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014'
   });
   const get = id => (r.document.getElementById(id) || {}).textContent;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
-  assert.equal(get('hGraded'), '0');
-  assert.match(get('hPrecision'), /Not enough graded records/);
-  assert.ok(Number(get('cGraded')) > 0, 'the conditional forecasts should still be graded and shown');
+  // Nothing this project has recorded is an independent prospective
+  // prediction, and the page must say so rather than borrowing the
+  // conditional outlooks' record to stand in for one.
+  assert.equal(get('ipTotal'), '0');
+  assert.equal(get('ipPrecision'), 'Not computable');
+  assert.ok(Number(get('cdTotal')) > 0, 'the conditional outlooks should still be counted and shown');
+  assert.match(get('ipNote'), /no prediction hit rate/i);
   const note = get('classBreak');
-  assert.match(note, /No independent prospective prediction has been graded yet/);
   assert.match(note, /Continuation outlook: \d+/);
   assert.match(note, /Retrospective benchmark: \d+/);
-  // The old single rate must no longer be the only thing a reader sees.
-  assert.match(r.text(), /Hit rate of all graded forecasts/);
+  // The two performances are headed separately and never added together.
+  assert.match(r.text(), /Independent prediction performance/);
+  assert.match(r.text(), /Conditional \/ continuation outlook performance/);
   r.close();
 });
