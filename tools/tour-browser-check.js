@@ -145,8 +145,28 @@ const measure = () => {
          the card against a different target, and one of them being off-screen
          is exactly the failure this exists to catch. */
       let step = 0, bad = 0, lines = [], rings = 0;
+      /* Waits for the step to settle rather than for a fixed interval. The tour
+         retries a missing target for about three seconds, and a page whose body
+         is built from the feed can produce that target part-way through — on
+         personal-risk the forecast and verification steps find nothing at 3s
+         and a visible card by 9s. A fixed wait made the highlight count depend
+         on how fast the page happened to load, which is not something to pin an
+         expectation on. This returns as soon as a highlight is up and otherwise
+         waits out the tour's retry window. */
+      const settle = async () => {
+        const deadline = Date.now() + 4500;
+        while (Date.now() < deadline) {
+          if (await page.evaluate(() => {
+            const el = document.querySelector('.coach-ring');
+            return !!el && getComputedStyle(el).display !== 'none';
+          })) return;
+          await page.waitForTimeout(250);
+        }
+      };
       while (step < 5) {
-        await page.waitForTimeout(2200);
+        await settle();
+        /* and a beat for the card to finish being placed against it */
+        await page.waitForTimeout(600);
         const m = await page.evaluate(measure);
         if (m.missing) { lines.push('    step ' + (step + 1) + ': card vanished'); bad++; break; }
         checked++;
