@@ -254,8 +254,11 @@ test('collection pages list records and link to detail pages', async () => {
 
 test('forecast list shows every outlook, not just the benchmark', async () => {
   const expected = (await events()).filter(e => e.forecast).length;
-  const r = await renderPage('forecast-list.html', { waitFor: doc => doc.getElementById('cards').children.length > 1 });
-  assert.equal(r.document.getElementById('cards').children.length, expected,
+  /* One row per outlook. The list is a table now - thirty cards of the same
+     shape is not a list anyone compares - so the count is of rows. */
+  const r = await renderPage('forecast-list.html',
+    { waitFor: doc => doc.querySelectorAll('#cards tbody tr').length > 1 });
+  assert.equal(r.document.querySelectorAll('#cards tbody tr').length, expected,
     'forecast list should show all ' + expected + ' forecast records');
   assert.match(r.document.getElementById('statusLine').textContent, /matching records/);
   r.close();

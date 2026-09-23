@@ -122,6 +122,10 @@ function draw(){if(mode==='resources'){
     ${blind.length?PND.esc('For '+blind.join(', ').replace(/-/g,' ')+' no source here is both exhaustive and an observer, so nothing on this site can establish that no such disaster occurred \u2014 only that none was reported.'):'Every hazard listed here has a source whose silence is evidence.'}</div>`
     +rs.map(providerCard).join('');
   return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',all.filter(keep).filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase().includes(t.replace('s','')))&&(!l||e.alert===l)),SORT_KEYS);pageNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
+if(mode==='forecast-list'){cards.className='';
+ cards.innerHTML=es.length?PNDForecastTable.render(es)
+  :PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase());
+ return}
 cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="event-card" href="${PND.eventUrl(e)}"><span class="badge ${PND.riskClass(e.alert)}">${PND.esc(e.alert||'Watch')}</span> ${PND.severityBadge(e)} ${PND.sourceBadge(e)} ${e.forecast?`<span class="source">${PND.esc(e.forecastKind==='frozen-benchmark'?'Frozen benchmark':'Experimental outlook')}</span>`:''}${e.windowClosed?'<span class="source">Window closed</span>':''}<h3>${PND.esc(e.title)}</h3><p>${PND.esc(e.type)} · ${PND.esc(e.country||e.region||'Global')}${(()=>{const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':''})()}<br>${PND.esc(gist(PND.impactText(e)||e.details||''))}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}Source update ${PND.fmtDate(e.updated)} · ${PND.age(e.updated)}</small></a>`).join(''):PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase())}
 async function load(){statusLine.textContent='Refreshing authoritative feeds…';try{const d=await PND.getEvents();all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;
 /* The sources view is about the sources, so its status line counts those
