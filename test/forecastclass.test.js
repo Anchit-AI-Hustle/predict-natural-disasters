@@ -212,6 +212,63 @@ test('a row recorded before the taxonomy existed is still classified on read', (
     'a row with no recorded class was counted as an independent prediction');
 });
 
+test('a recorded row derived from a warning is not read as a hazard we had seen', async () => {
+  /* The ledger records an outlook, not the record it was derived from, and
+     that record leaves the rolling feed within days - so classifying a row
+     had no parent to consult and fell through to continuation-outlook, which
+     says "written after the hazard existed, forecasting that it continues".
+     For the 110 rows derived from National Weather Service warnings and the
+     14 from volcano alert levels that is a stronger claim than the record
+     supports: a warning says severe weather is EXPECTED. Measured on the
+     committed ledger, 124 rows carried the wrong one of the two. */
+  const ledger = require(path.join(ROOT, 'data', 'outlook-ledger.json'));
+  const derived = ledger.filter(r => r.forecastOf && !r.forecastClass &&
+    r.forecastKind !== 'aftershock-sequence');
+  assert.ok(derived.length > 0, 'the ledger holds no derived row written before the taxonomy');
+
+  const fromWarning = derived.filter(r => H.WARNING_PROVIDERS.test(String(r.source || '')));
+  assert.ok(fromWarning.length > 0,
+    'fixture: the ledger should hold rows derived from a warning-publishing provider');
+  for (const r of fromWarning.slice(0, 40)) {
+    assert.equal(V.forecastClassOf(r), 'warning-derived',
+      r.id + ' is derived from ' + r.source + ' and is classified ' + V.forecastClassOf(r));
+  }
+  /* And the rest are still continuation outlooks: this does not relabel
+     everything derived. */
+  const rest = derived.filter(r => !H.WARNING_PROVIDERS.test(String(r.source || '')));
+  assert.ok(rest.length > 0, 'fixture: every derived row now matches a warning provider');
+  for (const r of rest.slice(0, 40)) {
+    assert.equal(V.forecastClassOf(r), 'continuation-outlook',
+      r.id + ' is derived from ' + r.source + ' and is classified ' + V.forecastClassOf(r));
+  }
+  /* Neither class reaches a headline figure, so this changes no rate - it
+     changes what the record says each outlook was. */
+  assert.equal(fromWarning.some(r => V.headlineEligible(r)), false);
+});
+
+test('the list of warning-publishing providers is the feed\u2019s own classification', async () => {
+  /* The reconstruction above reads a provider name off the row. That is only
+     faithful while the feed still classifies that provider's records as
+     warnings, so it is pinned here rather than left to go stale: every source
+     the feed calls an official warning must be one this list knows, and every
+     source it calls an observation must not be. */
+  const { events } = await feed();
+  const records = events.filter(e => !e.forecast);
+  const warning = new Set(records.filter(e => e.evidenceState === 'official-warning')
+    .map(e => e.source));
+  const observed = new Set(records.filter(e => e.evidenceState === 'observed').map(e => e.source));
+  assert.ok(warning.size > 0 && observed.size > 0,
+    'fixture: the feed should carry both warnings and observations');
+  for (const src of warning) {
+    assert.equal(H.WARNING_PROVIDERS.test(src), true,
+      src + ' publishes warnings, and a recorded outlook derived from it would be read as a hazard already seen');
+  }
+  for (const src of observed) {
+    assert.equal(H.WARNING_PROVIDERS.test(src), false,
+      src + ' publishes observations, and an outlook derived from it would be read as merely echoing a warning');
+  }
+});
+
 /* ------------------------------------------------------- what is published */
 
 test('the published hit rate is not a prediction hit rate', async () => {

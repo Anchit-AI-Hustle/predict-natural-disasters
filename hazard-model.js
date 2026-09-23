@@ -847,6 +847,20 @@
    * nobody can check is not much better than no classification: the reason is
    * what a reader or an auditor needs.
    */
+  /*
+   * The providers whose records are warnings rather than observations.
+   *
+   * Held here, beside the classification that needs it, and pinned to the
+   * feed's own evidence classification by test/forecastclass.js: if a
+   * provider ever starts or stops publishing warnings, the test fails rather
+   * than this list quietly going stale. Matched against the outlook's source
+   * string, which the API builds from the parent record's own source.
+   */
+  var WARNING_PROVIDERS = /(?:National Weather Service|Volcano Hazards Program)/i;
+  function warningProvider(source) {
+    return WARNING_PROVIDERS.test(String(source || '')) ? 'official-warning' : null;
+  }
+
   function classifyForecast(f, parent) {
     f = f || {};
     if (!(f.forecast || f.isForecast)) return null;
@@ -861,7 +875,26 @@
         'Conditional on an earthquake that had already been observed when this was written.');
     }
     if (f.forecastOf) {
-      if (parent && parent.evidenceState === 'official-warning') {
+      var parentState = (parent && parent.evidenceState) ||
+        /* No parent to read.
+         *
+         * The append-only ledger records an outlook, not the record it was
+         * derived from, and that record leaves the rolling feed within days.
+         * Classifying a ledger row therefore had no parent to consult and
+         * fell straight through to continuation-outlook - "written after the
+         * hazard existed, forecasting that it continues" - for all 495
+         * derived rows on record, including the 110 derived from National
+         * Weather Service warnings and the 14 from volcano alert levels. A
+         * warning says severe weather is EXPECTED; it is not a hazard
+         * observed to exist, so that label claimed more for those outlooks
+         * than the record supports.
+         *
+         * What the row does carry is the provider it came from, because the
+         * API writes the parent's own source into it. For the providers whose
+         * records are warnings rather than observations that is enough to
+         * answer, and where it is not the row still says only what it can. */
+        warningProvider(f.source);
+      if (parentState === 'official-warning') {
         return say('warning-derived',
           'Derived from an official warning that the issuing agency had already published.');
       }
@@ -986,6 +1019,7 @@
     FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
     claimKey: claimKey,
     TYPE_NAMES_NO_HAZARD: TYPE_NAMES_NO_HAZARD,
+    WARNING_PROVIDERS: WARNING_PROVIDERS,
     effectiveForecastStart: effectiveForecastStart,
     observationCanVerify: observationCanVerify,
     creditedWindowHours: creditedWindowHours
