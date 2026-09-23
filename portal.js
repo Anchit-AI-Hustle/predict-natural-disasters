@@ -46,6 +46,15 @@ const PND={
    * not a Moderate record; and the title says both, so the reader can see the
    * disagreement rather than having it averaged away silently.
    */
+  /* The record's level on this site's scale, as a word - the same answer the
+     badge gives, for the places that print text rather than a badge. */
+  riskLabel(e){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return 'Not rated';
+    const sv=R.levelOf(e&&e.severity),a=R.levelOf(e&&e.alert);
+    const k=sv!=='UNKNOWN'?sv:(a!=='UNKNOWN'?a:null);
+    return k&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+  },
   riskTag(e,opts){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return '';
@@ -632,8 +641,13 @@ const PND={
       `<span class="kf-l">${this.esc(x.label)}</span>`+
       `<span class="kf-v">${x.reported?this.esc(String(x.value)):'Not reported'}</span></div>`).join('')+'</div>';},
   /* Compact line, for a card: only what is actually reported. */
+  /* A value that already names itself is printed on its own: the category of
+     a storm is "Category 3" or "Tropical storm", and prefixing the label made
+     the card read "Category Category 3". */
   keyFactsLine(e,max){const f=this.keyFacts(e).filter(x=>x.reported).slice(0,max||3);
-    return f.map(x=>this.esc(x.label)+' '+this.esc(String(x.value))).join(' · ');},
+    return f.map(x=>{const v=String(x.value);
+      const named=x.key==='category'||v.toLowerCase().indexOf(String(x.label).toLowerCase())===0;
+      return named?this.esc(v):this.esc(x.label)+' '+this.esc(v);}).join(' · ');},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };

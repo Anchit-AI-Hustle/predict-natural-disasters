@@ -742,3 +742,35 @@ test('the shared disclaimer is stated once, not on every card', async () => {
   assert.ok(bodies.every(b => b.length > 20), 'a card body was trimmed to nothing');
   r.close();
 });
+
+test('an event card states its figures once', async () => {
+  /* Found reviewing the report that the app is cluttered: each card printed
+     the key-facts line - "Lives lost 42 · People displaced 5,100 ..." - and
+     then the same three numbers again as "42 deaths · 5,100 displaced ...",
+     and a storm's prose repeated its wind and pressure a third time. */
+  const r = await renderPage('events.html', { waitFor: d => d.querySelectorAll('.event-card').length > 3, timeoutMs: 8000 });
+  const cards = [...r.document.querySelectorAll('.event-card')].map(c => c.textContent);
+  assert.ok(cards.length > 3, 'fixture: the events page rendered no cards');
+  const doubled = cards.filter(t => /Lives lost [\d,]+/.test(t) && /[\d,]+ deaths/.test(t));
+  assert.deepEqual(doubled.map(t => t.slice(0, 60)), [], 'a card states its death toll twice');
+  const storm = cards.find(t => /Maximum sustained wind/.test(t));
+  if (storm) {
+    assert.equal((storm.match(/sustained wind/gi) || []).length, 1, 'a storm card states its wind twice: ' + storm);
+  }
+  r.close();
+});
+
+test('Personal Risk says when it was updated and shows no empty warning box', async () => {
+  /* From a screenshot of the live page: "Updated unknown" - the page read
+     meta.generatedAt, which the API has never set; it publishes generatedAt at
+     the top level - and an empty amber bar, a message box set to '' and left
+     with its border and padding. */
+  const r = await renderPage('personal-risk.html', { waitFor: settled('fresh'), timeoutMs: 8000 });
+  assert.doesNotMatch(r.document.getElementById('fresh').textContent, /unknown/i,
+    'Personal Risk cannot say when its data was updated');
+  r.close();
+  for (const css of ['portal.css', 'app-pages.css']) {
+    assert.match(fs.readFileSync(path.join(__dirname, '..', css), 'utf8'), /\.notice:empty,\.stale:empty\{display:none\}/,
+      css + ' draws an empty message box');
+  }
+});
