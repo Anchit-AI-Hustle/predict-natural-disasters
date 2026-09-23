@@ -39,23 +39,86 @@ test('every page that builds a map loads the shared setup, after Leaflet', () =>
 /** The maps a page built, as recorded by the harness's Leaflet stub. */
 const mapsOf = r => r.window.__pndMaps || [];
 
-test('a map does not capture the wheel until the reader engages with it', async () => {
+test('a plain wheel scrolls the page and the modifier zooms the map', async () => {
+  /* A map inside a scrolling page has to share the wheel with the page. The
+     settled convention everywhere else on the web is that the modifier key
+     decides, and the map says so the first time a reader tries the plain
+     wheel over it. This replaced a click-to-arm behaviour with the same
+     intent that nobody arrives knowing - and clicking a map is how you open
+     an event. */
   for (const page of ['index.html', 'live-map.html', 'event-detail.html']) {
     const r = await renderPage(page, {
       search: page === 'event-detail.html' ? '?id=ND-001' : '',
       timeoutMs: 3000, waitFor: doc => (doc.defaultView.__pndMaps || []).length > 0
     });
+    const win = r.window;
     const maps = mapsOf(r);
     assert.ok(maps.length, page + ' built no map');
     for (const map of maps) {
+      const el = map.getContainer();
+      const wheel = over => el.dispatchEvent(new win.WheelEvent('wheel',
+        Object.assign({ bubbles: true, cancelable: true, deltaY: -120 }, over)));
+
       assert.equal(map.scrollWheelZoom.enabled(), false, page + ': wheel captured on load');
-      map.fire('click');
-      assert.equal(map.scrollWheelZoom.enabled(), true, page + ': wheel still inert after a click');
-      map.fire('blur');
-      assert.equal(map.scrollWheelZoom.enabled(), false, page + ': wheel stays captured after leaving');
+
+      wheel({});
+      assert.equal(map.scrollWheelZoom.enabled(), false,
+        page + ': a plain wheel took the page scroll');
+      const hint = el.querySelector('.pnd-wheel-hint');
+      assert.ok(hint && /scroll to zoom/i.test(hint.textContent),
+        page + ': nothing told the reader how to zoom');
+      assert.ok(hint.hasAttribute('data-shown'), page + ': the hint was not shown');
+
+      wheel({ ctrlKey: true });
+      assert.equal(map.scrollWheelZoom.enabled(), true,
+        page + ': Ctrl + wheel did not zoom the map');
+
+      // A trackpad pinch arrives as ctrl + wheel, and Command is the Mac key.
+      wheel({});
+      assert.equal(map.scrollWheelZoom.enabled(), false, page + ': the wheel stayed armed');
+      wheel({ metaKey: true });
+      assert.equal(map.scrollWheelZoom.enabled(), true,
+        page + ': Command + wheel did not zoom the map');
+
+      el.dispatchEvent(new win.MouseEvent('mouseleave', { bubbles: false }));
+      assert.equal(map.scrollWheelZoom.enabled(), false,
+        page + ': the wheel stayed armed after the pointer left');
     }
     r.close();
   }
+});
+
+test('the satellite view is the default, with the drawn world under it', () => {
+  /* What a reader means by a map of a disaster is the real ground, so that is
+     what opens. The political world is kept - one click away in the layers
+     control, and underneath the imagery as the fallback for tiles that a
+     network refuses, with its own country names coming back when they do. */
+  const src = read('map-setup.js');
+  assert.match(src, /var start = views\['Satellite'\] \|\| plain;\s*\n\s*start\.addTo\(map\)/,
+    'the map no longer opens on the satellite view');
+  assert.match(src, /L\.control\.layers\(\{ 'Satellite': views\['Satellite'\], 'Political': plain \}/,
+    'the plain political world is no longer offered');
+  assert.match(src, /political\(map, false\)/,
+    'the imagery has no drawn world underneath it to fall back to');
+  assert.match(src, /imagery\.on\('tileerror'[^)]*\)/,
+    'nothing notices when the imagery does not arrive');
+  assert.match(src, /under\.showNames\(\)/,
+    'the fallback world stays unlabelled when the imagery fails');
+});
+
+test('the view toggle does not sit on the zoom control', () => {
+  /* Measured at 1280x900 before this: the toggle was at (27,357) 109x31 with
+     z-index 1300 and the zoom-in button at (29,359) 30x30, so elementFromPoint
+     over BOTH zoom buttons returned the toggle - the zoom control was
+     unclickable on every map in the site. jsdom cannot see that, so what is
+     held here is the rule that produced it; tools/map-controls-check.js does
+     the measuring. */
+  const src = read('map-setup.js');
+  const rule = (src.match(/'\.pnd-view-toggle\{position:absolute;top:(\d+)px;left:(\d+)px;/) || []);
+  assert.ok(rule[1], 'the view toggle no longer states where it sits');
+  const top = Number(rule[1]);
+  /* Leaflet's zoom control is two 30px buttons with a border, at top:10px. */
+  assert.ok(top >= 10 + 62, 'the view toggle is back on top of the zoom control (top:' + top + 'px)');
 });
 
 test('the guard leaves dragging, pinch and the zoom control alone', () => {
@@ -220,8 +283,12 @@ test('both views carry place names, and satellite stays available', () => {
   // Satellite is imagery plus its own place names; it must never be bare.
   const sat = src.match(/views\['Satellite'\] = L\.layerGroup\(\[[\s\S]*?\]\)/);
   assert.ok(sat, 'the satellite view is not assembled as a layer group');
-  assert.match(sat[0], /IMAGERY/, 'the satellite view has no imagery');
+  assert.match(sat[0], /\bimagery\b/, 'the satellite view has no imagery');
   assert.match(sat[0], /PLACES/, 'the satellite view has no place-name layer');
+  /* The imagery layer is built just above the group so a tileerror on it can
+     bring the fallback world's names back; it still has to be the imagery. */
+  assert.match(src, /var imagery = L\.tileLayer\(IMAGERY,/,
+    'the satellite view is no longer built from the world imagery tiles');
 });
 
 test('the label layer sits in its own pane, above the map and below the markers', () => {
