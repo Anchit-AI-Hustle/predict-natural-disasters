@@ -462,6 +462,59 @@ test('the page says which country-wide outlooks it could not place', async () =>
   r.close(); r2.close();
 });
 
+test('a country-wide outlook is not lost to the language the place was saved in', () => {
+  /* Nominatim answers in the browser's language, so a home saved in a German
+     browser records "Deutschland" while every record in the feed says
+     "Germany". Exact name equality then failed and the page did the quiet
+     thing - it dropped every Germany-wide outlook for that reader rather than
+     being wrong out loud. */
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const outlook = { forecast: true, forecastScope: 'country', country: 'Germany',
+    type: 'Severe Storm', title: '2-day Severe Storm risk outlook \u2014 Germany',
+    lat: 50.1, lon: 8.7 };
+  const berlin = { lat: 52.52, lon: 13.40 };
+
+  const localized = H.riskRow(outlook, Object.assign({ country: 'Deutschland', countryCode: 'DE' }, berlin));
+  assert.ok(localized, 'a Germany-wide outlook was dropped for a home in Berlin saved in German');
+  assert.equal(localized.band, 'C');
+  assert.match(localized.applicability, /whole country/i);
+
+  // The English name alone still matches, as it always did.
+  assert.ok(H.riskRow(outlook, Object.assign({ country: 'Germany' }, berlin)));
+  // And a spelling that differs only in punctuation is the same country.
+  assert.equal(H.countryMatches({ country: 'Viet Nam' }, 'Vietnam'), true);
+
+  /* A genuinely different country is still a different country - the fix must
+     not turn every country-wide outlook into a match. */
+  assert.equal(H.riskRow(outlook, { lat: 48.86, lon: 2.35, country: 'France', countryCode: 'FR' }), null,
+    'a German outlook was shown for a home in Paris');
+  assert.equal(H.riskRow(outlook, { lat: 48.86, lon: 2.35, country: 'France' }), null,
+    'an English country name that does not match is still a mismatch');
+
+  /* A place saved before the code was recorded, under a name this page cannot
+     place: that cannot be told apart from the same country in another
+     language, so it is reported as unestablished rather than dropped. */
+  const legacy = H.riskRow(outlook, Object.assign({ country: 'Deutschland' }, berlin));
+  assert.ok(legacy, 'an unrecognised country name silently dropped the outlook');
+  assert.match(legacy.applicability, /not one this page can recognise/i);
+  assert.equal(H.countryComparable({ country: 'Deutschland' }), false);
+  assert.equal(H.countryComparable({ country: 'France' }), true);
+  assert.equal(H.countryComparable({ country: 'Deutschland', countryCode: 'DE' }), true);
+});
+
+test('a place with no coordinates is not measured from Null Island', () => {
+  /* Number(null) is 0, and 0,0 is a real position in the Gulf of Guinea. */
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const quake = { type: 'Earthquake', lat: 0.1, lon: 0.1, proximityEligible: true };
+  assert.equal(H.riskRow(quake, { name: 'Unlocated', lat: null, lon: null }), null,
+    'a place with no coordinates was placed at 0,0 and given a distance');
+  assert.equal(H.riskRow(quake, { name: 'Unlocated', lat: '', lon: '' }), null);
+  const unlocatedEvent = { type: 'Flood', lat: null, lon: null, country: 'Ghana' };
+  const row = H.riskRow(unlocatedEvent, { name: 'Accra', lat: 5.6, lon: -0.2 });
+  assert.ok(!row || row.distanceKm === null,
+    'a record with no coordinates was reported at a distance from a real home');
+});
+
 test('the country a place was found in is forgotten when the place changes', async () => {
   /* The geocoded country survived any later edit, so searching Paris and then
      pasting Tokyo's coordinates saved Tokyo as being in France — and a
@@ -469,9 +522,10 @@ test('the country a place was found in is forgotten when the place changes', asy
      Japanese one was withheld. */
   const r = await renderPage('personal-risk.html', { waitFor: d => !!d.getElementById('placeName') });
   const d = r.document, w = r.window;
+  let asked = '';
   w.fetch = async (u) => String(u).includes('nominatim')
-    ? { ok: true, json: async () => [{ lat: '48.85', lon: '2.35', display_name: 'Paris, France',
-        address: { country: 'France' } }] }
+    ? (asked = String(u), { ok: true, json: async () => [{ lat: '48.85', lon: '2.35',
+        display_name: 'Paris, France', address: { country: 'France', country_code: 'fr' } }] })
     : { ok: true, status: 200, headers: { get: () => null }, json: async () => ({ events: [], meta: {} }) };
 
   d.getElementById('placeName').value = 'Paris';
@@ -503,7 +557,14 @@ test('the country a place was found in is forgotten when the place changes', asy
   d.getElementById('placeName').value = 'Paris';
   d.getElementById('findPlace').click();
   await new Promise(res => setTimeout(res, 200));
-  assert.equal(save().country, 'France',
+  const found = save();
+  assert.equal(found.country, 'France',
     'a place saved exactly as it was found lost the country it was found in');
+  /* The name comes back in the browser's language, so the request asks for
+     English and the place also keeps the code, which no language changes. */
+  assert.match(asked, /accept-language=en/,
+    'the place search does not ask for a canonical language');
+  assert.equal(found.countryCode, 'FR',
+    'the saved place carries no country code, so a localised name cannot be resolved');
   r.close();
 });

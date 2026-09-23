@@ -37,20 +37,26 @@ function draw(){const a=PND.savedLocations();
   const placeless=a.filter(x=>!x.country).length;
   scopeNote.textContent=(wide&&placeless)
     ?placeless+' of your saved places have no country recorded, so '+wide+' country-wide outlook(s) can be neither shown nor ruled out for them. Search for the place by name instead of entering coordinates and this can be answered.'
-    :''}f.onsubmit=e=>{e.preventDefault();PND.saveLocation({kind:kind.value,name:placeName.value,lat:+lat.value,lon:+lon.value,country:foundCountry||''});foundCountry='';f.reset();draw()};PND.getEvents().then(d=>{events=d.events||[];PND.evaluateRiskNotifications(events);fresh.textContent='Updated '+PND.age(d.meta&&d.meta.generatedAt);draw()}).catch(()=>{fresh.textContent='Live feed unavailable';risks.innerHTML='<div class="stale">Live data could not be refreshed. Do not rely on this page for emergency decisions; check local authorities.</div>'});/* The country is asked for and kept, because a country-wide outlook applies
+    :''}f.onsubmit=e=>{e.preventDefault();PND.saveLocation({kind:kind.value,name:placeName.value,lat:+lat.value,lon:+lon.value,country:foundCountry||'',countryCode:foundCountryCode||''});foundCountry='';foundCountryCode='';f.reset();draw()};PND.getEvents().then(d=>{events=d.events||[];PND.evaluateRiskNotifications(events);fresh.textContent='Updated '+PND.age(d.meta&&d.meta.generatedAt);draw()}).catch(()=>{fresh.textContent='Live feed unavailable';risks.innerHTML='<div class="stale">Live data could not be refreshed. Do not rely on this page for emergency decisions; check local authorities.</div>'});/* The country is asked for and kept, because a country-wide outlook applies
    to a country and not to a radius around whichever point it was anchored at:
    without it, a United States outlook anchored in Florida cannot be shown to
    a home in California. A place entered as bare coordinates has none, and the
    row for such an outlook says so rather than guessing. */
 let foundCountry='';
+/* And the two-letter code it came with, because the name comes back in the
+   browser's language: a home saved in a German browser records "Deutschland"
+   while every record in the feed says "Germany", and comparing the names
+   dropped every Germany-wide outlook for that reader without saying so. The
+   code is the same in every language. */
+let foundCountryCode='';
 /* The geocoded country belongs to the coordinates it came back with, and to
    nothing else. It survived any later edit, so searching Paris and then
    pasting Tokyo's coordinates saved Tokyo as being in France — and a
    country-wide French outlook would then have been shown for it while every
    Japanese one was withheld. Any change to the place clears it. */
 ['input','change'].forEach(ev=>[placeName,lat,lon].forEach(f=>f.addEventListener(ev,()=>{
-  if(!foundCountry)return;
-  foundCountry='';
+  if(!foundCountry&&!foundCountryCode)return;
+  foundCountry='';foundCountryCode='';
   placeResult.textContent='Place changed, so the country it was in is no longer known. Search by name again to record it.';
 })));
-findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.textContent='Enter a place first.';return}placeResult.textContent='Finding place…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}),a=await r.json();if(!a.length)throw new Error('not found');lat.value=(+a[0].lat).toFixed(6);lon.value=(+a[0].lon).toFixed(6);foundCountry=(a[0].address&&a[0].address.country)||'';placeResult.textContent='Found: '+a[0].display_name+' · confirm and Save.'}catch(e){foundCountry='';placeResult.textContent='Place search unavailable. Enter latitude/longitude manually.'}};notifyBtn.onclick=async()=>{if(!('Notification' in window)){notifyBtn.textContent='This browser cannot show alerts';return}const p=await Notification.requestPermission();notifyBtn.textContent=p==='granted'?'Alerting while this page is open':'Alerts not enabled'};PND.initSort('sortBy',RISK_SORTS,draw);draw();setTimeout(()=>PND.startTour(),500);</script><script src="/glossary.js"></script></body></html>
+findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.textContent='Enter a place first.';return}placeResult.textContent='Finding place…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&accept-language=en&limit=1&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}),a=await r.json();if(!a.length)throw new Error('not found');lat.value=(+a[0].lat).toFixed(6);lon.value=(+a[0].lon).toFixed(6);foundCountry=(a[0].address&&a[0].address.country)||'';foundCountryCode=String((a[0].address&&a[0].address.country_code)||'').toUpperCase();placeResult.textContent='Found: '+a[0].display_name+' · confirm and Save.'}catch(e){foundCountry='';foundCountryCode='';placeResult.textContent='Place search unavailable. Enter latitude/longitude manually.'}};notifyBtn.onclick=async()=>{if(!('Notification' in window)){notifyBtn.textContent='This browser cannot show alerts';return}const p=await Notification.requestPermission();notifyBtn.textContent=p==='granted'?'Alerting while this page is open':'Alerts not enabled'};PND.initSort('sortBy',RISK_SORTS,draw);draw();setTimeout(()=>PND.startTour(),500);</script><script src="/glossary.js"></script></body></html>

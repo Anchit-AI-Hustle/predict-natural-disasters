@@ -601,6 +601,7 @@
     outsideForecast: 'Your saved place is outside the published outlook area.',
     countryForecast: 'This outlook was issued for the whole country your saved place is in, not for a point within it.',
     countryUnknownPlace: 'This outlook covers a whole country. Your saved place has no country recorded \u2014 search for it by name rather than entering coordinates, and this can be answered.',
+    countryUnrecognisedPlace: 'This outlook covers a whole country. The country recorded for your saved place is not one this page can recognise \u2014 a place search made in another language records the country in that language \u2014 so whether the outlook covers you cannot be established. Search for the place by name again to record it afresh.',
     areaLevel: 'Area-level record: its coordinate marks an area centre, not an incident. Whether this place falls inside the affected area has not been established.'
   };
 
@@ -611,15 +612,112 @@
    * distanceKm is always computed where both points exist, but claimDistance
    * says whether it may be shown to the reader as a distance to the hazard.
    */
+  /*
+   * Two names for one country, told apart from two different countries.
+   *
+   * The saved place's country comes from a geocoder that answers in the
+   * browser's language, so a home saved in a German browser reads
+   * "Deutschland" while every record in the feed says "Germany". Exact
+   * lower-cased equality then failed, and the page did the quiet thing: it
+   * dropped every Germany-wide outlook for that reader rather than being
+   * wrong out loud. The place now carries the two-letter code the geocoder
+   * returns, which no language changes, and the English name is derived from
+   * it here. Names are compared on their letters alone, so "Viet Nam" and
+   * "Vietnam" are one country; nothing further is inferred, and two genuinely
+   * different names stay two countries.
+   */
+  function coordOf(v) {
+    if (v === null || v === undefined || v === '') return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+
+  function countryKey(name) {
+    var s = String(name || '').toLowerCase();
+    if (s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return s.replace(/[^a-z]/g, '');
+  }
+
+  function countryFromCode(code) {
+    var c = String(code || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(c)) return null;
+    try {
+      if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
+        var n = new Intl.DisplayNames(['en'], { type: 'region' }).of(c);
+        if (n && n !== c) return n;
+      }
+    } catch (err) { /* no ICU data for regions: fall back to the saved name */ }
+    return null;
+  }
+
+  /** Every spelling this saved place can be recognised by; empty when it
+      records no country at all, which is not the same as not matching. */
+  function placeCountryKeys(place) {
+    var keys = [], fromCode = countryFromCode(place && place.countryCode);
+    if (fromCode) keys.push(countryKey(fromCode));
+    var named = countryKey(place && place.country);
+    if (named && keys.indexOf(named) < 0) keys.push(named);
+    return keys;
+  }
+
+  function countryMatches(place, name) {
+    var want = countryKey(name);
+    return !!want && placeCountryKeys(place).indexOf(want) >= 0;
+  }
+
+  /* Every country name in English, keyed the same way, built once from the
+     two-letter codes the platform knows. It is what lets a name that does not
+     match be read correctly: "France" is a different country from Germany,
+     while "Deutschland" is a name this comparison cannot place at all, and
+     saying "does not apply" to the second would be the same silent drop in a
+     new disguise. */
+  var ENGLISH_COUNTRIES = null;
+  function englishCountryKeys() {
+    if (ENGLISH_COUNTRIES) return ENGLISH_COUNTRIES;
+    ENGLISH_COUNTRIES = {};
+    try {
+      if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
+        var dn = new Intl.DisplayNames(['en'], { type: 'region' });
+        for (var a = 65; a <= 90; a++) {
+          for (var b = 65; b <= 90; b++) {
+            var code = String.fromCharCode(a, b), name = dn.of(code);
+            if (name && name !== code) ENGLISH_COUNTRIES[countryKey(name)] = code;
+          }
+        }
+      }
+    } catch (err) { /* no region data: the check below stands down */ }
+    return ENGLISH_COUNTRIES;
+  }
+
+  /** Whether a name that did not match can be trusted to mean a different
+      country. A code always can; an English name can; anything else cannot be
+      told apart from this country under another name. */
+  function countryComparable(place) {
+    if (countryFromCode(place && place.countryCode)) return true;
+    var k = countryKey(place && place.country);
+    if (!k) return false;
+    var names = englishCountryKeys();
+    for (var any in names) {
+      if (Object.prototype.hasOwnProperty.call(names, any)) {
+        return Object.prototype.hasOwnProperty.call(names, k);
+      }
+    }
+    return true;   // nothing to check against; the saved name stands
+  }
+
   function riskRow(e, place, radiusKm) {
     e = e || {}; place = place || {};
     var R = isFinite(radiusKm) ? Number(radiusKm) : RISK_RADIUS_KM;
-    var pLat = Number(place.lat), pLon = Number(place.lon);
-    var eLat = Number(e.lat), eLon = Number(e.lon);
-    if (!isFinite(pLat) || !isFinite(pLon)) return null;
+    /* Number(null) and Number('') are both 0, and 0,0 is a real position in
+       the Gulf of Guinea, so an unlocated place or record would have been
+       measured from Null Island and could read as kilometres from a reader's
+       home. Absent is absent. */
+    var pLat = coordOf(place.lat), pLon = coordOf(place.lon);
+    var eLat = coordOf(e.lat), eLon = coordOf(e.lon);
+    if (pLat === null || pLon === null) return null;
 
     var contains = geometryContains(e.geometry, pLat, pLon);
-    var d = (isFinite(eLat) && isFinite(eLon)) ? distanceKm(pLat, pLon, eLat, eLon) : null;
+    var d = (eLat !== null && eLon !== null) ? distanceKm(pLat, pLon, eLat, eLon) : null;
     var near = d !== null && d <= R;
     var out = function (band, note, claim) {
       return {
@@ -640,9 +738,13 @@
          not, neither answer is available and the row says so rather than
          inventing one from the distance. */
       if (e.forecastScope === 'country' && e.country) {
-        var pc = String(place.country || '').trim().toLowerCase();
-        var ec = String(e.country).trim().toLowerCase();
-        if (pc) return pc === ec ? out('C', APPLICABILITY.countryForecast, false) : null;
+        if (countryMatches(place, e.country)) return out('C', APPLICABILITY.countryForecast, false);
+        /* It did not match, and whether that means a different country
+           depends on whether the saved name can be placed at all. */
+        if (placeCountryKeys(place).length) {
+          if (countryComparable(place)) return null;
+          return near ? out('C', APPLICABILITY.countryUnrecognisedPlace, false) : null;
+        }
         /* No country on the saved place: neither "it applies" nor "it does
            not" can be established, so no row is invented for it. The page
            says how many outlooks this leaves out and how to fix it, rather
@@ -808,6 +910,8 @@
     keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,
     geometryContains: geometryContains, distanceKm: distanceKm,
     riskRow: riskRow, RISK_BANDS: RISK_BANDS, RISK_RADIUS_KM: RISK_RADIUS_KM,
+    countryMatches: countryMatches, countryFromCode: countryFromCode,
+    countryComparable: countryComparable,
     APPLICABILITY: APPLICABILITY,
     FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
     effectiveForecastStart: effectiveForecastStart,

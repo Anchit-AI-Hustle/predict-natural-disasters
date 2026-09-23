@@ -66,6 +66,21 @@
   };
 
   function ms(v) { var t = Date.parse(v || ''); return isFinite(t) ? t : null; }
+  /*
+   * A coordinate, or nothing - never Null Island.
+   *
+   * Number(null) and Number('') are both 0, and 0,0 is a real place: it sits
+   * inside the hurricane centre's Atlantic basin. An unlocated cyclone
+   * therefore tested as covered by a provider whose basins are nowhere near
+   * it, so that provider's silence could establish an absence nobody was in
+   * a position to observe, and a disaster nothing forecast could be blamed on
+   * forecasting rather than reported as coverage that cannot be established.
+   */
+  function coord(v) {
+    if (v === null || v === undefined || v === '') return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
   function norm(s) { return String(s || '').trim().toLowerCase(); }
 
   function distanceKm(aLat, aLon, bLat, bLon) {
@@ -113,8 +128,8 @@
       geography: {
         country: p.country || null,
         region: p.region || null,
-        lat: (p.lat === undefined || p.lat === null) ? null : Number(p.lat),
-        lon: (p.lon === undefined || p.lon === null) ? null : Number(p.lon),
+        lat: coord(p.lat),
+        lon: coord(p.lon),
         scope: p.forecastScope || null
       },
       window: {
@@ -686,8 +701,8 @@
       return false;
     }
     if (scope.kind === 'boxes') {
-      var lat = Number(g.lat), lon = Number(g.lon);
-      if (!isFinite(lat) || !isFinite(lon)) return null;
+      var lat = coord(g.lat), lon = coord(g.lon);
+      if (lat === null || lon === null) return null;   // unlocated: not an answer
       for (var b = 0; b < (scope.boxes || []).length; b++) {
         var x = scope.boxes[b];
         if (lat >= x.minLat && lat <= x.maxLat && lon >= x.minLon && lon <= x.maxLon) return true;

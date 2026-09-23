@@ -108,6 +108,37 @@ test('a cyclone outside the published basins is not the hurricane centre\'s to h
   assert.equal(V.providerCovers(nhc, atlantic), true, 'control: an Atlantic storm is in reach');
 });
 
+test('a record with no coordinates is not at Null Island', () => {
+  /* Number(null) and Number('') are both 0, and 0,0 sits inside the Atlantic
+     basin, so an unlocated cyclone tested as covered by the hurricane centre
+     — whose basins are nowhere near the western Pacific. That provider's
+     silence could then establish an absence nobody was in a position to
+     observe, and a disaster nothing forecast would be blamed on forecasting
+     rather than reported as coverage that cannot be established. */
+  const nhc = { hazards: ['Tropical Cyclone'], completeness: 'exhaustive', recordsObservations: true,
+    scope: { kind: 'boxes', boxes: [
+      { name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 }] } };
+  const unlocated = { hazard: 'tropical-cyclone',
+    geography: { country: 'Philippines', lat: null, lon: null } };
+  assert.equal(V.providerCoversPlace(nhc, unlocated), null,
+    'an unlocated cyclone was placed at 0,0 and read as covered');
+  assert.equal(V.providerCovers(nhc, unlocated), false,
+    'a provider that cannot be shown to reach this record was counted as having looked');
+  // Control: the same provider, and a storm that really is in the basin.
+  assert.equal(V.providerCovers(nhc, { hazard: 'tropical-cyclone',
+    geography: { country: 'Bahamas', lat: 24, lon: -75 } }), true);
+
+  /* And the claim side, which is where the nulls come from: a frozen claim
+     with no position must carry none, not a position off the coast of
+     Ghana. */
+  const empty = V.frozenClaim({ type: 'Flood', title: 'Flood outlook',
+    country: 'Nepal', lat: '', lon: '' }, OBS.familyOf);
+  assert.equal(empty.geography.lat, null, 'an empty coordinate became a real place');
+  assert.equal(empty.geography.lon, null);
+  const missing = V.frozenClaim({ type: 'Flood', title: 'Flood outlook', country: 'Nepal' }, OBS.familyOf);
+  assert.equal(missing.geography.lat, null);
+});
+
 test('an undecidable scope is never read as coverage', () => {
   const vague = { hazards: ['Flood'] };                     // no scope recorded
   assert.equal(V.providerCoversPlace(vague, flood()), null);
