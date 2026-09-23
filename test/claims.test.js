@@ -133,3 +133,88 @@ test('an outlook is never described as a prediction made ahead of its signal', (
   assert.match(detail, /Nothing here is a prediction made ahead of that signal/,
     'the forecast detail page no longer distinguishes an outlook from a prediction');
 });
+
+/* ------------------------------------------------- the copy nobody re-reads */
+
+/*
+ * The title and description are the most-read copy on the site: they are what
+ * a search result and a shared link show, and they are the one place nobody
+ * looks again after writing them. Every claim audit here had been applied to
+ * the body of the pages and none of it to this block, which was still
+ * marketing copy — "every active natural disaster", "ranked by population
+ * exposure", "the models behind the forecasts", "cross-checked before it is
+ * published". Each of those describes something this implementation does not
+ * do.
+ */
+const metaOf = (file) => {
+  const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+  const grab = re => { const m = html.match(re); return m ? m[1] : ''; };
+  return {
+    title: grab(/<title>([^<]*)<\/title>/i),
+    description: grab(/<meta name="description" content="([^"]*)"/i),
+    og: grab(/<meta property="og:description" content="([^"]*)"/i),
+    twitter: grab(/<meta name="twitter:description" content="([^"]*)"/i)
+  };
+};
+
+test('no page describes itself to search engines as doing something it does not do', () => {
+  /* Each rule names a capability and the evidence for it: a page may make the
+     claim only if the implementation carries it. */
+  const RULES = [
+    { claim: /\bevery (?:active )?(?:natural )?disaster\b/i,
+      why: 'the feed carries what eight providers report, which is not every disaster' },
+    { claim: /population exposure/i,
+      why: 'nothing in this repository computes population exposure' },
+    { claim: /\bmodels\b/i,
+      why: 'there is no calibrated model; the methodology page says so itself' },
+    { claim: /cross-checked against official sources before it is published/i,
+      why: 'records are republished from their source feed as they arrive' },
+    { claim: /continuously updated|updated continuously/i,
+      why: 'the feed is recomputed per request and the page refreshes on a timer' },
+    { claim: /\breal[- ]time\b(?! *monitoring is not)/i,
+      why: 'nothing here streams; the feed is polled' },
+    { claim: /\b(?:24\s*\/\s*7|guarantee|never miss|most accurate)\b/i,
+      why: 'no page may promise this' }
+  ];
+  const offences = [];
+  for (const f of fs.readdirSync(ROOT).filter(x => x.endsWith('.html'))) {
+    const m = metaOf(f);
+    const text = [m.title, m.description, m.og, m.twitter].join(' ');
+    for (const r of RULES) {
+      if (r.claim.test(text)) offences.push(f + ': "' + (text.match(r.claim) || [])[0] + '" — ' + r.why);
+    }
+  }
+  assert.deepEqual(offences, [],
+    'the search-facing copy claims capabilities this site does not have:\n  ' + offences.join('\n  '));
+});
+
+test('every page tells a search engine what it is', () => {
+  const missing = [];
+  for (const f of fs.readdirSync(ROOT).filter(x => x.endsWith('.html'))) {
+    const m = metaOf(f);
+    if (!m.title.trim()) missing.push(f + ': no title');
+    if (!m.description.trim()) missing.push(f + ': no description');
+    else if (m.description.trim().length < 40) missing.push(f + ': a description too short to say anything');
+  }
+  assert.deepEqual(missing, [], missing.join('\n  '));
+});
+
+test('a page that names a limit in its body does not deny it in its description', () => {
+  /* The specific contradiction found: a page whose body says outlooks are
+     "graded only against independently observed impacts after issuance",
+     described to search engines as cross-checking every record before
+     publication. */
+  const pairs = [
+    { file: 'verification.html', body: /after issuance|experimental risk outlooks/i },
+    { file: 'alerts-notifications.html', body: /no background alerting service/i },
+    { file: 'personal-risk.html', body: /cannot notify you|no background alerting/i }
+  ];
+  for (const p of pairs) {
+    const html = fs.readFileSync(path.join(ROOT, p.file), 'utf8');
+    assert.ok(p.body.test(html), p.file + ': the body no longer states the limit this checks');
+    const m = metaOf(p.file);
+    const meta = [m.title, m.description, m.og, m.twitter].join(' ');
+    assert.equal(/before it is published|instant alerts|notifies you/i.test(meta), false,
+      p.file + ': the description contradicts the limit its own body states');
+  }
+});

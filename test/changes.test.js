@@ -532,3 +532,43 @@ test('the panel escapes what it renders', async () => {
   assert.match(html, /&lt;img/);
   window.close();
 });
+
+test('no file claims a cadence the record contradicts', () => {
+  /* The coverage rule was justified in a comment as being "beyond the slowest
+     cycle observed", from a hand measurement over 15-20 September. The job's
+     own record has since written down a 35-hour gap, which made that
+     justification false while nothing failed — a measurement in prose goes
+     stale silently, and this is what catches the next one.
+
+     The rule is: anything that states a range of hours between runs must not
+     understate what the ledger itself recorded. */
+  const recorded = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'forecast-changes.json'), 'utf8'))
+    .observedCadenceHours || {};
+  if (typeof recorded.max !== 'number') return;   // nothing recorded yet to contradict
+
+  const files = ['verification-model.js', 'accuracy.html', 'api/events.js', 'README.md',
+    '.github/workflows/refresh-disaster-data.yml', 'tools/record-changes.js', 'methodology.html'];
+  const claims = [];
+  for (const f of files) {
+    const p = path.join(ROOT, f);
+    if (!fs.existsSync(p)) continue;
+    const text = fs.readFileSync(p, 'utf8');
+    for (const m of text.matchAll(/every\s+([\d.]+)\s*(?:to|-|–|and)\s*([\d.]+)\s*hours/gi)) {
+      claims.push({ file: f, low: Number(m[1]), high: Number(m[2]), text: m[0] });
+    }
+    for (const m of text.matchAll(/(?:slowest|longest|worst)[^.]{0,40}(?:cycle|gap|run)[^.]{0,60}/gi)) {
+      claims.push({ file: f, phrase: m[0] });
+    }
+  }
+  const wrong = claims.filter(c => typeof c.high === 'number' && c.high < recorded.max);
+  assert.deepEqual(wrong.map(c => c.file + ': "' + c.text + '" but the record holds ' + recorded.max + 'h'), [],
+    'a file states a cadence range the job\'s own record exceeds');
+
+  /* And nothing may claim six hours is an upper bound on the gap, because it
+     is not: it is the line between a normal cycle and an outage. */
+  const engine = fs.readFileSync(path.join(ROOT, 'verification-model.js'), 'utf8');
+  if (recorded.max > 6) {
+    assert.equal(/beyond the slowest cycle observed/.test(engine), false,
+      'the engine still justifies its gap rule as being longer than anything observed');
+  }
+});

@@ -508,11 +508,24 @@
    * observed. Scans are instants, so joining consecutive ones needs a stated
    * rule for how far apart they may be.
    *
-   * Measured from the ledger's own write times over 15-20 September, the
-   * hourly job actually ran every 2.0 to 5.6 hours, median 3.7. Six hours is
-   * therefore beyond the slowest cycle observed, and a gap longer than that is
-   * treated as a period nothing was watching. Published on every coverage
-   * answer and versioned with the engine, like every other tolerance here.
+   * Six hours, which is a little beyond a normal cycle of this job and well
+   * inside its worst. The job's own written record - forecast-changes.json,
+   * which measures what it achieved rather than what it asked for - puts the
+   * median gap between runs at about four hours, the shortest at 1.5 and the
+   * longest at nearly 35. So this is emphatically NOT "longer than anything
+   * observed": a 35-hour gap exists in the record and is exactly what this
+   * rule is for. A gap beyond a normal cycle is an outage, and the hours
+   * inside it are hours nothing was watching, whether the job was late or
+   * the provider was down.
+   *
+   * (An earlier version of this comment justified the six hours as being
+   * beyond the slowest cycle ever seen, from a hand measurement over 15-20
+   * September. The ledger has since recorded a 35-hour gap, so that
+   * justification was wrong; the number it justified is unchanged, because
+   * what it is for never depended on being an upper bound.)
+   *
+   * Published on every coverage answer and versioned with the engine, like
+   * every other tolerance here.
    */
   var MAX_SCAN_GAP_HOURS = 6;
 

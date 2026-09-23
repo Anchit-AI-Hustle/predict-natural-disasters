@@ -3,12 +3,17 @@ name: Refresh disaster intelligence
 # Hourly: re-pull the live feed, record any newly-seen outlook and any movement
 # in the existing ones, and pre-warm the per-event enrichment cache.
 #
-# This asked for every five minutes and never got it. Measured from the
-# ledger's own write times over 15-20 September, GitHub actually ran it every
-# 2.0 to 5.6 hours, median 3.7 — about a fortieth of the declared rate, because
-# a schedule this aggressive on a free runner is throttled hard. Asking hourly
-# is both achievable and honest; the run also measures what it actually
-# achieves and publishes that rather than the intention.
+# This asked for every five minutes and never got it: a schedule that
+# aggressive on a free runner is throttled hard. Asking hourly is both
+# achievable and honest.
+#
+# What it actually achieves is measured rather than asserted here, because a
+# hand measurement goes stale: tools/record-changes.js records the gap between
+# runs and publishes it as observedCadenceHours, and /api/events serves it as
+# meta.refreshRecorded. Read from that record rather than from this comment —
+# as of the last run it was a median of about four hours, a shortest of 1.5
+# and a longest of nearly 35, which is a scheduled job on a shared runner
+# rather than a promise.
 #
 # The pages themselves are not stale in between: /api/events recomputes the
 # feed from the upstream sources on every request. What this job adds is the
