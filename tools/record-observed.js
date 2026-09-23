@@ -54,11 +54,56 @@ const TRACKED = ['end', 'severity', 'alert', 'deaths', 'injuries', 'missing', 'a
   'displaced', 'evacuated', 'infrastructureImpact', 'impactLastUpdated', 'evidenceConfidence',
   'source', 'sourceUrl', 'eventId', 'geometry', 'significanceReason'];
 
+/*
+ * A returning disaster is recognised by its evidence, not by its id.
+ *
+ * The canonical id is built from the representative record's rounded position
+ * and the earliest onset then visible. Both can move: a second provider
+ * reports the same flood with a better location, or an earlier onset, and the
+ * id generated on the next run differs from the one already recorded. Looking
+ * the id up and finding nothing appends a second row, and one physical
+ * disaster is counted twice in the recall denominator for ever.
+ *
+ * The provider records underneath are stable, so they are what identifies an
+ * event across runs. The id stays frozen as first written even when the
+ * derived one changes, and the change is recorded rather than applied.
+ */
 const byId = new Map(ledger.events.map(e => [e.canonicalEventId, e]));
-let added = 0, updated = 0, changes = 0;
+const byEvidence = new Map();
+for (const e of ledger.events) {
+  if (e.supersededBy) continue;
+  for (const ev of (e.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, e);
+}
+const findExisting = c => {
+  const direct = byId.get(c.canonicalEventId);
+  if (direct && !direct.supersededBy) return [direct];
+  const hits = new Set();
+  for (const ev of (c.evidence || [])) {
+    const found = ev && ev.id ? byEvidence.get(ev.id) : null;
+    if (found) hits.add(found);
+  }
+  if (direct) hits.add(direct);
+  return [...hits];
+};
+
+let added = 0, updated = 0, changes = 0, superseded = 0, reidentified = 0;
 
 for (const c of significant) {
-  const existing = byId.get(c.canonicalEventId);
+  const candidates = findExisting(c);
+  /* A record that bridges two previously separate events means they were one
+     disaster all along. The earliest-recorded row keeps the identity; the
+     others are marked superseded rather than deleted, so the correction is
+     visible and nothing silently disappears from the denominator. */
+  candidates.sort((a, b) => String(a.firstRecordedAt || '').localeCompare(String(b.firstRecordedAt || '')));
+  const existing = candidates[0];
+  for (const extra of candidates.slice(1)) {
+    if (extra.supersededBy) continue;
+    extra.supersededBy = existing.canonicalEventId;
+    extra.supersededAt = now;
+    extra.supersededReason = 'A later provider record links this to ' + existing.canonicalEventId +
+      ', so the two were one disaster. Kept for the record and excluded from the recall denominator.';
+    superseded++;
+  }
   if (!existing) {
     const row = Object.assign({}, c, {
       firstRecordedAt: now,
@@ -67,11 +112,23 @@ for (const c of significant) {
     });
     ledger.events.push(row);
     byId.set(row.canonicalEventId, row);
+    for (const ev of (row.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, row);
     added++;
     continue;
   }
 
   existing.lastSeenAt = now;
+  /* The id this run would have generated. Recorded when it differs, never
+     applied: the identity a disaster was first written under is what every
+     other record refers to. */
+  if (c.canonicalEventId !== existing.canonicalEventId) {
+    existing.derivedIdHistory = existing.derivedIdHistory || [];
+    if (!existing.derivedIdHistory.some(h => h.derivedId === c.canonicalEventId)) {
+      existing.derivedIdHistory.push({ at: now, derivedId: c.canonicalEventId,
+        note: 'Better evidence changed the id this would be generated under; the recorded id is unchanged.' });
+      reidentified++;
+    }
+  }
   existing.geography = c.geography;
   existing.evidence = c.evidence;
   existing.mergeReasons = c.mergeReasons;
@@ -111,11 +168,14 @@ ledger.lastRun = {
   providerRecordsEvaluated: observed.length,
   canonicalEventsFound: canonical.length,
   significant: significant.length,
+  supersededThisRun: superseded,
+  reidentifiedThisRun: reidentified,
   belowSignificanceBar: canonical.length - significant.length
 };
 
 fs.writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + '\n');
 console.log('observed ledger: ' + added + ' new, ' + updated + ' seen again, ' + changes +
-  ' figure(s) revised — ' + ledger.events.length + ' significant disasters recorded ' +
+  ' figure(s) revised, ' + reidentified + ' re-identified, ' + superseded + ' superseded — ' +
+  ledger.events.filter(e => !e.supersededBy).length + ' significant disasters recorded ' +
   '(' + observed.length + ' provider records → ' + canonical.length + ' events, ' +
   (canonical.length - significant.length) + ' below the bar)');

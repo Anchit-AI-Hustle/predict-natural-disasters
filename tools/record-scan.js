@@ -61,6 +61,7 @@ for (const p of scan.providers) {
     label: p.label, hazards: p.hazards,
     geographicCoverage: p.geographicCoverage,
     coverageResolution: p.coverageResolution,
+    scope: p.scope,
     endpoint: p.endpoint
   };
 }

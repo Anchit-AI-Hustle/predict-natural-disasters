@@ -88,18 +88,23 @@ honesty.textContent=l.length+' forecast windows have been recorded ('+distinct+'
 /* Graded by the verification engine, against the frozen claim and against the
    record of what was observed — not against whatever is in the feed today. */
 const VER=window.PNDVerification,OBSM=window.PNDObserved;
-const obsEvents=(obsLedger&&obsLedger.events)||[];
-/* What period the disaster record actually covers. A forecast whose window
-   falls outside it cannot be graded, and saying it failed would assert that
-   nothing happened there. */
-const coverage={from:obsEvents.length?obsEvents[0].onset:null,to:(obsLedger&&obsLedger.updatedAt)||null};
+/* A superseded row is a correction, not a disaster: two rows turned out to be
+   one, and counting both would leave the denominator wrong in the other
+   direction. It stays in the file and out of the arithmetic. */
+const obsEvents=((obsLedger&&obsLedger.events)||[]).filter(e=>!e.supersededBy);
+/* Coverage is asked per hazard and place, not taken as one window over
+   everything. The observed ledger's updatedAt advances on every run including
+   ones where the providers for a hazard were down, so using it would make a
+   flood outlook gradeable on a cycle when no flood source answered, and score
+   it a false positive for an absence nobody was watching for. */
+const coverageFor=claim=>VER.observedCoverageFor(scanLedger||{scans:[]},claim.hazard,claim.geography);
 const classOf=r=>V.forecastClassOf(r);
 const preds=l.map(r=>Object.assign({},r,{forecastClass:classOf(r)}));
-const verdicts=preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverage}));
+const verdicts=preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor}));
 const byId=new Map(verdicts.map((vd,i)=>[preds[i].id+'@'+preds[i].targetStart,vd]));
 const headlineIdx=preds.map((p,i)=>i).filter(i=>preds[i].forecastClass==='independent-prospective');
 const condIdx=preds.map((p,i)=>i).filter(i=>preds[i].forecastClass&&preds[i].forecastClass!=='independent-prospective'&&preds[i].forecastClass!=='invalid-post-event');
-const assessments=obsEvents.map(e=>VER.assessCoverage(e,preds,scanLedger||{scans:[]}));
+const assessments=obsEvents.map(e=>VER.assessCoverage(e,preds,scanLedger||{scans:[]},{hazardFamilyOf:OBSM.familyOf}));
 const sH=VER.score(headlineIdx.map(i=>verdicts[i]),assessments);
 const sC=VER.score(condIdx.map(i=>verdicts[i]),[]);
 const pct=(x,n,unit)=>x===null?'Not computable':(Math.round(x*1000)/10)+'% ('+n+' '+unit+')';
@@ -124,9 +129,10 @@ ipNote.textContent=headlineIdx.length===0
 cdTotal.textContent=condIdx.length;cdMatured.textContent=sC.eligibleMaturedPredictions;
 cdHit.textContent=sC.hit;cdPartial.textContent=sC.partial;cdMiss.textContent=sC.miss;
 cdPending.textContent=sC.pending;cdPrecision.textContent=pct(sC.precision,sC.eligibleMaturedPredictions,'graded');
+const anyScan=((scanLedger&&scanLedger.scans)||[]).length;
 cdNote.textContent=sC.eligibleMaturedPredictions===0
- ? 'None of these can be graded yet: '+sC.ungradeable+' matured window(s) fall outside the period the record of observed disasters covers. '
-   +(coverage.from?'That record begins on '+PND.fmtDate(coverage.from)+'.':'That record is empty, so there is nothing yet to grade any of them against.')
+ ? 'None of these can be graded yet: '+sC.ungradeable+' matured window(s) fall outside the period covered by a completed scan of their own hazard and place. '
+   +(anyScan?'Coverage is counted per hazard, so a cycle in which that hazard\u2019s providers were down extends nothing.':'No scan has been recorded yet, so there is nothing to grade any of them against.')
  : 'Computed from '+sC.eligibleMaturedPredictions+' matured outlook(s). This is not a prediction rate.';
 
 obTotal.textContent=obsEvents.length;
@@ -146,7 +152,7 @@ const classCounts=Object.keys(parts.byClass).sort().map(k=>{
   return (def?def.label:k)+': '+parts.byClass[k].length;});
 classBreak.textContent='Recorded windows by class — '+(classCounts.join(' \u00b7 ')||'none recorded')+'.'
  +(parts.unclassified.length?' '+parts.unclassified.length+' record(s) could not be classified and count toward no rate.':'');
-window.__verification={verdicts,byId,preds,assessments,obsEvents,coverage};
+window.__verification={verdicts,byId,preds,assessments,obsEvents,coverageFor};
 /* A figure nobody published is shown as not reported, never as a zero. */
 const fig=v=>v===null||v===undefined?'<span class="sub">Not reported</span>':String(v);
 obsRows.innerHTML=obsEvents.length?obsEvents.map((e,i)=>{const a=assessments[i]||{};

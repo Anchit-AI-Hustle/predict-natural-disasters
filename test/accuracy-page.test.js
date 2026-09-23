@@ -126,6 +126,21 @@ test('the page does grade, and does publish rates, once the record covers the fo
   assert.ok(matured.length > 0, 'the recorded ledger holds no matured window to grade');
   const first = matured[0];
 
+  /* Coverage is now taken from the scan ledger, per hazard and place, rather
+     than from the observed ledger's updatedAt — so grading this needs a scan
+     in which a provider covering floods in that country actually completed
+     one. Supplying only the disasters would leave everything ungradeable,
+     which is the whole point of that change. */
+  const scan = {
+    schemaVersion: 1,
+    providers: { gdacs: { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' } } },
+    scans: [
+      { scanTimestamp: new Date(Date.parse(first.targetStart) - 3600e3).toISOString(),
+        providers: [{ provider: 'gdacs', status: 'SCANNED' }] },
+      { scanTimestamp: new Date(Date.parse(first.targetEnd) + 3600e3).toISOString(),
+        providers: [{ provider: 'gdacs', status: 'SCANNED' }] }
+    ]
+  };
   const observed = {
     schemaVersion: 1,
     updatedAt: new Date().toISOString(),
@@ -147,10 +162,10 @@ test('the page does grade, and does publish rates, once the record covers the fo
       const real = w.fetch;
       w.fetch = async (input) => {
         const url = String(input && input.url ? input.url : input);
-        if (url.includes('observed-disasters.json')) {
-          return { ok: true, status: 200, headers: { get: () => null },
-            json: async () => observed, text: async () => JSON.stringify(observed) };
-        }
+        const serve = body => ({ ok: true, status: 200, headers: { get: () => null },
+          json: async () => body, text: async () => JSON.stringify(body) });
+        if (url.includes('observed-disasters.json')) return serve(observed);
+        if (url.includes('scan-ledger.json')) return serve(scan);
         return real(input);
       };
     }

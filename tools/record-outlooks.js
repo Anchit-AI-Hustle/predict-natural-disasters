@@ -50,10 +50,21 @@ const seen = new Set(ledger.map(key));
 
 const FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region', 'lat', 'lon',
   'alert', 'severity', 'severityRank', 'issuedAt', 'sourceIssuedAt', 'targetStart',
-  'targetEnd', 'forecastKind', 'forecastClass', 'classificationReason',
+  'targetEnd', 'forecastKind', 'forecastClass', 'forecastScope', 'classificationReason',
   'effectiveForecastStart', 'forecastOf', 'source', 'sourceUrl', 'confidence',
   'evidence', 'verificationRule'];
 
+/*
+ * forecastScope is recorded from here on and is deliberately NOT backfilled.
+ *
+ * The 490 rows written before it existed never carried a scope, so there is
+ * nothing to restore. It could be guessed from the country field, but a guess
+ * that turns a corridor into a whole country is exactly the retrospective
+ * widening of geography this project refuses: the frozen benchmark names the
+ * Hue-Da Nang corridor and also names Vietnam. Without a recorded scope those
+ * rows are graded on distance against the published tolerance, which is the
+ * narrower reading and the one that cannot flatter the record.
+ */
 const recordedAt = new Date().toISOString();
 /* The signal a derived outlook came from, needed to tell a forecast derived
    from an official warning apart from one derived from an observation. */

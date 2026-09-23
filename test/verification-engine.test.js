@@ -184,25 +184,33 @@ test('a disaster before the scan record begins cannot be attributed either way',
 test('scanned and nothing forecast is a forecasting failure, not a coverage one', () => {
   const led = {
     retention: { detailFrom: '2026-09-01T00:00:00Z' },
-    providers: { gdacs: { hazards: ['Flood', 'Earthquake'] } },
+    providers: { gdacs: { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' } } },
     scans: [{ scanTimestamp: '2026-09-03T01:00:00Z',
       providers: [{ provider: 'gdacs', status: 'SCANNED' }] }]
   };
-  const a = V.assessCoverage(disaster(), [], led);
+  const opts = { hazardFamilyOf: OBS.familyOf };
+  const a = V.assessCoverage(disaster(), [], led, opts);
   assert.equal(a.status, 'FORECAST_FAILURE');
 
   // The same disaster, with the only covering provider unavailable, is the
   // other thing entirely.
   const down = JSON.parse(JSON.stringify(led));
   down.scans[0].providers[0].status = 'DATA_UNAVAILABLE';
-  assert.equal(V.assessCoverage(disaster(), [], down).status, 'COVERAGE_FAILURE');
+  assert.equal(V.assessCoverage(disaster(), [], down, opts).status, 'COVERAGE_FAILURE');
+
+  /* And a provider that covers the hazard but not the place is not coverage
+     either - the case Codex raised, kept here beside its siblings. */
+  const elsewhere = JSON.parse(JSON.stringify(led));
+  elsewhere.providers.gdacs.scope = { kind: 'countries', countries: ['United States'] };
+  assert.equal(V.assessCoverage(disaster(), [], elsewhere, opts).status, 'COVERAGE_FAILURE',
+    'a US-only provider was credited with watching a flood in Nepal');
 });
 
 test('a disaster a qualifying forecast covered is not a false negative', () => {
   const led = { retention: { detailFrom: '2026-09-01T00:00:00Z' },
-    providers: { gdacs: { hazards: ['Flood'] } },
+    providers: { gdacs: { hazards: ['Flood'], scope: { kind: 'global' } } },
     scans: [{ scanTimestamp: '2026-09-03T01:00:00Z', providers: [{ provider: 'gdacs', status: 'SCANNED' }] }] };
-  const a = V.assessCoverage(disaster(), [prediction()], led);
+  const a = V.assessCoverage(disaster(), [prediction()], led, { hazardFamilyOf: OBS.familyOf });
   assert.equal(a.falseNegative, false);
   assert.equal(a.matched.length, 1);
   assert.equal(a.matched[0].result, 'HIT');
@@ -210,11 +218,12 @@ test('a disaster a qualifying forecast covered is not a false negative', () => {
 
 test('only an independent prospective forecast can answer a false negative', () => {
   const led = { retention: { detailFrom: '2026-09-01T00:00:00Z' },
-    providers: { gdacs: { hazards: ['Flood'] } },
+    providers: { gdacs: { hazards: ['Flood'], scope: { kind: 'global' } } },
     scans: [{ scanTimestamp: '2026-09-03T01:00:00Z', providers: [{ provider: 'gdacs', status: 'SCANNED' }] }] };
   /* A continuation outlook describing a flood already under way does not make
      that flood a predicted one. */
-  const a = V.assessCoverage(disaster(), [prediction({ forecastClass: 'continuation-outlook' })], led);
+  const a = V.assessCoverage(disaster(), [prediction({ forecastClass: 'continuation-outlook' })], led,
+    { hazardFamilyOf: OBS.familyOf });
   assert.equal(a.falseNegative, true,
     'a continuation outlook was accepted as having predicted the disaster it describes');
 });

@@ -208,7 +208,12 @@
      * precision from that would have been a fabricated number, not a poor
      * one. The record becomes gradeable as the observed ledger fills.
      */
-    var cov = o.observedCoverage;
+    /* A window may be given directly, or resolved for this forecast's own
+       hazard and place — which is the only form that can tell "nothing
+       happened" apart from "nothing was watching for it". */
+    var cov = typeof o.observedCoverage === 'function'
+      ? o.observedCoverage(claim)
+      : o.observedCoverage;
     if (cov) {
       var covFrom = ms(cov.from), covTo = ms(cov.to);
       if (covFrom === null || covTo === null) {
@@ -270,8 +275,15 @@
    * the disaster come back unpredicted. What matters for a false negative is
    * only whether the disaster fell inside what the forecast claimed.
    */
-  function covers(prediction, event) {
-    var claim = frozenClaim(prediction, function () { return event.hazard; });
+  function covers(prediction, event, hazardFamilyOf) {
+    /* The prediction's own hazard, classified the same way the event's was.
+       Passing a function that returns the event's hazard made
+       `claim.hazard !== event.hazard` unfalsifiable, so an earthquake
+       prediction counted as having predicted a flood whenever the time and
+       the geography lined up. Without a classifier there is no way to compare
+       them, and an uncomparable pair is not a match. */
+    if (typeof hazardFamilyOf !== 'function') return null;
+    var claim = frozenClaim(prediction, hazardFamilyOf);
     if (claim.hazard !== event.hazard) return null;
     var onset = ms(event.onset);
     var start = ms(claim.window.effectiveForecastStart);
@@ -280,6 +292,100 @@
     if (start !== null && onset < start) return null;
     if (onset > end) return null;
     return geographyMatch(claim, event);
+  }
+
+  /**
+   * Over what period can an absence of disasters of THIS hazard, in THIS
+   * place, actually be read as an absence?
+   *
+   * The first version took one window for everything: the earliest recorded
+   * disaster through the observed ledger's updatedAt. But that timestamp
+   * advances on every run, including runs where the providers covering a
+   * hazard were down. A cycle with only USGS online would extend "coverage"
+   * over floods, make a matured flood outlook gradeable, and score it a false
+   * positive although no flood source had answered.
+   *
+   * Coverage is therefore derived per hazard from the scan ledger: the span
+   * of scans in which some provider covering that hazard, and reaching that
+   * place, actually completed one. No such scan means no coverage, and a
+   * forecast over that period stays ungradeable.
+   */
+  function observedCoverageFor(scanLedger, hazard, place) {
+    var scans = (scanLedger && scanLedger.scans) || [];
+    if (!scans.length) return { from: null, to: null, scans: 0 };
+    var meta = (scanLedger && scanLedger.providers) || {};
+    var probe = { hazard: hazard, geography: place || {} };
+    var from = null, to = null, n = 0;
+    for (var i = 0; i < scans.length; i++) {
+      var s = scans[i], t = ms(s.scanTimestamp);
+      if (t === null) continue;
+      var covered = (s.providers || []).some(function (p) {
+        return p.status === 'SCANNED' && providerCovers(meta[p.provider] || {}, probe);
+      });
+      if (!covered) continue;
+      n++;
+      if (from === null || t < from) from = t;
+      if (to === null || t > to) to = t;
+    }
+    return {
+      from: from === null ? null : new Date(from).toISOString(),
+      to: to === null ? null : new Date(to).toISOString(),
+      scans: n
+    };
+  }
+
+  /**
+   * Was this provider in a position to see this disaster?
+   *
+   * Its hazard list is half the question. NWS publishes flood warnings and
+   * covers the United States, so a flood in Nepal is outside it however well
+   * the hazard matches; the National Hurricane Center publishes cyclones for
+   * two ocean basins and nothing in the western Pacific. Counting either as
+   * having looked turns a coverage failure into a forecasting failure and
+   * blames the engine for a gap in the sources.
+   *
+   * Returns null where the scope cannot be decided, and the caller treats
+   * that as not covering: erring toward "we cannot say anyone was looking"
+   * rather than toward blame.
+   */
+  function providerCoversHazard(meta, hazard) {
+    var hazards = (meta && meta.hazards) || [];
+    if (!hazards.length) return null;
+    var want = norm(hazard).split('-')[0];
+    for (var i = 0; i < hazards.length; i++) {
+      if (norm(hazards[i]).indexOf(want) >= 0) return true;
+    }
+    return false;
+  }
+
+  function providerCoversPlace(meta, event) {
+    var scope = meta && meta.scope;
+    if (!scope || !scope.kind) return null;          // nothing recorded to test
+    if (scope.kind === 'global') return true;
+    var g = event.geography || {};
+    if (scope.kind === 'countries') {
+      if (!g.country) return null;
+      for (var i = 0; i < (scope.countries || []).length; i++) {
+        if (norm(scope.countries[i]) === norm(g.country)) return true;
+      }
+      return false;
+    }
+    if (scope.kind === 'boxes') {
+      var lat = Number(g.lat), lon = Number(g.lon);
+      if (!isFinite(lat) || !isFinite(lon)) return null;
+      for (var b = 0; b < (scope.boxes || []).length; b++) {
+        var x = scope.boxes[b];
+        if (lat >= x.minLat && lat <= x.maxLat && lon >= x.minLon && lon <= x.maxLon) return true;
+      }
+      return false;
+    }
+    return null;
+  }
+
+  /** Did this provider both cover the hazard and reach the place? */
+  function providerCovers(meta, event) {
+    return providerCoversHazard(meta, event.hazard) === true &&
+           providerCoversPlace(meta, event) === true;
   }
 
   /* ------------------------------------------------------- false negatives */
@@ -300,13 +406,14 @@
    * answer can be given, and the honest reply is that it cannot be
    * established.
    */
-  function assessCoverage(event, predictions, scanLedger) {
+  function assessCoverage(event, predictions, scanLedger, opts) {
+    var hazardFamilyOf = (opts || {}).hazardFamilyOf;
     var qualifying = (predictions || []).filter(function (p) {
       return p.forecastClass === 'independent-prospective';
     });
     var matched = [];
     for (var i = 0; i < qualifying.length; i++) {
-      var c = covers(qualifying[i], event);
+      var c = covers(qualifying[i], event, hazardFamilyOf);
       if (c) matched.push({ predictionId: qualifying[i].id, result: c.level === 'full' ? 'HIT' : 'PARTIAL_HIT', why: c.why });
     }
     if (matched.length) {
@@ -340,9 +447,7 @@
     var covering = near.some(function (s) {
       return (s.providers || []).some(function (p) {
         var meta = (scanLedger.providers || {})[p.provider] || {};
-        var hazards = meta.hazards || [];
-        var covers = hazards.some(function (h) { return norm(h).indexOf(norm(event.hazard).split('-')[0]) >= 0; });
-        return covers && p.status === 'SCANNED';
+        return p.status === 'SCANNED' && providerCovers(meta, event);
       });
     });
     if (!covering) {
@@ -416,7 +521,10 @@
     CLASSIFICATION: CLASSIFICATION, COVERAGE: COVERAGE,
     PARTIAL_WEIGHT: PARTIAL_WEIGHT, GEOGRAPHY_TOLERANCE_KM: GEOGRAPHY_TOLERANCE_KM,
     effectiveStart: effectiveStart, frozenClaim: frozenClaim, geographyMatch: geographyMatch,
-    verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm
+    verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm,
+    providerCovers: providerCovers, providerCoversHazard: providerCoversHazard,
+    observedCoverageFor: observedCoverageFor,
+    providerCoversPlace: providerCoversPlace
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PNDVerification = api;

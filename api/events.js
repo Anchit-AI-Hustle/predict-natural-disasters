@@ -1631,56 +1631,71 @@ async function handler(req, res) {
       hazards: ['Earthquake', 'Tropical Cyclone', 'Flood', 'Drought', 'Wildfire', 'Volcano'],
       geographicCoverage: 'Global',
       coverageResolution: 'Only events GDACS itself raises to an alert level. Flood, drought and wildfire records describe alert areas, not incident points.',
-      endpoint: 'https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP'
+      endpoint: 'https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP',
+      scope: { kind: 'global' }
     },
     usgs: {
       label: 'USGS Earthquake Hazards Program',
       hazards: ['Earthquake'],
       geographicCoverage: 'Global',
       coverageResolution: 'Every earthquake of magnitude 2.5 or above in the past seven days, at its epicentre. Anything smaller, or older, is outside this feed.',
-      endpoint: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson'
+      endpoint: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson',
+      scope: { kind: 'global' }
     },
     emsc: {
       label: 'EMSC (European-Mediterranean Seismological Centre)',
       hazards: ['Earthquake'],
       geographicCoverage: 'Global, with the densest network in Europe and the Mediterranean',
       coverageResolution: 'Earthquakes of magnitude 4.5 or above, at epicentre.',
-      endpoint: 'https://www.emsc-csem.org/'
+      endpoint: 'https://www.emsc-csem.org/',
+      scope: { kind: 'global' }
     },
     eonet: {
       label: 'NASA EONET',
       hazards: ['Wildfire', 'Volcano', 'Severe Storm', 'Ice', 'Landslide'],
       geographicCoverage: 'Global',
       coverageResolution: 'A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.',
-      endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events'
+      endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events',
+      scope: { kind: 'global' }
     },
     nhc: {
       label: 'NOAA National Hurricane Center',
       hazards: ['Tropical Cyclone'],
       geographicCoverage: 'Atlantic, eastern Pacific and central Pacific basins only',
       coverageResolution: 'Active tropical cyclones, at storm centre. Storms in the western Pacific, Indian Ocean and southern hemisphere are outside this provider entirely.',
-      endpoint: 'https://www.nhc.noaa.gov/CurrentStorms.json'
+      endpoint: 'https://www.nhc.noaa.gov/CurrentStorms.json',
+      /* The published basin bounds, approximated as boxes. Approximate in the
+         safe direction: a storm this cannot place is treated as outside the
+         provider's reach, which makes coverage unestablished rather than
+         blaming the forecasting engine for missing it. */
+      scope: { kind: 'boxes', boxes: [
+        { name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 },
+        { name: 'Eastern and central Pacific', minLat: -5, maxLat: 60, minLon: -180, maxLon: -75 }
+      ] }
     },
     nws: {
       label: 'NOAA / National Weather Service',
       hazards: ['Flood', 'Severe Weather', 'Extreme Heat', 'Winter Storm', 'Tornado'],
       geographicCoverage: 'United States and its territories only',
       coverageResolution: 'Alerts at severe or extreme severity, carrying the affected-area polygon where the agency published one and a forecast-zone centre where it did not.',
-      endpoint: 'https://api.weather.gov/alerts/active'
+      endpoint: 'https://api.weather.gov/alerts/active',
+      scope: { kind: 'countries', countries: ['United States'] }
     },
     reliefweb: {
       label: 'ReliefWeb (UN OCHA)',
       hazards: ['Flood', 'Drought', 'Earthquake', 'Tropical Cyclone', 'Complex Emergency'],
       geographicCoverage: 'Global',
       coverageResolution: 'Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.',
-      endpoint: 'https://reliefweb.int/disasters/feed'
+      endpoint: 'https://reliefweb.int/disasters/feed',
+      scope: { kind: 'global' }
     },
     usgs_volcano: {
       label: 'USGS Volcano Hazards Program',
       hazards: ['Volcano'],
       geographicCoverage: 'Volcanoes monitored by the United States volcano observatories',
       coverageResolution: 'Volcanoes currently at an elevated alert level. Volcanoes outside the US observatory network are not covered by this provider.',
-      endpoint: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes'
+      endpoint: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes',
+      scope: { kind: 'countries', countries: ['United States'] }
     }
   };
 
@@ -1768,6 +1783,7 @@ async function handler(req, res) {
         hazards: PROVIDERS[key].hazards,
         geographicCoverage: PROVIDERS[key].geographicCoverage,
         coverageResolution: PROVIDERS[key].coverageResolution,
+        scope: PROVIDERS[key].scope,
         endpoint: PROVIDERS[key].endpoint,
         status: st.status,
         success: !!(s && s.ok),

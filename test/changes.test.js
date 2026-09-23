@@ -30,11 +30,27 @@ test.after(closeAllWindows);
 function tmp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-changes-'));
 }
+/*
+ * Windows are relative to now, not written down.
+ *
+ * They used to be absolute, and the default one ended at 2026-09-23T00:00:00Z.
+ * The tool correctly stops treating an outlook as still being issued once its
+ * window has closed - the test below this one asserts exactly that - so at
+ * midnight UTC on the 23rd, "an outlook that stopped being issued is recorded
+ * as gone" began failing for everyone, on a suite nobody had touched. A
+ * fixture that expires is a test that reports the calendar rather than the
+ * code; mock-upstreams.js learned this already.
+ */
+const isoIn = days => new Date(Date.now() + days * 86400e3).toISOString().replace(/\.\d{3}Z$/, 'Z');
+const WINDOW_START = isoIn(-3);
+const WINDOW_END = isoIn(3);
+const WINDOW_END_MOVED = isoIn(7);
+
 function outlook(over) {
   return Object.assign({
     id: 'OUT-a', forecast: true, type: 'Flood', title: '3-day Flood risk outlook',
     country: 'Testland', alert: 'Watch', severityRank: 2,
-    targetStart: '2026-09-20T00:00:00Z', targetEnd: '2026-09-23T00:00:00Z'
+    targetStart: WINDOW_START, targetEnd: WINDOW_END
   }, over || {});
 }
 function run(dir, events, sources) {
@@ -109,11 +125,11 @@ test('a raised level is told apart from a lowered one', () => {
 test('a window pushed out is recorded, with both ends', () => {
   const d = tmp();
   run(d, [outlook()]);
-  const log = run(d, [outlook({ targetEnd: '2026-09-27T00:00:00Z' })]);
+  const log = run(d, [outlook({ targetEnd: WINDOW_END_MOVED })]);
   const last = log.runs[log.runs.length - 1];
   assert.equal(last.windowMoved.length, 1);
-  assert.equal(last.windowMoved[0].fromEnd, '2026-09-23T00:00:00Z');
-  assert.equal(last.windowMoved[0].toEnd, '2026-09-27T00:00:00Z');
+  assert.equal(last.windowMoved[0].fromEnd, WINDOW_END);
+  assert.equal(last.windowMoved[0].toEnd, WINDOW_END_MOVED);
 });
 
 test('an outlook that stopped being issued is recorded as gone', () => {
