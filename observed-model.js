@@ -42,6 +42,14 @@
     ['severe-weather', /\b(?:storms?|tornado(?:es)?|winds?|hail|winter)\b/i]
   ];
 
+  /* The types that say "we do not know what this is".
+   *
+   * api/events.js normalises an absent type to "Natural Hazard" and passes an
+   * unrecognised provider label through unchanged; ReliefWeb's own catch-alls
+   * are "Other" and "Complex Emergency". Only these let the title decide.
+   * Anything else is the provider's classification of its own record. */
+  var UNCLASSIFIED = /^(?:|natural hazard|other|others|unknown|unspecified|unclassified|complex emergency)$/i;
+
   /*
    * Every hazard family a record names, not only the first.
    *
@@ -70,13 +78,21 @@
      * comes from and what a forecast is graded against, so an explicitly
      * typed landslide was credited to a flood outlook.
      *
-     * The title is read only where the type names no family at all - "Natural
-     * Hazard", "Complex Emergency", an empty type - which is the case it was
-     * there for. */
+     * The title is read only where the type says nothing about the hazard at
+     * all - an empty type, or one of the labels that exist precisely to mean
+     * "unclassified". A type naming a hazard this table has no family for is
+     * not one of those: "Tsunami" is the provider's own classification and it
+     * is not an earthquake, but with the title consulted whenever no family
+     * matched, familyOf('Tsunami', 'Tsunami advisory after M7.1 earthquake')
+     * answered earthquake - so a tsunami could be merged into the quake that
+     * caused it, removing one disaster from the denominator, and could be
+     * credited to an earthquake forecast. Such a record is 'other', which is
+     * what this table means by a hazard it does not model, and the same title
+     * under an empty type still resolves as it did. */
     for (var i = 0; i < FAMILIES.length; i++) {
       if (FAMILIES[i][1].test(t)) { out.push(FAMILIES[i][0]); break; }
     }
-    if (!out.length) {
+    if (!out.length && UNCLASSIFIED.test(t.trim())) {
       var both = t + ' ' + String(title || '');
       for (var k = 0; k < FAMILIES.length; k++) {
         if (FAMILIES[k][1].test(both)) { out.push(FAMILIES[k][0]); break; }

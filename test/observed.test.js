@@ -1140,6 +1140,31 @@ test('the hazard a record is typed as wins over one its title mentions', () => {
   assert.deepEqual(OBS.familiesOf('Flood / Landslide', 'Nepal'), ['flood', 'landslide']);
 });
 
+test('a hazard this table has no family for is not filed under one from the title', () => {
+  /* GDACS publishes TS records and hazard-model.js models Tsunami as a hazard
+     of its own, but the family table has no tsunami row - so the title was
+     consulted, and a tsunami whose title named the quake that caused it came
+     back as an earthquake. That family is the event's identity: it decides
+     which records merge into one disaster and which forecasts it can be
+     credited to, so a tsunami could be absorbed into its own mainshock and
+     could bear out an earthquake outlook. */
+  assert.equal(OBS.familyOf('Tsunami', 'Tsunami advisory after M7.1 earthquake'), 'other',
+    'a tsunami was filed as the earthquake that caused it');
+  assert.equal(OBS.familyOf('Tsunami', 'Tsunami warning \u2014 Pacific'), 'other',
+    'the same hazard lands in two families depending on its title');
+  assert.equal(OBS.familyOf('Epidemic', 'Cholera outbreak after floods'), 'other');
+  assert.equal(OBS.familyOf('Extreme Cold', 'Cold wave after the storm'), 'other');
+
+  /* A type that says nothing about the hazard still lets the title decide,
+     which is the case that fallback exists for. */
+  for (const generic of ['', 'Natural Hazard', 'Other', 'Unknown', 'Unspecified', 'Complex Emergency']) {
+    assert.equal(OBS.familyOf(generic, 'M 5.9 earthquake'), 'earthquake',
+      JSON.stringify(generic) + ' stopped the title being read');
+  }
+  // And an unclassified type with an unclassifiable title is still 'other'.
+  assert.equal(OBS.familyOf('Natural Hazard', 'Situation report \u2014 Sindh'), 'other');
+});
+
 test('a country-wide record does not bridge two regional disasters', async () => {
   /* After the pairwise fix, a national declaration was still compatible with
      every regional record in its country — so India, Assam and Gujarat all
