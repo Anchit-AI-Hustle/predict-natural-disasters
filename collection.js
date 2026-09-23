@@ -1,4 +1,4 @@
-(()=>{const mode=document.body.dataset.view||'events';const cfg={events:['Live Global Events','Current and recent multi-hazard events from authoritative feeds.'],'recent-events':['Recent Major Events','Latest observed disasters and significant hazard activity.'],'official-warnings':['Official Warnings & Alerts','Higher-priority official alerts and agency-observed events.'],'hazard-types':['Hazards by Type','Browse current events by flood, earthquake, wildfire, volcano, storm and drought.'],'forecast-list':['Experimental Risk Outlooks','All active short-horizon outlooks and frozen benchmark forecasts.'],'forecast-calendar':['Forecast Calendar','Upcoming monitored forecast windows with current hazard context.'],'historical-events':['Historical & Recent Event Explorer','Recent GDACS event history plus current feeds.'],'alerts-notifications':['Alerts & Notifications','Current higher-priority alerts with source links and freshness.'],'compare-locations':['Compare Locations','Compare current hazard signals across locations.'],resources:['Learn & Resources','Authoritative data sources, methodology and safety guidance.']}[mode]||['Disaster Intelligence','Live global hazard intelligence'];
+(()=>{const mode=document.body.dataset.view||'events';const cfg={events:['Live Global Events','Current and recent multi-hazard events from authoritative feeds.'],'recent-events':['Recent Major Events','Latest observed disasters and significant hazard activity.'],'official-warnings':['Official Warnings & Alerts','Higher-priority official alerts and agency-observed events.'],'hazard-types':['Hazards by Type','Browse current events by flood, earthquake, wildfire, volcano, storm and drought.'],'forecast-list':['Experimental Risk Outlooks','All active short-horizon outlooks and frozen benchmark forecasts.'],'forecast-calendar':['Forecast Calendar','Upcoming monitored forecast windows with current hazard context.'],'historical-events':['Historical & Recent Event Explorer','Recent GDACS event history plus current feeds.'],'alerts-notifications':['Alerts & Notifications','Current higher-priority alerts with source links and freshness.'],'compare-locations':['Compare Locations','Compare current hazard signals across locations.'],resources:['Sources & coverage','Every source this site reads, what it answered this time, and what its silence does and does not establish.']}[mode]||['Disaster Intelligence','Live global hazard intelligence'];
 const SORT_KEYS=mode==='resources'?['curated','name','nameDesc']:mode==='forecast-list'||mode==='forecast-calendar'?['newest','severity','windowEnd','oldest','country','type','title']:mode==='historical-events'?['newest','oldest','severity','country','type','title']:PND.EVENT_SORTS;
 nav.innerHTML=PND.nav(mode==='forecast-list'||mode==='forecast-calendar'?'Forecasts':mode==='official-warnings'||mode==='alerts-notifications'?'Alerts':'');pageTitle.textContent=cfg[0];pageSub.textContent=cfg[1];heading.textContent=cfg[0];let all=[];let lastMeta=null;
 function keep(e){if(mode==='official-warnings'||mode==='alerts-notifications')return e.sourceType==='official'&&(['Red','Orange'].includes(e.alert)||e.source==='USGS');if(mode==='forecast-list'||mode==='forecast-calendar')return e.forecast===true;if(mode==='recent-events')return e.sourceType==='official';return true}
@@ -60,7 +60,81 @@ function timeline(list){
    '<p class="tl-note muted">Bars span each outlook’s own window, from its start to its expected end. The line marks now. '+
    'Outlooks are experimental and derived from active official signals — they are not deterministic predictions and do not replace official warnings.</p>';
 }
-function draw(){if(mode==='resources'){const RES=[['GDACS','Global Disaster Alert and Coordination System','https://www.gdacs.org/'],['USGS','Earthquake Hazards Program','https://earthquake.usgs.gov/'],['NASA EONET','Earth Observatory Natural Event Tracker','https://eonet.gsfc.nasa.gov/'],['WMO','World Meteorological Organization','https://wmo.int/']];const rk=PND.sortValue('sortBy',SORT_KEYS);const rs=RES.slice();if(rk==='name')rs.sort((a,b)=>a[0].localeCompare(b[0]));else if(rk==='nameDesc')rs.sort((a,b)=>b[0].localeCompare(a[0]));cards.innerHTML=rs.map(([a,b,u])=>`<a class="event-card" href="${u}" target="_blank" rel="noopener"><span class="source">Authoritative source</span><h3>${a}</h3><p>${b}</p></a>`).join('');return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',all.filter(keep).filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase().includes(t.replace('s','')))&&(!l||e.alert===l)),SORT_KEYS);pageNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
+/* The sources this site actually reads, from the feed's own scan record.
+ *
+ * This page used to list four names written into the file - one of which,
+ * WMO, nothing here has ever read - and omitted four that are read on every
+ * request. It offered a "Refresh source status" button beside a status line
+ * that described the event feed, not the sources. What a reader needs from a
+ * page called Authoritative sources is which ones answered this time, what
+ * each one covers, and what its silence does and does not establish. All of
+ * that is in meta.scan; none of it was shown.
+ */
+const SCAN_STATE={SCANNED:['ok','Answered this scan'],INCOMPLETE_SCAN:['warn','Answered in part'],
+  DATA_UNAVAILABLE:['bad','Did not answer'],NOT_ATTEMPTED:['muted','Not attempted this scan']};
+function providerCard(p){
+  const st=SCAN_STATE[p.status]||['muted',p.status||'Status not recorded'];
+  const reach=p.geographicCoverage||(p.scope&&p.scope.kind==='global'?'Global':'');
+  const absence=p.recordsObservations===false
+    ?'Its records are warnings or published statuses, not observations, so its silence cannot establish that no disaster occurred.'
+    :p.completeness==='exhaustive'
+      ?'Exhaustive within its stated bounds, so an absence here is meaningful. '+(p.completenessBasis||'')
+      :'Not exhaustive, so an absence here is not evidence that nothing happened. '+(p.completenessBasis||'');
+  const counted=[Number.isFinite(p.recordsEvaluated)?p.recordsEvaluated+' records evaluated':null,
+    Number.isFinite(p.recordsServed)?p.recordsServed+' served':null].filter(Boolean).join(' · ');
+  return `<article class="event-card"><span class="source status-${st[0]}">${PND.esc(st[1])}</span>
+    <h3>${PND.esc(p.label||p.provider)}</h3>
+    <p><b>Hazards</b> ${PND.esc((p.hazards||[]).join(', ')||'Not stated')}<br>
+    <b>Reach</b> ${PND.esc(reach||'Not stated')}<br>
+    <b>What it lists</b> ${PND.esc(p.coverageResolution||'Not stated')}<br>
+    <b>If it reports nothing</b> ${PND.esc(absence.trim())}</p>
+    <small class="muted">${PND.esc(counted||'Nothing counted this scan')}${p.failureReason?' · '+PND.esc(p.failureReason):''}${p.dataFreshness?' · data '+PND.esc(p.dataFreshness):''}</small>
+    ${p.endpoint?`<small class="muted" style="display:block;margin-top:4px"><a href="${PND.esc(p.endpoint)}" target="_blank" rel="noopener">${PND.esc(p.endpoint)}</a></small>`:''}</article>`;
+}
+function draw(){if(mode==='resources'){
+  const scan=(lastMeta&&lastMeta.scan)||null;
+  const ps=(scan&&scan.providers)||[];
+  if(!ps.length){cards.innerHTML='<div class="empty">The feed did not report which sources it read, so this page cannot say. It is not a claim that none were read.</div>';return}
+  const rk=PND.sortValue('sortBy',SORT_KEYS);
+  const rs=ps.slice();
+  const name=p=>String(p.label||p.provider||'');
+  if(rk==='name')rs.sort((a,b)=>name(a).localeCompare(name(b)));
+  else if(rk==='nameDesc')rs.sort((a,b)=>name(b).localeCompare(name(a)));
+  /* Which hazards nobody here can establish an absence for. Stated on the
+     page because it is the limit that decides what the verification page is
+     allowed to call a false positive. */
+  /* Grouped by the same hazard families the verification engine grades on,
+     rather than by each provider's own vocabulary: NWS alone names ice,
+     tornado, winter storm and severe storm, and listing those separately
+     would turn one limit into four. */
+  const fam=h=>(window.PNDObserved&&PNDObserved.familiesOf?PNDObserved.familiesOf(h,'')[0]:String(h||'').toLowerCase());
+  const hazards={};
+  ps.forEach(p=>(p.hazards||[]).forEach(h=>{const f=fam(h);if(f==='other')return;
+    hazards[f]=hazards[f]||false;
+    if(p.completeness==='exhaustive'&&p.recordsObservations!==false)hazards[f]=true}));
+  const blind=Object.keys(hazards).filter(h=>!hazards[h]).sort();
+  const answered=ps.filter(p=>p.status==='SCANNED').length;
+  const partial=ps.filter(p=>p.status==='INCOMPLETE_SCAN').length;
+  /* "Answered" and "answered in full" are different counts, and printing one
+     of them beside a status line reporting the other made the page disagree
+     with itself. Both are stated. */
+  cards.innerHTML=`<div class="panel" style="grid-column:1/-1;padding:12px"><b>${answered} of ${ps.length} sources answered this scan in full${partial?', '+partial+' in part':''}.</b>
+    ${blind.length?PND.esc('For '+blind.join(', ').replace(/-/g,' ')+' no source here is both exhaustive and an observer, so nothing on this site can establish that no such disaster occurred \u2014 only that none was reported.'):'Every hazard listed here has a source whose silence is evidence.'}</div>`
+    +rs.map(providerCard).join('');
+  return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',all.filter(keep).filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase().includes(t.replace('s','')))&&(!l||e.alert===l)),SORT_KEYS);pageNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
 cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="event-card" href="${PND.eventUrl(e)}"><span class="badge ${PND.riskClass(e.alert)}">${PND.esc(e.alert||'Watch')}</span> ${PND.severityBadge(e)} ${PND.sourceBadge(e)} ${e.forecast?`<span class="source">${PND.esc(e.forecastKind==='frozen-benchmark'?'Frozen benchmark':'Experimental outlook')}</span>`:''}${e.windowClosed?'<span class="source">Window closed</span>':''}<h3>${PND.esc(e.title)}</h3><p>${PND.esc(e.type)} · ${PND.esc(e.country||e.region||'Global')}${(()=>{const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':''})()}<br>${PND.esc(gist(PND.impactText(e)||e.details||''))}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}Source update ${PND.fmtDate(e.updated)} · ${PND.age(e.updated)}</small></a>`).join(''):PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase())}
-async function load(){statusLine.textContent='Refreshing authoritative feeds…';try{const d=await PND.getEvents();all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;statusLine.textContent=`${PND.statusText(d.meta)} · ${shown} matching records · fetched ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Upstream feed unavailable · retrying automatically'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name — A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name — Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
-PNDSearch.initSearch(q,draw);type.onchange=draw;level.onchange=draw;refresh.onclick=load;PND.autoRefresh(load,60000)})();
+async function load(){statusLine.textContent='Refreshing authoritative feeds…';try{const d=await PND.getEvents();all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;
+/* The sources view is about the sources, so its status line counts those
+   rather than the records they produced. */
+statusLine.textContent=mode==='resources'
+  ?`${PND.statusText(d.meta)} · scan ${PND.fmtDate((d.meta&&d.meta.scan&&d.meta.scan.scanTimestamp)||d.generatedAt)} · fetched ${PND.age(d.generatedAt)}`
+  :`${PND.statusText(d.meta)} · ${shown} matching records · fetched ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Upstream feed unavailable · retrying automatically'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name — A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name — Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
+/* Looked up rather than assumed: the sources view has no search box and no
+   hazard or level filter, because on that page they filtered nothing and a
+   control that cannot be operated is not a control. */
+const el=id=>document.getElementById(id);
+if(el('q'))PNDSearch.initSearch(el('q'),draw);
+if(el('type'))el('type').onchange=draw;
+if(el('level'))el('level').onchange=draw;
+if(el('refresh'))el('refresh').onclick=load;
+PND.autoRefresh(load,60000)})();

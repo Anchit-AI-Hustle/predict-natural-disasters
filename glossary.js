@@ -114,6 +114,21 @@
     var out = expandAlways(text);
     return out.replace(onceRe, function (m, term, offset, whole) {
       if (spelled[term]) return m;
+      /* The text already writes it out.
+       *
+       * A provider label is "GDACS (Global Disaster Alert and Coordination
+       * System)" and expanding it produced "Global Disaster Alert and
+       * Coordination System (GDACS) (Global Disaster Alert and Coordination
+       * System)". Written the other way round - "Global Disaster Alert and
+       * Coordination System (GDACS)" - it was worse: the bracketed rule
+       * replaced the acronym with the full form and swallowed the very
+       * acronym the brackets existed to introduce. Where the full form is
+       * already present, the term has been introduced and nothing is
+       * rewritten. */
+      if (whole.toLowerCase().indexOf(full[term].toLowerCase()) >= 0) {
+        spelled[term] = true;
+        return m;
+      }
       spelled[term] = true;
       // "ReliefWeb (UN OCHA)" should not become "ReliefWeb (... (UN OCHA))".
       var bracketed = whole.charAt(offset - 1) === '(' && whole.charAt(offset + m.length) === ')';

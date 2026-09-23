@@ -129,3 +129,27 @@ test('no page leaves a raw bearing, magnitude scale or state code on screen', as
   }
   assert.deepEqual(found, [], found.join('\n'));
 });
+
+/* A new instance per assertion: the expansion is once per page, so a second
+   call in the same instance would leave the term short and prove nothing. */
+function fresh() {
+  delete require.cache[require.resolve('../glossary.js')];
+  return require('../glossary.js');
+}
+
+test('a name that already writes itself out is left alone', () => {
+  /* Two ways this went wrong on the sources page, where every provider label
+     carries its own expansion. */
+  assert.equal(fresh().rewrite('GDACS (Global Disaster Alert and Coordination System)'),
+    'GDACS (Global Disaster Alert and Coordination System)',
+    'the full form was printed twice');
+  assert.equal(fresh().rewrite('Global Disaster Alert and Coordination System (GDACS)'),
+    'Global Disaster Alert and Coordination System (GDACS)',
+    'the acronym the brackets exist to introduce was swallowed');
+
+  // And the cases this must not change.
+  assert.equal(fresh().rewrite('A GDACS alert'),
+    'A Global Disaster Alert and Coordination System (GDACS) alert');
+  assert.equal(fresh().rewrite('ReliefWeb (UN OCHA)'),
+    'ReliefWeb (United Nations Office for the Coordination of Humanitarian Affairs)');
+});
