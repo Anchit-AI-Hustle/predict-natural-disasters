@@ -1235,3 +1235,78 @@ test('provider records learned on earlier runs are not forgotten', async () => {
     'the same disaster was recorded twice after its providers alternated');
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+/* ------------------------- a retained snapshot is not a provider sighting */
+
+test('a retained fallback snapshot is not recorded as a provider carrying the event', () => {
+  /*
+   * api/events.js keeps a handful of verified fallback records and pushes
+   * each one into the feed WHEN THE LIVE PROVIDERS DO NOT CARRY IT. They are
+   * marked `cached` and their own timestamps are fixed in the source file.
+   *
+   * Recording them as observed at each scan wrote down the opposite of what
+   * had happened. Measured on two runs with every upstream unreachable, both
+   * fallback records gained a fresh sighting run at every scan - so the
+   * ledger asserted that a provider was carrying them at moments when nothing
+   * had been reached at all, and it asserted it hardest exactly while the
+   * providers were down. A sighting run inside a window is the evidence a
+   * continuation outlook is graded on, so this was the site's own fallback
+   * manufacturing "it was still being reported".
+   */
+  const V = require('../verification-model.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-cached-'));
+  const ledgerPath = path.join(dir, 'observed.json');
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, events: [] }));
+  const snapshot = over => Object.assign(quake('gdacs-fallback-1', 27.7, 85.3, 12),
+    { cached: true, updated: '2026-09-10T00:00:00Z' }, over || {});
+  const run = (events, scanId, at) => {
+    const p = path.join(dir, 'events-' + scanId + '.json');
+    fs.writeFileSync(p, JSON.stringify({ events, generatedAt: at,
+      meta: { scan: { scanId, scanTimestamp: at } } }));
+    require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', 'record-observed.js'), p, ledgerPath], { stdio: 'pipe' });
+    return JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  };
+
+  /* It is still a disaster that happened, so it is still recorded. */
+  const one = run([snapshot()], 'scan-1', '2026-09-20T00:00:00Z');
+  assert.equal(one.events.length, 1, 'a verified snapshot of a real disaster was dropped from the record');
+  const two = run([snapshot()], 'scan-2', '2026-09-22T00:00:00Z');
+  const row = two.events[0];
+  assert.deepEqual(row.sightings, [],
+    'a retained snapshot was recorded as a provider carrying the disaster: ' + JSON.stringify(row.sightings));
+  assert.equal(row.lastSeenAt, null, 'a retained snapshot set a last-seen time it cannot support');
+  assert.match(String(row.retainedSnapshotOnly), /not evidence that a provider was carrying it/,
+    'the row does not say why it has no sighting history');
+  assert.equal(two.lastRun.sightingsWithheldFromRetainedSnapshots, 1,
+    'the run does not report how many sightings it withheld');
+
+  /* Which is the whole point: nothing here may be read as the hazard having
+     carried on inside a forecast window. */
+  assert.equal(V.continuedActivity(row,
+    Date.parse('2026-09-19T00:00:00Z'), Date.parse('2026-09-26T00:00:00Z')), null,
+    'a retained snapshot was read as evidence that the disaster continued');
+
+  /* And when a provider does carry it again, that is a real sighting. */
+  const three = run([snapshot({ cached: false })], 'scan-3', '2026-09-24T00:00:00Z');
+  const back = three.events[0];
+  assert.equal(back.sightings.length, 1, 'a live provider record recorded no sighting');
+  assert.equal(back.sightings[0].fromScan, 'scan-3');
+  assert.equal(back.lastSeenAt, '2026-09-24T00:00:00Z');
+  assert.equal(back.retainedSnapshotOnly, undefined,
+    'a row being carried live still says it has never been sighted');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('the fallback records the feed serves are still marked as retained', async () => {
+  /* The guard above keys on that mark. If a fallback record ever loses it,
+     the recorder goes back to dating a sighting from a snapshot, silently -
+     so the mark is asserted where it is written rather than assumed. */
+  const src = fs.readFileSync(path.join(ROOT, 'api', 'events.js'), 'utf8');
+  const block = src.slice(src.indexOf('verified fallback records'),
+    src.indexOf('frozen benchmark'));
+  const pushes = block.match(/\bpush\(\{/g) || [];
+  assert.ok(pushes.length > 0, 'the verified fallback records are no longer pushed here');
+  assert.equal((block.match(/cached:\s*true/g) || []).length, pushes.length,
+    'a verified fallback record is served without being marked cached');
+});

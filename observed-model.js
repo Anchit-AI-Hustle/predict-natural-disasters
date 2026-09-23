@@ -574,6 +574,11 @@
   var api = {
     regionsCompatible: regionsCompatible,
     FAMILIES: FAMILIES.map(function (f) { return f[0]; }), MATCH: MATCH,
+    /* Which types say nothing about the hazard, so that the one other place
+       that has to know - the claim key, which must treat a title as part of
+       the claim exactly where the title is what names the hazard - can be
+       held to this definition rather than to a copy of it that drifts. */
+    UNCLASSIFIED: UNCLASSIFIED,
     familyOf: familyOf, familiesOf: familiesOf, sameEvent: sameEvent, issuedAlert: issuedAlert,
     sameOccurrence: sameOccurrence, sameCanonical: sameCanonical,
     significanceOf: significanceOf,

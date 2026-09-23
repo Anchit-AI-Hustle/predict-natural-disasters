@@ -220,6 +220,26 @@ test('a claim is its terms, not its id and the day it starts', async () => {
     assert.notEqual(H.claimKey(Object.assign({}, base, { [field]: value })), H.claimKey(base),
       'a changed ' + field + ' is graded differently and must be a different claim');
   }
+  /* Except where the title is the only thing that says what the outlook is
+     about. The hazard a claim is graded on comes from its type, and from its
+     title only where the type names no hazard at all - so under such a type
+     two rows sharing an id, a window and a geography were one key and two
+     different hazards, and the second was served under the first one's
+     freeze timestamp, which is a freeze nobody performed for that claim. */
+  const vague = Object.assign({}, base, { type: 'Other', title: 'Flood risk outlook \u2014 Bagmati' });
+  const alsoVague = Object.assign({}, vague, { title: 'Landslide risk outlook \u2014 Bagmati' });
+  const OBS = require(path.join(ROOT, 'observed-model.js'));
+  const V = require(path.join(ROOT, 'verification-model.js'));
+  assert.notDeepEqual(V.frozenClaim(vague, OBS.familyOf).hazards,
+    V.frozenClaim(alsoVague, OBS.familyOf).hazards,
+    'fixture: these two are supposed to be graded on different hazards');
+  assert.notEqual(H.claimKey(vague), H.claimKey(alsoVague),
+    'two outlooks graded on different hazards share one claim key');
+  /* And the two definitions of "this type says nothing" are one definition.
+     A copy that drifts puts the key and the grading back out of step. */
+  assert.equal(String(H.TYPE_NAMES_NO_HAZARD), String(OBS.UNCLASSIFIED),
+    'the claim key and the hazard classifier disagree about which types name no hazard');
+
   /* A term a row never recorded is absent, not equal: it cannot prove what it
      does not state. */
   const noScope = Object.assign({}, base); delete noScope.forecastScope;

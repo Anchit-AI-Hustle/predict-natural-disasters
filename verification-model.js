@@ -208,20 +208,25 @@
    */
   function sequenceTie(claim, sup) {
     var kept = (sup && sup.keptFor) || [];
-    if (!kept.length) return null;
+    /* Nothing recorded is not the same as recorded as someone else's.
+     *
+     * The first version returned a bare null for both, and the caller dropped
+     * the observation either way - which turned "the record cannot answer
+     * this" into "the window closed with nothing observed", and a verdict of
+     * PENDING into a false positive. An absence that nothing could have
+     * established is the one thing this file exists to refuse to assert. */
+    if (!kept.length) return { unknown: true };
     var subjects = [], mine = false;
     for (var i = 0; i < kept.length; i++) {
       var entry = kept[i];
       var subject = entry && typeof entry === 'object' ? entry.subject : null;
-      /* An entry that records no subject cannot establish one. */
-      if (!subject) return null;
+      if (!subject) return { unknown: true };
       if (subjects.indexOf(subject) < 0) subjects.push(subject);
       if (claim.subject && subject === claim.subject) mine = true;
     }
-    if (!mine) return null;
-    if (subjects.length > 1) {
-      return { ambiguous: subjects.filter(function (x) { return x !== claim.subject; }) };
-    }
+    var others = subjects.filter(function (x) { return x !== claim.subject; });
+    if (!mine) return { other: others };
+    if (others.length) return { ambiguous: others };
     return { ok: true };
   }
 
@@ -552,6 +557,15 @@
     var matched = [], early = [], awaitingActivity = [];
     var continuationKind = CONTINUATION_EVIDENCE[claim.forecastClass] || null;
     var continuation = !!continuationKind;
+    /* Does this claim name one particular disaster it follows? Only the
+       post-event-conditional class does, and only for those is the
+       observation's association with it recorded. */
+    var subjectClaim = claim.forecastClass === 'post-event-conditional' && !!claim.subject;
+    /* Observations that satisfy the claim on hazard, window and geography but
+       cannot be shown to belong to the disaster it follows rather than to a
+       neighbouring one. Declared here because both the significant events
+       below and the supporting observations further down fill it. */
+    var unattributed = [];
     for (var i = 0; i < (observedEvents || []).length; i++) {
       var ev = observedEvents[i];
       if (!ev.significant) continue;
@@ -560,6 +574,33 @@
       if (onset === null) continue;
       var geo = geographyMatch(claim, ev);
       if (!geo) continue;
+      /*
+       * A claim about ONE disaster is borne out by that disaster, not by a
+       * neighbour of it.
+       *
+       * sequenceTie was applied to the observations kept beside the ledger
+       * and not to the significant ones here, which left the same hole open
+       * on the bigger events: measured on two mainshocks 167 km and a day
+       * apart, a magnitude-6 aftershock of quake A graded quake B's outlook a
+       * HIT at 161 km, and so did quake A's own death toll rising inside B's
+       * window, at 167 km. Both read "a significant earthquake was observed
+       * inside the frozen geography and window", which was true and about the
+       * wrong earthquake.
+       *
+       * Only a post-event-conditional claim names a subject, and only for
+       * those is the association recorded, so only those are gated: a flood
+       * outlook is not about one particular prior flood and has nothing to be
+       * tied to.
+       */
+      var seqTie = subjectClaim ? sequenceTie(claim, ev) : { ok: true };
+      /* Recorded as another sequence's: it says nothing about this one, in
+         either direction, so it is simply not this claim's evidence. */
+      if (seqTie.other) continue;
+      if (seqTie.ambiguous) { unattributed.push({ event: ev, also: seqTie.ambiguous }); continue; }
+      /* No association on record. It cannot bear the claim out, and it cannot
+         establish that nothing happened either - so the claim waits rather
+         than being failed on an absence nothing could have shown. */
+      if (seqTie.unknown) { awaitingActivity.push({ event: ev, level: geo.level, why: geo.why }); continue; }
       if (start !== null && onset < start) {
         if (!continuation) { early.push({ event: ev, level: geo.level, why: geo.why }); continue; }
         /* The disaster this outlook is about. It predates the freeze because
@@ -598,7 +639,6 @@
      * never enter the recall denominator: they are evidence that something
      * happened, not claims that a disaster did.
      */
-    var unattributed = [];
     if (claim.forecastClass === 'post-event-conditional' && !matched.length) {
       var support = (o.supportingEvents || []);
       for (var sIdx = 0; sIdx < support.length; sIdx++) {
@@ -612,7 +652,7 @@
         /* Hazard, window and geography are satisfied by every neighbouring
            sequence too. Only the recorded association says whose it is. */
         var tie = sequenceTie(claim, sup);
-        if (!tie) continue;
+        if (tie.other || tie.unknown) continue;
         if (tie.ambiguous) { unattributed.push({ event: sup, also: tie.ambiguous }); continue; }
         matched.push({ event: sup, level: sGeo.level, supporting: true,
           why: sGeo.why + ' Observed activity of the sequence this outlook is about, recorded ' +
@@ -672,7 +712,17 @@
         'so this can be graded neither way yet.', [], 'CONTINUATION_EVIDENCE_UNAVAILABLE');
     }
     return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
-      'The window closed with no significant ' + claim.hazards.join(' or ') + ' observed inside the frozen geography.', []);
+      subjectClaim
+        /* One was observed inside the geography here; it belonged to another
+           sequence. Saying "none was observed" would be false, and the
+           verdict stands either way: this outlook's own sequence produced
+           nothing. */
+        ? 'The window closed with no ' + claim.hazards.join(' or ') +
+          ' activity that can be shown to belong to the disaster this outlook follows (' +
+          claim.subject + '). ' +
+          'Activity of the same hazard nearby, belonging to another sequence, is not this one\u2019s.'
+        : 'The window closed with no significant ' + claim.hazards.join(' or ') +
+          ' observed inside the frozen geography.', []);
   }
 
   /**
