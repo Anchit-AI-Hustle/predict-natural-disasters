@@ -23,6 +23,10 @@ process.on('beforeExit', closeAllWindows);
 
 const eventsHandler = require(path.join(ROOT, 'api', 'events.js'));
 const enrichHandler = require(path.join(ROOT, 'api', 'event-enrichment.js'));
+/* Background alerts, answered as a deployment with no alert store or schedule
+   answers - which is what the handler reads from an empty environment. A test
+   of the switched-on state serves its own answer from beforeParse. */
+const alertsHandler = require(path.join(ROOT, 'api', 'alerts.js'));
 
 /** Enough of Leaflet for the pages' map calls to run without the real library. */
 const LEAFLET_STUB = `
@@ -293,6 +297,7 @@ async function renderPage(page, opts) {
         const url = String(input && input.url ? input.url : input);
         apiCalls.push(url);
         if (url.includes('/api/event-enrichment')) return callApi(enrichHandler, url, o.mock);
+        if (/\/api\/alerts(?:\?|$)/.test(url)) return callApi(alertsHandler, url, o.mock);
         // feedDown is the endpoint itself being unreachable, which is not the
         // same as every upstream provider being down: that still returns 200.
         if (url.includes('/api/events')) {

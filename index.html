@@ -89,7 +89,7 @@ a:focus-visible{color:#b7f5ff;outline:2px solid #6fe3ff;outline-offset:2px;borde
 <div class="lowergrid"><section class="panel"><div class="panel-head"><h3>Upcoming Forecasts</h3><button class="viewall" onclick="GO('/forecast-list')">View All →</button></div><table class="table"><thead><tr><th>Date</th><th>Location</th><th>Hazard</th><th>Risk</th></tr></thead><tbody id="forecastRows"><tr class="clickable" tabindex="0" onclick="GO('/forecasts/ND-001')"><td>14 Sep 2026</td><td>Đà Nẵng, Vietnam</td><td>Flooding + landslides</td><td><span class="risk risk-severe">Critical</span></td></tr></tbody></table></section><section class="panel"><div class="panel-head"><h3>Recent Major Events (Live Feed)</h3><button class="viewall" onclick="GO('/recent-events')">View All →</button></div><table class="table"><thead><tr><th>Time</th><th>Location</th><th>Event</th><th>Source</th></tr></thead><tbody id="recentRows"></tbody></table></section><section class="panel"><div class="panel-head"><h3>Official Warnings</h3><button class="viewall" onclick="GO('/official-warnings')">View All →</button></div><table class="table"><thead><tr><th>Agency</th><th>Location</th><th>Warning</th><th>Valid Till</th></tr></thead><tbody id="warningRows"></tbody></table></section></div>
 <section class="verification"><div class="panel-head"><h3>Prediction Verification & Track Record</h3><button class="viewall" onclick="GO('/accuracy')">View All →</button></div><div class="verify-wrap"><div class="verify-card" onclick="GO('/forecasts/ND-001')"><b>ND-001 · Central Vietnam — Flash flood + landslides</b><p style="font-size:9px;color:#9bb8ac">Target: 14 Sep 2026 · Starts 13 Sept 2026 · expected duration 4 days</p><span class="verdict verdict-partial">PARTIALLY VERIFIED</span></div><div class="verify-card" onclick="GO('/accuracy')"><b>Verification Factors</b><p style="font-size:9px;color:#9bb8ac">Timing · Geography · Mechanism · Severity · Official Data</p></div><div class="verify-card"><b>How verification works</b><p style="font-size:9px;color:#9bb8ac">Final grading requires meaningful impacts that match the frozen forecast.</p><button class="details-btn" onclick="GO('/forecasts/ND-001')">View Details →</button></div></div></section>
 <div class="foot">Forecasts support awareness and preparedness; they do not replace official government warnings.</div></main></div>
-<script src="/vendor/leaflet/leaflet.js"></script><script src="/search.js"></script><script src="/hazard-model.js"></script><script src="/globe.js"></script><script src="/map-setup.js"></script><script src="/risk.js"></script><script src="/place-risk.js"></script><script src="/portal.js"></script>
+<script src="/vendor/leaflet/leaflet.js"></script><script src="/search.js"></script><script src="/hazard-model.js"></script><script src="/globe.js"></script><script src="/map-setup.js"></script><script src="/risk.js"></script><script src="/place-risk.js"></script><script src="/alert-rules.js"></script><script src="/portal.js"></script><script src="/alerts-client.js"></script>
 <script>
 function GO(url){if(url)window.location.assign(url)}
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
@@ -116,6 +116,11 @@ let lastGeneratedAt=null;
 async function load(){try{const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store'});const d=await r.json();events=d.events||[];lastGeneratedAt=d.generatedAt||null;/* A place already answered for is re-answered on the new feed rather than
    left showing a verdict from a cycle ago. */
 if(typeof checked!=='undefined'&&checked)try{answer(checked)}catch(e){}
+/* A returning reader's own place is answered without being asked for: the
+   first thing on the page is whether where they live, or where they are now,
+   has anything reported at it. Only a place they saved themselves - nothing
+   is looked up to find one. */
+else if(typeof mine==='function'){const own=mine();if(own)try{answer(own,{auto:true})}catch(e){}}
 document.getElementById('lastUpdated').textContent=new Date(d.generatedAt||Date.now()).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',hour12:true})+' IST';render()}catch(err){console.error(err)}}
 document.getElementById('hazardFilter').onchange=render;document.getElementById('mapSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.toLowerCase();const x=events.find(v=>PND.matches(v,q));if(x)selectEvent(x,{fly:true,open:true})}});document.getElementById('topSearch').addEventListener('keydown',e=>{if(e.key==='Enter')GO('/events?q='+enc(e.target.value))});load();setInterval(load,60000);
 
@@ -153,8 +158,13 @@ function actionHtml(a){
     `<p style="color:#ffd9a8">${esc(a.authority)}</p>`;
 }
 
-function answer(place){
+/* The place a returning reader cares about most: where they are now if they
+   asked for that to be kept, otherwise the first place they saved. */
+function mine(){const a=(window.PND&&PND.savedLocations&&PND.savedLocations())||[];
+  return a.find(x=>x.id==='loc-current')||a[0]||null}
+function answer(place,opts){
   checked=place;
+  if(opts&&opts.auto)PR.note.textContent='Showing '+(place.id==='loc-current'?'your current location':'your saved place “'+place.name+'”')+'. Search above to check anywhere else.';
   const A=window.PNDPlaceRisk.assess(place,events,{generatedAt:lastGeneratedAt});
   const act=window.PNDPlaceRisk.actionsFor(A);
   const lead=A.lead&&A.lead.e;
@@ -186,13 +196,24 @@ function answer(place){
       country:place.country||'',countryCode:place.countryCode||''});
     quickSaved();PR.note.textContent='Saved. It is on your Personal Risk page.';};
   PR.out.querySelector('#alertPlace').onclick=async()=>{
-    /* Only what the browser can actually do while this page is open. The
-       copy says exactly that rather than implying background monitoring. */
-    if(!('Notification' in window)){PR.note.textContent='This browser cannot show notifications.';return}
+    /* Background alerts where this deployment's service is switched on and
+       this browser can take them; otherwise exactly what still works - an
+       alert while a page is open - and said as that. The place is saved
+       either way, because an alert has to be about a saved place. */
+    if(!(PND.savedLocations()||[]).some(x=>x.lat===place.lat&&x.lon===place.lon)){
+      PND.saveLocation({kind:place.kind==='My location'?'Current location':(place.kind||'Place'),name:place.name,lat:place.lat,lon:place.lon,
+        country:place.country||'',countryCode:place.countryCode||''});quickSaved();}
+    const s=window.PNDAlerts?await PNDAlerts.state():{mode:'unavailable'};
+    if(s.mode==='on'){await PNDAlerts.sync();PR.note.textContent='Saved. Alerts are on for this device, so it will be told when a hazard is reported at or near this place, even with the site closed.';return}
+    if(s.mode==='off'){const r=await PNDAlerts.enable();
+      PR.note.textContent=r.ok?'Saved, and alerts are on: this device will be told when a hazard is reported at or near this place, even with the site closed. Manage them on Personal Risk.'
+        :r.reason;return}
+    if(!('Notification' in window)){PR.note.textContent=(s.reason?s.reason+' ':'')+'This browser cannot show notifications.';return}
     const perm=await Notification.requestPermission();
-    PR.note.textContent=perm==='granted'
-      ?'Notifications allowed. This page will alert you about a saved place while it is open in a tab — it cannot watch in the background.'
-      :'Notifications were not allowed, so nothing will be sent.';};
+    PR.note.textContent=(s.reason?s.reason+' ':'')+(perm==='granted'
+      ?'Saved. A page of this site will alert you about it while open in a tab; nothing reaches you once it is closed.'
+      :'Notifications were not allowed, so nothing will be sent.');};
+  if(opts&&opts.auto)return;   // answered on arrival: no scrolling, no coachmarks
   PR.out.scrollIntoView({block:'nearest'});
   /* The second and third coachmarks arrive here rather than on load:
      there is now a place to save and an answer to check the evidence
@@ -224,11 +245,25 @@ useLoc.onclick=()=>{
   navigator.geolocation.getCurrentPosition(pos=>{
     /* No country comes with a browser fix, and a country-wide outlook needs
        one - so the answer says what it cannot cover rather than guessing. */
-    answer({kind:'My location',name:'Your current location',
-      lat:pos.coords.latitude,lon:pos.coords.longitude,country:'',countryCode:''});
-    PR.note.textContent='Checked at your device’s reported position. It carries no country, so outlooks issued for a whole country cannot be included — search the place by name to include those.';
+    /* The country is read off the map's own outline, here in the browser,
+       so outlooks issued for a whole country can be included without the
+       position being sent anywhere to be named. */
+    const lat=pos.coords.latitude,lon=pos.coords.longitude;
+    const named=window.PNDAlerts?PNDAlerts.countryAt(lat,lon):Promise.resolve('');
+    named.then(country=>{
+      answer({kind:'My location',name:'Your current location',lat,lon,country:country||'',countryCode:''});
+      PR.note.textContent=country
+        ?'Checked at your device’s reported position, in '+country+'. Save it to have it answered here each time you come back.'
+        :'Checked at your device’s reported position. Its country could not be told from the map, so outlooks issued for a whole country are not included — search the place by name to include those.';
+    });
   },()=>{PR.note.textContent='Your browser did not share a location, so nothing was checked.';},{timeout:10000});
 };
 quickSaved();
+/* Where the reader keeps a current location, it is refreshed on each visit -
+   only if they already allowed it, so arriving never raises a prompt - and
+   background alerts, if on, are told the places again so they do not lapse. */
+if(window.PNDAlerts){PNDAlerts.config();
+  PNDAlerts.refreshLocation().then(r=>{if(r&&r.moved){quickSaved();if(checked&&checked.id==='loc-current')answer(mine(),{auto:true})}});
+  PNDAlerts.sync()}
 </script>
 <script>function startHomeTour(force=false){PND.startTour(force)}setTimeout(()=>PND.startTour(),650)</script><script src="/glossary.js"></script><!-- seo-nav:start --><nav class="seo-nav" aria-label="Site sections"><h2>Explore Predict Natural Disasters</h2><div class="seo-nav-links"><a href="/live-map">Live disaster map</a><a href="/events">Live global events</a><a href="/alerts">Disaster alerts</a><a href="/official-warnings">Official warnings</a><a href="/forecasts">Forecasts</a><a href="/forecast-calendar">Forecast calendar</a><a href="/hazard-types">Hazards by type</a><a href="/regions">Regions</a><a href="/historical-events">Historical events</a><a href="/recent-events">Recent major events</a><a href="/calamities">Current calamities</a><a href="/insights">Insights</a><a href="/personal-risk">Personal risk</a><a href="/accuracy">Verification & track record</a><a href="/methodology">Methodology</a><a href="/resources">Preparedness resources</a><a href="/about">About</a></div></nav><style>.seo-nav{border-top:1px solid #174638;padding:16px;background:#03140f}.seo-nav h2{font-size:12px;margin:0 0 8px;color:#8eaa9e;text-transform:uppercase;letter-spacing:.12em}.seo-nav-links{display:flex;flex-wrap:wrap;gap:8px 14px}.seo-nav-links a{color:#8ff0ca;font-size:12px;text-decoration:none}.seo-nav-links a:hover{text-decoration:underline}</style><!-- seo-nav:end --></body></html>

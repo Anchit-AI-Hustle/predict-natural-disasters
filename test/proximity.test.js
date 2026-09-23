@@ -404,7 +404,8 @@ test('a browser notification does fire for an incident next door', async () => {
     waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
   });
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
-  assert.ok(fired.some(t => /km away/.test(t)),
+  /* Worded by alert-rules.js now, shared with the background service. */
+  assert.ok(fired.some(t => /\d+ km from your home/.test(t)),
     'gating the notifications silenced the case they exist for: ' + JSON.stringify(fired));
   r.close();
 });

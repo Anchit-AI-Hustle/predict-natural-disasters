@@ -2,22 +2,19 @@
 /*
  * The app may only promise the alerting it has.
  *
- * There is no service worker in this repository, no Push API call, no VAPID
- * key and no durable subscription store — not one process.env read in any
- * handler. A notification can therefore only be raised while the Personal Risk
- * page is open in a tab and refreshing; nothing can reach a reader who has
- * closed it.
+ * Until this change there was no service worker, no Push API call, no VAPID
+ * key and no subscription store, and these tests held the copy to that: an
+ * alert could only be raised while the Personal Risk page was open. The
+ * first of them was written to fail the day background alerting arrived, so
+ * that the copy would be revisited on purpose rather than drift.
  *
- * What was published was "Disaster Alert Notifications | Get Notified" and
- * "Set up natural disaster alert notifications for the places you care about
- * and get warned when risk rises", over a page that has no notification
- * setup on it at all, and a button reading "Enable browser alerts" whose
- * success state said "Browser alerts enabled".
- *
- * These tests hold the copy to the capability from both ends: the promises
- * are gone, the limit is stated where the button is, and — because the cheap
- * way to pass that is to remove the feature — the alerting itself still has
- * to work.
+ * It has arrived (api/alerts.js, api/alerts-run.js, sw.js, alerts-client.js),
+ * but only where a deployment has an alert store and a schedule. So the rule
+ * is now conditional, and so is the copy: background alerts are offered only
+ * when /api/alerts says the service is on, and where it is not the page says
+ * so, offers the in-page alerting that still works, and names where alerting
+ * that follows a reader can be had. The promises that were never true stay
+ * banned.
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -33,21 +30,15 @@ const pages = () => fs.readdirSync(ROOT).filter(f => f.endsWith('.html'));
 
 /* ------------------------------------------- the capability, as it stands */
 
-test('nothing in the repository implements background alerting', () => {
-  /* If any of this arrives, the copy below may be raised to match it — but
-     that has to be a deliberate change, not a promise that drifted ahead of
-     the code again. */
-  const files = fs.readdirSync(ROOT).filter(f => /\.(js|html)$/.test(f))
-    .concat(fs.readdirSync(path.join(ROOT, 'api')).map(f => path.join('api', f)));
-  const hits = [];
-  for (const f of files) {
-    const src = read(f);
-    for (const marker of ['serviceWorker.register', 'pushManager', 'applicationServerKey', 'webpush']) {
-      if (src.includes(marker)) hits.push(f + ': ' + marker);
-    }
-  }
-  assert.deepEqual(hits, [],
-    'background alerting now exists; revisit the copy these tests pin, do not just delete them');
+test('background alerting exists end to end, and only behind the service switch', () => {
+  const src = f => read(f);
+  assert.match(src('sw.js'), /addEventListener\('push'/, 'nothing shows a pushed alert');
+  assert.match(src('alerts-client.js'), /pushManager\.subscribe/, 'nothing subscribes a device');
+  assert.match(src('alerts-client.js'), /serviceWorker\.register\('\/sw\.js'\)/);
+  assert.match(src('api/alerts-run.js'), /WEBPUSH\.send/, 'nothing sends a push');
+  /* The switch: the page is offered background alerts only by the service. */
+  assert.match(src('alerts-client.js'), /if \(!cfg\.available\) return Object\.assign\(base, \{ mode: 'unavailable'/,
+    'the page can offer background alerts without asking whether the service is on');
 });
 
 /* ----------------------------------------------- what the copy may promise */
@@ -72,23 +63,24 @@ test('no page promises to warn a reader it cannot reach', () => {
 
 test('the page offering alerts says where they stop', () => {
   const src = read('personal-risk.html');
-  assert.match(src, /no background alerting service/i,
-    'the limit is not stated on the page that offers the feature');
-  assert.match(src, /while this page is open/i,
-    'the copy does not say when an alert can actually be raised');
+  assert.match(src, /While this page is open/,
+    'the copy does not say when an alert can be raised without the service');
   assert.match(src, /closed/i, 'the copy does not say what happens when the page is closed');
   assert.match(src, /national or regional hazard agency/i,
     'a reader who needs alerting that follows them is given nowhere to go');
+  assert.equal(/no background alerting service/i.test(src), false,
+    'the page still denies a service that now exists where it is switched on');
 });
 
 test('the reader is told the limit without opening anything', async () => {
   const r = await renderPage('personal-risk.html', {
-    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+    waitFor: d => /not switched on/.test((d.getElementById('alertsStatus') || {}).textContent || '')
   });
   const text = r.text();
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
-  assert.match(text, /no background alerting service/i,
-    'the limit is in the markup but not rendered');
+  assert.match(text, /not switched on/i, 'where the service is off, the page does not say so');
+  assert.match(text, /nothing reaches you once it is closed/,
+    'the limit of in-page alerting is not stated where it is offered');
   assert.match(text, /Alert me while this page is open/,
     'the button no longer says what it does');
   r.close();
@@ -123,10 +115,10 @@ test('the alerting that is promised still happens', async () => {
 test('the alerts page no longer sells a subscription it does not offer', () => {
   const src = read('alerts-notifications.html');
   assert.equal(/Get Notified/.test(src), false, 'the title still promises notification');
-  assert.match(src, /cannot notify you when it is closed/i,
-    'the page description does not state the limit');
-  // And the page really does have no subscription controls, which is why the
-  // title had to change rather than the page gaining a form.
+  assert.match(src, /Personal Risk/,
+    'the page description does not say where alerts are actually set up');
+  // The page itself still has no subscription controls, which is why its
+  // title describes a list rather than a sign-up.
   assert.equal(/requestPermission|pushManager/.test(src), false,
     'this page now has alerting controls; the title should describe them');
 });

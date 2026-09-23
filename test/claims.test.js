@@ -206,8 +206,11 @@ test('a page that names a limit in its body does not deny it in its description'
      publication. */
   const pairs = [
     { file: 'verification.html', body: /after issuance|experimental risk outlooks/i },
-    { file: 'alerts-notifications.html', body: /no background alerting service/i },
-    { file: 'personal-risk.html', body: /cannot notify you|no background alerting/i }
+    /* Background alerts exist now, where the service is switched on; the
+       limits the bodies state are where alerts are set up, and what still
+       happens - and stops happening - without the service. */
+    { file: 'alerts-notifications.html', body: /set up on Personal Risk/i },
+    { file: 'personal-risk.html', body: /nothing reaches you once it is closed/i }
   ];
   for (const p of pairs) {
     const html = fs.readFileSync(path.join(ROOT, p.file), 'utf8');

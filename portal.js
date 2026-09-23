@@ -352,11 +352,15 @@ const PND={
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   distanceKm(a,b,c,d){const r=Math.PI/180,R=6371,x=(c-a)*r,y=(d-b)*r,z=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(z))},
-  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;/* Same banding as the page, from the same model. A notification is the
-     most intrusive claim this app makes, so it fires only where the record
-     places the hazard at this place - inside a published area, or at an
-     incident coordinate close by - and never off an area centroid. */
-    const H=typeof PNDHazards!=='undefined'?PNDHazards:null;if(!H)return;const locs=this.savedLocations(),seen=JSON.parse(localStorage.getItem('pnd_notified')||'{}'),now=Date.now();locs.forEach(x=>events.forEach(e=>{const r=H&&H.riskRow(e,x);if(!r)return;const ser=String(e.alert||e.severity||'').toLowerCase(),key=x.id+'|'+e.id+'|'+ser;let body='';if(r.band==='B'&&r.containment===true)body=(e.type||'Hazard')+' · your saved place is inside the warned area · '+(e.alert||e.severity||'active');else if(r.band==='A'&&r.containment===true)body=(e.type||'Hazard')+' · your saved place is inside the reported affected area · '+(e.alert||e.severity||'active');else if(r.band==='A'&&r.claimDistance&&r.distanceKm<=100&&(/red|orange|severe|extreme|catastrophic/.test(ser)||r.distanceKm<=30))body=(e.type||'Hazard')+' · '+Math.round(r.distanceKm)+' km away · '+(e.alert||e.severity||'active');if(body&&(!seen[key]||now-seen[key]>21600000)){new Notification('Hazard near '+x.name,{body:body});seen[key]=now}}));localStorage.setItem('pnd_notified',JSON.stringify(seen))},
+  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;/* The same rules the background service applies (alert-rules.js), so the
+     page open in a tab and the service behind it never disagree about what is
+     worth a notification. Where the service is on for this device it has
+     already sent these; raising them again here would say everything twice. */
+    const H=typeof PNDHazards!=='undefined'?PNDHazards:null,R=typeof PNDAlertRules!=='undefined'?PNDAlertRules:null;if(!H||!R)return;
+    if(typeof PNDAlerts!=='undefined'&&PNDAlerts.isOn())return;
+    let seen={};try{seen=JSON.parse(localStorage.getItem('pnd_notified')||'{}')}catch(e){seen={}}const now=Date.now();
+    R.alertsFor(events,this.savedLocations(),H,now).forEach(a=>{if(!seen[a.key]||now-seen[a.key]>21600000){new Notification(a.title,{body:a.body,tag:a.tag});seen[a.key]=now}});
+    try{localStorage.setItem('pnd_notified',JSON.stringify(seen))}catch(e){}},
   /*
    * Three coachmarks, and each one arrives where it is earned.
    *
