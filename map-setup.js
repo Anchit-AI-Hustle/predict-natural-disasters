@@ -183,16 +183,75 @@
   /*
    * One basemap everywhere, so a map means the same thing on every page.
    *
-   * The default is a political world map -- a colour per country, borders,
-   * names, blue ocean -- drawn from country outlines the app serves itself
-   * rather than fetched from a tile service. No raster tile provider renders
-   * that style, and a self-served layer also cannot go blank the way a tile
-   * layer can: the outlines, the colours and the labels are all in the repo.
-   *
-   * Satellite stays as the second view, for when the terrain around an
-   * incident matters, with its own place-name layer so it is never unlabelled.
+   * The political world map -- a colour per country, borders, names, blue
+   * ocean -- is drawn from country outlines the app serves itself rather than
+   * fetched from a tile service. No raster tile provider renders that style,
+   * and a self-served layer also cannot go blank the way a tile layer can.
+   * It is one click away in the layers control, and it lies underneath the
+   * satellite view as the floor that is left if the imagery never arrives.
    */
   var IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+  /*
+   * The Earth as it looked on the latest complete day, not years ago.
+   *
+   * The satellite view was Esri's World Imagery on its own: sharp, and a
+   * mosaic of captures that are months to years old. Nothing said so. Opened
+   * on a flood, it showed the dry ground from before the flood under the
+   * flood's marker, and a reader had every reason to take it for the scene
+   * now - the opposite of what a disaster map is for.
+   *
+   * NASA publishes a true-colour picture of the whole planet every day from
+   * the Terra satellite's MODIS instrument, through its Global Imagery
+   * Browse Services. It is public, needs no key, and is what NASA's own
+   * Worldview opens on. Its pixels are about 250 m, so it is the right
+   * picture from a continent down to a region - a cyclone's eye, a smoke
+   * plume, a river out of its banks - and too coarse past zoom 9, where the
+   * detailed mosaic takes over and says what it is.
+   *
+   * The day is the latest one that ended at least four hours ago. Today's
+   * picture is still being assembled swath by swath, its tiles are JPEG, and
+   * the part of the world the satellite has not yet passed over comes back
+   * opaque black - so "today" would black out the Americas every morning UTC.
+   * The four hours cover NASA's near-real-time processing of the last passes.
+   * Clouds are part of the picture: a satellite photographs the top of a
+   * storm, not the flooding under it, and the caption says that too.
+   */
+  var DAILY_LAYER = 'MODIS_Terra_CorrectedReflectance_TrueColor';
+  var DAILY_MAX_ZOOM = 9;
+  var DAILY_SETTLE_HOURS = 28;
+  var DAILY_CREDIT = 'Daily imagery: NASA GIBS';
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function dailyImagery(now) {
+    var t = (now === undefined ? Date.now() : Number(now)) - DAILY_SETTLE_HOURS * 3600e3;
+    var day = new Date(t).toISOString().slice(0, 10);
+    var parts = day.split('-');
+    return {
+      day: day,
+      label: Number(parts[2]) + ' ' + MONTHS[Number(parts[1]) - 1] + ' ' + parts[0],
+      url: 'https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/' + DAILY_LAYER +
+        '/default/' + day + '/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
+      credit: DAILY_CREDIT,
+      maxZoom: DAILY_MAX_ZOOM
+    };
+  }
+  /* What the caption says for each source. One table, so the flat map and
+     the globe can never describe the same picture two different ways. */
+  function imageryText(source, latest) {
+    if (source === 'daily') {
+      return 'Satellite: NASA, ' + latest.label + ' \u2014 the latest complete day. Cloud is part of the picture.';
+    }
+    if (source === 'fallback') {
+      return 'NASA\u2019s picture of ' + latest.label + ' did not load here. Showing a mosaic of past captures \u2014 not the scene now.';
+    }
+    if (source === 'detail') {
+      return 'Satellite: a detailed mosaic of past captures \u2014 not the scene now. Zoom out for NASA\u2019s picture of ' + latest.label + '.';
+    }
+    if (source === 'drawn') {
+      return 'Satellite imagery did not load here. This is the drawn map.';
+    }
+    return '';
+  }
   var PLACES = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
   var COUNTRIES = '/world-countries.json';
   var ESRI_CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
@@ -224,6 +283,29 @@
     return LABEL_PANE;
   }
 
+  /*
+   * The floor under the satellite imagery, and it has to be under it.
+   *
+   * The drawn world is vector shapes - an ocean rectangle and a polygon per
+   * country, both fully opaque - and Leaflet draws vector shapes in its
+   * overlay pane at z-index 400, above every tile layer at 200. So "the
+   * political world underneath the imagery" was painted on top of it: from
+   * the day Satellite became the default, the flat map's Satellite view
+   * showed the political map, and the imagery it requested was never seen.
+   * Nothing caught it because every check asked which tiles were requested,
+   * not what reached the screen. The floor gets its own pane below the tiles.
+   */
+  var UNDER_PANE = 'pndUnder';
+  function underPane(map) {
+    if (typeof map.createPane !== 'function') return undefined;
+    if (!map.getPane(UNDER_PANE)) {
+      var pane = map.createPane(UNDER_PANE);
+      pane.style.zIndex = 150;          // below the tile pane (200)
+      pane.style.pointerEvents = 'none';
+    }
+    return UNDER_PANE;
+  }
+
   /** The widest ring of a country, and its centre, for placing the name. */
   function anchorOf(geom) {
     var rings = geom.type === 'Polygon' ? [geom.coordinates[0]] : geom.coordinates.map(function (p) { return p[0]; });
@@ -248,6 +330,9 @@
      second copy of every name. */
   function political(map, named) {
     var withNames = named !== false;
+    /* Only the floor under the imagery moves; the Political view itself stays
+       where vector layers normally draw. */
+    var floor = withNames ? undefined : underPane(map);
     var group = L.layerGroup();
     /* The world file is fetched asynchronously, so a showNames() call can
        arrive before there is anything to name; it is remembered instead. */
@@ -256,19 +341,20 @@
       if (group.__showNames) group.__showNames();
     };
     if (typeof L.rectangle === 'function') {
-      L.rectangle(WORLD, { fillColor: OCEAN, fillOpacity: 1, stroke: false, interactive: false }).addTo(group);
+      L.rectangle(WORLD, Object.assign({ fillColor: OCEAN, fillOpacity: 1, stroke: false, interactive: false },
+        floor ? { pane: floor } : {})).addTo(group);
     }
     if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
 
     var labels = L.layerGroup();
     fetch(COUNTRIES).then(function (r) { return r.json(); }).then(function (data) {
-      L.geoJSON(data, {
+      L.geoJSON(data, Object.assign({
         interactive: false,
         style: function (f) {
           return { fillColor: PALETTE[f.properties.c % PALETTE.length], fillOpacity: 1,
             color: BORDER, weight: 0.7, opacity: 0.85 };
         }
-      }).addTo(group);
+      }, floor ? { pane: floor } : {})).addTo(group);
 
       var places = data.features.map(function (f) {
         return { name: f.properties.n, at: anchorOf(f.geometry) };
@@ -368,6 +454,12 @@
     '.pnd-view-toggle button[aria-pressed="true"]{background:#25e29c;color:#04120e}',
     '.pnd-view-toggle button:focus-visible{outline:2px solid #25e29c;outline-offset:-2px}',
     '.pnd-globe .cesium-widget-credits{font-size:10px;opacity:.75}',
+    /* Which picture is showing. Bottom-left, clear of the attribution on the
+       right and above it on a phone, never catching the pointer. */
+    '.pnd-imagery-note{position:absolute;left:8px;bottom:26px;z-index:1300;pointer-events:none;',
+    'max-width:min(420px,calc(100% - 16px));padding:5px 8px;border-radius:6px;',
+    'background:rgba(4,18,14,.86);color:#e6f4ee;font:500 11px/1.35 system-ui,sans-serif}',
+    '.pnd-imagery-note[hidden]{display:none}',
     /* The wheel hint, shown only when a reader tries the plain wheel over
        the map. Above the panes, below the controls, and never in the way
        of a pointer. */
@@ -388,12 +480,96 @@
     (document.head || document.documentElement).appendChild(tag);
   }
 
+  /*
+   * Which picture is on screen, and how old it is, said on the map itself.
+   *
+   * Two sources now share one satellite view, and they differ by years. A
+   * reader cannot tell a 250 m photograph from yesterday from a sharp one
+   * assembled long ago by looking, so the view says which it is showing at
+   * the zoom it is at - and, if NASA's tiles are refused, says that it has
+   * fallen back to the old mosaic rather than letting it pass for today.
+   * The globe reports its own source through the same caption.
+   */
+  function imageryNote(map, satellite, daily, latest, under) {
+    var box = map && typeof map.getContainer === 'function' ? map.getContainer() : null;
+    if (!box || typeof document === 'undefined' || typeof map.on !== 'function') return null;
+    var el = document.createElement('div');
+    el.className = 'pnd-imagery-note';
+    el.setAttribute('role', 'note');
+    box.appendChild(el);
+    var state = { view: 'flat', globe: null, loaded: false, errors: 0, failed: false, rescue: null,
+      rescueLoaded: false, rescueErrors: 0, rescueFailed: false };
+    function source() {
+      if (state.view === 'globe') return state.globe;
+      if (typeof map.hasLayer === 'function' && !map.hasLayer(satellite)) return null;
+      /* By the zoom tiles are drawn at, which Leaflet rounds: these maps sit
+         at fractional zooms, and at 9.3 the daily picture is still the one on
+         screen while an unrounded test already called it the mosaic. */
+      var z = typeof map.getZoom === 'function' ? Math.round(map.getZoom()) : 0;
+      if (z > DAILY_MAX_ZOOM) return 'detail';
+      if (!state.failed) return 'daily';
+      /* Both hosts refused: what is on screen is the drawn world, and calling
+         it a mosaic would describe a picture that is not there. */
+      return state.rescueFailed ? 'drawn' : 'fallback';
+    }
+    /* Above the credit line, however many lines it wraps to at this width. */
+    function place() {
+      var credit = box.querySelector('.leaflet-control-attribution');
+      var h = credit && credit.offsetHeight ? credit.offsetHeight : 16;
+      el.style.bottom = (h + 8) + 'px';
+    }
+    function render() {
+      var s = source();
+      el.hidden = !s;
+      el.textContent = s ? imageryText(s, latest) : '';
+      el.setAttribute('data-source', s || '');
+      if (s) place();
+    }
+    if (typeof daily.on === 'function') {
+      daily.on('tileload', function () { state.loaded = true; });
+      /* Three refusals and not one picture: the host is not answering. The
+         mosaic is put in underneath for the zooms it had left to the daily
+         picture, so the view is still a photograph - and captioned as the old
+         one it is. A tile that did load means the service is up, and a stray
+         failure is not a reason to swap the reader's picture. */
+      daily.on('tileerror', function () {
+        state.errors++;
+        if (state.loaded || state.failed || state.errors < 3) return;
+        state.failed = true;
+        try {
+          state.rescue = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: DAILY_MAX_ZOOM, noWrap: true });
+          state.rescue.on('tileload', function () { state.rescueLoaded = true; });
+          state.rescue.on('tileerror', function () {
+            try { under.showNames(); } catch (e) {}
+            if (state.rescueLoaded || state.rescueFailed || ++state.rescueErrors < 3) return;
+            state.rescueFailed = true;
+            render();
+          });
+          satellite.addLayer(state.rescue);
+        } catch (e) { /* the drawn world is still underneath */ }
+        render();
+      });
+    }
+    map.on('zoomend baselayerchange resize', render);
+    render();
+    /* The credit line is filled in as layers add their attributions, after
+       this first render; place the caption again once it has settled. */
+    setTimeout(render, 600);
+    map.__pndImageryNote = {
+      element: el,
+      setView: function (v) { state.view = v; render(); },
+      setGlobe: function (s) { state.globe = s; render(); }
+    };
+    return map.__pndImageryNote;
+  }
+
   function basemap(map) {
     if (!map) return map;
     try {
       injectStyle();
       var pane = labelPane(map);
       var views = {};
+      var under = null, latest = null, daily = null;
       var plain = political(map);
       views['Political'] = plain;
 
@@ -404,8 +580,18 @@
            is a black panel; with the drawn world beneath it, a reader who
            loses the imagery still gets coastlines, borders and names. The
            globe already works this way. */
-        var under = political(map, false);
-        var imagery = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: 18, noWrap: true });
+        under = political(map, false);
+        latest = dailyImagery();
+        /* NASA's picture of the latest complete day, from the world view down
+           to zoom 9; the bounds keep Leaflet from asking for the tiles past
+           the Mercator edge that the service does not have. */
+        daily = L.tileLayer(latest.url, {
+          attribution: latest.credit, subdomains: 'abc', maxZoom: DAILY_MAX_ZOOM,
+          maxNativeZoom: DAILY_MAX_ZOOM, noWrap: true,
+          bounds: [[-85.0511287776, -179.999999975], [85.0511287776, 179.999999975]]
+        });
+        /* The detailed mosaic, from where the daily picture runs out. */
+        var imagery = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, minZoom: DAILY_MAX_ZOOM + 1, maxZoom: 18, noWrap: true });
         /* Esri's tiles come from a third-party host that a network can refuse.
            When they do not arrive the drawn world underneath is all there is,
            and an unlabelled one is a puzzle - so its own country names come
@@ -414,21 +600,27 @@
           imagery.on('tileerror', function () { try { under.showNames(); } catch (e) {} });
         }
         views['Satellite'] = L.layerGroup([
-          under, imagery,
+          under, daily, imagery,
           L.tileLayer(PLACES, { maxZoom: 18, pane: pane, opacity: 0.95, noWrap: true })
         ]);
       }
 
       /* Satellite is what a reader means by looking at a map of a disaster:
-         the real ground, as it is, rather than a coloured abstraction of it.
-         It is the default wherever it can be built, and Political remains one
-         click away for anyone who wants the plain political world. */
+         the ground, photographed, rather than a coloured abstraction of it -
+         and zoomed out, photographed on the latest complete day rather than
+         whenever the mosaic was assembled. It is the default wherever it can
+         be built, and Political remains one click away. */
       var start = views['Satellite'] || plain;
       start.addTo(map);
       if (map.attributionControl && map.attributionControl.addAttribution) map.attributionControl.addAttribution(NE_CREDIT);
       if (L.control && typeof L.control.layers === 'function' && views['Satellite']) {
         L.control.layers({ 'Satellite': views['Satellite'], 'Political': plain }, null,
           { position: 'topright' }).addTo(map);
+      }
+      /* Last, and on its own: the caption describes the map, so nothing in it
+         may stop the map being built. */
+      if (views['Satellite']) {
+        try { imageryNote(map, views['Satellite'], daily, latest, under); } catch (e) { /* no caption */ }
       }
     } catch (e) { /* stub layers in the test harness */ }
     attachGlobe(map);
@@ -477,13 +669,14 @@
             /* Revealed only now: until the viewer exists there is nothing to
                show, and the flat map underneath is the better thing to be
                looking at. */
-            if (PNDGlobe.prefers() !== 'flat') handle.reveal();
+            if (PNDGlobe.prefers() !== 'flat') { handle.reveal(); noteView('globe'); }
             resync();
           }).catch(function () {
             /* Cesium never arrived. Drop back to the flat map rather than
                leaving a dead panel over it. */
             teardown();
             setPressed('flat');
+            noteView('flat');
           });
         }
         if (handle.viewer && handle.viewer()) handle.reveal();
@@ -495,6 +688,13 @@
         handle.destroy();
         handle = null;
       }
+
+      /* The caption follows whichever view is in front; the globe says which
+         picture it is draping as its camera moves. */
+      function noteView(v) { if (map.__pndImageryNote) map.__pndImageryNote.setView(v); }
+      container.addEventListener('pnd-imagery', function (ev) {
+        if (map.__pndImageryNote && ev && ev.detail) map.__pndImageryNote.setGlobe(ev.detail.source);
+      });
 
       var bar = document.createElement('div');
       bar.className = 'pnd-view-toggle';
@@ -517,6 +717,7 @@
         setPressed(view);
         if (view === 'globe') show();
         else if (handle) handle.hide();
+        noteView(view === 'globe' && handle && handle.viewer && handle.viewer() ? 'globe' : 'flat');
       }
 
       bGlobe.addEventListener('click', function () { choose('globe', true); });
@@ -693,5 +894,8 @@
        ever made, so the globe carried no basemap at all. */
     COUNTRIES: COUNTRIES, PALETTE: PALETTE, OCEAN: OCEAN, BORDER: BORDER,
     IMAGERY: IMAGERY, PLACES: PLACES, ESRI_CREDIT: ESRI_CREDIT,
-    NE_CREDIT: NE_CREDIT };
+    NE_CREDIT: NE_CREDIT,
+    /* The daily picture and the words for it, shared with the globe for the
+       same reason the rest of this block is. */
+    dailyImagery: dailyImagery, imageryText: imageryText, DAILY_MAX_ZOOM: DAILY_MAX_ZOOM };
 })();

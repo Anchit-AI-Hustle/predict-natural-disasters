@@ -403,11 +403,13 @@ test('the basemap it draws is the flat map\'s, and is credited', async () => {
     waitFor: (d, w) => (w.__pndViewers || []).length &&
       w.__pndViewers[0].imageryLayers.length });
   const layers = r.window.__pndViewers[0].imageryLayers;
-  /* Three, in this order: the painted world underneath so an unreachable tile
-     host costs detail rather than the globe, then the satellite imagery, then
-     the reference layer that names what you are looking at. */
-  assert.equal(layers.length, 3,
-    'the globe carries ' + layers.length + ' imagery layers, not the painted world + satellite + places');
+  /* Four, in this order: the painted world underneath so an unreachable tile
+     host costs detail rather than the globe; the detailed Esri mosaic; NASA's
+     picture of the latest complete day over it, shown while the camera is high
+     enough for it to be the sharper of the two; then the reference layer that
+     names what you are looking at. */
+  assert.equal(layers.length, 4,
+    'the globe carries ' + layers.length + ' imagery layers, not the painted world + mosaic + daily + places');
   const added = layers.__all || [];
   assert.match(String(added[0] && added[0].opts && added[0].opts.credit),
     /Natural Earth/, 'the outlines the globe draws are not credited to Natural Earth');
@@ -417,6 +419,10 @@ test('the basemap it draws is the flat map\'s, and is credited', async () => {
     'the satellite layer is not the Esri imagery the flat map uses');
   assert.equal(added[1] && added[1].maximumLevel, 18,
     'the satellite layer stops short of the zoom the flat map offers');
+  assert.ok(added[2] && /gibs-\{s\}\.earthdata\.nasa\.gov\/wmts\/epsg3857\/best\/MODIS_Terra_CorrectedReflectance_TrueColor\/default\/\d{4}-\d{2}-\d{2}\//.test(String(added[2].url)),
+    'the third layer is not NASA\u2019s daily picture: ' + (added[2] && added[2].url));
+  assert.equal(added[2] && added[2].maximumLevel, 9,
+    'the daily picture is asked for past the zoom it exists at');
   r.window.close();
 });
 

@@ -93,7 +93,10 @@ const server = http.createServer(async (req, res) => {
          toggle being one of the controls checked. */
       await pg.addInitScript(() => {
         localStorage.setItem('pnd_tour_done', '1');
-        localStorage.setItem('pnd_globe_view', 'flat');
+        /* The globe's own preference key; 'pnd_globe_view', which this set
+           before, is read by nothing - the flat map was measured only because
+           Cesium could not be fetched here. */
+        localStorage.setItem('pnd_map_view', 'flat');
       });
       const imageryAsked = [];
       pg.on('request', r => { if (/World_Imagery/.test(r.url())) imageryAsked.push(r.url()); });

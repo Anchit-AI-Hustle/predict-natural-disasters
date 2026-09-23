@@ -327,6 +327,16 @@
     } catch (e) { /* older widget */ }
   }
 
+  /*
+   * Below this camera height the daily picture's ~250 m pixels are larger
+   * than the screen's, and the detailed mosaic is the sharper of the two.
+   * It is the height a 1000 px view spans about zoom 9 on the flat map - the
+   * same point at which the flat map hands over - and it is also the lowest
+   * height this globe ever frames an event at, so opening on an event always
+   * shows the daily picture first.
+   */
+  var DAILY_ABOVE_M = 250000;
+
   function mount(map, container) {
     if (!map || !container) return null;
     var host = document.createElement('div');
@@ -348,7 +358,65 @@
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(host);
 
-    var viewer = null, entities = null, disposed = false;
+    var viewer = null, entities = null, disposed = false, reannounce = null;
+
+    /*
+     * The globe is the view a reader opens on, so it carries the same two
+     * pictures as the flat map and says which it is showing.
+     *
+     * NASA's picture of the latest complete day goes over the detailed
+     * mosaic while the camera is high enough for it to be the sharper of the
+     * two, and the two are swapped - never both drawn - as the camera passes
+     * DAILY_ABOVE_M, so the mosaic is only fetched where it is shown. If
+     * NASA's tiles keep failing and none has arrived, the mosaic stays up at
+     * every height and the caption says it is the old picture rather than
+     * letting it pass for today's.
+     */
+    function todaysEarth(Cesium, satLayer) {
+      var daily = shared('dailyImagery', null);
+      var latest = typeof daily === 'function' ? daily() : null;
+      var provider = latest ? tiled(Cesium, latest.url, latest.credit, latest.maxZoom) : null;
+      var dayLayer = provider ? viewer.imageryLayers.addImageryProvider(provider) : null;
+      var failures = 0, loaded = false, failed = false, last = null;
+      function say(source) {
+        if (source === last) return;
+        last = source;
+        try { container.dispatchEvent(new CustomEvent('pnd-imagery', { detail: { source: source } })); }
+        catch (e) { /* an old browser without CustomEvent keeps an uncaptioned globe */ }
+      }
+      function pick() {
+        if (disposed || !viewer || viewer.isDestroyed()) return;
+        var c = viewer.camera && viewer.camera.positionCartographic;
+        var high = !c || c.height > DAILY_ABOVE_M;
+        var useDay = !!dayLayer && high && !failed;
+        if (dayLayer) dayLayer.show = useDay;
+        if (satLayer) satLayer.show = !useDay;
+        say(useDay ? 'daily' : (high && dayLayer ? 'fallback' : 'detail'));
+      }
+      if (provider && provider.errorEvent && provider.errorEvent.addEventListener) {
+        provider.errorEvent.addEventListener(function () {
+          if (loaded || failed || ++failures < 3) return;
+          failed = true;
+          pick();
+        });
+      }
+      /* A tile that arrives means the service is up. Cesium reports loads per
+         layer through the globe's tile queue rather than per provider, so the
+         first frame drawn with the layer showing and no errors counts. */
+      try {
+        viewer.scene.globe.tileLoadProgressEvent.addEventListener(function (queued) {
+          if (queued === 0 && dayLayer && dayLayer.show && failures === 0) loaded = true;
+        });
+      } catch (e) { /* older Globe: errors alone decide */ }
+      try {
+        viewer.camera.moveEnd.addEventListener(pick);
+        viewer.camera.changed.addEventListener(pick);
+      } catch (e) { /* no camera events: the first pick stands */ }
+      pick();
+      /* Re-announced on every reveal, since the caption is shared with the
+         flat map and was describing that until the globe came to the front. */
+      return function () { last = null; pick(); };
+    }
 
     function setControls(display) {
       try {
@@ -451,7 +519,8 @@
           if (disposed || !viewer || viewer.isDestroyed()) return;
           var esri = shared('ESRI_CREDIT', '');
           var sat = tiled(Cesium, shared('IMAGERY', ''), esri, 18);
-          if (sat) viewer.imageryLayers.addImageryProvider(sat);
+          var satLayer = sat ? viewer.imageryLayers.addImageryProvider(sat) : null;
+          reannounce = todaysEarth(Cesium, satLayer);
           /* Borders and place names, the same reference layer the flat map
              draws over its own satellite view. Without it the globe is
              photography with nothing named on it, and a reader zoomed in on a
@@ -494,6 +563,7 @@
           var c = viewer.scene.canvas;
           if (c && c.clientWidth > 0 && c.clientHeight > 0) {
             frame(window.Cesium, viewer, map);
+            if (reannounce) reannounce();
             return;
           }
           if (++tries < 30) requestAnimationFrame(settle);
