@@ -138,6 +138,84 @@ test('the freeze is the earliest proof, not the first one to hand', async () => 
   assert.equal(nd.freezeEvidenced, true);
 });
 
+/* ---------------------------------- a benchmark is the claim it froze, only */
+
+test('the benchmark in the feed is the claim its commit froze', async () => {
+  /* ND-001 was given a forecastScope nine days after the commit that froze
+     it. The scope is part of what identifies a claim, so the feed presented a
+     new claim under the old id - still citing that commit as proof - and the
+     next run of the job recorded it as frozen on 13 September. */
+  const { events } = await feed();
+  const nd = events.find(e => e.id === 'ND-001');
+  const rows = require(path.join(ROOT, 'data', 'outlook-ledger.json')).filter(r => r.id === 'ND-001');
+  assert.equal(rows.length, 1, 'the frozen benchmark is recorded under more than one set of terms');
+  assert.equal(H.claimKey(nd), H.claimKey(rows[0]),
+    'the feed serves ND-001 under terms other than the ones it was frozen with');
+  assert.equal(nd.locationPrecision, 'regional',
+    'the corridor should still be described as a region, not a point');
+});
+
+test('a revised claim is not backdated to the commit that froze the original', () => {
+  const ledger = require(path.join(ROOT, 'data', 'outlook-ledger.json'));
+  const original = ledger.find(r => r.id === 'ND-001');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-revision-'));
+  const eventsPath = path.join(dir, 'events.json');
+  const ledgerPath = path.join(dir, 'ledger.json');
+  /* The feed as it was: new terms, and the commit named as their proof. */
+  const revised = Object.assign({}, original, { forecast: true, forecastScope: 'regional',
+    freezeTimestamp: '2026-09-13T19:20:03Z', freezeEvidenced: true,
+    freezeBasis: 'First verifiable timestamp: the commit that introduced this record.' });
+  delete revised.recordedAt;
+  fs.writeFileSync(eventsPath, JSON.stringify({ events: [revised] }));
+  fs.writeFileSync(ledgerPath, JSON.stringify([original], null, 2));
+  require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-outlooks.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
+  const after = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.equal(after.length, 2, 'the revision should be recorded as its own row');
+  const row = after.find(r => r.forecastScope === 'regional');
+  assert.equal(row.freezeTimestamp, row.recordedAt,
+    'a revision recorded today was given the freeze of the claim it revised');
+  assert.match(row.freezeBasis, /Revised terms/);
+  assert.deepEqual(after.find(r => r !== row), original, 'the original row was touched');
+});
+
+test('the feed does not cite a commit as proof of terms added after it', () => {
+  /* The same rule where the feed attaches freezes: once the ledger holds an id
+     under other terms, the record's own provenance proves those, not these. */
+  const Module = require('node:module');
+  const ledgerFile = require.resolve(path.join(ROOT, 'data', 'outlook-ledger.json'));
+  const apiFile = require.resolve(path.join(ROOT, 'api', 'events.js'));
+  const saved = { ledger: require.cache[ledgerFile], api: require.cache[apiFile] };
+  const real = require(ledgerFile).find(r => r.id === 'ND-001');
+  const fake = new Module(ledgerFile);
+  fake.filename = ledgerFile; fake.loaded = true;
+  fake.exports = [Object.assign({}, real, { region: 'Somewhere the commit never named' })];
+  require.cache[ledgerFile] = fake;
+  delete require.cache[apiFile];
+  return callApi(require(apiFile), '/api/events').then(r => r.json()).then(({ events }) => {
+    const nd = events.find(e => e.id === 'ND-001');
+    assert.equal(nd.freezeEvidenced, false,
+      'the benchmark cited its commit as proof of terms the ledger records otherwise');
+    assert.match(nd.freezeBasis, /earlier terms/);
+  }).finally(() => {
+    if (saved.ledger) require.cache[ledgerFile] = saved.ledger; else delete require.cache[ledgerFile];
+    if (saved.api) require.cache[apiFile] = saved.api; else delete require.cache[apiFile];
+  });
+});
+
+test('no recorded row claims a freeze from before it was written, unless it is the first for its id', () => {
+  const ledger = require(path.join(ROOT, 'data', 'outlook-ledger.json'));
+  const first = new Map();
+  for (const r of ledger) {
+    if (!first.has(r.id) || ms(r.recordedAt) < ms(first.get(r.id).recordedAt)) first.set(r.id, r);
+  }
+  const backdated = ledger.filter(r => r.freezeTimestamp && ms(r.freezeTimestamp) < ms(r.recordedAt) &&
+    first.get(r.id) !== r);
+  assert.deepEqual(backdated.map(r => r.id + ' ' + r.recordedAt), [],
+    'these rows revise a recorded claim and carry a freeze older than themselves');
+});
+
 test('a freeze nothing can check is never treated as a prediction', () => {
   const unproven = { forecast: true, targetStart: '2099-01-01T00:00:00Z',
     freezeTimestamp: '2026-01-01T00:00:00Z', freezeEvidenced: false };

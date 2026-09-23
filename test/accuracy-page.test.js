@@ -38,8 +38,37 @@ test('no prediction rate is published when none can be computed', async () => {
   r.close();
 });
 
-test('an empty record of disasters is not presented as nothing having happened', async () => {
+/* A record of observed disasters that really is empty, served in place of the
+   committed one. These tests used to read the committed ledger and rely on it
+   being empty; the first real run of the job put four disasters in it, and
+   what they guard - how an empty record is described - still needs guarding. */
+const EMPTY_OBSERVED = { schemaVersion: 1, updatedAt: null, events: [], supporting: [] };
+const COMMITTED_SCAN = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'scan-ledger.json'), 'utf8'));
+const openEmpty = () => openWith({ scan: COMMITTED_SCAN(), observed: EMPTY_OBSERVED });
+
+test('the disasters on record are listed, and none is put in a rate nothing was predicting for', async () => {
+  const committed = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
+  const disasters = (committed.events || []).filter(e => !e.supersededBy);
   const r = await open();
+  assert.equal(text(r, 'obTotal'), String(disasters.length));
+  const rows = [...r.document.querySelectorAll('#obsRows tr')];
+  assert.equal(rows.length, Math.max(disasters.length, 1));
+  if (disasters.length && text(r, 'ipTotal') === '0') {
+    /* The defect: "Recall 0% (4 disasters)" under a note saying no prediction
+       rate is shown, for disasters that all happened before anything here
+       was predicting. */
+    assert.equal(text(r, 'ipRecall'), 'Not computable');
+    assert.match(text(r, 'ipNote'), new RegExp(disasters.length + ' disaster\\(s\\) on record'));
+    assert.match(text(r, 'ipNote'), /count towards no recall/);
+    assert.equal(text(r, 'obFalseNeg'), String(disasters.length),
+      'a disaster left out of the rate was also dropped from the unforecast count');
+  }
+  r.close();
+});
+
+test('an empty record of disasters is not presented as nothing having happened', async () => {
+  const r = await openEmpty();
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   assert.equal(text(r, 'obTotal'), '0');
   assert.match(text(r, 'obNote'), /not a claim that nothing happened/i,
     'an empty ledger is being allowed to read as a quiet world');
@@ -50,7 +79,7 @@ test('an empty record of disasters is not presented as nothing having happened',
 });
 
 test('matured forecasts are not called false positives against an empty record', async () => {
-  const r = await open();
+  const r = await openEmpty();
   assert.equal(text(r, 'ipMiss'), '0');
   assert.equal(text(r, 'cdMiss'), '0',
     'forecasts were graded as failures against a disaster record that cannot cover them');
@@ -144,8 +173,14 @@ function gradingFixture() {
   const ledger = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'outlook-ledger.json'), 'utf8'));
   const OBSM = require(path.join(ROOT, 'observed-model.js'));
   const HZ = require(path.join(ROOT, 'hazard-model.js'));
+  /* An observation can only bear a forecast out once the forecast is known to
+     have existed, and for a row written before freezeTimestamp did that is
+     the moment the row was recorded - often well after its window opened. */
+  const credited = o => Math.max(Date.parse(o.targetStart),
+    Date.parse(o.freezeTimestamp || o.recordedAt || o.targetStart));
   const matured = ledger.filter(o => Date.parse(o.targetEnd) < Date.now() &&
-    OBSM.familyOf(o.type, o.title) === 'earthquake');
+    OBSM.familyOf(o.type, o.title) === 'earthquake' &&
+    credited(o) + 2 * 3600e3 < Date.parse(o.targetEnd));
   assert.ok(matured.length > 0, 'the recorded ledger holds no matured earthquake window to grade');
   const target = matured[0];
   assert.equal(ledger.filter(o => o.id === target.id).length, 1,
@@ -168,7 +203,7 @@ function gradingFixture() {
     events: [{
       canonicalEventId: 'OBS-test-1', hazard: 'earthquake', significant: true,
       significanceReason: 'Deaths reported (12).',
-      onset: new Date(Date.parse(target.targetStart) + 3600e3).toISOString(),
+      onset: new Date(credited(target) + 3600e3).toISOString(),
       geography: { country: target.country, region: target.region,
         lat: target.lat, lon: target.lon },
       deaths: 12, displaced: null, evidenceConfidence: 'CONFIRMED',
@@ -515,8 +550,8 @@ test('a ledger it could not read is not graded against', async () => {
 });
 
 test('a ledger that really is empty is still reported as empty', async () => {
-  // The control: the committed ledgers ship empty, and that is not an error.
-  const r = await open();
+  // The control: an empty record that loaded is not an error.
+  const r = await openEmpty();
   assert.equal(r.document.getElementById('ledgerError'), null,
     'a ledger that loaded fine was reported as unavailable');
   assert.match(text(r, 'obNote'), /not a claim that nothing happened/i);

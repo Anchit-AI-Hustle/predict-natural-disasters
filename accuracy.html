@@ -267,6 +267,14 @@ const forecastableOf=e=>{const H=window.PNDHazards&&PNDHazards.HAZARDS;if(!H)ret
   const h=H[e.hazardLabel]||H[e.type];return h?h.forecastable!==false:true};
 const assessments=obsEvents.map(e=>VER.assessCoverage(e,preds,scanLedger||{scans:[]},{hazardFamilyOf:OBSM.familyOf,hazardForecastable:forecastableOf}));
 const sH=VER.score(headlineIdx.map(i=>verdicts[i]),assessments);
+/* Recall and F1 are measured only over the disasters that happened once an
+   independent prediction was on record. Every disaster is still assessed
+   above and still listed as unforecast below; one from before then simply
+   cannot say how often predicting worked, because nothing was predicting. */
+const since=VER.predictingSince(preds);
+const recallIdx=obsEvents.map((e,i)=>i).filter(i=>VER.inRecallPeriod(obsEvents[i],since));
+const sR=VER.score(headlineIdx.map(i=>verdicts[i]),recallIdx.map(i=>assessments[i]));
+const outsideRecall=obsEvents.length-recallIdx.length;
 const sC=VER.score(condIdx.map(i=>verdicts[i]),[]);
 const pct=(x,n,unit)=>x===null?'Not computable':(Math.round(x*1000)/10)+'% ('+n+' '+unit+')';
 
@@ -280,15 +288,20 @@ mUpdated.textContent=PND.fmtDate(new Date().toISOString());
 ipTotal.textContent=headlineIdx.length;ipMatured.textContent=sH.eligibleMaturedPredictions;
 ipHit.textContent=sH.hit;ipPartial.textContent=sH.partial;ipMiss.textContent=sH.miss;
 ipPending.textContent=sH.pending;ipInvalid.textContent=verdicts.filter(x=>x.classification==='INVALID_POST_EVENT').length;
-ipPrecision.textContent=pct(sH.precision,sH.eligibleMaturedPredictions,'graded');ipRecall.textContent=pct(sH.recall,sH.significantObservedEvents,'disasters');ipF1.textContent=pct(sH.f1,sH.eligibleMaturedPredictions+' graded, '+sH.significantObservedEvents,'disasters');
+ipPrecision.textContent=pct(sH.precision,sH.eligibleMaturedPredictions,'graded');ipRecall.textContent=pct(sR.recall,sR.significantObservedEvents,'disasters');ipF1.textContent=pct(sR.f1,sR.eligibleMaturedPredictions+' graded, '+sR.significantObservedEvents,'disasters');
 /* A hit that could not have been a miss is still a hit, and is still not a
    data point for a rate. Said wherever a rate is published. */
 const outsideNote=s=>s.hitsOutsideCoverage?' '+s.hitsOutsideCoverage+' window(s) were borne out by a disaster on record but are not counted in this rate: for their hazard and place nothing could have established the opposite, so a rate including them would be made only of the outcomes that could be found.':'';
-ipNote.textContent=headlineIdx.length===0
+/* Said wherever recall leaves disasters out, so a smaller denominator is
+   never mistaken for fewer disasters. */
+const recallNote=outsideRecall?' '+outsideRecall+' disaster(s) on record '+(since===null
+   ?'are listed below as unforecast and count towards no recall: nothing here was predicting when they happened.'
+   :'happened before the first independent prediction was recorded ('+PND.fmtDate(new Date(since).toISOString())+'), or have no recorded onset; they are listed below as unforecast and count towards no recall.'):'';
+ipNote.textContent=(headlineIdx.length===0
  ? 'No independent prospective prediction has ever been recorded here, so this project has no prediction hit rate and none is shown. Every forecast it has published describes a hazard already reported, follows an observed event, or is a benchmark written after its own window opened.'
  : (sH.eligibleMaturedPredictions===0
    ? 'No independent prediction can be graded yet: '+sH.ungradeable+' matured window(s) fall outside the period the record of observed disasters covers, so an absence of matching disasters would say nothing about what happened.'+outsideNote(sH)
-   : 'Computed from '+sH.eligibleMaturedPredictions+' matured prediction(s). Small samples move a long way on one record.'+outsideNote(sH));
+   : 'Computed from '+sH.eligibleMaturedPredictions+' matured prediction(s). Small samples move a long way on one record.'+outsideNote(sH)))+recallNote;
 
 cdTotal.textContent=condIdx.length;cdMatured.textContent=sC.eligibleMaturedPredictions;
 cdHit.textContent=sC.hit;cdPartial.textContent=sC.partial;cdMiss.textContent=sC.miss;

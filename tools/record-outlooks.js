@@ -64,6 +64,8 @@ const key = o => (HAZARDS && HAZARDS.claimKey)
   ? HAZARDS.claimKey(o)
   : String(o.id) + '@' + String(o.targetStart);
 const seen = new Set(ledger.map(key));
+/* Ids the ledger already holds a claim for, under any terms. */
+const recordedIds = new Set(ledger.map(r => r && r.id));
 
 const FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region', 'lat', 'lon',
   'alert', 'severity', 'severityRank', 'issuedAt', 'sourceIssuedAt', 'targetStart',
@@ -103,12 +105,21 @@ for (const e of events) {
      run. Once written it is never revisited: rows already present are not
      touched by this tool. */
   const claimed = Date.parse(e.freezeTimestamp || '');
-  const evidenced = e.freezeEvidenced === true &&
+  /* An id already in the ledger under other terms is a revision, and nothing
+     earlier than this row can be evidence for terms that are only now being
+     written down: whatever the feed cites - the commit behind a hand-frozen
+     record - froze the earlier terms, and the ledger already holds those.
+     Taking it anyway is how a scope added to ND-001 nine days after its
+     commit was recorded as frozen at that commit. */
+  const revision = recordedIds.has(e.id);
+  const evidenced = !revision && e.freezeEvidenced === true &&
     Number.isFinite(claimed) && claimed < Date.parse(recordedAt);
   row.freezeTimestamp = evidenced ? e.freezeTimestamp : recordedAt;
   row.freezeBasis = evidenced
     ? (e.freezeBasis || 'Earlier repository record carried by the feed.')
-    : 'First row recorded for this forecast in the append-only ledger.';
+    : revision
+      ? 'Revised terms of a forecast the ledger already records; these terms are proven only from this row.'
+      : 'First row recorded for this forecast in the append-only ledger.';
   /* The feed worked from a freeze that had not happened yet - this row is the
      thing that makes it happen - so the class and the effective window are
      settled here, against the row as it is about to be written. Otherwise a

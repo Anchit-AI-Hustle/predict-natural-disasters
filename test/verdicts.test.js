@@ -32,6 +32,37 @@ test.after(closeAllWindows);
 
 const settled = d => (d.getElementById('mTotal') || {}).textContent !== '—';
 
+/* What the committed records add up to, recomputed here from the ledgers
+ * rather than read back from the page.
+ *
+ * The hand-written verdicts alone were the whole of it while the record of
+ * observed disasters was empty. It no longer is, and a window the verification
+ * engine can decide from that record is shown with the engine's verdict, which
+ * is the one the page's rates are computed from. So the recomputation grades
+ * the committed ledgers with the engine too, and lets its decision stand over
+ * the hand-written state exactly where the engine could decide. */
+function recomputed(now) {
+  const VER = require(path.join(ROOT, 'verification-model.js'));
+  const OBSM = require(path.join(ROOT, 'observed-model.js'));
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const observed = JSON.parse(read('data/observed-disasters.json'));
+  const scan = JSON.parse(read('data/scan-ledger.json'));
+  const events = (observed.events || []).filter(e => !e.supersededBy);
+  const cover = c => VER.observedCoverageFor(scan, c.hazards || c.hazard, c.geography);
+  const DECIDED = ['VERIFIED', 'PARTIAL', 'FALSE_ALARM', 'NOT_A_PREDICTION'];
+  const engine = new Map();
+  for (const row of OUTLOOKS) {
+    const p = Object.assign({}, row, { forecastClass: V.forecastClassOf(row) });
+    const state = V.engineState(VER.verify(p, events, { now, hazardFamilyOf: OBSM.familyOf,
+      observedCoverage: cover, supportingEvents: observed.supporting || [] }));
+    if (DECIDED.includes(state)) engine.set(H.claimKey(row), state);
+  }
+  const { records } = V.joinVerdicts(OUTLOOKS, LEDGER.verifications);
+  const graded = records.map(r => engine.has(H.claimKey(r))
+    ? Object.assign({}, r, { _state: engine.get(H.claimKey(r)) }) : r);
+  return { t: V.tally(graded.concat(LEDGER.observedEvents), now), engineDecided: engine.size };
+}
+
 /* ---------- the vocabulary must cover what the ledgers actually write ---------- */
 
 test('every status in the shipped ledgers is a status the code recognises', () => {
@@ -143,8 +174,7 @@ test('the published figures equal the ledgers, recomputed independently', async 
   const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   const num = id => Number(doc.getElementById(id).textContent);
-  const { records } = V.joinVerdicts(OUTLOOKS, LEDGER.verifications);
-  const t = V.tally(records.concat(LEDGER.observedEvents), Date.now());
+  const { t } = recomputed(Date.now());
   assert.equal(num('mTotal'), OUTLOOKS.length);
   assert.equal(num('mGraded'), t.graded);
   assert.equal(num('mVerified'), t.verified);
@@ -200,8 +230,7 @@ test('the page never claims a perfect record while its ledger records failures',
 test('every graded prediction gets a predicted-against-observed comparison', async () => {
   const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
-  const { records } = V.joinVerdicts(OUTLOOKS, LEDGER.verifications);
-  const t = V.tally(records.concat(LEDGER.observedEvents), Date.now());
+  const { t } = recomputed(Date.now());
   const cards = doc.querySelectorAll('#cmpList .cmp');
   assert.equal(cards.length, t.graded, 'a graded prediction has no comparison');
   const txt = cards[0].textContent;

@@ -1293,8 +1293,15 @@ async function handler(req, res) {
     details: 'Starts 13 Sep 2026; expected duration 4 days. Written 19 hours after the window opened, so it carries no lead time; it is still graded against independently observed impact rather than against rainfall or a warning alone.',
     forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen, but not issued in advance',
     /* The record already names a corridor. Saying so keeps its coordinate
-       from being read as the point where the flooding was expected. */
-    forecastScope: 'regional',
+       from being read as the point where the flooding was expected.
+
+       This is said as the coordinate's precision and deliberately NOT as a
+       forecastScope. The scope is one of the terms the claim is graded and
+       identified on, and it was not in the commit this record was frozen by:
+       adding it nine days later made the feed present a different claim
+       under the same id while still citing that commit as its proof, and the
+       ledger writer duly recorded the new claim as frozen on 13 September. */
+    precision: 'regional',
     evidence: 'Frozen as the platform’s first graded benchmark. The record was committed at 2026-09-13T19:20:03Z against a window that opened at 2026-09-13T00:00:00Z, so it did not anticipate the onset.',
     verificationRule: 'Counts as correct only if meaningful flood or landslide impact is independently observed inside the frozen geography and window.',
     sourceUrl: '/verification'
@@ -1654,8 +1661,11 @@ async function handler(req, res) {
    * have existed before this response computed it, and says so.
    */
   const ledgerFreeze = new Map();
+  /* Every id the ledger holds a claim for, whatever its terms. */
+  const ledgerIds = new Set();
   if (Array.isArray(OUTLOOK_LEDGER)) {
     for (const row of OUTLOOK_LEDGER) {
+      if (row && row.id !== undefined) ledgerIds.add(row.id);
       /* Every term the verifier grades on, not the id and the window's start:
          a row proves the claim it recorded, and cannot prove one whose window
          or geography has since moved. Shared with the ledger writer so the
@@ -1689,7 +1699,13 @@ async function handler(req, res) {
     if (ledgerFreeze.has(k)) {
       proofs.push({ at: ledgerFreeze.get(k), basis: 'Earliest row in the append-only outlook ledger in the repository.' });
     }
-    if (e.issuedAtBasis && e.issuedAt) {
+    /* A record's own repository provenance proves the terms it was committed
+       with. Once the ledger holds this id under other terms and none under
+       these, the terms have been revised since, and the commit it names is
+       proof of the earlier claim - which the ledger already carries - not of
+       this one. */
+    const revised = ledgerIds.has(e.id) && !ledgerFreeze.has(k);
+    if (e.issuedAtBasis && e.issuedAt && !revised) {
       proofs.push({ at: e.issuedAt, basis: e.issuedAtBasis });
     }
     proofs.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
@@ -1704,7 +1720,9 @@ async function handler(req, res) {
          apart, so the difference is stated rather than left to be inferred
          from the wording. */
       e.freezeTimestamp = generatedAt;
-      e.freezeBasis = 'Nothing in the repository records this forecast yet, so it is not established before the moment this response computed it.';
+      e.freezeBasis = revised
+        ? 'The ledger records this forecast only under earlier terms. Nothing in the repository records these terms yet, so they are not established before the moment this response computed them.'
+        : 'Nothing in the repository records this forecast yet, so it is not established before the moment this response computed it.';
       e.freezeEvidenced = false;
     }
 
