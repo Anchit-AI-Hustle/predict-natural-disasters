@@ -7,7 +7,10 @@ main{max-width:1440px;margin:auto;padding:24px}.hero2{padding:26px 0 14px}.hero2
 <div class="split"><section class="section"><h2>✓ Predictions verified</h2><div id="verifiedList" class="empty">Loading…</div></section><section class="section"><h2>⚠ Significant events missed</h2><div id="missedList" class="empty">Loading…</div></section></div>
 <section class="section"><h2>Predicted against observed</h2><p class="note">Every graded prediction, with what was claimed beside what was found.</p><div id="cmpList" class="empty">Loading…</div></section><section class="section"><h2>Complete historical ledger</h2><div class="controls"><input id="q" aria-label="Search ID, country, region or hazard" placeholder="Search ID, country, region or hazard"><select id="outcome" aria-label="Filter by verdict"><option value="">All verdicts</option><option value="VERIFIED">Verified prediction</option><option value="PARTIAL">Partially verified</option><option value="FALSE_ALARM">False alarm</option><option value="MISSED">Missed event</option><option value="COVERAGE_FAILURE">Coverage failure</option><option value="AWAITING">Awaiting verification</option><option value="UNGRADEABLE">Not gradeable</option><option value="NOT_A_PREDICTION">Not a prediction</option><option value="OPEN">Window still open</option></select><select id="sortBy" aria-label="Sort the ledger"></select><select id="severity" aria-label="Filter by observed severity"><option value="">All severities</option><option>CATASTROPHIC</option><option>EXTREME</option><option>SEVERE</option><option>SIGNIFICANT</option><option>MODERATE</option><option>MINOR</option></select></div><div class="tablewrap"><table class="ledger"><thead><tr><th>Record</th><th>Occurred?</th><th>Verdict</th><th>Forecast class</th><th>Observed severity</th><th>Hazard / geography</th><th>Freeze time</th><th>Frozen target window</th><th>Threshold</th><th>Observed event</th><th>Evidence</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 <section class="section"><h2>Observed disasters</h2><p class="note">Every significant observed disaster on record, including the ones nothing forecast. Where no scan covering that hazard and moment is recorded, the reason cannot be established either way, and it says so rather than being attributed to coverage or to forecasting.</p><div class="tablewrap"><table class="ledger"><thead><tr><th>Disaster</th><th>Hazard</th><th>Where</th><th>Onset</th><th>Deaths</th><th>Displaced</th><th>Evidence</th><th>Predicted?</th><th>Why not</th></tr></thead><tbody id="obsRows"></tbody></table></div></section><p class="note">Precision answers “when the system predicted an event, how often was it right?” Recall answers “of significant disasters that actually occurred, how many had a qualifying frozen prediction beforehand?” Pending forecasts are excluded until their target window matures. Signal-derived outlooks are not credited merely because the source warning already existed.</p></main><script src="/search.js"></script><script src="/observed-model.js"></script><script src="/verification-model.js"></script><script src="/verdicts.js"></script><script src="/hazard-model.js"></script><script src="/portal.js"></script><script>
-nav.innerHTML=PND.nav('Verification');let records=[];/* Newest first by default: this is a record of what was claimed and when. */
+nav.innerHTML=PND.nav('Verification');let records=[];
+/* Set false when a record grading depends on could not be read, so the rows
+   say so rather than showing a state reached without it. */
+let gradingAvailable=true;/* Newest first by default: this is a record of what was claimed and when. */
 const LEDGER_SORTS=['recorded','windowEnd','observed','hazard','country','title'];
 /* Ledger rows carry their level in observedSeverity, in the ledger's own
    vocabulary. The shared severity comparator reads severityRank/alert, which
@@ -40,7 +43,7 @@ rows.innerHTML=list.map(r=>{const v2=vd(r);
   return ks.length>1?ks.map(k=>by[k]+' km '+k).join(' · '):(t.geographyToleranceKm+' km');};
  const thr=v2&&v2.originalThresholds?(tolText(v2.originalThresholds)+' · significant '+(v2.originalGeography&&v2.originalGeography.country||'—')):'—';
  const matched=v2&&v2.observedEventIds&&v2.observedEventIds.length?v2.observedEventIds.join(', '):(v2?(v2.gradeable?'None observed':'Not gradeable'):'—');
- return `<tr class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><td><b>${esc(r.id||r.eventId||'Observed')}</b><div class="sub">${esc(r.title||'')}</div></td><td><b>${esc(occurredText(r._state))}</b></td><td><span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span>${r._ledgerState?`<div class="sub">Graded by hand as ${esc(statusLabel(r._ledgerState))}; the engine’s verdict is the one counted.</div>`:''}${r._engineUnreproduced?'<div class="sub">Recorded by hand. The engine cannot reproduce this from the written record of observed disasters, so no rate on this page was computed from it.</div>':''}${v2&&!v2.gradeable&&v2.classificationReason?`<div class="sub">${esc(v2.classificationReason)}</div>`:''}</td><td>${esc(v2&&v2.forecastClass||V.forecastClassOf(r)||'—')}</td><td><span class="pill severity-${String(r.observedSeverity||'').toLowerCase()}">${esc(r.observedSeverity||'NOT OBSERVED')}</span></td><td>${esc(r.hazard||r.type||'—')}<div class="sub">${esc([r.region,r.country].filter(Boolean).join(' · '))}</div></td><td>${esc(r.freezeTimestamp?PND.fmtDate(r.freezeTimestamp):'—')}</td><td>${r.targetStart?esc(PND.windowText(r)):'Observed event'}</td><td class="sub">${esc(thr)}</td><td class="sub">${esc(matched)}</td><td>${esc(r.evidenceConfidence||'Not yet checked')}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No records match these filters.</td></tr>'}
+ return `<tr class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><td><b>${esc(r.id||r.eventId||'Observed')}</b><div class="sub">${esc(r.title||'')}</div></td><td><b>${gradingAvailable?esc(occurredText(r._state)):'Unavailable'}</b></td><td>${gradingAvailable?`<span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span>`:'<span class="pill ungradeable">Unavailable</span><div class="sub">The record this window would be graded against could not be read, so no verdict is shown for it.</div>'}${r._ledgerState?`<div class="sub">Graded by hand as ${esc(statusLabel(r._ledgerState))}; the engine’s verdict is the one counted.</div>`:''}${r._engineUnreproduced?'<div class="sub">Recorded by hand. The engine cannot reproduce this from the written record of observed disasters, so no rate on this page was computed from it.</div>':''}${v2&&!v2.gradeable&&v2.classificationReason?`<div class="sub">${esc(v2.classificationReason)}</div>`:''}</td><td>${esc(v2&&v2.forecastClass||V.forecastClassOf(r)||'—')}</td><td><span class="pill severity-${String(r.observedSeverity||'').toLowerCase()}">${esc(r.observedSeverity||'NOT OBSERVED')}</span></td><td>${esc(r.hazard||r.type||'—')}<div class="sub">${esc([r.region,r.country].filter(Boolean).join(' · '))}</div></td><td>${esc(r.freezeTimestamp?PND.fmtDate(r.freezeTimestamp):'—')}</td><td>${r.targetStart?esc(PND.windowText(r)):'Observed event'}</td><td class="sub">${esc(thr)}</td><td class="sub">${esc(matched)}</td><td>${esc(r.evidenceConfidence||'Not yet checked')}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No records match these filters.</td></tr>'}
 /* Predicted against observed, field by field, for every record that has been
    graded. This is the comparison the ledger was always able to support and
    the page never showed: what was claimed, beside what was found. */
@@ -96,7 +99,17 @@ const obsEvents=((obsLedger&&obsLedger.events)||[]).filter(e=>!e.supersededBy);
 const coverageFor=claim=>VER.observedCoverageFor(scanLedger||{scans:[]},claim.hazards||claim.hazard,claim.geography);
 const classOf=r=>V.forecastClassOf(r);
 const preds=l.map(r=>Object.assign({},r,{forecastClass:classOf(r)}));
-const verdicts=preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor}));
+/* A record this page could not read is not a record that is empty, and the
+   warning alone was not enough to stop it being graded against.
+ *
+ * A failed fetch still became an empty list of disasters and went into the
+ * verifier. Measured, with the observed record failing and a scan ledger that
+ * establishes exhaustive coverage: four matured windows graded as false
+ * positives and the page published "0% (4 graded)" — verdicts about a record
+ * it had never read, under a banner saying it could not read it. Nothing is
+ * graded at all unless both written records are in hand. */
+const canGrade=!ledgerUnavailable.length;
+const verdicts=canGrade?preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor})):[];
 const byId=new Map(verdicts.map((vd,i)=>[preds[i].id+'@'+preds[i].targetStart,vd]));
 const observed=(v.observedEvents||[]).map(x=>Object.assign({},x,{status:x.status||'MISSED_EVENT'}));
 /* One grading drives the figures and the rows alike.
@@ -129,26 +142,54 @@ records=joined.records.concat(observed).map(r=>{
        says on its face that no rate on this page was computed from it. */
     _engineUnreproduced:!decided&&ledGraded&&eng==='UNGRADEABLE'});});
 records.sort((a,b)=>Date.parse(b.recordedAt||b.observedAt||0)-Date.parse(a.recordedAt||a.observedAt||0));
-const t=V.tally(records,now);
-mTotal.textContent=l.length;mOpen.textContent=t.open;mAwaiting.textContent=t.awaiting;
-mGraded.textContent=t.graded;mVerified.textContent=t.verified;mPartial.textContent=t.partial;
-mFalse.textContent=t.falseAlarm;mMissed.textContent=t.missed;
-mUngradeable.textContent=t.ungradeable;mNotPrediction.textContent=t.notPrediction;
-
 /* State plainly how little of this record has been checked, rather than
    letting a rate computed from six records read as a track record. */
 const distinct=new Set(l.map(x=>x.id)).size;
-const disagree=records.filter(r=>r._ledgerState).length;
 /* Said first, because every figure under it is computed from records this
    page may not have been able to read. */
-if(ledgerUnavailable.length){
+if(!canGrade){
   const warn=document.createElement('p');
   warn.className='stale';warn.id='ledgerError';warn.setAttribute('role','alert');
   warn.textContent='Verification data unavailable: '+ledgerUnavailable.join(' and ')+
     ' could not be loaded, so no figure on this page is a statement about what happened. '+
     'This is not the same as nothing having been recorded.';
   honesty.parentNode.insertBefore(warn,honesty);
+  /* Every figure that would have come from a grading, said as what it is. A
+     dash would read as nothing recorded; a zero would read as nothing found. */
+  ['mOpen','mAwaiting','mGraded','mVerified','mPartial','mFalse','mMissed','mUngradeable','mNotPrediction',
+   'ipTotal','ipMatured','ipHit','ipPartial','ipMiss','ipPending','ipInvalid','ipPrecision','ipRecall','ipF1',
+   'cdTotal','cdMatured','cdHit','cdPartial','cdMiss','cdPending','cdPrecision',
+   'obTotal','obFalseNeg','obCoverage','obForecast','obUnknown','obNotForecastable']
+   .forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='Unavailable';});
+  /* What the outlook ledger itself says is still true: it loaded. */
+  mTotal.textContent=l.length;mSample.textContent=l.length+' windows';
+  mUpdated.textContent=PND.fmtDate(new Date().toISOString());
+  const os=l.map(r=>Date.parse(r.targetStart||'')).filter(Number.isFinite);
+  const oe=l.map(r=>Date.parse(r.targetEnd||'')).filter(Number.isFinite);
+  mPeriod.textContent=os.length&&oe.length
+   ?PND.fmtDate(new Date(Math.min(...os)).toISOString())+' — '+PND.fmtDate(new Date(Math.max(...oe)).toISOString())
+   :'No recorded windows';
+  mEarliest.textContent='Unavailable';
+  const cannot='This page could not read '+ledgerUnavailable.join(' or ')+
+    ', so nothing here has been graded and no figure below is a statement about what happened. Reload, or try again later.';
+  honesty.textContent=l.length+' forecast windows have been recorded ('+distinct+
+    ' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '+cannot;
+  ipNote.textContent=cannot;cdNote.textContent=cannot;obNote.textContent=cannot;
+  methodNote.textContent='No grading was performed: '+cannot;
+  classBreak.textContent='';
+  obsRows.innerHTML='<tr><td colspan="9" class="empty">'+esc(cannot)+'</td></tr>';
+  verifiedList.textContent=cannot;missedList.textContent=cannot;cmpList.textContent=cannot;
+  window.__verification={verdicts:[],byId,preds,assessments:[],obsEvents:[],coverageFor,records,unavailable:ledgerUnavailable};
+  gradingAvailable=false;
+  render();
+  return;
 }
+const t=V.tally(records,now);
+mTotal.textContent=l.length;mOpen.textContent=t.open;mAwaiting.textContent=t.awaiting;
+mGraded.textContent=t.graded;mVerified.textContent=t.verified;mPartial.textContent=t.partial;
+mFalse.textContent=t.falseAlarm;mMissed.textContent=t.missed;
+mUngradeable.textContent=t.ungradeable;mNotPrediction.textContent=t.notPrediction;
+const disagree=records.filter(r=>r._ledgerState).length;
 const unreproduced=records.filter(r=>r._engineUnreproduced).length;
 honesty.textContent=l.length+' forecast windows have been recorded ('+distinct+' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '
  +t.graded+' of them carry a verdict: '+(t.graded-unreproduced)+' graded by the verification engine'
@@ -207,9 +248,7 @@ obFalseNeg.textContent=sH.falseNegatives;
 obCoverage.textContent=sH.coverage.COVERAGE_FAILURE;
 obForecast.textContent=sH.coverage.FORECAST_FAILURE;
 obUnknown.textContent=sH.coverage.DATA_UNAVAILABLE;obNotForecastable.textContent=sH.coverage.NOT_FORECASTABLE;
-obNote.textContent=ledgerUnavailable.length
- ? 'This page could not read ' + ledgerUnavailable.join(' or ') + ', so nothing below is a statement about what happened \u2014 it is a statement about what this page could read. Reload, or try again later.'
- : obsEvents.length===0
+obNote.textContent=obsEvents.length===0
  ? 'No significant observed disaster has been recorded yet. The hourly job writes this record from the live feed; until it has run there is no denominator for recall, and none is shown. An empty record is not a claim that nothing happened.'
  : 'A disaster counts as a false negative when no independent prospective forecast covered it. Where no scan is recorded for that hazard and moment, the reason cannot be established either way, and it is reported as such rather than blamed on coverage or on forecasting.';
 

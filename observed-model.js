@@ -473,10 +473,32 @@
            established. */
         matchedPredictionIds: o.matchedPredictionIds === undefined ? null : o.matchedPredictionIds,
         predictionCoverageStatus: o.predictionCoverageStatus === undefined ? null : o.predictionCoverageStatus,
-        evidence: recs.map(function (r) {
-          return { id: r.id, source: r.source, sourceUrl: r.sourceUrl || null,
-            updated: r.updated || null, locationPrecision: r.locationPrecision || null };
-        }),
+        /* Every provider record behind this disaster, including the ones an
+           upstream merge folded into a single record before this file ever
+           saw them. The feed merges agency reports of one earthquake and
+           serves only the leader; the leader changes when another agency
+           publishes a death toll, so a ledger indexed on the leader's id
+           alone loses the thread and records the same quake twice. A member
+           carries no location precision of its own here - the record that
+           stands for it is the one that was placed - and says which record
+           it was merged into. */
+        evidence: (function () {
+          var seen = {}, out = [];
+          recs.forEach(function (r) {
+            if (r.id && !seen[r.id]) {
+              seen[r.id] = 1;
+              out.push({ id: r.id, source: r.source, sourceUrl: r.sourceUrl || null,
+                updated: r.updated || null, locationPrecision: r.locationPrecision || null });
+            }
+            (r.mergedFrom || []).forEach(function (m) {
+              if (!m || !m.id || seen[m.id]) return;
+              seen[m.id] = 1;
+              out.push({ id: m.id, source: m.source || null, sourceUrl: m.sourceUrl || null,
+                updated: m.updated || null, locationPrecision: null, mergedUpstream: r.id });
+            });
+          });
+          return out;
+        })(),
         mergeReasons: grp.mergeReasons,
         unattachedReason: grp.ambiguous || null
       };

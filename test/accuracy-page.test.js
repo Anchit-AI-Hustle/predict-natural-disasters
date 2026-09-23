@@ -349,6 +349,52 @@ test('a ledger it could not read is not a ledger that is empty', async () => {
   r.close();
 });
 
+test('a ledger it could not read is not graded against', async () => {
+  /* The banner was not enough. A failed observed-ledger fetch still became an
+     empty array and was handed to the verifier, and with a scan ledger that
+     establishes exhaustive coverage every matured window then graded as a
+     false positive against a record the page had never read. The warning sat
+     above a table of fabricated verdicts. */
+  const fx = gradingFixture();
+  const r = await renderPage('accuracy.html', {
+    mock: {},
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    beforeParse(w) {
+      const real = w.fetch;
+      w.fetch = async (input) => {
+        const url = String(input && input.url ? input.url : input);
+        if (url.includes('observed-disasters.json')) {
+          return { ok: false, status: 503, headers: { get: () => null },
+            json: async () => ({}), text: async () => '' };
+        }
+        if (url.includes('scan-ledger.json')) {
+          return { ok: true, status: 200, headers: { get: () => null },
+            json: async () => fx.scan, text: async () => JSON.stringify(fx.scan) };
+        }
+        return real(input);
+      };
+    }
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  assert.ok(r.document.getElementById('ledgerError'), 'control: the banner should be up');
+  for (const id of ['ipHit', 'ipPartial', 'ipMiss', 'cdHit', 'cdPartial', 'cdMiss',
+    'obFalseNeg', 'obCoverage', 'obForecast']) {
+    assert.equal(text(r, id), 'Unavailable',
+      id + ' published a count graded against a record the page could not read');
+  }
+  for (const id of ['ipPrecision', 'ipRecall', 'ipF1', 'cdPrecision']) {
+    assert.equal(text(r, id), 'Unavailable', id + ' published a rate from nothing');
+  }
+  const verdicts = [...r.document.querySelectorAll('#rows tr')]
+    .map(t => (t.children[2] || {}).textContent || '');
+  assert.ok(verdicts.length > 0, 'control: the ledger rows should still be listed');
+  for (const v of verdicts) {
+    assert.match(v, /Unavailable/,
+      'a row published a verdict reached against a record that was never read');
+  }
+  r.close();
+});
+
 test('a ledger that really is empty is still reported as empty', async () => {
   // The control: the committed ledgers ship empty, and that is not an error.
   const r = await open();

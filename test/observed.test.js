@@ -33,11 +33,16 @@ const observedOf = events => events.filter(e => e && !e.forecast && e.evidenceSt
 test('one disaster reported by two providers is one disaster', async () => {
   const { events } = await feed();
   const canon = OBS.canonicalise(observedOf(events));
-  const merged = canon.filter(c => c.evidence.length > 1);
+  /* Records this file grouped, as against ones an upstream merge had already
+     folded into a single feed record: those are carried on the evidence so a
+     change of lead cannot lose them, and they need no merge reason from
+     here, because this file never saw them apart. */
+  const grouped = c => c.evidence.filter(e => !e.mergedUpstream);
+  const merged = canon.filter(c => grouped(c).length > 1);
   assert.ok(merged.length > 0,
     'the fixture no longer contains the same disaster from two providers, so this proves nothing');
   for (const c of merged) {
-    assert.equal(c.mergeReasons.length, c.evidence.length - 1,
+    assert.equal(c.mergeReasons.length, grouped(c).length - 1,
       c.canonicalEventId + ' merged records without recording why');
     for (const why of c.mergeReasons) {
       assert.ok(why.length > 30, 'a merge reason that explains nothing: ' + why);
@@ -49,7 +54,8 @@ test('one disaster reported by two providers is one disaster', async () => {
     assert.equal(seen.has(ev.id), false, ev.id + ' was counted under two disasters');
     seen.add(ev.id);
   }
-  assert.equal(seen.size, observedOf(events).length, 'a provider record was dropped entirely');
+  const fromFeed = canon.reduce((n, c) => n + grouped(c).length, 0);
+  assert.equal(fromFeed, observedOf(events).length, 'a provider record was dropped entirely');
 });
 
 test('two different earthquakes are two disasters', async () => {
@@ -371,6 +377,51 @@ test('a superseded row never receives another write', () => {
   assert.ok(survivor.evidence.some(e => e.id === 'rw-new'),
     'the update went somewhere other than the surviving disaster');
   assert.equal(survivor.deaths, 9, 'the survivor did not take up the revised toll');
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
+test('an earthquake survives its agencies changing places', () => {
+  /* The feed merges the agencies' reports of one earthquake and serves only
+     the leader. The leader is chosen by how much each record carries, and a
+     death toll outranks agency priority outright - so the moment GDACS
+     publishes one it takes the lead from USGS, and the feed's account of that
+     earthquake changes its id. Where the two agencies' latitudes fall either
+     side of a rounding boundary the derived canonical id moves with it, and
+     nothing at all links the runs: the same earthquake enters the recall
+     denominator twice, once with no deaths and once with twelve. */
+  const API = require(path.join(ROOT, 'api', 'events.js'));
+  const base = { type: 'Earthquake', magnitude: 6.4, startedAt: '2026-09-10T00:00:00Z',
+    updated: '2026-09-10T01:00:00Z', country: 'India', region: 'Meghalaya',
+    locationPrecision: 'incident', evidenceState: 'observed', severity: 'SEVERE' };
+  const usgs = Object.assign({}, base, { id: 'usgs-1', source: 'USGS',
+    sourceUrl: 'https://earthquake.usgs.gov/1', lat: 25.49, lon: 90.0, deaths: null });
+  const gdacs = deaths => Object.assign({}, base, { id: 'gdacs-1', source: 'GDACS',
+    sourceUrl: 'https://gdacs.org/1', lat: 25.51, lon: 90.0, deaths, alert: 'Orange' });
+
+  const before = API.mergeSeismicReports([usgs, gdacs(null)]);
+  const after = API.mergeSeismicReports([usgs, gdacs(12)]);
+  assert.equal(before.length, 1, 'control: these two reports should merge into one record');
+  assert.equal(before[0].id, 'usgs-1');
+  assert.equal(after[0].id, 'gdacs-1', 'control: the death toll should move the lead to GDACS');
+  assert.deepEqual(after[0].mergedFrom.map(m => m.id).sort(), ['gdacs-1', 'usgs-1'],
+    'the record does not name the provider records it stands for');
+  assert.notEqual(OBS.canonicalise(before)[0].canonicalEventId,
+    OBS.canonicalise(after)[0].canonicalEventId,
+    'control: the derived id has to move for this to prove anything');
+
+  const led = freshLedger();
+  recordObserved(before, led, 'lead-usgs');
+  recordObserved(after, led, 'lead-gdacs');
+  const rows = JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  assert.equal(rows.filter(e => !e.supersededBy).length, 1,
+    'one earthquake was recorded twice because the agency leading it changed');
+  assert.equal(rows[0].deaths, 12, 'the death toll the second report carried was not taken up');
+  for (const id of ['usgs-1', 'gdacs-1']) {
+    assert.ok(rows[0].evidence.some(e => e.id === id),
+      'the evidence should name every agency record behind this earthquake, missing ' + id);
+  }
+  assert.ok(rows[0].derivedIdHistory && rows[0].derivedIdHistory.length,
+    'the id this run would now derive was neither applied nor recorded');
   fs.rmSync(path.dirname(led), { recursive: true, force: true });
 });
 

@@ -514,6 +514,24 @@ function mergeSeismicReports(events) {
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);
     // Independent corroboration is worth stating, not discarding.
     if (others.length) g.lead.corroboratedBy = [...new Set(others)];
+    /* The provider records this one record stands for.
+     *
+     * Only the lead survives the merge, so the feed's account of an
+     * earthquake carries whichever agency's id happened to lead - and the
+     * lead changes the moment another agency publishes a death toll, which
+     * outranks agency priority outright. Measured: a USGS record at 25.49 and
+     * a GDACS record at 25.51 are one quake; GDACS then reports 12 deaths,
+     * takes the lead, and the feed serves a different id at a latitude that
+     * rounds to a different degree. Anything keeping its own record of what
+     * has been reported sees a second earthquake, and one disaster is counted
+     * twice for ever. The members are named so that identity survives a
+     * change of lead. */
+    if (g.members.length > 1) {
+      g.lead.mergedFrom = ranked.map(m => ({
+        id: m.id, source: m.source || null,
+        sourceUrl: m.sourceUrl || null, updated: m.updated || null
+      }));
+    }
   }
   // Rebuild in the caller's order so the newest-first sort survives the merge.
   return events.filter(e => { const g = groupOf.get(e); return !g || g.lead === e; });
