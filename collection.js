@@ -135,7 +135,11 @@ if(mode==='forecast-list'){cards.className='';
  cards.innerHTML=es.length?PNDForecastTable.render(es)
   :PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase());
  return}
-cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="event-card" href="${PND.eventUrl(e)}">${PND.riskTag(e)} ${PND.sourceBadge(e)} ${e.forecast?`<span class="prov">${PND.esc(e.forecastKind==='frozen-benchmark'?'Frozen benchmark':'Experimental outlook')}</span>`:''}${e.windowClosed?'<span class="prov">Window closed</span>':''}<h3>${PND.esc(e.title)}</h3><p>${PND.esc(e.type)} · ${PND.esc(e.country||e.region||'Global')}${(()=>{const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':''})()}<br>${PND.esc(gist(PND.impactText(e)||e.details||''))}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}Source update ${PND.fmtDate(e.updated)} · ${PND.age(e.updated)}</small></a>`).join(''):PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase())}
+cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="event-card" href="${PND.eventUrl(e)}">${PND.riskTag(e)} ${PND.sourceBadge(e)} ${e.forecast?`<span class="prov">${PND.esc(e.forecastKind==='frozen-benchmark'?'Frozen benchmark':'Experimental outlook')}</span>`:''}${e.windowClosed?'<span class="prov">Window closed</span>':''}<h3>${PND.esc(e.title)}</h3><p>${PND.esc(e.type)} · ${PND.esc(e.country||e.region||'Global')}${(()=>{/* One line of figures per card. The key-facts line and the impact line
+   stated the same deaths, displaced and affected twice, one under the other,
+   and a storm's prose then repeated its wind and pressure a third time. The
+   prose is the fallback for a record with no figures; the full text is on the
+   record's own page. */const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':'<br>'+PND.esc(gist(PND.impactText(e)||e.details||''));})()}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}Source update ${PND.fmtDate(e.updated)} · ${PND.age(e.updated)}</small></a>`).join(''):PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase())}
 async function load(){statusLine.textContent='Refreshing authoritative feeds…';try{const d=await PND.getEvents();all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;
 /* The sources view is about the sources, so its status line counts those
    rather than the records they produced. */

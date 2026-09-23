@@ -175,7 +175,12 @@
    * label short.
    */
   var LABEL = { risk: 1, badge: 1, source: 1, prov: 1, verdict: 1, provenance: 1,
-    sev: 1, pill: 1, 'provenance-badge': 1 };
+    sev: 1, pill: 1, 'provenance-badge': 1,
+    /* A map's credit line and its imagery caption are labels too. Expanded,
+       "NASA" in the credits became "National Aeronautics and Space
+       Administration (NASA)", and on a phone the attribution wrapped to three
+       lines and ran under the caption above it. */
+    'leaflet-control-attribution': 1, 'pnd-imagery-note': 1 };
   function isLabel(el) {
     if (!el || !el.classList) return false;
     for (var i = 0; i < el.classList.length; i++) if (LABEL[el.classList[i]]) return true;

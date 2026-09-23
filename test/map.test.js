@@ -397,3 +397,92 @@ test('the political layer draws countries, not an empty ocean', async () => {
   }
   assert.equal(clashes, 0, clashes + ' bordering country pairs share a colour');
 });
+
+/* ------------------------------------ the picture is today's, and says so */
+
+test('zoomed out, the satellite view is NASA’s picture of the latest complete day', async () => {
+  /* The satellite view was Esri's World Imagery alone: sharp, and a mosaic of
+     captures months to years old, with nothing saying so. Opened on a flood it
+     showed the dry ground from before the flood under the flood's marker. */
+  const r = await renderPage('live-map.html', { timeoutMs: 4000 });
+  const M = r.window.PNDMap;
+  assert.equal(typeof M.dailyImagery, 'function', 'the daily picture is not defined');
+
+  /* The latest UTC day that ended at least four hours ago. Today's picture is
+     still being assembled and its unimaged half comes back opaque black. */
+  assert.equal(M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).day, '2026-09-22');
+  assert.equal(M.dailyImagery(Date.parse('2026-09-23T02:00:00Z')).day, '2026-09-21',
+    'before NASA has processed the last passes, the day before is not yet complete');
+  assert.equal(M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).label, '22 Sep 2026');
+
+  /* Exactly the URL shape of NASA's own Leaflet example for this service. */
+  const u = M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).url;
+  assert.equal(u, 'https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/' +
+    'MODIS_Terra_CorrectedReflectance_TrueColor/default/2026-09-22/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg');
+  assert.equal(M.DAILY_MAX_ZOOM, 9, 'the daily picture is asked for past the zoom it exists at');
+  r.close();
+
+  const src = read('map-setup.js');
+  const sat = src.match(/views\['Satellite'\] = L\.layerGroup\(\[[\s\S]*?\]\)/);
+  assert.match(sat[0], /\bdaily\b/, 'the satellite view does not carry the daily picture');
+  assert.match(src, /maxZoom: DAILY_MAX_ZOOM,\s*\n?\s*maxNativeZoom: DAILY_MAX_ZOOM/,
+    'the daily layer is not capped at the zoom it exists at');
+  assert.match(src, /L\.tileLayer\(IMAGERY, \{ attribution: ESRI_CREDIT, minZoom: DAILY_MAX_ZOOM \+ 1,/,
+    'the detailed mosaic is fetched even where the daily picture is shown');
+});
+
+test('the caption never lets an old picture pass for the scene now', async () => {
+  const r = await renderPage('live-map.html', { timeoutMs: 4000 });
+  const M = r.window.PNDMap;
+  const latest = M.dailyImagery(Date.parse('2026-09-23T10:30:00Z'));
+  assert.match(M.imageryText('daily', latest), /NASA, 22 Sep 2026/);
+  assert.match(M.imageryText('daily', latest), /Cloud is part of the picture/,
+    'the daily caption does not warn that a satellite photographs cloud tops');
+  for (const s of ['detail', 'fallback']) {
+    assert.match(M.imageryText(s, latest), /not the scene now/,
+      'the ' + s + ' caption lets the old mosaic read as current');
+  }
+  assert.match(M.imageryText('fallback', latest), /did not load/);
+  /* Both hosts refused: what is left is the drawn world, and the caption must
+     not describe a photograph that is not there. */
+  assert.match(M.imageryText('drawn', latest), /drawn map/);
+  assert.doesNotMatch(M.imageryText('drawn', latest), /mosaic|NASA, /);
+  r.close();
+
+  const src = read('map-setup.js');
+  assert.match(src, /imageryNote\(map, views\['Satellite'\]/, 'nothing puts the caption on the map');
+  assert.match(src, /state\.rescueFailed \? 'drawn' : 'fallback'/,
+    'a double failure is still captioned as a mosaic');
+  /* Built last, in its own try: a caption fault must not take the map with it.
+     The first version threw before the layers control was added. */
+  assert.match(src, /try \{ imageryNote\(map, views\['Satellite'\], daily, latest, under\); \} catch \(e\)/);
+});
+
+test('the globe - the view readers open on - carries the same two pictures', () => {
+  const src = read('globe.js');
+  assert.match(src, /var DAILY_ABOVE_M = 250000;/, 'the globe has no height at which the pictures swap');
+  assert.match(src, /function todaysEarth\(Cesium, satLayer\)/, 'the globe does not drape the daily picture');
+  assert.match(src, /dayLayer\.show = useDay;[\s\S]{0,80}satLayer\.show = !useDay;/,
+    'the two pictures are drawn together rather than swapped, fetching both');
+  assert.match(src, /'pnd-imagery'/, 'the globe does not report which picture it is showing');
+});
+
+test('the drawn world under the imagery is drawn under it', () => {
+  /* It was drawn over it. The floor is vector shapes - an opaque ocean and an
+     opaque polygon per country - and Leaflet puts vector shapes in its overlay
+     pane at z-index 400, above every tile at 200. From the day Satellite
+     became the default, the flat map's Satellite view showed the political
+     map; the imagery was requested and never seen. Every check asked which
+     tiles were requested, and none asked what reached the screen -
+     tools/imagery-check.js now does, by colour. */
+  const src = read('map-setup.js');
+  const z = src.match(/pane\.style\.zIndex = (\d+);\s*\/\/ below the tile pane \(200\)/);
+  assert.ok(z, 'the floor has no pane of its own');
+  assert.ok(Number(z[1]) < 200, 'the floor pane is not below the tiles: ' + z[1]);
+  assert.match(src, /var floor = withNames \? undefined : underPane\(map\);/,
+    'the floor under the imagery is not put in that pane');
+  assert.match(src, /L\.rectangle\(WORLD, Object\.assign\(\{[^}]*\}, *\n?\s*floor \? \{ pane: floor \} : \{\}\)\)/,
+    'the ocean is still drawn in the overlay pane, over the imagery');
+  assert.match(src, /\}, floor \? \{ pane: floor \} : \{\}\)\)\.addTo\(group\);/,
+    'the countries are still drawn in the overlay pane, over the imagery');
+});

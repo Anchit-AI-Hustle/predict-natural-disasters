@@ -70,3 +70,7 @@ a.btn,a.viewall,a.live,a.logo,a.action,a.countryLink,a.onward{text-decoration:no
 /* Present to a screen reader, absent to the eye: a label that names a
    control whose purpose is already obvious from its placeholder. */
 .visually-hidden{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* A message box with nothing in it is an empty amber bar. It was on
+   Personal Risk for every reader whose saved places all had a country. */
+.notice:empty,.stale:empty{display:none}

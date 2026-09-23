@@ -930,3 +930,42 @@ test('a hazard this table does not model is measured by the same impact', () => 
       JSON.stringify(type) + ' is measured by a different impact from every other hazard');
   }
 });
+
+test('a field the provider left blank reaches the page as absent, end to end', async () => {
+  /* The model-level test above passed null straight into the grid and was
+     green - while the API's own num() helper had already turned that null
+     into 0 before the grid ever saw it, so the served page said "north at
+     0 kt" regardless. Tested here from the provider payload to the words on
+     the page, because that is the only path a reader is on. */
+  const nhc = { activeStorms: [{ id: 'al992026', binNumber: 'AT1', name: 'NOTRACK',
+    classification: 'TD', intensity: '30', pressure: null,
+    latitudeNumeric: 15, longitudeNumeric: -45, movementDir: null, movementSpeed: '',
+    lastUpdate: new Date().toISOString(), publicAdvisory: { url: 'https://www.nhc.noaa.gov/x' } }] };
+  const { events } = await (await callApi(require(path.join(__dirname, '..', 'api', 'events.js')),
+    '/api/events', { feeds: { nhc } })).json();
+  const storm = events.find(e => e.id === 'nhc-al992026');
+  assert.ok(storm, 'fixture: the storm with no track was not served at all');
+  for (const k of ['pressureMb', 'movementDirDeg', 'movementKt']) {
+    assert.equal(storm[k], null, k + ' was served as ' + JSON.stringify(storm[k]) +
+      ' for a field the provider left blank');
+  }
+  const facts = H.keyFacts(storm);
+  assert.equal(facts.find(f => f.key === 'movement').reported, false,
+    'a storm with no published track was given one');
+  assert.equal(facts.find(f => f.key === 'pressureMb').reported, false);
+});
+
+test('the number helper keeps a real zero and refuses a blank one', () => {
+  /* Read from the source rather than exported, so the test holds the helper
+     the feed actually runs. */
+  const src = fs.readFileSync(path.join(__dirname, '..', 'api', 'events.js'), 'utf8');
+  const body = src.slice(src.indexOf('const num = v =>'), src.indexOf('};', src.indexOf('const num = v =>')) + 2);
+  const num = new Function(body + '\nreturn num;')();
+  for (const blank of [null, undefined, '', '   ', 'n/a', NaN]) {
+    assert.equal(num(blank), null, JSON.stringify(blank) + ' became ' + num(blank));
+  }
+  assert.equal(num(0), 0, 'a genuine zero was lost');
+  assert.equal(num('0'), 0);
+  assert.equal(num('948'), 948);
+  assert.equal(num(-6.8), -6.8);
+});

@@ -434,3 +434,49 @@ test('no page offers sourceApiUrl to a reader as a source to open', () => {
   assert.deepEqual(offenders, [],
     'the machine-readable URL is for provenance, not for a link: ' + offenders.join(', '));
 });
+
+/* ------------------------------------------ found reviewing the clutter report */
+
+test('a detail page headlines the site’s level, never the provider’s colour word', async () => {
+  /* The lists were fixed; the detail pages were not. Event detail opened with
+     "ALERT / RISK: Red" and its action panel read "Severe · Red", alert
+     detail printed "Live" for a record with no level at all. */
+  const { renderPage } = require('./render.js');
+  const { callApi } = require('./render.js');
+  const evs = (await (await callApi(require('../api/events.js'), '/api/events')).json()).events;
+  const red = evs.find(e => !e.forecast && e.alert === 'Red');
+  assert.ok(red, 'fixture: the feed should carry a red record');
+  const r = await renderPage('event-detail.html', { search: '?id=' + encodeURIComponent(red.id), timeoutMs: 6000 });
+  const k = r.document.getElementById('kRisk').textContent.trim();
+  const a = r.document.getElementById('aSeverity').textContent.trim();
+  for (const [where, text] of [['the headline box', k], ['the action panel', a]]) {
+    assert.doesNotMatch(text, /\b(Red|Orange|Green|Live)\b/,
+      where + ' prints "' + text + '", a provider colour or an invented level');
+  }
+  assert.ok(r.window.PNDRisk.LEVELS.some(l => k.includes(l.label)), 'the headline is not a level on the scale: ' + k);
+  r.close();
+
+  for (const page of ['alert-detail.html', 'calamity-detail.html', 'forecast-detail.html']) {
+    const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', page), 'utf8');
+    assert.doesNotMatch(src, /textContent=e\.alert\|\|'(Live|—)'/,
+      page + ' still prints the provider’s alert word as its level');
+  }
+});
+
+test('a storm’s category is not labelled twice', () => {
+  /* The card read "Category Category 3": the label and a value that already
+     names itself. */
+  const vm = require('node:vm');
+  const fs = require('node:fs'), path = require('node:path');
+  const ctx = { window: {}, console };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'hazard-model.js'), 'utf8'), ctx);
+  const src = fs.readFileSync(path.join(__dirname, '..', 'portal.js'), 'utf8');
+  const body = src.slice(src.indexOf('  keyFactsLine(e,max){'), src.indexOf('impactText(e)'));
+  const line = new Function('H', 'return {keyFacts(e){return H.keyFacts(e)},esc:s=>s,' +
+    body.replace(/,\s*$/, '') + '};')(ctx.window.PNDHazards || require('../hazard-model.js'));
+  const text = line.keyFactsLine({ type: 'Tropical Cyclone', windKt: 105, pressureMb: 948 }, 3);
+  assert.doesNotMatch(text, /Category Category/, text);
+  assert.match(text, /Category 3/);
+  assert.match(text, /Maximum sustained wind 105 kt/, 'an ordinary fact lost its label');
+});
