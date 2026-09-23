@@ -63,7 +63,15 @@ function comparisons(list){const graded=list.filter(r=>['VERIFIED','PARTIAL','FA
     ${critRows}</table></div></div></article>`}).join('')}
 async function load(){const [l,v,obsLedger,scanLedger]=await Promise.all([fetch('/data/outlook-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()),fetch('/data/verification-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()),/* The two records the engine grades against. A page that cannot read
    them must say so rather than quietly score against nothing. */
-fetch('/data/observed-disasters.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>({events:[]})),fetch('/data/scan-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>({scans:[]}))]);
+/* A request that failed is not a record that is empty.
+   Catching into {events:[]} made a transient network or deployment error
+   indistinguishable from "no disaster has been recorded yet" - and this page
+   then explained, at length, that an empty record is not a claim that
+   nothing happened. It was not reporting an empty record; it had not read
+   one. The failure is carried through and said out loud instead. */
+fetch('/data/observed-disasters.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status))).catch(e=>({__unavailable:String(e&&e.message||e)})),fetch('/data/scan-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status))).catch(e=>({__unavailable:String(e&&e.message||e)}))]);
+const ledgerUnavailable=[obsLedger&&obsLedger.__unavailable?'the record of observed disasters':null,
+  scanLedger&&scanLedger.__unavailable?'the record of what was scanned':null].filter(Boolean);
 /* The ledger re-records a rolling outlook each time it is re-issued, so one id
    can hold several windows. Joining a verdict on the id alone stamped it onto
    every one of them and turned five graded false alarms into nine. */
@@ -81,7 +89,7 @@ const obsEvents=((obsLedger&&obsLedger.events)||[]).filter(e=>!e.supersededBy);
    ones where the providers for a hazard were down, so using it would make a
    flood outlook gradeable on a cycle when no flood source answered, and score
    it a false positive for an absence nobody was watching for. */
-const coverageFor=claim=>VER.observedCoverageFor(scanLedger||{scans:[]},claim.hazard,claim.geography);
+const coverageFor=claim=>VER.observedCoverageFor(scanLedger||{scans:[]},claim.hazards||claim.hazard,claim.geography);
 const classOf=r=>V.forecastClassOf(r);
 const preds=l.map(r=>Object.assign({},r,{forecastClass:classOf(r)}));
 const verdicts=preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor}));
@@ -127,6 +135,16 @@ mUngradeable.textContent=t.ungradeable;mNotPrediction.textContent=t.notPredictio
    letting a rate computed from six records read as a track record. */
 const distinct=new Set(l.map(x=>x.id)).size;
 const disagree=records.filter(r=>r._ledgerState).length;
+/* Said first, because every figure under it is computed from records this
+   page may not have been able to read. */
+if(ledgerUnavailable.length){
+  const warn=document.createElement('p');
+  warn.className='stale';warn.id='ledgerError';warn.setAttribute('role','alert');
+  warn.textContent='Verification data unavailable: '+ledgerUnavailable.join(' and ')+
+    ' could not be loaded, so no figure on this page is a statement about what happened. '+
+    'This is not the same as nothing having been recorded.';
+  honesty.parentNode.insertBefore(warn,honesty);
+}
 const unreproduced=records.filter(r=>r._engineUnreproduced).length;
 honesty.textContent=l.length+' forecast windows have been recorded ('+distinct+' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '
  +t.graded+' of them carry a verdict: '+(t.graded-unreproduced)+' graded by the verification engine'
@@ -176,7 +194,9 @@ obFalseNeg.textContent=sH.falseNegatives;
 obCoverage.textContent=sH.coverage.COVERAGE_FAILURE;
 obForecast.textContent=sH.coverage.FORECAST_FAILURE;
 obUnknown.textContent=sH.coverage.DATA_UNAVAILABLE;
-obNote.textContent=obsEvents.length===0
+obNote.textContent=ledgerUnavailable.length
+ ? 'This page could not read ' + ledgerUnavailable.join(' or ') + ', so nothing below is a statement about what happened \u2014 it is a statement about what this page could read. Reload, or try again later.'
+ : obsEvents.length===0
  ? 'No significant observed disaster has been recorded yet. The hourly job writes this record from the live feed; until it has run there is no denominator for recall, and none is shown. An empty record is not a claim that nothing happened.'
  : 'A disaster counts as a false negative when no independent prospective forecast covered it. Where no scan is recorded for that hazard and moment, the reason cannot be established either way, and it is reported as such rather than blamed on coverage or on forecasting.';
 

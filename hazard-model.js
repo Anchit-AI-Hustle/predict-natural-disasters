@@ -599,6 +599,8 @@
     undetermined: 'Regional warning — exact applicability to this location has not been established.',
     forecast: 'A window being watched, not a report that anything has happened.',
     outsideForecast: 'Your saved place is outside the published outlook area.',
+    countryForecast: 'This outlook was issued for the whole country your saved place is in, not for a point within it.',
+    countryUnknownPlace: 'This outlook covers a whole country. Your saved place has no country recorded \u2014 search for it by name rather than entering coordinates, and this can be answered.',
     areaLevel: 'Area-level record: its coordinate marks an area centre, not an incident. Whether this place falls inside the affected area has not been established.'
   };
 
@@ -630,6 +632,24 @@
     if (e.isForecast || e.forecast) {
       if (contains === true) return out('C', APPLICABILITY.forecast, false);
       if (contains === false) return near ? out('D', APPLICABILITY.outsideForecast, false) : null;
+      /* A country-wide outlook applies to the country, not to a radius around
+         whichever point it was anchored at. A United States outlook anchored
+         in Florida was dropped for a home in California - 3,500 km away and
+         squarely inside the area the outlook names. Where the saved place
+         records which country it is in, that is what decides it; where it does
+         not, neither answer is available and the row says so rather than
+         inventing one from the distance. */
+      if (e.forecastScope === 'country' && e.country) {
+        var pc = String(place.country || '').trim().toLowerCase();
+        var ec = String(e.country).trim().toLowerCase();
+        if (pc) return pc === ec ? out('C', APPLICABILITY.countryForecast, false) : null;
+        /* No country on the saved place: neither "it applies" nor "it does
+           not" can be established, so no row is invented for it. The page
+           says how many outlooks this leaves out and how to fix it, rather
+           than listing every country-wide outlook on earth against a place
+           it cannot locate. */
+        return near ? out('C', APPLICABILITY.countryUnknownPlace, false) : null;
+      }
       return near ? out('C', APPLICABILITY.forecast, !!e.proximityEligible) : null;
     }
 

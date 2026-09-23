@@ -408,3 +408,56 @@ test('a browser notification does fire for an incident next door', async () => {
     'gating the notifications silenced the case they exist for: ' + JSON.stringify(fired));
   r.close();
 });
+
+test('a country-wide outlook applies to the country, not to a radius', async () => {
+  /* A United States outlook anchored in Florida was dropped for a home in
+     California — 3,500 km away and squarely inside the area the outlook
+     names — because a forecast with no geometry was matched on distance to
+     whichever point it happened to be anchored at. */
+  const outlook = { id: 'OUT-us', forecast: true, forecastScope: 'country',
+    country: 'United States', type: 'Wildfire', lat: 27.9, lon: -81.7 };
+  const california = { id: 'p', name: 'Home', lat: 36.7, lon: -119.4, country: 'United States' };
+  const nepal = { id: 'p2', name: 'Home', lat: 27.7, lon: 85.3, country: 'Nepal' };
+
+  const row = H.riskRow(outlook, california);
+  assert.ok(row, 'a country-wide outlook was withheld from a place inside the country it names');
+  assert.equal(row.band, 'C');
+  assert.equal(row.claimDistance, false, 'a country-wide outlook must not be reported as a distance');
+  assert.match(row.applicability, /whole country/i);
+
+  assert.equal(H.riskRow(outlook, nepal), null,
+    'a United States outlook was shown for a home in Nepal');
+
+  /* Where the saved place has no country, neither answer is available, so
+     nothing is invented for it beyond the radius it would have had. */
+  const unplaced = { id: 'p3', name: 'Home', lat: 36.7, lon: -119.4 };
+  assert.equal(H.riskRow(outlook, unplaced), null);
+  const near = H.riskRow(outlook, { id: 'p4', name: 'Home', lat: 28.2, lon: -81.9 });
+  assert.match(near.applicability, /no country recorded/i,
+    'a place with no country is not told why the answer is missing');
+});
+
+test('the page says which country-wide outlooks it could not place', async () => {
+  const anchor = { id: 'p1', kind: 'Home', name: 'Probe place', lat: 27.75, lon: 85.3 };
+  const r = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([anchor]) },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const note = (r.document.getElementById('scopeNote') || {}).textContent || '';
+  const feedHasCountryOutlooks = /country-wide outlook/.test(note);
+  if (feedHasCountryOutlooks) {
+    assert.match(note, /no country recorded/i);
+    assert.match(note, /search for the place by name/i,
+      'the page states the limitation without saying how to fix it');
+  }
+  /* A place saved with a country is not warned about. */
+  const placed = { id: 'p2', kind: 'Home', name: 'Kathmandu', lat: 27.75, lon: 85.3, country: 'Nepal' };
+  const r2 = await renderPage('personal-risk.html', {
+    storage: { pnd_saved_locations: JSON.stringify([placed]) },
+    waitFor: d => (d.getElementById('risks') || {}).children && d.getElementById('risks').children.length > 0
+  });
+  assert.equal((r2.document.getElementById('scopeNote') || {}).textContent, '',
+    'a place with a country recorded was still reported as unplaceable');
+  r.close(); r2.close();
+});

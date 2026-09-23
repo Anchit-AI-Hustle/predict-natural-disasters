@@ -126,8 +126,8 @@ test('a run where a hazard\'s providers were down extends no coverage for it', (
      separating the two hazards here is whether anyone actually scanned. */
   const led = {
     providers: {
-      usgs: { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' },
-      nhc: { hazards: ['Tropical Cyclone'], completeness: 'exhaustive',
+      usgs: { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive', recordsObservations: true },
+      nhc: { hazards: ['Tropical Cyclone'], completeness: 'exhaustive', recordsObservations: true,
         scope: { kind: 'boxes', boxes: [{ name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 }] } }
     },
     /* The real cadence, because coverage is now a run of scans rather than
@@ -178,8 +178,8 @@ test('a selective feed\'s silence is not evidence that nothing happened', () => 
      able to establish an absence are two different questions, and only the
      first one a selective feed answers. */
   const gdacs = { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' },
-    completeness: 'selective' };
-  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' };
+    completeness: 'selective', recordsObservations: true };
+  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive', recordsObservations: true };
   const nepalFlood = flood();
 
   assert.equal(V.providerCovers(gdacs, nepalFlood), true,
@@ -360,7 +360,7 @@ test('a gap between successful scans is not coverage', () => {
      Friday, and was unavailable in between, produced a week of "coverage"
      from two instants — and a Tuesday outlook could be failed for an absence
      nobody was there to observe. */
-  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' };
+  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive', recordsObservations: true };
   const at = (t, ok) => ({ scanTimestamp: t, providers: [{ provider: 'usgs', status: ok ? 'SCANNED' : 'DATA_UNAVAILABLE' }] });
   const led = { providers: { usgs: usgs }, scans: [
     at('2026-09-07T00:00:00Z', true),
@@ -399,11 +399,81 @@ test('a gap between successful scans is not coverage', () => {
 });
 
 test('an isolated scan covers the moment it ran, not the days around it', () => {
-  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' };
+  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive', recordsObservations: true };
   const led = { providers: { usgs: usgs },
     scans: [{ scanTimestamp: '2026-09-07T00:00:00Z', providers: [{ provider: 'usgs', status: 'SCANNED' }] }] };
   const cov = V.observedCoverageFor(led, 'earthquake', { country: 'Nepal' });
   assert.equal(cov.intervals.length, 1);
   assert.equal(cov.intervals[0].from, cov.intervals[0].to,
     'one scan was treated as a span rather than an instant');
+});
+
+/* ------------- exhaustive about warnings is not exhaustive about disasters */
+
+test('a feed of warnings or statuses can never establish that nothing happened', () => {
+  /* The volcano feed lists every elevated alert level in its network, which
+     made it exhaustive — but those records are statuses, they are excluded
+     from the observed-disaster ledger, and a ledger that would never have
+     recorded the eruption cannot show that none occurred. Its silence
+     establishes that nothing was elevated, and nothing more. */
+  const volcano = { hazards: ['Volcano'], scope: { kind: 'countries', countries: ['United States'] },
+    completeness: 'exhaustive', recordsObservations: false };
+  const quakes = { hazards: ['Earthquake'], scope: { kind: 'global' },
+    completeness: 'exhaustive', recordsObservations: true };
+  const eruption = { hazard: 'volcano', geography: { country: 'United States', lat: 19.4, lon: -155.3 } };
+
+  assert.equal(V.providerCovers(volcano, eruption), true,
+    'control: the volcano feed does publish US volcanoes');
+  assert.equal(V.providerCanEstablishAbsence(volcano, eruption), false,
+    'a feed of alert levels was accepted as proof that no eruption caused harm');
+  assert.equal(V.providerCanEstablishAbsence(quakes, { hazard: 'earthquake', geography: { country: 'Nepal' } }), true,
+    'control: a catalogue of events that happened can support an absence');
+
+  const led = { providers: { volcano: volcano }, scans: [
+    { scanTimestamp: '2026-09-01T00:00:00Z', providers: [{ provider: 'volcano', status: 'SCANNED' }] },
+    { scanTimestamp: '2026-09-01T03:00:00Z', providers: [{ provider: 'volcano', status: 'SCANNED' }] }] };
+  assert.equal(V.observedCoverageFor(led, 'volcano', eruption.geography).scans, 0,
+    'successful scans of a warning feed were counted as coverage of the disasters it never records');
+});
+
+test('the served feed says, for every provider, whether its records are observations', async () => {
+  const { meta } = await feed();
+  const byName = Object.fromEntries(meta.scan.providers.map(p => [p.provider, p]));
+  for (const p of meta.scan.providers) {
+    assert.equal(typeof p.recordsObservations, 'boolean',
+      p.provider + ' does not say whether its records are observations');
+  }
+  assert.equal(byName.nws.recordsObservations, false, 'a warning feed is recorded as observing disasters');
+  assert.equal(byName.usgs_volcano.recordsObservations, false,
+    'an alert-level feed is recorded as observing disasters');
+  assert.equal(byName.usgs.recordsObservations, true, 'the earthquake catalogue is recorded as not observing');
+});
+
+/* ---------------------- a definition is never applied backwards */
+
+test('a scan is read under the definitions it was recorded with', () => {
+  /* One table overwritten every run meant that widening a provider's scope,
+     or calling a selective feed exhaustive, reached back and turned scans
+     that established nothing into evidence of an absence — silently changing
+     verdicts already published. */
+  const usOnly = { usgs: { hazards: ['Earthquake'], scope: { kind: 'countries', countries: ['United States'] },
+    completeness: 'exhaustive', recordsObservations: true } };
+  const global = { usgs: { hazards: ['Earthquake'], scope: { kind: 'global' },
+    completeness: 'exhaustive', recordsObservations: true } };
+  const led = {
+    providers: global,
+    providerVersions: { v1: { providers: usOnly }, v2: { providers: global } },
+    scans: [
+      { scanTimestamp: '2026-09-01T00:00:00Z', providerVersion: 'v1', providers: [{ provider: 'usgs', status: 'SCANNED' }] },
+      { scanTimestamp: '2026-09-01T03:00:00Z', providerVersion: 'v2', providers: [{ provider: 'usgs', status: 'SCANNED' }] }
+    ]
+  };
+  const cov = V.observedCoverageFor(led, 'earthquake', { country: 'Nepal' });
+  assert.equal(cov.scans, 1,
+    'a scan recorded under a US-only definition was read under a later global one');
+  assert.equal(cov.intervals[0].from, '2026-09-01T03:00:00.000Z');
+
+  // A ledger written before versions existed still works, under its one table.
+  const old = { providers: global, scans: led.scans.map(s => ({ scanTimestamp: s.scanTimestamp, providers: s.providers })) };
+  assert.equal(V.observedCoverageFor(old, 'earthquake', { country: 'Nepal' }).scans, 2);
 });

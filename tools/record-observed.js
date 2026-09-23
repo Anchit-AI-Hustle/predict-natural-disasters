@@ -56,6 +56,38 @@ try {
  * A warning that does materialise is reported by an observing provider too,
  * and that record is what belongs here.
  */
+/*
+ * When this disaster was being carried by its providers, as runs rather than
+ * a single latest timestamp.
+ *
+ * lastSeenAt was overwritten on every run, so the first cycle after an
+ * outlook's window closed destroyed the evidence that the disaster had been
+ * in the feed throughout it: the verifier then saw one timestamp, dated after
+ * the window, and could grade the outlook neither way. A record that was
+ * observed on every scan inside its window became "no evidence either way",
+ * which is the opposite of what the ledger had just watched happen.
+ *
+ * Consecutive sightings are joined into one run while they are close enough
+ * together to be continuous watching - the same six hours the coverage model
+ * uses, and for the same reason - so the list is bounded by the number of
+ * real gaps rather than by the number of runs.
+ */
+const SIGHTING_GAP_HOURS = 6;
+
+function noteSighting(row, at) {
+  const t = Date.parse(at);
+  if (!Array.isArray(row.sightings)) {
+    /* A row written before this existed still knows two moments. */
+    row.sightings = [{ from: row.firstRecordedAt || row.lastSeenAt || at,
+      to: row.lastSeenAt || at }];
+  }
+  const last = row.sightings[row.sightings.length - 1];
+  const lastTo = Date.parse(last && last.to);
+  if (last && Number.isFinite(lastTo) && t - lastTo <= SIGHTING_GAP_HOURS * 3600e3) last.to = at;
+  else row.sightings.push({ from: at, to: at });
+  row.lastSeenAt = at;
+}
+
 const observed = events.filter(e => e && !e.forecast && e.evidenceState === 'observed');
 /* What was left out, and under which evidence state, so that the exclusion is
    auditable rather than silent. Today that is warnings; if an observing
@@ -131,7 +163,8 @@ for (const c of significant) {
     const row = Object.assign({}, c, {
       firstRecordedAt: now,
       geographyAtFirstRecord: c.geography,
-      lastSeenAt: now
+      lastSeenAt: now,
+      sightings: [{ from: now, to: now }]
     });
     ledger.events.push(row);
     byId.set(row.canonicalEventId, row);
@@ -140,7 +173,7 @@ for (const c of significant) {
     continue;
   }
 
-  existing.lastSeenAt = now;
+  noteSighting(existing, now);
   /* The id this run would have generated. Recorded when it differs, never
      applied: the identity a disaster was first written under is what every
      other record refers to. */
@@ -183,6 +216,7 @@ ledger.updatedAt = now;
 ledger.method = {
   canonicalisation: 'Provider records are grouped into one disaster when they share a hazard family and fall inside that hazard’s matching window. Where either record is placed at an area centre, kilometres between them say nothing, so the match is by country and time instead.',
   significance: 'An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.',
+  sightings: 'Each event records the runs during which it was actually being carried by a provider, not only the last time it was seen. A single latest timestamp is overwritten on the next run, which destroys the evidence that a disaster was in the feed throughout a forecast window that has since closed. Consecutive sightings more than ' + SIGHTING_GAP_HOURS + ' hours apart start a new run rather than being joined.',
   frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions.',
   notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed.',
   observationsOnly: 'Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations.'

@@ -36,11 +36,34 @@
     ['severe-weather', /storm|tornado|wind|hail|winter/i]
   ];
 
-  function familyOf(type, title) {
+  /*
+   * Every hazard family a record names, not only the first.
+   *
+   * "Flood / Landslide" is one claim about two hazards, and the frozen
+   * benchmark ND-001 says so explicitly: its rule accepts flood OR landslide
+   * impact inside its corridor. Reducing it to `flood` made a landslide there
+   * a false positive under a rule that had promised to accept it.
+   *
+   * familyOf still answers with one family, because an event's identity and
+   * its matching window need a single answer; familiesOf is what a claim is
+   * graded against.
+   */
+  function familiesOf(type, title) {
     var s = String(type || '') + ' ' + String(title || '');
-    for (var i = 0; i < FAMILIES.length; i++) if (FAMILIES[i][1].test(s)) return FAMILIES[i][0];
-    return 'other';
+    var out = [];
+    for (var i = 0; i < FAMILIES.length; i++) {
+      if (FAMILIES[i][1].test(s) && out.indexOf(FAMILIES[i][0]) < 0) out.push(FAMILIES[i][0]);
+    }
+    return out.length ? out : ['other'];
   }
+
+  function familyOf(type, title) {
+    return familiesOf(type, title)[0];
+  }
+  /* Carried on the function itself so that anything already being handed
+     familyOf - the verifier, the pages, the tools - grades a compound claim
+     against every family it names without each caller having to know. */
+  familyOf.families = familiesOf;
 
   /*
    * How close two reports of the same family have to be to be the same event.
@@ -99,6 +122,45 @@
    * Returns the reason when they do, and null when they do not, so a merge is
    * always accompanied by the evidence for it.
    */
+  /*
+   * Can these two area-level records be describing the same area?
+   *
+   * Returns the reason they can, or null where they plainly cannot. Two
+   * records that name different sub-national areas are two disasters until
+   * something says otherwise; one naming the country and the other a province
+   * inside it are compatible, which is the ordinary case of a global alerting
+   * agency and a national declaration reporting one event.
+   */
+  function placeWords(e) {
+    return String((e && e.region) || '').toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(function (w) { return w.length > 2 && STOP_PLACE_WORDS.indexOf(w) < 0; });
+  }
+  var STOP_PLACE_WORDS = ['and', 'the', 'north', 'south', 'east', 'west', 'central',
+    'northern', 'southern', 'eastern', 'western', 'province', 'provinces', 'district',
+    'districts', 'region', 'regions', 'state', 'states', 'county', 'counties', 'city'];
+
+  function normPlace(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+
+  function regionsCompatible(a, b) {
+    var ra = normPlace(a && a.region), rb = normPlace(b && b.region);
+    var country = normPlace((a && a.country) || (b && b.country));
+    if (!ra || !rb) return 'One record names no area within the country, so the two do not contradict.';
+    if (ra === rb) return 'Both name ' + ((a && a.region) || '') + '.';
+    if (ra === country || rb === country) {
+      return 'One record is country-wide, so it covers the area the other names.';
+    }
+    if (ra.indexOf(rb) >= 0 || rb.indexOf(ra) >= 0) {
+      return 'One area named is inside the other.';
+    }
+    var wa = placeWords(a), wb = placeWords(b);
+    for (var i = 0; i < wa.length; i++) {
+      if (wb.indexOf(wa[i]) >= 0) return 'Both name ' + wa[i] + '.';
+    }
+    return null;
+  }
+
   function sameEvent(a, b) {
     var fa = familyOf(a.type, a.title), fb = familyOf(b.type, b.title);
     if (fa !== fb) return null;
@@ -113,8 +175,20 @@
        to match on is the country both name. */
     if (isAreaLevel(a) || isAreaLevel(b)) {
       if (!sameCountry(a, b)) return null;
+      /* A country and a week is not an identity.
+       *
+       * Matching area-level records on country and time alone merged every
+       * flood of the same family anywhere in one country inside the hazard's
+       * window: floods in Assam and in Gujarat a day apart became one
+       * disaster, and one real event left the recall denominator for good.
+       * The two places have to be capable of being the same place - one of
+       * them country-wide or unstated, or the two naming an overlapping
+       * area - before the merge may be made. Where they plainly contradict,
+       * this file's own policy applies and they stay separate. */
+      var r = regionsCompatible(a, b);
+      if (!r) return null;
       return 'Same ' + fa + ' in ' + a.country + ', reported ' + Math.round(apart) +
-             'h apart; at least one record is area-level, so matched by country and time.';
+             'h apart; at least one record is area-level, so matched by country and time. ' + r;
     }
     var la = num(a.lat), lo = num(a.lon), lb = num(b.lat), ob = num(b.lon);
     if (la === null || lo === null || lb === null || ob === null) return null;
@@ -324,8 +398,9 @@
   }
 
   var api = {
+    regionsCompatible: regionsCompatible,
     FAMILIES: FAMILIES.map(function (f) { return f[0]; }), MATCH: MATCH,
-    familyOf: familyOf, sameEvent: sameEvent, significanceOf: significanceOf,
+    familyOf: familyOf, familiesOf: familiesOf, sameEvent: sameEvent, significanceOf: significanceOf,
     canonicalise: canonicalise, distanceKm: distanceKm, impactOf: impactOf
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

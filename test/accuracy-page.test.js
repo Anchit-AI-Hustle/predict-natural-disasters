@@ -134,7 +134,10 @@ const USGS = {
   geographicCoverage: 'Global',
   scope: { kind: 'global' },
   completeness: 'exhaustive',
-  completenessBasis: 'A complete catalogue of earthquakes of magnitude 2.5 and above for the past seven days, so an absence above that threshold is meaningful.'
+  completenessBasis: 'A complete catalogue of earthquakes of magnitude 2.5 and above for the past seven days, so an absence above that threshold is meaningful.',
+  /* And its records are observations of events that happened, which is the
+     other half of what an absence needs. */
+  recordsObservations: true
 };
 
 function gradingFixture() {
@@ -311,5 +314,46 @@ test('a hand-recorded verdict the engine cannot reproduce is kept, shown and exc
     'a hand-recorded verdict is displayed as though the engine had produced it');
   // And it counts towards no engine rate.
   assert.equal(text(r, 'ipPrecision'), 'Not computable');
+  r.close();
+});
+
+test('a ledger it could not read is not a ledger that is empty', async () => {
+  /* Both new fetches caught into a valid-looking empty ledger, so a transient
+     network or deployment error was indistinguishable from "nothing has been
+     recorded yet" — and the page then explained at length that an empty
+     record is not a claim that nothing happened, while itself making exactly
+     that substitution. */
+  const r = await renderPage('accuracy.html', {
+    mock: {},
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    beforeParse(w) {
+      const real = w.fetch;
+      w.fetch = async (input) => {
+        const url = String(input && input.url ? input.url : input);
+        if (url.includes('observed-disasters.json') || url.includes('scan-ledger.json')) {
+          return { ok: false, status: 503, headers: { get: () => null },
+            json: async () => ({}), text: async () => '' };
+        }
+        return real(input);
+      };
+    }
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const banner = r.document.getElementById('ledgerError');
+  assert.ok(banner, 'a failed ledger fetch is reported as an empty ledger, with no warning at all');
+  assert.match(banner.textContent, /could not be loaded/i);
+  assert.match(banner.textContent, /not the same as nothing having been recorded/i);
+  assert.equal(banner.getAttribute('role'), 'alert');
+  assert.match(text(r, 'obNote'), /could not read/i,
+    'the observed-disasters note still reads as though the record were empty');
+  r.close();
+});
+
+test('a ledger that really is empty is still reported as empty', async () => {
+  // The control: the committed ledgers ship empty, and that is not an error.
+  const r = await open();
+  assert.equal(r.document.getElementById('ledgerError'), null,
+    'a ledger that loaded fine was reported as unavailable');
+  assert.match(text(r, 'obNote'), /not a claim that nothing happened/i);
   r.close();
 });

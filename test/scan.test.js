@@ -170,7 +170,19 @@ test('the coverage ledger records a scan and never rewrites one', async () => {
       name + ' reached the ledger with no completeness: ' + p.completeness);
     assert.ok(String(p.completenessBasis || '').length > 40,
       name + ' reached the ledger with a completeness and no basis for it');
+    assert.equal(typeof p.recordsObservations, 'boolean',
+      name + ' reached the ledger without saying whether its records are observations');
   }
+  /* And the definitions each scan ran under are frozen with it: applying
+     today's definitions to a scan recorded in September would turn a scan
+     that established nothing into evidence of an absence, and change verdicts
+     already published. */
+  const v = first.scans[0].providerVersion;
+  assert.ok(v, 'a scan was recorded without the provider definitions in force when it ran');
+  assert.ok(first.providerVersions[v], 'the version a scan names is not kept');
+  assert.deepEqual(first.providerVersions[v].providers, first.providers);
+  assert.match(String(first.providerVersionNote || ''), /never applied backwards/i,
+    'the ledger does not state that definitions are not applied backwards');
 
   // The same scan again is the same scan.
   const out = run();
@@ -179,6 +191,45 @@ test('the coverage ledger records a scan and never rewrites one', async () => {
   assert.equal(second.scans.length, 1, 'a scan was recorded twice');
   assert.equal(second.aggregate.scansRecorded, 1, 'the totals double-counted a single scan');
   assert.deepEqual(second.scans[0], first.scans[0], 'a recorded scan was rewritten');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a changed provider definition is a new version, not a rewrite', async () => {
+  const { meta } = await feed();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-scan-ver-'));
+  const eventsPath = path.join(dir, 'events.json');
+  const ledgerPath = path.join(dir, 'scan-ledger.json');
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, scans: [] }));
+  const run = m => {
+    fs.writeFileSync(eventsPath, JSON.stringify({ meta: m }));
+    require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', 'record-scan.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
+    return JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  };
+
+  const first = run(meta);
+  const same = JSON.parse(JSON.stringify(meta));
+  same.scan.scanId = 'scan-same';
+  same.scan.scanTimestamp = new Date(Date.parse(meta.scan.scanTimestamp) + 3600e3).toISOString();
+  const second = run(same);
+  assert.equal(Object.keys(second.providerVersions).length, 1,
+    'a run that changed nothing wrote a new version of the definitions');
+
+  // Now widen one provider's reach, as a real change would.
+  const widened = JSON.parse(JSON.stringify(meta));
+  widened.scan.scanId = 'scan-widened';
+  widened.scan.scanTimestamp = new Date(Date.parse(meta.scan.scanTimestamp) + 7200e3).toISOString();
+  const nws = widened.scan.providers.find(p => p.provider === 'nws');
+  nws.scope = { kind: 'global' };
+  const third = run(widened);
+  assert.equal(Object.keys(third.providerVersions).length, 2,
+    'a widened provider did not produce a new version');
+  const before = third.scans.find(s => s.scanId === first.scans[0].scanId);
+  const after = third.scans.find(s => s.scanId === 'scan-widened');
+  assert.notEqual(before.providerVersion, after.providerVersion);
+  assert.deepEqual(third.providerVersions[before.providerVersion].providers.nws.scope,
+    { kind: 'countries', countries: ['United States'] },
+    'the definition an earlier scan ran under was rewritten');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 

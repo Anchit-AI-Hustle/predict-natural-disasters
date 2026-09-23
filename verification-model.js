@@ -80,14 +80,31 @@
     return Math.max(s, f);
   }
 
+  /** Does this claim name the hazard family that was observed? */
+  function claimAccepts(claim, hazard) {
+    var list = (claim && claim.hazards) || [claim && claim.hazard];
+    return list.indexOf(hazard) >= 0;
+  }
+
   /**
    * The frozen claim, extracted once so that everything downstream grades the
    * same thing and a reader can see exactly what was compared.
    */
   function frozenClaim(p, hazardFamilyOf) {
     var family = hazardFamilyOf(p.type, p.title);
+    /* Every family the claim names, where the classifier can give them.
+     *
+     * "Flood / Landslide" is one claim about two hazards - ND-001's published
+     * rule accepts either inside its corridor - and grading it on the first
+     * family alone made a landslide there a false positive under a rule that
+     * had promised to accept it. The primary family still names the claim;
+     * the list is what an observed event is compared against. */
+    var families = (typeof hazardFamilyOf.families === 'function'
+      ? hazardFamilyOf.families(p.type, p.title)
+      : null) || [family];
     return {
       hazard: family,
+      hazards: families,
       hazardLabel: p.type || null,
       geography: {
         country: p.country || null,
@@ -208,10 +225,35 @@
     if (onset !== null && to !== null && onset > to) return null;
     var end = ms(event.end);
     if (end !== null && end < from) return null;          // over before the window opened
-    var marks = [{ at: ms(event.impactLastUpdated), what: 'its impact figures were last updated' }];
+    var marks = [];
+
+    /* impactLastUpdated is NOT an impact change.
+     *
+     * The observed model sets it from the newest provider timestamp on the
+     * record, whether or not a single figure moved - so a routine refresh of
+     * a mainshock inside the window would have credited an aftershock outlook
+     * with "additional impacts" it never reported. Only a revision to a
+     * figure shows an impact changed, and that is the only thing this class
+     * may be credited with. */
     if (!impactOnly) {
+      marks.push({ at: ms(event.impactLastUpdated), what: 'its impact figures were last reassessed' });
       marks.push({ at: ms(event.end), what: 'it was recorded as ending' });
-      marks.push({ at: ms(event.lastSeenAt), what: 'it was last seen in the feed' });
+      /* Every run during which the record was actually being carried, not the
+         last time it was seen: that single timestamp is overwritten on the
+         next run, so the first cycle after the window closed would otherwise
+         erase the evidence of everything inside it. */
+      for (var g = 0; g < (event.sightings || []).length; g++) {
+        var sg = event.sightings[g], sa = ms(sg.from), sb = ms(sg.to);
+        if (sa === null || sb === null) continue;
+        if (to !== null && sa > to) continue;
+        if (sb < from) continue;
+        marks.push({ at: Math.max(sa, from),
+          text: 'It was still being reported inside the window: its provider was carrying it from ' +
+            sg.from + ' to ' + sg.to + '.' });
+      }
+      if (!(event.sightings || []).length) {
+        marks.push({ at: ms(event.lastSeenAt), what: 'it was last seen in the feed' });
+      }
     }
     for (var r = 0; r < (event.revisions || []).length; r++) {
       var rev = event.revisions[r];
@@ -226,8 +268,8 @@
     }
     if (!best) return null;
     return { at: best.at,
-      why: 'It was still being reported inside the window: ' + best.what + ' at ' +
-           new Date(best.at).toISOString() + '.' };
+      why: best.text || ('It was still being reported inside the window: ' + best.what + ' at ' +
+           new Date(best.at).toISOString() + '.') };
   }
 
   /**
@@ -341,7 +383,7 @@
     for (var i = 0; i < (observedEvents || []).length; i++) {
       var ev = observedEvents[i];
       if (!ev.significant) continue;
-      if (ev.hazard !== claim.hazard) continue;
+      if (!claimAccepts(claim, ev.hazard)) continue;
       var onset = ms(ev.onset);
       if (onset === null) continue;
       var geo = geographyMatch(claim, ev);
@@ -380,7 +422,7 @@
         'so this can be graded neither way yet.', [], 'CONTINUATION_EVIDENCE_UNAVAILABLE');
     }
     return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
-      'The window closed with no significant ' + claim.hazard + ' observed inside the frozen geography.', []);
+      'The window closed with no significant ' + claim.hazards.join(' or ') + ' observed inside the frozen geography.', []);
   }
 
   /**
@@ -401,7 +443,7 @@
        them, and an uncomparable pair is not a match. */
     if (typeof hazardFamilyOf !== 'function') return null;
     var claim = frozenClaim(prediction, hazardFamilyOf);
-    if (claim.hazard !== event.hazard) return null;
+    if (!claimAccepts(claim, event.hazard)) return null;
     var onset = ms(event.onset);
     var start = ms(claim.window.effectiveForecastStart);
     var end = ms(claim.window.targetEnd);
@@ -446,16 +488,29 @@
    */
   var MAX_SCAN_GAP_HOURS = 6;
 
+  /* A claim naming two hazards needs both of them watched before its silence
+     means anything: a flood-or-landslide claim graded against flood coverage
+     alone would be failed for the absence of a landslide nobody was looking
+     for. The answer is the intersection of the two. */
   function observedCoverageFor(scanLedger, hazard, place) {
+    if (Array.isArray(hazard)) {
+      if (!hazard.length) return { from: null, to: null, scans: 0, intervals: [], maxGapHours: MAX_SCAN_GAP_HOURS };
+      var each = hazard.map(function (h) { return observedCoverageFor(scanLedger, h, place); });
+      return each.reduce(intersectCoverage);
+    }
     var scans = (scanLedger && scanLedger.scans) || [];
     var empty = { from: null, to: null, scans: 0, intervals: [], maxGapHours: MAX_SCAN_GAP_HOURS };
     if (!scans.length) return empty;
-    var meta = (scanLedger && scanLedger.providers) || {};
     var probe = { hazard: hazard, geography: place || {} };
     var times = [];
     for (var i = 0; i < scans.length; i++) {
       var s = scans[i], t = ms(s.scanTimestamp);
       if (t === null) continue;
+      /* The definitions in force when THIS scan ran, never today's. Widening
+         a provider's scope, or calling a selective feed exhaustive, changes
+         what future scans can establish; it must not reach back and turn a
+         scan that established nothing into evidence of an absence. */
+      var meta = providersFor(scanLedger, s);
       var covered = (s.providers || []).some(function (p) {
         return p.status === 'SCANNED' && providerCanEstablishAbsence(meta[p.provider] || {}, probe);
       });
@@ -481,6 +536,33 @@
       intervals: intervals.map(function (iv) {
         return { from: new Date(iv.from).toISOString(), to: new Date(iv.to).toISOString() };
       }),
+      maxGapHours: MAX_SCAN_GAP_HOURS
+    };
+  }
+
+  /** The provider definitions a given scan was recorded under. */
+  function providersFor(scanLedger, scan) {
+    var versions = (scanLedger && scanLedger.providerVersions) || null;
+    var key = scan && scan.providerVersion;
+    if (versions && key && versions[key] && versions[key].providers) return versions[key].providers;
+    return (scanLedger && scanLedger.providers) || {};
+  }
+
+  /** Where two coverage answers overlap, and nowhere else. */
+  function intersectCoverage(a, b) {
+    var out = [];
+    for (var i = 0; i < a.intervals.length; i++) {
+      for (var j = 0; j < b.intervals.length; j++) {
+        var from = Math.max(ms(a.intervals[i].from), ms(b.intervals[j].from));
+        var to = Math.min(ms(a.intervals[i].to), ms(b.intervals[j].to));
+        if (from <= to) out.push({ from: new Date(from).toISOString(), to: new Date(to).toISOString() });
+      }
+    }
+    return {
+      from: out.length ? out[0].from : null,
+      to: out.length ? out[out.length - 1].to : null,
+      scans: Math.min(a.scans, b.scans),
+      intervals: out,
       maxGapHours: MAX_SCAN_GAP_HOURS
     };
   }
@@ -555,12 +637,17 @@
    * claimed to be complete. Only a provider that is exhaustive within its own
    * stated bounds can support an absence.
    *
-   * A warning source cannot either, whatever its completeness: its records are
-   * warnings, they never enter the observed-disaster ledger, and a ledger that
-   * would not have recorded the disaster cannot show that none happened.
+   * And exhaustive about what matters. A source whose records are warnings or
+   * published statuses cannot establish an absence whatever its completeness:
+   * the National Weather Service lists every active warning, and the USGS
+   * volcano feed every elevated alert level, but neither kind of record enters
+   * the observed-disaster ledger - so their silence establishes that nothing
+   * was warned or elevated, not that no disaster occurred. A ledger that would
+   * never have recorded the disaster cannot show that none happened.
    */
   function providerCanEstablishAbsence(meta, event) {
-    return !!(meta && meta.completeness === 'exhaustive' && providerCovers(meta, event));
+    return !!(meta && meta.completeness === 'exhaustive' &&
+      meta.recordsObservations === true && providerCovers(meta, event));
   }
 
   /* ------------------------------------------------------- false negatives */
@@ -628,7 +715,7 @@
     }
     var covering = near.some(function (s) {
       return (s.providers || []).some(function (p) {
-        var meta = (scanLedger.providers || {})[p.provider] || {};
+        var meta = providersFor(scanLedger, s)[p.provider] || {};
         return p.status === 'SCANNED' && providerCovers(meta, event);
       });
     });
@@ -703,10 +790,12 @@
     CLASSIFICATION: CLASSIFICATION, COVERAGE: COVERAGE,
     PARTIAL_WEIGHT: PARTIAL_WEIGHT, GEOGRAPHY_TOLERANCE_KM: GEOGRAPHY_TOLERANCE_KM,
     effectiveStart: effectiveStart, frozenClaim: frozenClaim, geographyMatch: geographyMatch,
+    claimAccepts: claimAccepts,
     verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm,
     providerCovers: providerCovers, providerCoversHazard: providerCoversHazard,
     providerCanEstablishAbsence: providerCanEstablishAbsence,
     observedCoverageFor: observedCoverageFor, MAX_SCAN_GAP_HOURS: MAX_SCAN_GAP_HOURS,
+    providersFor: providersFor,
     continuedActivity: continuedActivity, CONTINUATION_CLASSES: CONTINUATION_CLASSES,
     CONTINUATION_EVIDENCE: CONTINUATION_EVIDENCE, IMPACT_FIELDS: IMPACT_FIELDS,
     providerCoversPlace: providerCoversPlace

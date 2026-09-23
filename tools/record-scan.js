@@ -51,27 +51,50 @@ if (ledger.scans.some(s => s.scanId === scan.scanId)) {
   process.exit(0);
 }
 
-/* What each provider is and what it reaches is the same on every run, so it is
-   described once here rather than copied into every row. */
+/*
+ * What each provider was, at the time each scan ran.
+ *
+ * One table, overwritten every run, meant a scan recorded in September was
+ * later read under October's definitions: widen a basin or call a selective
+ * feed exhaustive, and every historical scan retroactively becomes evidence
+ * of an absence it never established, silently changing verdicts already
+ * published. Definitions are frozen instead. The table is content-addressed,
+ * every version is kept, and each scan records which one was in force when it
+ * ran; a run that changes nothing reuses the same version, so the file grows
+ * only when a definition actually changes.
+ */
 ledger.engineVersion = scan.engineVersion;
 ledger.coverageLimitation = scan.coverageLimitation;
-ledger.providers = ledger.providers || {};
+
+const table = {};
 for (const p of scan.providers) {
-  ledger.providers[p.provider] = {
+  table[p.provider] = {
     label: p.label, hazards: p.hazards,
     geographicCoverage: p.geographicCoverage,
     coverageResolution: p.coverageResolution,
     scope: p.scope,
     completeness: p.completeness,
     completenessBasis: p.completenessBasis,
+    recordsObservations: p.recordsObservations,
     endpoint: p.endpoint
   };
 }
+const stable = JSON.stringify(Object.keys(table).sort().map(k => [k, table[k]]));
+const tableVersion = require('crypto').createHash('sha256').update(stable).digest('hex').slice(0, 12);
+ledger.providerVersions = ledger.providerVersions || {};
+if (!ledger.providerVersions[tableVersion]) {
+  ledger.providerVersions[tableVersion] = { firstSeenAt: scan.scanTimestamp, providers: table };
+}
+/* The current definitions, for a reader; the frozen ones above are what the
+   verifier reads for any given scan. */
+ledger.providers = table;
+ledger.providerVersionNote = 'Each scan records the provider definitions in force when it ran, under providerVersions. A definition is never applied backwards: widening a provider\u2019s scope or calling it exhaustive changes what future scans can establish, never what past ones did.';
 
 ledger.scans.push({
   scanId: scan.scanId,
   scanTimestamp: scan.scanTimestamp,
   engineVersion: scan.engineVersion,
+  providerVersion: tableVersion,
   providers: scan.providers.map(p => ({
     provider: p.provider,
     status: p.status,

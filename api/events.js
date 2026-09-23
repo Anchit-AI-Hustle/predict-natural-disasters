@@ -1645,6 +1645,7 @@ async function handler(req, res) {
       endpoint: 'https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP',
       scope: { kind: 'global' },
       completeness: 'selective',
+      recordsObservations: true,
       completenessBasis: 'GDACS lists only events it raises to an alert level, so a disaster it does not carry may simply be below that threshold.'
     },
     usgs: {
@@ -1655,6 +1656,7 @@ async function handler(req, res) {
       endpoint: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson',
       scope: { kind: 'global' },
       completeness: 'exhaustive',
+      recordsObservations: true,
       completenessBasis: 'A complete catalogue of earthquakes of magnitude 2.5 and above for the past seven days, so an absence above that threshold is meaningful.'
     },
     emsc: {
@@ -1665,6 +1667,7 @@ async function handler(req, res) {
       endpoint: 'https://www.emsc-csem.org/',
       scope: { kind: 'global' },
       completeness: 'exhaustive',
+      recordsObservations: true,
       completenessBasis: 'A complete catalogue above magnitude 4.5.'
     },
     eonet: {
@@ -1675,6 +1678,7 @@ async function handler(req, res) {
       endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events',
       scope: { kind: 'global' },
       completeness: 'selective',
+      recordsObservations: true,
       completenessBasis: 'A curated set; EONET does not claim to list every event, so its silence is not evidence.'
     },
     nhc: {
@@ -1692,6 +1696,7 @@ async function handler(req, res) {
         { name: 'Eastern and central Pacific', minLat: -5, maxLat: 60, minLon: -180, maxLon: -75 }
       ] },
       completeness: 'exhaustive',
+      recordsObservations: true,
       completenessBasis: 'Every active tropical cyclone in the basins it publishes for.'
     },
     nws: {
@@ -1702,6 +1707,7 @@ async function handler(req, res) {
       endpoint: 'https://api.weather.gov/alerts/active',
       scope: { kind: 'countries', countries: ['United States'] },
       completeness: 'selective',
+      recordsObservations: false,
       completenessBasis: 'Exhaustive for active warnings, but a warning is not an observation: these records never enter the observed-disaster ledger, so this provider cannot establish that no disaster occurred.'
     },
     reliefweb: {
@@ -1712,6 +1718,7 @@ async function handler(req, res) {
       endpoint: 'https://reliefweb.int/disasters/feed',
       scope: { kind: 'global' },
       completeness: 'selective',
+      recordsObservations: true,
       completenessBasis: 'Only disasters ReliefWeb has declared, which is a subset of those that occur.'
     },
     usgs_volcano: {
@@ -1722,7 +1729,8 @@ async function handler(req, res) {
       endpoint: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes',
       scope: { kind: 'countries', countries: ['United States'] },
       completeness: 'exhaustive',
-      completenessBasis: 'Every volcano at an elevated alert level in the observatory network it covers.'
+      recordsObservations: false,
+      completenessBasis: 'Exhaustive for elevated alert levels in the observatory network it covers, which is not the same as exhaustive for eruptions that caused harm: an alert level is a published status, these records never enter the observed-disaster ledger, and their silence establishes only that nothing was elevated.'
     }
   };
 
@@ -1813,6 +1821,7 @@ async function handler(req, res) {
         scope: PROVIDERS[key].scope,
         completeness: PROVIDERS[key].completeness,
         completenessBasis: PROVIDERS[key].completenessBasis,
+        recordsObservations: PROVIDERS[key].recordsObservations,
         endpoint: PROVIDERS[key].endpoint,
         status: st.status,
         success: !!(s && s.ok),

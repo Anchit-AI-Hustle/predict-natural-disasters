@@ -309,3 +309,84 @@ test('the hourly run records and commits observed disasters', () => {
   assert.match(wf, /git diff --quiet[^\n]*data\/observed-disasters\.json/,
     'a run whose only change is the observed ledger would be treated as no change');
 });
+
+test('two disasters in different parts of one country stay two', async () => {
+  /* Matching area-level records on country and time alone merged every flood
+     of the same family anywhere in a country inside the hazard's window:
+     Assam and Gujarat a day apart became one disaster, and a real event left
+     the recall denominator for good. */
+  const flood = (region, t) => ({ id: 'x-' + region + t, type: 'Flood', title: 'Flood in ' + region,
+    country: 'India', region: region, locationPrecision: 'regional',
+    lat: 26, lon: 92, startedAt: t, updated: t, sourceType: 'official', evidenceState: 'observed' });
+  const assam = flood('Assam', '2026-09-10T00:00:00Z');
+  const gujarat = flood('Gujarat', '2026-09-11T00:00:00Z');
+  assert.equal(OBS.sameEvent(assam, gujarat), null,
+    'two floods in different states of one country were merged into one disaster');
+  assert.equal(OBS.canonicalise([assam, gujarat]).length, 2);
+
+  /* And the case merging exists for still merges: a global agency naming a
+     province and a national declaration naming the country. */
+  assert.ok(OBS.sameEvent(assam, flood('India', '2026-09-11T00:00:00Z')),
+    'a country-wide declaration no longer matches the province record it describes');
+  assert.ok(OBS.sameEvent(assam, flood('Assam', '2026-09-11T00:00:00Z')));
+  /* Overlapping names count as the same place, and the reason says why. */
+  const upper = flood('Upper Assam', '2026-09-11T00:00:00Z');
+  assert.match(String(OBS.sameEvent(assam, upper)), /inside the other|both name/i);
+  /* Sharing a direction is not sharing a place. */
+  assert.equal(OBS.sameEvent(flood('Northern Assam', '2026-09-10T00:00:00Z'),
+    flood('Northern Gujarat', '2026-09-11T00:00:00Z')), null,
+    '"northern" was treated as the name of a place');
+});
+
+test('the runs a disaster was carried for survive the next run', async () => {
+  /* lastSeenAt is overwritten every cycle, so the first run after a forecast
+     window closed destroyed the evidence that the disaster had been in the
+     feed throughout it. */
+  const { events } = await feed();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-seen-'));
+  const eventsPath = path.join(dir, 'events.json');
+  const ledgerPath = path.join(dir, 'observed.json');
+  fs.writeFileSync(eventsPath, JSON.stringify({ events }));
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, events: [] }));
+  const run = () => require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-observed.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
+
+  run();
+  const first = JSON.parse(fs.readFileSync(ledgerPath, 'utf8')).events[0];
+  assert.ok(Array.isArray(first.sightings) && first.sightings.length === 1,
+    'the first sighting was not recorded');
+  assert.equal(first.sightings[0].from, first.sightings[0].to);
+
+  run();
+  const second = JSON.parse(fs.readFileSync(ledgerPath, 'utf8')).events[0];
+  assert.equal(second.sightings.length, 1, 'a second run within the hour started a new run of sightings');
+  assert.equal(second.sightings[0].from, first.sightings[0].from,
+    'the moment this disaster was first seen was overwritten');
+  assert.ok(second.sightings[0].to >= first.sightings[0].to);
+  assert.equal(second.lastSeenAt, second.sightings[0].to);
+
+  /* A gap longer than the stated one starts a new run rather than pretending
+     the disaster was carried throughout. */
+  const led = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  led.events.forEach(e => {
+    e.sightings = [{ from: '2026-09-01T00:00:00Z', to: '2026-09-01T02:00:00Z' }];
+    e.lastSeenAt = '2026-09-01T02:00:00Z';
+  });
+  fs.writeFileSync(ledgerPath, JSON.stringify(led));
+  run();
+  const third = JSON.parse(fs.readFileSync(ledgerPath, 'utf8')).events[0];
+  assert.equal(third.sightings.length, 2, 'a gap of days was joined into one unbroken run');
+  assert.equal(third.sightings[0].to, '2026-09-01T02:00:00Z', 'the earlier run was rewritten');
+  assert.match(String(JSON.parse(fs.readFileSync(ledgerPath, 'utf8')).method.sightings || ''), /overwritten/i,
+    'the ledger does not say why it keeps the runs');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a compound hazard record keeps every family it names', () => {
+  assert.deepEqual(OBS.familiesOf('Flood / Landslide', ''), ['flood', 'landslide']);
+  assert.deepEqual(OBS.familiesOf('Earthquake', 'M 5.9'), ['earthquake']);
+  assert.equal(OBS.familyOf('Flood / Landslide', ''), 'flood',
+    'an event still has one family for its identity and matching window');
+  assert.equal(typeof OBS.familyOf.families, 'function',
+    'the classifier does not carry its compound form, so callers cannot use it');
+});

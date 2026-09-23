@@ -314,16 +314,26 @@ test('a continuation outlook is graded on whether the disaster carried on', () =
   assert.deepEqual(carried.observedEventIds, [began.canonicalEventId]);
 });
 
-test('every continuation class is graded the same way, and only those', () => {
+test('each class that follows a disaster is graded by its own rule', () => {
   const began = disaster({ onset: '2026-09-03T00:00:00Z', impactLastUpdated: '2026-09-05T12:00:00Z' });
   const windowed = extra => prediction(Object.assign({
     freezeTimestamp: '2026-09-04T00:00:00Z',
     targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
   }, extra));
-  for (const k of ['continuation-outlook', 'warning-derived', 'post-event-conditional']) {
+  /* A continuation and a warning-derived outlook say the hazard itself
+     carries on, so the record being reassessed inside the window shows it. */
+  for (const k of ['continuation-outlook', 'warning-derived']) {
     assert.equal(grade(windowed({ forecastClass: k }), [began]).classification, 'HIT',
       k + ' cannot be borne out by the disaster it follows');
   }
+  /* An aftershock outlook claims new activity or new impacts, so the same
+     reassessment is not enough for it — that is the whole difference. */
+  assert.equal(grade(windowed({ forecastClass: 'post-event-conditional' }), [began]).classification,
+    'PENDING', 'an aftershock outlook was credited with a routine reassessment');
+  assert.equal(grade(windowed({ forecastClass: 'post-event-conditional' }), [disaster({
+    onset: '2026-09-03T00:00:00Z',
+    revisions: [{ at: '2026-09-05T12:00:00Z', field: 'deaths', from: 1, to: 6 }] })]).classification,
+    'HIT', 'an impact that actually moved was not credited');
   /* And the rule does not leak. An independent prospective prediction frozen
      after the disaster began has still predicted nothing, however long that
      disaster then ran. */
@@ -418,4 +428,100 @@ test('an aftershock outlook is not verified by the mainshock still being in the 
      still graded on the record being carried — the two classes are not one. */
   const cont = Object.assign({}, outlook, { forecastClass: 'continuation-outlook' });
   assert.equal(grade(cont, [mainshock({ lastSeenAt: '2026-09-06T00:00:00Z' })]).classification, 'HIT');
+});
+
+/* ---------------- what the ledger remembers is what can be graded */
+
+test('a disaster carried through the window is not erased by the next run', () => {
+  /* lastSeenAt is overwritten on every run, so the first cycle after an
+     outlook's window closed replaced the evidence from inside it with a
+     timestamp from outside it — and the window bound then correctly rejected
+     that. A continuation observed on every scan inside its window became
+     "no evidence either way", which is the opposite of what the ledger had
+     just watched happen. The runs it was carried for are kept. */
+  const cont = prediction({
+    forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
+  });
+  const carried = disaster({
+    onset: '2026-09-03T00:00:00Z',
+    lastSeenAt: '2026-09-09T12:00:00Z',                 // this morning's run
+    sightings: [{ from: '2026-09-03T00:00:00Z', to: '2026-09-09T12:00:00Z' }]
+  });
+  const v = grade(cont, [carried]);
+  assert.equal(v.classification, 'HIT',
+    'a disaster carried by its provider throughout the window was graded as though nothing was known');
+  assert.match(v.classificationReason, /carrying it from/);
+
+  // A run that began only after the window closed is still not evidence.
+  const later = disaster({ onset: '2026-09-03T00:00:00Z',
+    lastSeenAt: '2026-09-09T12:00:00Z',
+    sightings: [{ from: '2026-09-08T00:00:00Z', to: '2026-09-09T12:00:00Z' }] });
+  assert.equal(grade(cont, [later]).ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+});
+
+test('a routine refresh is not an additional impact', () => {
+  /* impactLastUpdated is set from the newest provider timestamp on the
+     record, whether or not a figure moved, so a mainshock being refreshed
+     inside the window would have credited an aftershock outlook with
+     "additional impacts" nobody reported. */
+  const outlook = prediction({
+    type: 'Earthquake aftershock sequence', title: 'Aftershock-sequence outlook — Nepal',
+    forecastClass: 'post-event-conditional', freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-08T00:00:00Z'
+  });
+  const mainshock = over => Object.assign({
+    canonicalEventId: 'OBS-eq-main', hazard: 'earthquake', significant: true,
+    onset: '2026-09-03T12:00:00Z',
+    geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.7, lon: 85.3 }
+  }, over || {});
+
+  assert.equal(grade(outlook, [mainshock({ impactLastUpdated: '2026-09-06T00:00:00Z' })]).classification,
+    'PENDING', 'a refreshed timestamp was counted as an additional impact');
+  assert.equal(grade(outlook, [mainshock({
+    revisions: [{ at: '2026-09-06T00:00:00Z', field: 'displaced', from: 100, to: 400 }] })]).classification,
+    'HIT', 'a figure that actually moved was not counted');
+  // A revision to something that is not an impact is not one either.
+  assert.equal(grade(outlook, [mainshock({
+    revisions: [{ at: '2026-09-06T00:00:00Z', field: 'sourceUrl', from: 'a', to: 'b' }] })]).classification,
+    'PENDING', 'a changed source link was counted as an additional impact');
+});
+
+test('a claim naming two hazards is graded against both', () => {
+  /* The frozen benchmark is "Flood / Landslide" and its published rule
+     accepts either inside its corridor. Reduced to its first family, a
+     landslide there was a false positive under a rule that had promised to
+     accept it. */
+  const both = prediction({ type: 'Flood / Landslide',
+    title: 'Central Vietnam flash-flood and landslide outlook',
+    country: 'Vietnam', region: 'Huế corridor', forecastScope: null });
+  const claim = V.frozenClaim(both, H);
+  assert.deepEqual(claim.hazards, ['flood', 'landslide']);
+  assert.equal(claim.hazard, 'flood', 'the primary family still names the claim');
+
+  const slide = disaster({ canonicalEventId: 'OBS-ls-1', hazard: 'landslide',
+    geography: { country: 'Vietnam', region: 'Huế corridor', lat: 27.7, lon: 85.3 } });
+  assert.equal(grade(both, [slide]).classification, 'HIT',
+    'a landslide inside the corridor did not satisfy a flood-or-landslide claim');
+  // And the claim has not become a claim about everything.
+  const quake = Object.assign({}, slide, { hazard: 'earthquake' });
+  assert.equal(grade(both, [quake]).classification, 'MISS_FALSE_POSITIVE');
+  // A single-hazard claim is unchanged.
+  assert.deepEqual(V.frozenClaim(prediction(), H).hazards, ['flood']);
+});
+
+test('a claim naming two hazards needs both of them watched', () => {
+  const exhaustive = (h) => ({ hazards: [h], scope: { kind: 'global' },
+    completeness: 'exhaustive', recordsObservations: true });
+  const at = (t, up) => ({ scanTimestamp: t, providers: [
+    { provider: 'quake', status: 'SCANNED' },
+    { provider: 'slide', status: up ? 'SCANNED' : 'DATA_UNAVAILABLE' }] });
+  const led = { providers: { quake: exhaustive('Earthquake'), slide: exhaustive('Landslide') },
+    scans: [at('2026-09-01T00:00:00Z', false), at('2026-09-01T03:00:00Z', true),
+      at('2026-09-01T06:00:00Z', true)] };
+  const one = V.observedCoverageFor(led, 'earthquake', { country: 'Nepal' });
+  const both = V.observedCoverageFor(led, ['earthquake', 'landslide'], { country: 'Nepal' });
+  assert.equal(one.intervals[0].from, '2026-09-01T00:00:00.000Z');
+  assert.equal(both.intervals[0].from, '2026-09-01T03:00:00.000Z',
+    'a compound claim was credited with coverage of only one of its hazards');
 });
