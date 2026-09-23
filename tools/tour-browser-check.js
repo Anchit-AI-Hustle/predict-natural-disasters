@@ -74,8 +74,12 @@ const server = http.createServer(async (req, res) => {
 /* Real handsets, smallest first, plus a tablet so the desktop path stays
    covered. The bug only ever showed below the 600px breakpoint. */
 const SIZES = [
-  ['small Android', 360, 740], ['iPhone SE', 375, 667], ['iPhone 14', 390, 844],
-  ['Pixel 7', 412, 915], ['iPhone 14 Pro Max', 430, 932], ['iPad mini', 768, 1024]
+  /* 320 is the narrowest screen still in use and the width the coachmark
+     spec names first; 440 is the widest phone before the tablet breakpoint.
+     Both were outside the range this checker measured. */
+  ['narrow', 320, 568], ['small Android', 360, 740], ['iPhone SE', 375, 667],
+  ['iPhone 14', 390, 844], ['Pixel 7', 412, 915], ['iPhone 14 Pro Max', 430, 932],
+  ['large phone', 440, 956], ['iPad mini', 768, 1024]
 ];
 const PAGES = (process.env.PAGES || 'index,personal-risk').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -91,33 +95,31 @@ const PAGES = (process.env.PAGES || 'index,personal-risk').split(',').map(s => s
  * describe homepage furniture. That is the current state, recorded so it
  * cannot get worse without saying so -- not a claim that 2 is right.
  */
-/* personal-risk was pinned at 2. Those two were the tutorial highlighting
-   itself: draw() puts the step's fallback URL on the coach's own "Open
-   feature" anchor, and the step then searched the document for a link with
-   that href. On a phone, with the real header link display:none and skipped
-   as off-screen, the coach's anchor was the only match left - step 4 ringed
-   that button and step 5 ringed where it had been before the card moved,
-   both 120x71 at 390x844. Excluding the coach from target selection leaves
-   the true count, which is 0: the page has a map-less body and three of its
-   steps describe homepage furniture.
-
-   Recorded here so it cannot quietly get worse, and explicitly NOT endorsed -
-   a tour that highlights nothing on the page it is running on still needs
-   real targets. */
+/*
+ * What each page should highlight.
+ *
+ * There were five steps, shown in a row on first load: the map, the Personal
+ * Risk link, an events card, the forecasts link and the accuracy link, before
+ * the reader had done anything. On /personal-risk the real count was ZERO -
+ * the page has no map and three of the steps described homepage furniture, so
+ * the tour ran there and pointed at nothing.
+ *
+ * There are three now, and they follow the one journey the product is for:
+ * the search field on arrival, Save once a place has been found, and the
+ * evidence once an answer has been given for it. A step with nothing to point
+ * at on the page it is running on is no longer shown at all, which is why the
+ * pages that are not the homepage expect no tour rather than a silent one.
+ *
+ * The homepage is driven through an actual place lookup before the tour is
+ * replayed, because the second and third coachmarks do not exist until there
+ * is a place and an answer - which is the whole point of them.
+ */
 const EXPECT_RINGS = {
-  index: () => 5,
-  /* Breakpoint-dependent, which is what Codex said in the first place and I
-     dismissed because I measured 2 at every size. Those 2 were the tutorial
-     ringing its own "Open feature" button, so the number was the same
-     everywhere for the wrong reason. With the coach excluded from target
-     selection the real counts appear, and they differ:
-
-       below 760px  `.top nav` is display:none, so neither the forecasts nor
-                    the accuracy step finds anything -> 0
-       768px        the nav is back, so the forecasts link is a real target;
-                    the accuracy link is still hidden by
-                    `.nav a:nth-child(n+7)` at <=1150px            -> 1 */
-  'personal-risk': w => (w >= 760 ? 1 : 0)
+  index: () => 3,
+  /* No search field, no saved answer, nothing to point at: the tour is
+     correctly silent here. Recorded so that a step quietly reappearing
+     without a target is a failure. */
+  'personal-risk': () => 0
 };
 
 const measure = () => {
@@ -167,10 +169,53 @@ const measure = () => {
          tutorial's geometry, so they are failed rather than waited on. */
       await page.route(/unpkg\.com\/cesium@|arcgisonline\.com|terrain\.reearth\.land/, r => r.abort());
 
+      /* The geocoder is a third-party host and this checker is about geometry,
+         not about Nominatim. Answered with a fixed place so the homepage can
+         be driven to the state the second and third coachmarks describe. */
+      await page.route(/nominatim\.openstreetmap\.org/, r => r.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify([{ lat: '27.7172', lon: '85.3240',
+          display_name: 'Kathmandu, Nepal',
+          address: { country: 'Nepal', country_code: 'np' } }])
+      }));
+
       await page.goto('http://localhost:8097/' + page0, { waitUntil: 'load', timeout: 60000 });
+
+      const want = typeof EXPECT_RINGS[page0] === 'function' ? EXPECT_RINGS[page0](w) : EXPECT_RINGS[page0];
+
+      if (page0 === 'index') {
+        /* Check a place first: without an answer there is no Save button and
+           no evidence link, so two of the three coachmarks have no target.
+           The two contextual ones are marked seen beforehand, or answering
+           opens one of its own and two dialogs end up on screen at once. */
+        await page.evaluate(() => {
+          localStorage.setItem('pnd_coach_save', '1');
+          localStorage.setItem('pnd_coach_evidence', '1');
+        });
+        await page.waitForSelector('#placeQ', { timeout: 20000 });
+        await page.fill('#placeQ', 'Kathmandu');
+        await page.click('#checkBtn');
+        await page.waitForSelector('#savePlace', { timeout: 20000 });
+        /* Whatever opened on arrival comes down; the replay is what is
+           measured, and it shows all three in order. */
+        await page.waitForTimeout(900);
+        await page.evaluate(() => { document.querySelectorAll('.pnd-coach').forEach(n => n.remove()); });
+        await page.evaluate(() => window.PND.replayTour());
+      }
+
       const appeared = await page.waitForSelector('.coach-card', { timeout: 20000 }).then(() => true).catch(() => false);
       if (!appeared) {
+        if (want === 0) {
+          console.log('  ok   ' + (page0 + ' / ' + name).padEnd(30) + ' ' + w + 'x' + h +
+            ' — no coachmark has a target here, and none was shown');
+          checked++; await ctx.close(); continue;
+        }
         console.log('  FAIL ' + (page0 + ' / ' + name).padEnd(30) + ' the tour never opened');
+        failures++; await ctx.close(); continue;
+      }
+      if (want === 0) {
+        console.log('  FAIL ' + (page0 + ' / ' + name).padEnd(30) +
+          ' a coachmark opened on a page where none has a target');
         failures++; await ctx.close(); continue;
       }
 
@@ -196,7 +241,13 @@ const measure = () => {
           await page.waitForTimeout(250);
         }
       };
-      while (step < 5) {
+      /* However many steps this page actually runs, read from the tour rather
+         than assumed: the count is no longer the same on every page. */
+      const total = await page.evaluate(() => {
+        const t = (document.querySelector('.coach-progress') || {}).textContent || '';
+        const m = /of (\d+)/.exec(t); return m ? Number(m[1]) : 1;
+      });
+      while (step < total) {
         await settle();
         /* and a beat for the card to finish being placed against it */
         await page.waitForTimeout(600);
@@ -226,14 +277,12 @@ const measure = () => {
             btn.map(b => ' BUTTON-CLIPPED("' + b.t + '" ' + b.l + '..' + b.r + ')').join(''));
         }
         step++;
-        if (step < 5) await page.click('.coach-card [data-a=next]');
+        if (step < total) await page.click('.coach-card [data-a=next]');
       }
       if (errors.length) { bad++; lines.push('    page error: ' + errors[0].slice(0, 120)); }
-      const spec = EXPECT_RINGS[page0];
-      const want = typeof spec === 'function' ? spec(w) : spec;
       if (want !== undefined && rings !== want) {
         bad++;
-        lines.push('    highlighted ' + rings + ' of 5 steps, expected ' + want +
+        lines.push('    highlighted ' + rings + ' of ' + total + ' steps, expected ' + want +
           ' — a step has stopped finding what it describes');
       }
       if (bad) failures++;

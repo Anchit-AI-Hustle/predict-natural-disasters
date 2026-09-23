@@ -192,6 +192,13 @@ function answer(place){
       ?'Notifications allowed. This page will alert you about a saved place while it is open in a tab — it cannot watch in the background.'
       :'Notifications were not allowed, so nothing will be sent.';};
   PR.out.scrollIntoView({block:'nearest'});
+  /* The second and third coachmarks arrive here rather than on load:
+     there is now a place to save and an answer to check the evidence
+     for. Each shows once, ever, and the evidence one waits for the
+     save one to be out of the way. */
+  if(window.PND&&PND.coach){
+    if(!PND.coach('save'))setTimeout(()=>PND.coach('evidence'),400);
+  }
 }
 
 PR.form.addEventListener('submit',async e=>{
