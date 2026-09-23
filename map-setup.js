@@ -142,6 +142,7 @@
     window.L = L;
     window.PNDMap = window.PNDMap || {
       basemap: function (m) { return m; },
+      riskMarker: function () { return thing(); },
       worldZoom: function () { return 1; }
     };
     window.PNDMap.mapUnavailable = true;
@@ -535,7 +536,37 @@
   wrapped.__pndScrollGuard = true;
   L.map = wrapped;
 
+  /*
+   * One event marker, on the one risk scale.
+   *
+   * Every map page had its own ternary - red at #ef2639, orange at #ff681e,
+   * green at #25e29c, and nothing else. Three levels out of six, off the
+   * shared palette, and hue as the only carrier: on that map a reader with a
+   * red-green deficiency could not tell a Red alert from a Green one, and a
+   * screen reader was handed an unnamed circle. Here the level decides the
+   * colour, the shape and the marker's accessible name together, from
+   * risk.js, so a page cannot drift from the scale by editing a ternary.
+   */
+  function riskMarker(latlng, value, label, opts) {
+    var R = window.PNDRisk;
+    /* Without the scale there is no honest marker to draw: a plain one that
+       states no level is better than one that states the wrong level. */
+    if (!R) return L.marker(latlng, opts || {});
+    var icon = R.markerIcon(value, label);
+    var o = opts || {};
+    var settings = { icon: L.divIcon({ className: icon.className, html: icon.html,
+      iconSize: icon.iconSize, iconAnchor: icon.iconAnchor }),
+      /* Leaflet's default alt is "Marker", which is what a screen reader
+         announced for every event on the map. Keyboard focus is left alone:
+         Leaflet already gives markers it, and map.test.js holds this file to
+         not re-stating what Leaflet does. */
+      alt: icon.label, title: icon.label };
+    for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) settings[k] = o[k];
+    return L.marker(latlng, settings);
+  }
+
   window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD,
+    riskMarker: riskMarker,
     /* Published so the globe can exclude exactly this pane rather than
        guessing at the name or rejecting every layer that has one. */
     LABEL_PANE: LABEL_PANE,

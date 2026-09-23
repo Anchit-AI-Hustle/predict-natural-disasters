@@ -88,10 +88,14 @@ test('provenance is not painted in a risk colour', async () => {
   /* Risk colours mean one thing on this site. A badge saying where a record
      came from is not a risk level, and giving it the palette would say a
      model outlook is more dangerous than an observed event. */
-  const css = read('portal.css');
-  const rule = (css.match(/\.ftable \.prov\{[^}]*\}/) || [''])[0];
+  /* Styled once, in risk.css, beside the scale it is deliberately not on -
+     portal.css used to carry a second copy scoped to .ftable. */
+  const css = read('risk.css');
+  const rule = (css.match(/\.prov,[^{]*\{[^}]*\}/) || [''])[0];
   assert.ok(rule, 'the provenance badge has no styling of its own');
   assert.match(rule, /background:transparent/, 'a provenance badge is filled like a risk badge');
+  assert.doesNotMatch(read('portal.css'), /\.ftable \.prov\{/,
+    'a second copy of the provenance styling is back in portal.css');
   const r = await open();
   for (const el of r.document.querySelectorAll('#cards .prov')) {
     assert.equal(el.classList.contains('badge'), false,
