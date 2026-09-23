@@ -824,6 +824,56 @@ test('a claim naming two hazards needs both of them watched', () => {
     'a compound claim was credited with coverage of only one of its hazards');
 });
 
+test('a window nothing covers says why, and never calls a full record empty', () => {
+  /* The live record held four disasters and two scans, and 305 flood,
+     wildfire and volcano windows said "The record of observed disasters is
+     empty". It was not: the scans had run, and no source they read is
+     complete for those hazards in those places. */
+  const exhaustive = (h) => ({ hazards: [h], scope: { kind: 'global' },
+    completeness: 'exhaustive', recordsObservations: true });
+  const scan = (t, providers) => ({ scanTimestamp: t, providers });
+  const up = name => ({ provider: name, status: 'SCANNED' });
+  const quakesOnly = { providers: { quake: exhaustive('Earthquake') },
+    scans: [scan('2026-09-01T00:00:00Z', [up('quake')]), scan('2026-09-01T04:00:00Z', [up('quake')])] };
+  const cover = led => claim => V.observedCoverageFor(led, claim.hazards || claim.hazard, claim.geography);
+
+  // Scans ran, but nothing they read can vouch for a flood in Nepal.
+  const flood = V.observedCoverageFor(quakesOnly, 'flood', { country: 'Nepal' });
+  assert.equal(flood.why, 'not-watched');
+  const unwatched = grade(prediction(), [], { observedCoverage: cover(quakesOnly) });
+  assert.equal(unwatched.classification, 'PENDING');
+  assert.equal(unwatched.gradeable, false);
+  assert.equal(unwatched.ungradeableReason, 'ABSENCE_NOT_ESTABLISHABLE');
+  assert.doesNotMatch(unwatched.classificationReason, /empty/,
+    'a record that holds scans was described as empty');
+  assert.match(unwatched.classificationReason, /not show that nothing happened/);
+
+  // No scan on record at all: that one is empty, and says so.
+  assert.equal(V.observedCoverageFor({ scans: [] }, 'flood', { country: 'Nepal' }).why, 'no-scans');
+  assert.equal(V.observedCoverageFor(null, ['flood', 'landslide'], {}).why, 'no-scans');
+  const none = grade(prediction(), [], { observedCoverage: cover({ scans: [] }) });
+  assert.equal(none.ungradeableReason, 'OBSERVED_RECORD_EMPTY');
+  assert.match(none.classificationReason, /No scan of the disaster sources has been recorded yet/);
+  // Undated scans establish nothing, so they are not scans either.
+  assert.equal(V.observedCoverageFor({ providers: quakesOnly.providers,
+    scans: [scan('', [up('quake')])] }, 'earthquake', {}).why, 'no-scans');
+
+  // Each hazard of a compound claim watched, but never both at once.
+  const apart = { providers: { quake: exhaustive('Earthquake'), slide: exhaustive('Landslide') },
+    scans: [scan('2026-09-01T00:00:00Z', [up('quake')]), scan('2026-09-03T00:00:00Z', [up('slide')])] };
+  const both = V.observedCoverageFor(apart, ['earthquake', 'landslide'], { country: 'Nepal' });
+  assert.equal(both.why, 'not-together');
+  assert.equal(both.scans, 1, 'the scan count of a compound claim changed with its reason');
+  assert.equal(V.observedCoverageFor(apart, ['earthquake', 'flood'], { country: 'Nepal' }).why, 'not-watched');
+
+  // Only the reason moved: a disaster on record still bears the forecast out.
+  assert.equal(grade(prediction(), [disaster()], { observedCoverage: cover(quakesOnly) }).classification, 'HIT');
+  // And a window the scans do cover still fails for an absence.
+  const quake = prediction({ type: 'Earthquake', title: '3-day Earthquake risk outlook — Nepal',
+    targetStart: '2026-09-01T00:00:00Z', targetEnd: '2026-09-01T03:00:00Z', freezeTimestamp: '2026-08-31T00:00:00Z' });
+  assert.equal(grade(quake, [], { observedCoverage: cover(quakesOnly) }).classification, 'MISS_FALSE_POSITIVE');
+});
+
 /* ------------- what a hit needs, and what a false positive needs */
 
 test('a disaster on record bears a forecast out whether or not an absence could have been shown', () => {
@@ -1025,10 +1075,11 @@ test('a claim that follows no particular disaster is not gated on attribution', 
 test('a change to what a verdict means changes the version it is stamped with', () => {
   /* 1.3.0 credits legacy rows from recordedAt and measures recall only from
      the first independent prediction. Verdicts under the old reading would
-     otherwise carry the same stamp as the new ones. */
-  assert.equal(V.VERIFICATION_VERSION, 'verify-1.3.0');
+     otherwise carry the same stamp as the new ones. 1.3.1 changes only the
+     reason an uncovered window gives, and is stamped all the same. */
+  assert.equal(V.VERIFICATION_VERSION, 'verify-1.3.1');
   const legacy = { id: 'x', type: 'Flood', targetStart: '2026-09-14T00:00:00Z', targetEnd: '2026-09-20T00:00:00Z',
     recordedAt: '2026-09-15T00:00:00Z', lat: 1, lon: 1 };
   assert.equal(V.verify(legacy, [], { now: Date.parse('2026-09-16T00:00:00Z'), hazardFamilyOf: H,
-    observedCoverage: { from: null, to: null } }).verificationVersion, 'verify-1.3.0');
+    observedCoverage: { from: null, to: null } }).verificationVersion, 'verify-1.3.1');
 });
