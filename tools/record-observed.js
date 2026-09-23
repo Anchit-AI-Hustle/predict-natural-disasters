@@ -35,6 +35,13 @@ if (!eventsPath || !ledgerPath) {
 const feed = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
 const events = Array.isArray(feed.events) ? feed.events : [];
 const now = new Date().toISOString();
+/* When the providers were actually read, and which scan that was. Everything
+   about what was OBSERVED is dated from here; only the ledger's own
+   bookkeeping - when a row was first written, when a figure was revised in
+   this file - is dated from the clock. */
+const scan = (feed.meta && feed.meta.scan) || {};
+const scanId = scan.scanId || null;
+const observedAt = scan.scanTimestamp || feed.generatedAt || now;
 
 let ledger = { schemaVersion: 1, events: [] };
 try {
@@ -74,7 +81,23 @@ try {
  */
 const SIGHTING_GAP_HOURS = 6;
 
-function noteSighting(row, at) {
+/*
+ * A sighting is dated by the scan that saw it, never by the clock here.
+ *
+ * The refresh job fetches the feed once, records the outlooks from it - which
+ * is the moment their freeze happens - and only then records the
+ * observations. Stamping a sighting with this tool's own start time therefore
+ * dated it a few milliseconds AFTER the freeze of a forecast derived from the
+ * very same snapshot. Measured: a continuation outlook frozen at
+ * 03:41:17.676Z, its source cyclone sighted at 03:41:17.721Z, graded HIT on
+ * that 45-millisecond "continuation" with no later scan ever showing the
+ * hazard carried on. The snapshot a forecast was derived from cannot be
+ * evidence that the hazard continued after it, and dating the sighting when
+ * the providers were actually read - before the freeze - is what makes that
+ * true rather than merely intended. The scan is also named on the run, so a
+ * verifier can tell one snapshot's evidence from another's.
+ */
+function noteSighting(row, at, scanId) {
   const t = Date.parse(at);
   if (!Array.isArray(row.sightings)) {
     /* A row written before this existed still knows two moments. */
@@ -83,8 +106,17 @@ function noteSighting(row, at) {
   }
   const last = row.sightings[row.sightings.length - 1];
   const lastTo = Date.parse(last && last.to);
-  if (last && Number.isFinite(lastTo) && t - lastTo <= SIGHTING_GAP_HOURS * 3600e3) last.to = at;
-  else row.sightings.push({ from: at, to: at });
+  /* A feed older than what is already recorded says nothing new; it must
+     never drag a run's end backwards. */
+  if (Number.isFinite(lastTo) && Number.isFinite(t) && t <= lastTo) return;
+  if (last && Number.isFinite(lastTo) && t - lastTo <= SIGHTING_GAP_HOURS * 3600e3) {
+    last.to = at;
+    if (scanId) last.toScan = scanId;
+  } else {
+    const run = { from: at, to: at };
+    if (scanId) { run.fromScan = scanId; run.toScan = scanId; }
+    row.sightings.push(run);
+  }
   row.lastSeenAt = at;
 }
 
@@ -103,7 +135,8 @@ const canonical = OBS.canonicalise(observed);
 const significant = canonical.filter(c => c.significant);
 
 /* Frozen once: what the event is. Everything else is still being learned. */
-const FROZEN = ['canonicalEventId', 'hazard', 'onset', 'firstRecordedAt', 'geographyAtFirstRecord'];
+const FROZEN = ['canonicalEventId', 'hazard', 'onset', 'firstRecordedAt', 'geographyAtFirstRecord',
+  'significanceAtEntry'];
 /* Updatable, with every change written into revisions. */
 const TRACKED = ['end', 'severity', 'alert', 'deaths', 'injuries', 'missing', 'affected',
   'displaced', 'evacuated', 'infrastructureImpact', 'impactLastUpdated', 'evidenceConfidence',
@@ -218,8 +251,22 @@ const differenceNote = (a, b) => {
 };
 
 let added = 0, updated = 0, changes = 0, superseded = 0, reidentified = 0, distinguished = 0;
+let belowBarNew = 0, belowBarUpdated = 0;
 
-for (const c of significant) {
+/*
+ * The bar decides what ENTERS this ledger, not what may go on being learned
+ * about what is already in it.
+ *
+ * Filtering the whole reconciliation by significance dropped a recorded
+ * disaster the moment it fell below the bar while still being carried - a
+ * cyclone weakening from orange to green, a flood whose displacement figure
+ * is withdrawn - and everything still being learned about it stopped with it:
+ * its sighting run ended, its end date and alert level froze at the last
+ * qualifying run, and a continuation outlook covering that period lost the
+ * evidence that the hazard had gone on. A row that is in the ledger is
+ * reconciled on every run; only a new row has to clear the bar.
+ */
+for (const c of canonical) {
   const { candidates, idMatch, collision } = findExisting(c);
   /* A record that bridges two previously separate events means they were one
      disaster all along. The earliest-recorded row keeps the identity; the
@@ -227,6 +274,8 @@ for (const c of significant) {
      visible and nothing silently disappears from the denominator. */
   candidates.sort((a, b) => String(a.firstRecordedAt || '').localeCompare(String(b.firstRecordedAt || '')));
   const existing = candidates[0];
+  if (!existing && !c.significant) { belowBarNew++; continue; }
+  if (existing && !c.significant) belowBarUpdated++;
   for (const extra of candidates.slice(1)) {
     if (extra.supersededBy) continue;
     extra.supersededBy = existing.canonicalEventId;
@@ -238,9 +287,15 @@ for (const c of significant) {
   if (!existing) {
     const row = Object.assign({}, c, {
       firstRecordedAt: now,
+      /* Why it qualified, as at the moment it entered. significanceReason
+         goes on tracking the current assessment, so without this the answer
+         to "why is this in the denominator" would be overwritten the first
+         time the disaster eased. */
+      significanceAtEntry: c.significanceReason,
       geographyAtFirstRecord: c.geography,
-      lastSeenAt: now,
-      sightings: [{ from: now, to: now }]
+      lastSeenAt: observedAt,
+      sightings: [Object.assign({ from: observedAt, to: observedAt },
+        scanId ? { fromScan: scanId, toScan: scanId } : {})]
     });
     /* Recording this disaster under an id another one already holds would
        hand both to whichever lookup ran first, so it is written under a
@@ -265,7 +320,7 @@ for (const c of significant) {
     continue;
   }
 
-  noteSighting(existing, now);
+  noteSighting(existing, observedAt, scanId);
   /* Recognised by the id alone: no provider record this run overlaps the ones
      already recorded, so the reason the two are one disaster is the match
      itself, and it is written down rather than assumed. */
@@ -312,11 +367,13 @@ for (const c of significant) {
        honest reading; the revision records that it stopped being published. */
     if (after === null && before !== null) {
       (existing.revisions = existing.revisions || []).push(
-        { at: now, field: f, from: before, to: null, note: 'No longer reported upstream; the recorded figure is kept.' });
+        { at: now, observedAt: observedAt, scanId: scanId, field: f, from: before, to: null,
+          note: 'No longer reported upstream; the recorded figure is kept.' });
       changes++;
       continue;
     }
-    (existing.revisions = existing.revisions || []).push({ at: now, field: f, from: before, to: after });
+    (existing.revisions = existing.revisions || []).push(
+      { at: now, observedAt: observedAt, scanId: scanId, field: f, from: before, to: after });
     existing[f] = after;
     changes++;
   }
@@ -334,7 +391,7 @@ ledger.method = {
   sightings: 'Each event records the runs during which it was actually being carried by a provider, not only the last time it was seen. A single latest timestamp is overwritten on the next run, which destroys the evidence that a disaster was in the feed throughout a forecast window that has since closed. Consecutive sightings more than ' + SIGHTING_GAP_HOURS + ' hours apart start a new run rather than being joined.',
   frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions.',
   identity: 'A canonical id is a country, a rounded position and a minute, so two separate disasters can derive the same one. An id already held is believed only where the provider records overlap or the two rows can be the same occurrence under this hazard\u2019s matching window; otherwise the new disaster is recorded under a distinguished id, carrying the id it derived and the measured reason the two were not merged.',
-  notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed.',
+  notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed. The bar decides what enters: a disaster already recorded goes on being reconciled on every run even when it eases below it, because what is still being learned about it - how long it was carried, when it ended, what it did - does not stop being true. Each row keeps the reason it qualified on entry, under significanceAtEntry, beside the current assessment.',
   observationsOnly: 'Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations.'
 };
 ledger.lastRun = {
@@ -343,6 +400,8 @@ ledger.lastRun = {
   providerRecordsNotObservations: notObservations,
   canonicalEventsFound: canonical.length,
   significant: significant.length,
+  belowBarNotRecorded: belowBarNew,
+  belowBarStillReconciled: belowBarUpdated,
   supersededThisRun: superseded,
   reidentifiedThisRun: reidentified,
   distinguishedFromCollidingIdThisRun: distinguished,

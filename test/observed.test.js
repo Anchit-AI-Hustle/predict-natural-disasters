@@ -425,6 +425,143 @@ test('an earthquake survives its agencies changing places', () => {
   fs.rmSync(path.dirname(led), { recursive: true, force: true });
 });
 
+test('a forecast cannot be verified by the snapshot it was derived from', () => {
+  /* The refresh job fetches the feed once, records the outlooks from it -
+     which is the moment their freeze happens - and only then records the
+     observations. Stamped with this tool's own start time, the source
+     cyclone's sighting landed a few milliseconds AFTER the freeze of the
+     outlook derived from it, and continuedActivity took that for evidence
+     that the hazard had carried on: measured, a continuation outlook frozen
+     at 03:41:17.676Z was graded HIT on a sighting at 03:41:17.721Z, with no
+     later scan ever showing anything. */
+  const V = require(path.join(ROOT, 'verification-model.js'));
+  const now = Date.now();
+  const snapshot = (scanId, at) => {
+    const cyclone = { id: 'gdacs-tc-1', type: 'Tropical Cyclone', title: 'Tropical Cyclone RAI-26',
+      source: 'GDACS', sourceUrl: 'https://gdacs.example/tc1', country: 'Philippines',
+      region: 'Eastern Visayas', lat: 11.2, lon: 125.0, alert: 'Orange', severity: 'SEVERE',
+      deaths: 4, startedAt: new Date(now - 30 * 36e5).toISOString(), updated: at,
+      locationPrecision: 'incident', evidenceState: 'observed' };
+    const outlook = { id: 'OUT-tc-1', type: 'Tropical Cyclone',
+      title: '2-day Tropical Cyclone outlook \u2014 Eastern Visayas', source: 'Derived',
+      sourceUrl: 'https://gdacs.example/tc1', country: 'Philippines', region: 'Eastern Visayas',
+      lat: 11.2, lon: 125.0, forecast: true, forecastKind: 'signal-derived-outlook',
+      forecastOf: 'gdacs-tc-1', forecastScope: 'event', severity: 'SEVERE', alert: 'Orange',
+      issuedAt: at, targetStart: new Date(now - 6e4).toISOString(),
+      targetEnd: new Date(now + 2 * 864e5).toISOString(),
+      evidence: 'Derived from an active cyclone', verificationRule: 'Continued activity in the window.' };
+    return { generatedAt: at, events: [cyclone, outlook],
+      meta: { scan: { scanId: scanId, scanTimestamp: at, engineVersion: 'e1',
+        providers: [{ provider: 'gdacs', label: 'GDACS', hazards: ['Tropical Cyclone'],
+          status: 'SCANNED', success: true, geographicCoverage: 'Global', scope: { kind: 'global' },
+          completeness: 'selective', completenessBasis: 'alert-level only',
+          recordsObservations: true, recordsEvaluated: 1, recordsServed: 1 }] } } };
+  };
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-snap-'));
+  const outlooks = path.join(dir, 'outlooks.json');
+  const observed = path.join(dir, 'observed.json');
+  fs.writeFileSync(outlooks, '[]\n');
+  fs.writeFileSync(observed, JSON.stringify({ schemaVersion: 1, events: [] }));
+  const run = (tool, feedPath, ledger) => require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', tool), feedPath, ledger], { encoding: 'utf8' });
+  const write = (body, tag) => {
+    const f = path.join(dir, tag + '.json');
+    fs.writeFileSync(f, JSON.stringify(body));
+    return f;
+  };
+  /* The job's order, from one fetch: outlooks first, observations second. */
+  const first = write(snapshot('scan-1', new Date(now - 6e4).toISOString()), 'run1');
+  run('record-outlooks.js', first, outlooks);
+  run('record-observed.js', first, observed);
+
+  const row = JSON.parse(fs.readFileSync(outlooks, 'utf8'))[0];
+  const event = JSON.parse(fs.readFileSync(observed, 'utf8')).events[0];
+  assert.equal(row.forecastClass, 'continuation-outlook', 'control: this must be a continuation outlook');
+  assert.ok(Date.parse(event.sightings[0].to) < Date.parse(row.freezeTimestamp),
+    'the sighting is dated after the freeze of a forecast drawn from the same snapshot');
+  assert.equal(event.sightings[0].toScan, 'scan-1', 'the sighting does not name the scan that saw it');
+  assert.equal(row.sourceScanId, 'scan-1', 'the outlook does not name the scan it was derived from');
+
+  const grade = () => V.verify(JSON.parse(fs.readFileSync(outlooks, 'utf8'))[0],
+    JSON.parse(fs.readFileSync(observed, 'utf8')).events,
+    { now: Date.parse(row.targetEnd) + 36e5, hazardFamilyOf: OBS.familyOf,
+      observedCoverage: { from: new Date(now - 864e5).toISOString(),
+        to: new Date(now + 3 * 864e5).toISOString() } });
+
+  const alone = grade();
+  assert.notEqual(alone.classification, 'HIT',
+    'an outlook was verified by the very snapshot it was derived from');
+  assert.equal(alone.gradeable, false);
+  assert.match(alone.classificationReason, /whether it continued|neither way/i);
+
+  /* The control, and the thing that must still work: a later scan carries the
+     same cyclone, which is genuine evidence that it went on. */
+  const second = write(snapshot('scan-2', new Date(now + 2 * 36e5).toISOString()), 'run2');
+  run('record-observed.js', second, observed);
+  const after = grade();
+  assert.equal(after.classification, 'HIT',
+    'a later scan still carrying the hazard is what a continuation outlook claims');
+  assert.match(after.classificationReason, /still being reported/i);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a disaster that eases below the bar goes on being reconciled', () => {
+  /* The significance filter ran before reconciliation, so a recorded disaster
+     dropped out of the run the moment it fell below the bar while still being
+     carried. Its sighting run ended there, its end date and alert froze at
+     the last qualifying scan, and a continuation outlook covering that period
+     lost the evidence the hazard had gone on. */
+  const led = freshLedger();
+  const at = t => new Date(Date.parse('2026-09-10T00:00:00Z') + t * 36e5).toISOString();
+  const cyclone = (alert, deaths, t) => ({
+    id: 'gdacs-tc-9', type: 'Tropical Cyclone', title: 'Tropical Cyclone TEST',
+    source: 'GDACS', sourceUrl: 'https://gdacs.example/tc9', country: 'Philippines',
+    region: 'Eastern Visayas', lat: 11.2, lon: 125.0, alert: alert, deaths: deaths,
+    severity: 'SEVERE', startedAt: at(0), updated: at(t), locationPrecision: 'incident',
+    evidenceState: 'observed'
+  });
+  const feed = (events, scanId, t) => ({ generatedAt: at(t), events: events,
+    meta: { scan: { scanId: scanId, scanTimestamp: at(t) } } });
+  const record = (body, tag) => {
+    const f = path.join(path.dirname(led), tag + '.json');
+    fs.writeFileSync(f, JSON.stringify(body));
+    require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', 'record-observed.js'), f, led], { encoding: 'utf8' });
+  };
+
+  record(feed([cyclone('Orange', 2, 1)], 'scan-a', 1), 'a');
+  const entered = JSON.parse(fs.readFileSync(led, 'utf8')).events[0];
+  assert.ok(entered, 'control: an orange cyclone with deaths should enter the ledger');
+  assert.match(entered.significanceAtEntry, /Deaths reported/);
+
+  /* Three hours later it is still being carried, now eased to green with no
+     new deaths reported: below the bar, and still the same disaster. */
+  record(feed([cyclone('Green', null, 4)], 'scan-b', 4), 'b');
+  const rows = JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  assert.equal(rows.length, 1, 'the eased cyclone was recorded as a second disaster');
+  const row = rows[0];
+  assert.equal(row.sightings[row.sightings.length - 1].to, at(4),
+    'the sighting stopped the moment the disaster eased below the bar');
+  assert.equal(row.alert, 'Green', 'the alert level froze at the last qualifying scan');
+  assert.equal(row.deaths, 2, 'a reported death toll was dropped when the provider stopped publishing it');
+  assert.equal(row.significanceAtEntry, entered.significanceAtEntry,
+    'the reason this disaster entered the ledger was overwritten');
+  assert.ok((row.revisions || []).some(r => r.field === 'alert' && r.to === 'Green'),
+    'the change of alert level was not recorded as a revision');
+
+  /* And the bar still decides what enters: a hazard record that never
+     qualified is not recorded at all. */
+  const minor = Object.assign(cyclone('Green', null, 5), { id: 'gdacs-tc-10', lat: -20, lon: 60,
+    region: 'Mascarene Islands', country: 'Mauritius' });
+  record(feed([minor], 'scan-c', 5), 'c');
+  const after = JSON.parse(fs.readFileSync(led, 'utf8'));
+  assert.equal(after.events.length, 1, 'a hazard record below the bar entered the ledger');
+  assert.equal(after.lastRun.belowBarNotRecorded, 1,
+    'the run does not say how many below-bar events it left out');
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
 test('the ledger states how it decides what it holds', () => {
   const led = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
   assert.ok(Array.isArray(led.events), 'the observed ledger has no events array');
@@ -489,6 +626,64 @@ test('an official warning is not a disaster that happened', async () => {
   assert.match(String(led.method.observationsOnly || ''), /warning/i,
     'the ledger does not state that warnings are not observations');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a colour this site computed is not an alert an authority issued', async () => {
+  /* `alert` is the display level, and for some providers this site works it
+     out itself: the hurricane centre publishes a wind speed, and 64 and 96
+     knots become orange and red here. Read as an authority's alert, an active
+     hurricane over open water with nothing reported entered the record of
+     observed disasters - into the recall denominator, as an event nothing
+     forecast - and stated on its face that an authority had raised an alert
+     nobody raised. */
+  const { events } = await feed();
+  const nhc = events.filter(e => !e.forecast && /Hurricane Center/i.test(String(e.source || '')));
+  assert.ok(nhc.length > 0, 'the fixture no longer carries a hurricane-centre record');
+  const storm = nhc.find(e => e.alert === 'Red' || e.alert === 'Orange');
+  assert.ok(storm, 'control: this needs a storm the site paints red or orange');
+  assert.equal(storm.alertBasis, 'derived-from-intensity',
+    'the record does not say the colour was derived rather than issued');
+  assert.equal(storm.deaths === undefined || storm.deaths === null, true,
+    'control: this storm should have no reported impact');
+  assert.equal(OBS.significanceOf(storm).significant, false,
+    'a wind speed painted red entered the ledger as a disaster that happened');
+  assert.match(OBS.significanceOf(storm).reason, /No reported casualties/);
+
+  /* It is not excluded for being a cyclone: the same storm, once it does
+     something, enters on what it did. */
+  assert.equal(OBS.significanceOf(Object.assign({}, storm, { deaths: 3 })).significant, true,
+    'a storm with a reported death toll must still count');
+
+  /* And a level an authority really did issue still counts. */
+  const issued = events.find(e => !e.forecast && e.alertBasis === 'issued' &&
+    (e.alert === 'Red' || e.alert === 'Orange'));
+  assert.ok(issued, 'the fixture no longer carries an authority-issued alert level');
+  assert.equal(OBS.significanceOf(issued).significant, true);
+  /* On the alert branch itself: the same record with nothing reported still
+     qualifies, because an authority raised the level. */
+  const levelAlone = Object.assign({}, issued, { deaths: null, missing: null,
+    displaced: null, affected: null, magnitude: null, source: 'Test provider' });
+  assert.equal(OBS.significanceOf(levelAlone).significant, true,
+    'an alert an authority issued no longer counts on its own');
+  assert.match(OBS.significanceOf(levelAlone).reason, /issuing authority/);
+  assert.equal(OBS.significanceOf(Object.assign({}, levelAlone,
+    { alertBasis: 'derived-from-intensity' })).significant, false,
+    'the same level, derived rather than issued, still counted');
+
+  /* Nothing may clear the bar on an alert level without saying who issued
+     it, anywhere in the feed. */
+  for (const e of observedOf(events)) {
+    const why = OBS.significanceOf(e);
+    if (!/issuing authority/.test(why.reason)) continue;
+    assert.equal(e.alertBasis, 'issued',
+      e.id + ' claims an authority alert without recording that one was issued');
+  }
+  /* The canonical row carries it too, or the question would be answered one
+     way of the provider record and another of the disaster. */
+  const canon = OBS.canonicalise(observedOf(events)).find(c => c.evidence.some(x => x.id === storm.id));
+  assert.equal(canon.alertBasis, 'derived-from-intensity');
+  assert.equal(canon.significant, false,
+    'the storm entered the recall denominator through the canonical row instead');
 });
 
 test('a volcano alert level is a status, not a disaster that happened', async () => {

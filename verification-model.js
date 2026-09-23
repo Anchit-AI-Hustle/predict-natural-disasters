@@ -158,6 +158,9 @@
         partialHitWeight: PARTIAL_WEIGHT
       },
       freezeTimestamp: p.freezeTimestamp || null,
+      /* The scan whose snapshot this forecast was derived from. Its own
+         source cannot show that the hazard continued after it. */
+      sourceScanId: p.sourceScanId || null,
       forecastClass: p.forecastClass || null
     };
   }
@@ -270,7 +273,31 @@
    * as "inside the window". The mirror image of the defect this function was
    * written to fix, and the one that flatters.
    */
-  function continuedActivity(event, from, to, kind) {
+  /*
+   * Does this revision report MORE impact, or only a different figure?
+   *
+   * The observed ledger deliberately records a figure that stopped being
+   * published as a revision to null, and it records downward corrections
+   * too. Reading either as "an additional impact" let a mainshock's death
+   * toll being withdrawn, or corrected from 12 to 8, grade an aftershock
+   * outlook a hit though nothing further had happened. Prose counts only
+   * where there was none before, since one description replacing another
+   * says nothing about which is worse.
+   */
+  function reportsMoreImpact(rev) {
+    if (!rev) return false;
+    var to = rev.to, from = rev.from;
+    if (to === null || to === undefined || to === '') return false;
+    var nTo = Number(to), nFrom = Number(from);
+    if (typeof to === 'string' && !isFinite(nTo)) {
+      return from === null || from === undefined || from === '';
+    }
+    if (!isFinite(nTo)) return false;
+    if (from === null || from === undefined || from === '') return nTo > 0;
+    return isFinite(nFrom) ? nTo > nFrom : true;
+  }
+
+  function continuedActivity(event, from, to, kind, sourceScanId) {
     if (from === null) return null;
     var impactOnly = kind === 'new-impact';
     var onset = ms(event.onset);
@@ -299,6 +326,9 @@
         if (sa === null || sb === null) continue;
         if (to !== null && sa > to) continue;
         if (sb < from) continue;
+        /* A run that ends at the forecast's own snapshot shows what was
+           already there when it was written, not that anything carried on. */
+        if (sourceScanId && sg.toScan === sourceScanId) continue;
         marks.push({ at: Math.max(sa, from),
           text: 'It was still being reported inside the window: its provider was carrying it from ' +
             sg.from + ' to ' + sg.to + '.' });
@@ -309,8 +339,13 @@
     }
     for (var r = 0; r < (event.revisions || []).length; r++) {
       var rev = event.revisions[r];
-      if (impactOnly && IMPACT_FIELDS.indexOf(rev.field) < 0) continue;
-      marks.push({ at: ms(rev.at), what: 'its ' + rev.field + ' was revised' });
+      if (sourceScanId && rev.scanId === sourceScanId) continue;
+      if (impactOnly) {
+        if (IMPACT_FIELDS.indexOf(rev.field) < 0) continue;
+        if (!reportsMoreImpact(rev)) continue;
+      }
+      marks.push({ at: ms(rev.at),
+        what: 'its ' + rev.field + (impactOnly ? ' rose to ' + rev.to : ' was revised') });
     }
     var best = null;
     for (var i = 0; i < marks.length; i++) {
@@ -462,7 +497,7 @@
         /* The disaster this outlook is about. It predates the freeze because
            that is what a continuation outlook is; what has to fall inside the
            window is the evidence that it carried on. */
-        var act = continuedActivity(ev, start, end, continuationKind);
+        var act = continuedActivity(ev, start, end, continuationKind, claim.sourceScanId);
         if (act) { matched.push({ event: ev, level: geo.level, why: geo.why + ' ' + act.why }); }
         else { awaitingActivity.push({ event: ev, level: geo.level, why: geo.why }); }
         continue;
@@ -924,7 +959,7 @@
     providerCanEstablishAbsence: providerCanEstablishAbsence,
     observedCoverageFor: observedCoverageFor, MAX_SCAN_GAP_HOURS: MAX_SCAN_GAP_HOURS,
     providersFor: providersFor,
-    continuedActivity: continuedActivity, CONTINUATION_CLASSES: CONTINUATION_CLASSES,
+    continuedActivity: continuedActivity, reportsMoreImpact: reportsMoreImpact, CONTINUATION_CLASSES: CONTINUATION_CLASSES,
     CONTINUATION_EVIDENCE: CONTINUATION_EVIDENCE, IMPACT_FIELDS: IMPACT_FIELDS,
     providerCoversPlace: providerCoversPlace
   };

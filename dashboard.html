@@ -53,8 +53,10 @@ function adapt(e){const x=String(e.type||'').toLowerCase(),cls=dashType(e.type),
     status:e.forecast?'experimental':(e.sourceType==='official'?'official':'observed'),
     src:e.source||'',official:e.sourceType==='official'&&!e.forecast,experimental:!!e.forecast,
     lat:Number(e.lat),lon:Number(e.lon),region:e.country||e.region||'',
-    /* Severity follows the issuing authority's own alert level rather than a
-       number invented per event. */
+    /* Severity follows the published alert level rather than a number
+       invented per event - the issuing authority's own where the provider
+       issues one, and this site's mapping of the measured intensity where it
+       does not. */
     sev:DASH_SEV[e.alert]!=null?DASH_SEV[e.alert]:38,
     updated:e.updated||e.targetStart||new Date().toISOString(),
     desc:e.details||''};}

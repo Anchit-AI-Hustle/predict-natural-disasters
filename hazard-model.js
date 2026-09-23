@@ -242,7 +242,12 @@
     return 0;
   }
 
-  /** Severity from the level the issuing authority actually published. */
+  /** Severity from the published level, rather than a number invented per
+      event: an authority's own alert where the provider issues one, and this
+      site's mapping of a measured intensity where it does not (a record says
+      which, under alertBasis). Both are evidence about how grave the hazard
+      is; only the first is evidence that an authority declared anything, and
+      that distinction is the observed ledger's business, not this ranking's. */
   function alertRank(e) {
     /* Every assessment on the record is weighed and the gravest wins. Returning
        on the first one that matched meant a record could be made *less* severe

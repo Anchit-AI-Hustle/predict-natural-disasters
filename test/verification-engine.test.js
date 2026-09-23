@@ -430,6 +430,69 @@ test('a report dated after the window closed is not evidence from inside it', ()
   assert.equal(at('2026-09-07T00:00:01Z'), null, 'a second after the window is not inside it');
 });
 
+test('the scan a forecast was derived from is not evidence that came after it', () => {
+  /* Dating sightings by the scan that saw them keeps the ordinary case
+     honest, but a forecast whose freeze is evidenced EARLIER than the
+     recording - a hand-frozen record the repository can show - has a freeze
+     before its own snapshot, and that snapshot's sighting then falls inside
+     the window. It is still the record the forecast was drawn from, so it
+     cannot show the hazard continued afterwards; the scan is named on both
+     sides so the two can be told apart. */
+  const p = prediction({ forecastClass: 'continuation-outlook',
+    freezeTimestamp: '2026-09-02T00:00:00Z', sourceScanId: 'scan-1',
+    targetStart: '2026-09-02T00:00:00Z', targetEnd: '2026-09-05T00:00:00Z' });
+  const sighted = scan => disaster({ onset: '2026-09-01T00:00:00Z',
+    sightings: [{ from: '2026-09-03T00:00:00Z', to: '2026-09-03T06:00:00Z',
+      fromScan: scan, toScan: scan }] });
+
+  const own = grade(p, [sighted('scan-1')]);
+  assert.notEqual(own.classification, 'HIT',
+    'a forecast was borne out by the snapshot it was derived from');
+  assert.equal(own.gradeable, false);
+  const later = grade(p, [sighted('scan-2')]);
+  assert.equal(later.classification, 'HIT',
+    'a later scan still carrying the hazard is what this class claims');
+});
+
+test('a withdrawn or reduced impact figure is not an additional impact', () => {
+  /* The observed ledger deliberately records a figure that stopped being
+     published as a revision to null - the reported figure is kept, and the
+     withdrawal is recorded - and it records downward corrections too. Reading
+     either as "an additional impact" made a mainshock's death toll being
+     withdrawn, or corrected from 12 to 8, grade an aftershock outlook a hit
+     though nothing further had happened. */
+  const windowed = extra => prediction(Object.assign({
+    forecastClass: 'post-event-conditional',
+    freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
+  }, extra));
+  const withRevision = rev => disaster({ onset: '2026-09-03T00:00:00Z',
+    revisions: [Object.assign({ at: '2026-09-05T12:00:00Z' }, rev)] });
+
+  assert.equal(grade(windowed(), [withRevision({ field: 'deaths', from: 12, to: null,
+    note: 'No longer reported upstream; the recorded figure is kept.' })]).classification,
+    'PENDING', 'a withdrawn death toll was credited as an additional impact');
+  assert.equal(grade(windowed(), [withRevision({ field: 'deaths', from: 12, to: 8 })]).classification,
+    'PENDING', 'a death toll corrected downwards was credited as an additional impact');
+  assert.equal(grade(windowed(), [withRevision({ field: 'deaths', from: null, to: 0 })]).classification,
+    'PENDING', 'a reported zero was credited as an additional impact');
+  assert.equal(grade(windowed(), [withRevision({ field: 'infrastructureImpact',
+    from: 'Bridges down', to: 'Roads closed' })]).classification,
+    'PENDING', 'one description replacing another was credited as an additional impact');
+
+  /* The controls: impact that actually grew, and impact reported where there
+     was none, are what this class is graded on. */
+  assert.equal(grade(windowed(), [withRevision({ field: 'deaths', from: 1, to: 6 })]).classification,
+    'HIT', 'an impact that actually rose was not credited');
+  assert.equal(grade(windowed(), [withRevision({ field: 'displaced', from: null, to: 400 })]).classification,
+    'HIT', 'an impact reported where there was none was not credited');
+  assert.equal(grade(windowed(), [withRevision({ field: 'infrastructureImpact',
+    from: null, to: 'Two bridges lost' })]).classification,
+    'HIT', 'newly reported damage was not credited');
+  assert.equal(V.reportsMoreImpact({ field: 'deaths', from: 12, to: null }), false);
+  assert.equal(V.reportsMoreImpact({ field: 'deaths', from: 12, to: 20 }), true);
+});
+
 test('an aftershock outlook is not verified by the mainshock still being in the feed', () => {
   /* Its published rule is "grade against observed aftershock activity and any
      additional impacts in the window". The mainshock sits in the USGS feed

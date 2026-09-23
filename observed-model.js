@@ -257,6 +257,18 @@
    * that matter among hundreds that never mattered. The bar is stated on each
    * record so it can be argued with.
    */
+  /**
+   * Did an authority issue this alert level, or did this site work it out?
+   *
+   * Only a record that says an authority issued it counts as one. Absence is
+   * not issuance: a provider whose colour this site derives, or one that
+   * records nothing about where its level came from, cannot support a claim
+   * about what an authority declared.
+   */
+  function issuedAlert(e) {
+    return String((e && e.alertBasis) || '') === 'issued';
+  }
+
   function significanceOf(e) {
     var deaths = num(e.deaths), missing = num(e.missing);
     var displaced = num(e.displaced), affected = num(e.affected);
@@ -267,8 +279,21 @@
     if (missing !== null && missing > 0) return { significant: true, reason: 'People reported missing (' + missing + ').' };
     if (displaced !== null && displaced >= 1000) return { significant: true, reason: 'At least 1,000 people displaced (' + displaced + ').' };
     if (affected !== null && affected >= 10000) return { significant: true, reason: 'At least 10,000 people affected (' + affected + ').' };
-    if (alert === 'Red') return { significant: true, reason: 'Raised to a red alert by the issuing authority.' };
-    if (alert === 'Orange') return { significant: true, reason: 'Raised to an orange alert by the issuing authority.' };
+    /* An alert level counts only where an authority issued one.
+     *
+     * `alert` is this site's display colour, and for some providers the site
+     * computes it itself: the hurricane centre publishes a wind speed, and 64
+     * and 96 knots become orange and red here. Read as an authority's alert,
+     * a category-3 hurricane over open water with nothing reported entered
+     * this ledger as a disaster that happened - into the recall denominator,
+     * as an event nothing forecast - and said on its face that an authority
+     * had raised an alert nobody raised. A derived colour proves the wind
+     * speed and nothing else; such a record enters here on reported impact,
+     * like any other, or not at all. */
+    if (issuedAlert(e)) {
+      if (alert === 'Red') return { significant: true, reason: 'Raised to a red alert by the issuing authority.' };
+      if (alert === 'Orange') return { significant: true, reason: 'Raised to an orange alert by the issuing authority.' };
+    }
     if (/ReliefWeb/i.test(String(e.source || ''))) {
       return { significant: true, reason: 'Declared a disaster by ReliefWeb / UN OCHA.' };
     }
@@ -456,6 +481,11 @@
         sourceUrl: lead.sourceUrl || null,
         severity: lead.severity || null,
         alert: lead.alert || null,
+        /* Where the level came from travels with it. Without this the row
+           says "Red" and nothing about whether an authority issued it, and
+           anything asking the significance question of the row rather than of
+           the provider records underneath would answer differently. */
+        alertBasis: lead.alertBasis || null,
         deaths: impact.deaths,
         injuries: impact.injuries,
         missing: impact.missing,
@@ -508,7 +538,7 @@
   var api = {
     regionsCompatible: regionsCompatible,
     FAMILIES: FAMILIES.map(function (f) { return f[0]; }), MATCH: MATCH,
-    familyOf: familyOf, familiesOf: familiesOf, sameEvent: sameEvent,
+    familyOf: familyOf, familiesOf: familiesOf, sameEvent: sameEvent, issuedAlert: issuedAlert,
     sameOccurrence: sameOccurrence, sameCanonical: sameCanonical,
     significanceOf: significanceOf,
     canonicalise: canonicalise, distanceKm: distanceKm, impactOf: impactOf

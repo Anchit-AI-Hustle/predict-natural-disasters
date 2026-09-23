@@ -33,6 +33,13 @@ if (!eventsPath || !ledgerPath) {
 
 const feed = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
 const events = Array.isArray(feed.events) ? feed.events : [];
+/* Which scan's snapshot this forecast was derived from.
+ *
+ * A continuation outlook is derived from a hazard in this very feed, so the
+ * same snapshot's record of that hazard cannot be evidence that it carried on
+ * afterwards. Naming the scan lets the verifier tell the forecast's own
+ * source from a later observation of the same disaster. */
+const sourceScanId = ((feed.meta || {}).scan || {}).scanId || null;
 
 let ledger = [];
 try {
@@ -98,6 +105,7 @@ for (const e of events) {
      row could carry a window start a few milliseconds before the timestamp it
      stores as its own proof, and a verifier reading the ledger alone would
      find it inconsistent with itself. */
+  if (sourceScanId) row.sourceScanId = sourceScanId;
   if (HAZARDS) {
     row.freezeEvidenced = true;
     /* The row is built from FIELDS, which carries what a forecast says and

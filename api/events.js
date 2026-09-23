@@ -614,6 +614,7 @@ async function handler(req, res) {
         country: p.country || p.countryname || p.iso3 || '',
         region: p.location || p.description || '',
         alert: p.alertlevel || p.alertLevel || 'Green',
+        alertBasis: 'issued',
         lat: coords[1], lon: coords[0],
         startedAt: p.fromdate || p.fromDate || null,
         updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
@@ -646,6 +647,7 @@ async function handler(req, res) {
         country: tag('gdacs:country', b) || '',
         region: tag('gdacs:location', b) || '',
         alert: tag('gdacs:alertlevel', b) || 'Green',
+        alertBasis: 'issued',
         lat, lon,
         startedAt: tag('gdacs:fromdate', b) || null,
         updated: tag('gdacs:todate', b) || tag('pubDate', b) || now.toISOString(),
@@ -695,7 +697,9 @@ async function handler(req, res) {
           id: 'usgs-' + f.id,
           source: 'USGS', sourceType: 'official', type: 'Earthquake',
           title: spellUsPlaces(f.properties.title), country, admin1, region: place,
+          /* USGS PAGER's own impact alert, renamed to this site's colours. */
           alert: pagerLevel(f.properties.alert),
+          alertBasis: 'issued',
           lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
           startedAt: new Date(f.properties.time).toISOString(),
           updated: new Date(f.properties.updated || f.properties.time).toISOString(),
@@ -787,7 +791,16 @@ async function handler(req, res) {
           region: [s.name, basinText(s.binNumber)].filter(Boolean).join(' ') || s.basin || '',
           // 64 kt and 96 kt are the Saffir-Simpson category 1 and category 3
           // boundaries, not thresholds of our own.
+          //
+          // It is still a colour this site computes from a wind speed, not an
+          // alert the hurricane centre issued, and the difference decides
+          // whether a storm counts as a disaster that happened: read as an
+          // authority's alert, a category-3 hurricane over open water with no
+          // reported impact entered the record of observed disasters and the
+          // recall denominator, described as having been "raised to a red
+          // alert by the issuing authority". It says what it is.
           alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
+          alertBasis: 'derived-from-intensity',
           windKt: intensity,
           lat, lon,
           updated: s.lastUpdate || now.toISOString(),
@@ -907,7 +920,9 @@ async function handler(req, res) {
             type: normalizeType(p.event, p.event),
             title: p.event + (p.areaDesc ? ' — ' + spellUsPlaces(String(p.areaDesc).split(';')[0].trim()) : ''),
             country: 'United States', region: spellUsPlaces(p.areaDesc || ''),
+            /* The severity the alert itself carries, in this site's colours. */
             alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
+            alertBasis: 'issued',
             lat: c.lat, lon: c.lon,
             /* The affected area, not just its middle. It was already fetched -
                resolved from the zone where the alert carries no polygon of its
@@ -1146,6 +1161,7 @@ async function handler(req, res) {
           title: name + ' — ' + (level || 'elevated') + ' alert level',
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
+          alertBasis: 'issued',
           // The observatory's own wording, kept apart from the colour the UI
           // maps it to. Only a source that publishes a level gets one: every
           // EONET volcano carries alert 'Green', which EONET never assessed.
