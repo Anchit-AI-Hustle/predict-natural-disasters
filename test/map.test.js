@@ -28,7 +28,7 @@ test('every page that builds a map loads the shared setup, after Leaflet', () =>
     const src = read(page);
     if (!src.includes('/map-setup.js')) { missing.push(page); continue; }
     // It wraps L.map, so it is useless before Leaflet defines it.
-    if (src.indexOf('/map-setup.js') < src.indexOf('leaflet@1.9.4/dist/leaflet.js')) misordered.push(page);
+    if (src.indexOf('/map-setup.js') < src.indexOf('/vendor/leaflet/leaflet.js')) misordered.push(page);
     // ...and useless after the page has already built its map.
     if (src.indexOf('/map-setup.js') > src.indexOf('L.map(')) misordered.push(page);
   }

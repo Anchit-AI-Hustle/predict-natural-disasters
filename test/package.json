@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Offline test suite for the API handlers and every rendered detail page. Kept out of the site root so the Vercel static build is unaffected.",
   "scripts": {
-    "test": "node --test api.test.js routes.test.js contrast.test.js order.test.js map.test.js audit.test.js glossary.test.js verification.test.js pages.test.js numbers.test.js hazards.test.js wording.test.js ledger.test.js keyfacts.test.js riskcolour.test.js search.test.js verdicts.test.js horizon.test.js changes.test.js review.test.js globe.test.js proximity.test.js forecastclass.test.js layout.test.js alerts-copy.test.js scan.test.js observed.test.js verification-engine.test.js accuracy-page.test.js claims.test.js coverage-attribution.test.js"
+    "test": "node --test api.test.js routes.test.js contrast.test.js order.test.js map.test.js audit.test.js glossary.test.js verification.test.js pages.test.js numbers.test.js hazards.test.js wording.test.js ledger.test.js keyfacts.test.js riskcolour.test.js search.test.js verdicts.test.js horizon.test.js changes.test.js review.test.js globe.test.js proximity.test.js forecastclass.test.js layout.test.js alerts-copy.test.js scan.test.js observed.test.js verification-engine.test.js accuracy-page.test.js claims.test.js coverage-attribution.test.js vendor.test.js a11y.test.js"
   },
   "devDependencies": {
     "jsdom": "^26.0.0"

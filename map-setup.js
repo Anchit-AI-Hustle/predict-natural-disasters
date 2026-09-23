@@ -22,8 +22,130 @@
  * Applied by wrapping L.map, so a page cannot forget to opt in.
  * Load after Leaflet and before the page builds its map.
  */
+/*
+ * If the map library is missing, stand in for it and say so.
+ *
+ * Every map page's script starts `const map = L.map('map')`, so a library
+ * that never arrives throws on the first statement and takes the rest of the
+ * page with it — the feed request, the list of hazards, the filters. Measured
+ * in Chromium with that request blocked, /alerts showed 5 of its 25 records
+ * and sat on "Loading…" for ever. The library is now served from this origin
+ * rather than a CDN, which removes the likeliest cause, but a script can
+ * still fail to arrive and a page about hazards near you must not go blank
+ * when it does.
+ *
+ * So a stand-in is installed: it answers every call, does nothing, and puts
+ * an honest line in each map panel saying the map could not be loaded. It is
+ * never a silent pretence that there is a map — an empty panel claiming
+ * nothing is nearby would be worse than no panel at all.
+ */
 (function () {
-  if (typeof window === 'undefined' || !window.L || typeof L.map !== 'function') return;
+  if (typeof window === 'undefined') return;
+  if (!window.L || typeof window.L.map !== 'function') {
+    installStandIn();
+    return;
+  }
+
+  function installStandIn() {
+    if (window.L && window.L.__pndStandIn) return;
+    var say = 'The map could not be loaded, so it is not shown. Everything else on this page is unaffected.';
+    var NOT_A_FUNCTION = { then: 1, nodeType: 1 };
+
+    /* Anything a page reaches for is both callable and reachable through.
+       `map.scrollWheelZoom.enable()` and `L.control.layers({}).addTo(map)`
+       are two levels deep, so a stand-in that only answers the first level
+       throws on the second and has solved nothing. */
+    function callable(make) {
+      var fn = function () { return make(); };
+      if (typeof Proxy !== 'function') return fn;
+      return new Proxy(fn, {
+        get: function (t, k) {
+          if (typeof k === 'symbol' || NOT_A_FUNCTION[k]) return undefined;
+          if (k === 'name' || k === 'length' || k === 'prototype' ||
+              k === 'call' || k === 'apply' || k === 'bind') return t[k];
+          return callable(make);
+        },
+        apply: function () { return make(); }
+      });
+    }
+
+    /* One map, layer or marker. Chained calls hand back the stand-in itself,
+       not the object behind it, or `L.circleMarker(...).addTo(layer)` breaks
+       at the second link. */
+    function thing() {
+      var self = {}, proxy;
+      var same = function () { return proxy; };
+      var known = {
+        getLayers: function () { return []; },
+        getZoom: function () { return 0; },
+        getCenter: function () { return { lat: 0, lng: 0 }; },
+        getSize: function () { return { x: 0, y: 0 }; },
+        getBounds: same,
+        isValid: function () { return false; },
+        toGeoJSON: function () { return null; },
+        __pndStandIn: true
+      };
+      if (typeof Proxy !== 'function') {
+        proxy = self;
+        for (var k in known) if (Object.prototype.hasOwnProperty.call(known, k)) self[k] = known[k];
+        /* Without Proxy, only the calls this codebase makes are answered. */
+        ['addTo', 'addLayer', 'removeLayer', 'clearLayers', 'setView', 'flyTo',
+         'fitBounds', 'bindPopup', 'openPopup', 'closePopup', 'on', 'off',
+         'remove', 'setStyle', 'setLatLng', 'addData', 'invalidateSize',
+         'eachLayer', 'setMinZoom', 'setMaxZoom'
+        ].forEach(function (n) { self[n] = same; });
+        self.scrollWheelZoom = { enable: same, disable: same };
+        return proxy;
+      }
+      proxy = new Proxy(self, {
+        get: function (t, k) {
+          if (typeof k === 'symbol' || NOT_A_FUNCTION[k]) return undefined;
+          if (Object.prototype.hasOwnProperty.call(known, k)) return known[k];
+          return callable(same);
+        },
+        has: function () { return true; }
+      });
+      return proxy;
+    }
+
+    /* The map panel says what happened, in the place the map would have
+       been. An empty panel would read as "nothing is happening near you". */
+    function mark(id) {
+      var el = typeof id === 'string' ? document.getElementById(id) : id;
+      if (!el || !el.setAttribute || el.getAttribute('data-map-unavailable') === '1') return;
+      el.setAttribute('data-map-unavailable', '1');
+      el.setAttribute('role', 'note');
+      el.textContent = say;
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.textAlign = 'center';
+      el.style.padding = '18px';
+      el.style.color = '#9db9ad';
+      el.style.font = '13px system-ui, sans-serif';
+    }
+
+    var L = typeof Proxy === 'function'
+      ? new Proxy({ __pndStandIn: true }, {
+          get: function (t, k) {
+            if (typeof k === 'symbol' || NOT_A_FUNCTION[k]) return undefined;
+            if (k === '__pndStandIn') return true;
+            if (k === 'map') return function (id) { mark(id); return thing(); };
+            return callable(thing);
+          },
+          has: function () { return true; }
+        })
+      : { __pndStandIn: true, map: function (id) { mark(id); return thing(); },
+          layerGroup: thing, circleMarker: thing, tileLayer: thing, marker: thing,
+          featureGroup: thing, rectangle: thing, geoJSON: thing, circle: thing,
+          divIcon: thing, control: { layers: thing, attribution: thing, scale: thing } };
+    window.L = L;
+    window.PNDMap = window.PNDMap || {
+      basemap: function (m) { return m; },
+      worldZoom: function () { return 1; }
+    };
+    window.PNDMap.mapUnavailable = true;
+  }
 
   var TILE = 256;
   // The Mercator projection stops here; there is no map data beyond it.

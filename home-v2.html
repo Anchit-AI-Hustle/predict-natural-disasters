@@ -20,7 +20,7 @@
 
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/portal.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
 <style>
 .homehero{padding:18px}.homegrid{display:grid;grid-template-columns:210px minmax(0,1fr) 315px;gap:10px}.side{padding:10px}.navitem,.viewall,.haz,.riskitem,.redirectCard,.detailBtn{appearance:none;-webkit-appearance:none;border:0;font:inherit;text-align:left;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(37,226,156,.18)}.navitem{display:block;width:100%;color:#e7f4ee;background:transparent;padding:10px;border-radius:7px;min-height:42px}.navitem:hover,.navitem:active,.navitem.active{background:#0b3e2e}.map{width:100%;aspect-ratio:2/1;min-height:300px;max-height:min(70vh,700px)}.risklist{max-height:500px;overflow:auto}.riskitem{display:block;width:100%;padding:12px 10px;border-bottom:1px solid #153f33;color:inherit;background:transparent;min-height:56px}.riskitem:hover,.riskitem:active{background:#0b3125}.hazards{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;padding:8px}.haz{display:block;border:1px solid #285c49;background:#09231b;border-radius:8px;padding:10px 8px;font-size:10px;color:#e7f4ee;min-height:44px}.haz:hover,.haz:active{border-color:#25e29c;background:#0b3125}.lower{display:grid;grid-template-columns:1fr 1.1fr 1.1fr;gap:10px}.verify{display:grid;grid-template-columns:1.1fr 1fr;gap:10px;padding:10px}.progress{height:6px;background:#163a2f;border-radius:9px;overflow:hidden}.progress i{display:block;height:100%;width:18%;background:#25e29c}.viewall,.detailBtn{background:transparent;color:#65e7b6;font-weight:800;min-height:40px;padding:6px}.redirectCard{display:block;width:100%;color:inherit;background:inherit}.table tr[data-href]{cursor:pointer;touch-action:manipulation}.table tr[data-href]:hover,.table tr[data-href]:active{background:#0b3125}.table td{position:relative}.tapHint{color:#65e7b6;font-size:10px;font-weight:800}
 @media(max-width:1150px){.homegrid{grid-template-columns:1fr}.side{display:block;overflow-x:auto;white-space:nowrap}.side .ph{display:none}.side .navitem{display:inline-block;width:auto;margin-right:5px}.hazards{grid-template-columns:repeat(4,1fr)}.lower{grid-template-columns:1fr}.verify{grid-template-columns:1fr}}
@@ -61,7 +61,7 @@
 <section>
 <div class="panel">
 <div class="ph"><h3>Global Live Hazard Map</h3><div class="statusbar"><span id="freshness">Loading…</span><button class="viewall" data-href="/live-map" onclick="go(this.dataset.href)">Open full map →</button></div></div>
-<div class="toolbar" style="padding:8px;margin:0"><input class="input" id="search" placeholder="Search location or event"><select class="select" id="haz"><option value="">All Hazards</option><option>Flood</option><option>Earthquake</option><option>Wildfires</option><option>Volcanoes</option><option>Severe Storms</option></select><select id="sortBy" class="select" style="max-width:200px"></select><select class="select"><option>Currently Active</option></select></div>
+<div class="toolbar" style="padding:8px;margin:0"><input class="input" id="search" aria-label="Search location or event" placeholder="Search location or event"><select class="select" id="haz" aria-label="Filter by hazard type"><option value="">All Hazards</option><option>Flood</option><option>Earthquake</option><option>Wildfires</option><option>Volcanoes</option><option>Severe Storms</option></select><select id="sortBy" aria-label="Sort results" class="select" style="max-width:200px"></select><select class="select" aria-label="Event status"><option>Currently Active</option></select></div>
 <div id="map" class="map"></div>
 </div>
 <section class="panel">
@@ -82,7 +82,7 @@
 <div class="foot">Live data sources: GDACS, USGS, NASA EONET. Forecasts are informational and do not replace official government warnings.</div>
 </main>
 <script>function go(u){if(!u)return;window.location.href=u;}document.addEventListener('click',function(e){const el=e.target.closest('[data-href]');if(!el)return;if(e.defaultPrevented)return;if(el.getAttribute('onclick'))return;e.preventDefault();go(el.dataset.href);},false);document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-href]')){e.preventDefault();go(e.target.closest('[data-href]').dataset.href)}},false);</script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/globe.js"></script><script src="/map-setup.js"></script>
+<script src="/vendor/leaflet/leaflet.js"></script><script src="/globe.js"></script><script src="/map-setup.js"></script>
 <script src="/search.js"></script><script src="/hazard-model.js"></script><script src="/portal.js?v=20260914-cross-device"></script>
 <script>
 nav.innerHTML=PND.nav('Home');
