@@ -298,6 +298,9 @@ ipTotal.textContent=headlineIdx.length;ipMatured.textContent=sH.eligibleMaturedP
 ipHit.textContent=sH.hit;ipPartial.textContent=sH.partial;ipMiss.textContent=sH.miss;
 ipPending.textContent=sH.pending;ipInvalid.textContent=verdicts.filter(x=>x.classification==='INVALID_POST_EVENT').length;
 ipPrecision.textContent=pct(sH.precision,sH.eligibleMaturedPredictions,'graded');ipRecall.textContent=pct(sR.recall,sR.significantObservedEvents,'disasters');ipF1.textContent=pct(sR.f1,sR.eligibleMaturedPredictions+' graded, '+sR.significantObservedEvents,'disasters');
+/* Why matured windows cannot be graded, in the engine's own reasons, largest first. One reason stretched over all of them told readers 305 windows fell outside the scans when the scans covered them and no source was complete for their hazard. */
+const WHY_NOT={ABSENCE_NOT_ESTABLISHABLE:' have no source this site reads that is complete for their hazard and place, so an absence there would say nothing about what happened',OBSERVED_RECORD_EMPTY:' had no scan on record to be graded against',OBSERVED_RECORD_STARTS_LATER:' open before the first completed scan of their hazard and place',OBSERVED_RECORD_NOT_YET_UPDATED:' close after the latest completed scan of their hazard and place',OBSERVED_RECORD_HAS_A_GAP:' fall in a gap of more than six hours between scans',SEQUENCE_ATTRIBUTION_AMBIGUOUS:' match activity that another outlook, following a different disaster, claims just as fully',CONTINUATION_EVIDENCE_UNAVAILABLE:' follow a disaster with nothing on record dated inside the window'};
+const whyNot=s=>{const b=s.ungradeableBy||{};return Object.keys(b).sort((x,y)=>b[y]-b[x]).map(k=>b[k]+(WHY_NOT[k]||' cannot be graded ('+k+')')).join('; ')};
 /* A hit that could not have been a miss is still a hit, and is still not a
    data point for a rate. Said wherever a rate is published. */
 const outsideNote=s=>s.hitsOutsideCoverage?' '+s.hitsOutsideCoverage+' window(s) were borne out by a disaster on record but are not counted in this rate: for their hazard and place nothing could have established the opposite, so a rate including them would be made only of the outcomes that could be found.':'';
@@ -309,7 +312,7 @@ const recallNote=outsideRecall?' '+outsideRecall+' disaster(s) on record '+(sinc
 ipNote.textContent=(headlineIdx.length===0
  ? 'No independent prospective prediction has ever been recorded here, so this project has no prediction hit rate and none is shown. Every forecast it has published describes a hazard already reported, follows an observed event, or is a benchmark written after its own window opened.'
  : (sH.eligibleMaturedPredictions===0
-   ? 'No independent prediction can be graded yet: '+sH.ungradeable+' matured window(s) fall outside the period the record of observed disasters covers, so an absence of matching disasters would say nothing about what happened.'+outsideNote(sH)
+   ? 'No independent prediction can be graded yet. Of '+sH.ungradeable+' matured window(s): '+whyNot(sH)+'.'+outsideNote(sH)
    : 'Computed from '+sH.eligibleMaturedPredictions+' matured prediction(s). Small samples move a long way on one record.'+outsideNote(sH)))+recallNote;
 
 cdTotal.textContent=condIdx.length;cdMatured.textContent=sC.eligibleMaturedPredictions;
@@ -317,7 +320,7 @@ cdHit.textContent=sC.hit;cdPartial.textContent=sC.partial;cdMiss.textContent=sC.
 cdPending.textContent=sC.pending;cdPrecision.textContent=pct(sC.precision,sC.eligibleMaturedPredictions,'graded');
 const anyScan=((scanLedger&&scanLedger.scans)||[]).length;
 cdNote.textContent=sC.eligibleMaturedPredictions===0
- ? 'None of these can be graded yet: '+sC.ungradeable+' matured window(s) fall outside the period covered by a completed scan of their own hazard and place. '
+ ? 'None of these can be graded yet. Of '+sC.ungradeable+' matured window(s): '+whyNot(sC)+'. '
    +(anyScan?'Coverage is counted per hazard, so a cycle in which that hazard\u2019s providers were down extends nothing.':'No scan has been recorded yet, so there is nothing to grade any of them against.')+outsideNote(sC)
  : 'Computed from '+sC.eligibleMaturedPredictions+' matured outlook(s). This is not a prediction rate.'+outsideNote(sC);
 

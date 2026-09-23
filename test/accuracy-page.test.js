@@ -83,8 +83,15 @@ test('matured forecasts are not called false positives against an empty record',
   assert.equal(text(r, 'ipMiss'), '0');
   assert.equal(text(r, 'cdMiss'), '0',
     'forecasts were graded as failures against a disaster record that cannot cover them');
-  assert.match(text(r, 'cdNote'), /fall outside the period|record is empty/i,
-    'the page does not say why none of them could be graded');
+  /* Every window is given its own reason. The note used to say all of them
+     fell outside the scans, when most had been scanned and simply had no
+     source complete for their hazard and place. */
+  const why = text(r, 'cdNote').match(/Of (\d+) matured window\(s\): ([^.]*)\./);
+  assert.ok(why, 'the page does not say why none of them could be graded');
+  const counted = why[2].split('; ').map(part => Number((part.match(/^(\d+) /) || [])[1]));
+  assert.ok(counted.every(n => n > 0), 'a reason was given without a count: ' + why[2]);
+  assert.equal(counted.reduce((a, b) => a + b, 0), Number(why[1]),
+    'the reasons given do not account for every window that cannot be graded');
   r.close();
 });
 

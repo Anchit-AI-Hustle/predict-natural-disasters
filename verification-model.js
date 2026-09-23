@@ -40,8 +40,16 @@
      targetStart, since the row is the only proof the forecast existed; and
      recall counts only disasters from the first independent prediction on
      record. The first can turn a hit into a miss, the second changes a rate's
-     denominator, so verdicts and figures from 1.2.0 are not comparable. */
-  var VERIFICATION_VERSION = 'verify-1.3.0';
+     denominator, so verdicts and figures from 1.2.0 are not comparable.
+
+     1.3.1: a window nothing covers says why. It used to say the record of
+     observed disasters was empty whenever no scan could vouch for the
+     window - including when scans had run and the record held disasters,
+     but no source they read is complete for that hazard in that place.
+     Those windows now carry ABSENCE_NOT_ESTABLISHABLE; OBSERVED_RECORD_EMPTY
+     is kept for a record with no scan in it. Only the reason moves: every
+     classification and every rate is the one 1.3.0 gives. */
+  var VERIFICATION_VERSION = 'verify-1.3.1';
 
   var CLASSIFICATION = {
     HIT: 'HIT',
@@ -537,8 +545,17 @@
       if (cov) {
         var covFrom = ms(cov.from), covTo = ms(cov.to);
         if (covFrom === null || covTo === null) {
-          return say(CLASSIFICATION.PENDING,
-            'The record of observed disasters is empty, so there is nothing this window can be graded against.', [],
+          /* Why nothing covers it decides what can be said. Scans that ran
+             and could not vouch for this place are not an empty record. */
+          if (cov.why === 'not-watched' || cov.why === 'not-together') {
+            return say(CLASSIFICATION.PENDING, cov.why === 'not-together'
+              ? 'This forecast names more than one hazard, and at no time were the sources this site reads complete for all of them here at once, so the lack of a matching report would not show that nothing happened.'
+              : 'None of the sources this site reads is complete for this hazard in this place, so the lack of a matching report would not show that nothing happened.',
+              [], 'ABSENCE_NOT_ESTABLISHABLE');
+          }
+          return say(CLASSIFICATION.PENDING, cov.why === 'no-scans'
+            ? 'No scan of the disaster sources has been recorded yet, so there is nothing this window can be graded against.'
+            : 'The record of observed disasters is empty, so there is nothing this window can be graded against.', [],
             'OBSERVED_RECORD_EMPTY');
         }
         if (start !== null && start < covFrom) {
@@ -825,20 +842,28 @@
      means anything: a flood-or-landslide claim graded against flood coverage
      alone would be failed for the absence of a landslide nobody was looking
      for. The answer is the intersection of the two. */
+  /* Nothing covers the window, and why: 'no-scans' when no dated scan is on
+     record at all, 'not-watched' when scans ran but no source they read can
+     vouch for an absence of this hazard here, 'not-together' when each
+     hazard of a compound claim was watched but never all at the same time. */
+  function uncovered(why) {
+    return { from: null, to: null, scans: 0, intervals: [], maxGapHours: MAX_SCAN_GAP_HOURS, why: why };
+  }
+
   function observedCoverageFor(scanLedger, hazard, place) {
+    var scans = (scanLedger && scanLedger.scans) || [];
     if (Array.isArray(hazard)) {
-      if (!hazard.length) return { from: null, to: null, scans: 0, intervals: [], maxGapHours: MAX_SCAN_GAP_HOURS };
+      if (!hazard.length) return uncovered(scans.length ? 'not-watched' : 'no-scans');
       var each = hazard.map(function (h) { return observedCoverageFor(scanLedger, h, place); });
       return each.reduce(intersectCoverage);
     }
-    var scans = (scanLedger && scanLedger.scans) || [];
-    var empty = { from: null, to: null, scans: 0, intervals: [], maxGapHours: MAX_SCAN_GAP_HOURS };
-    if (!scans.length) return empty;
+    if (!scans.length) return uncovered('no-scans');
     var probe = { hazard: hazard, geography: place || {} };
-    var times = [];
+    var times = [], dated = 0;
     for (var i = 0; i < scans.length; i++) {
       var s = scans[i], t = ms(s.scanTimestamp);
       if (t === null) continue;
+      dated++;
       /* The definitions in force when THIS scan ran, never today's. Widening
          a provider's scope, or calling a selective feed exhaustive, changes
          what future scans can establish; it must not reach back and turn a
@@ -849,7 +874,7 @@
       });
       if (covered) times.push(t);
     }
-    if (!times.length) return empty;
+    if (!times.length) return uncovered(dated ? 'not-watched' : 'no-scans');
     times.sort(function (a, b) { return a - b; });
 
     /* One interval per unbroken run of scans. A lone successful scan is an
@@ -890,6 +915,12 @@
         var to = Math.min(ms(a.intervals[i].to), ms(b.intervals[j].to));
         if (from <= to) out.push({ from: new Date(from).toISOString(), to: new Date(to).toISOString() });
       }
+    }
+    if (!out.length) {
+      var none = uncovered(a.why === 'no-scans' || b.why === 'no-scans' ? 'no-scans'
+        : a.why === 'not-watched' || b.why === 'not-watched' ? 'not-watched' : 'not-together');
+      none.scans = Math.min(a.scans, b.scans);
+      return none;
     }
     return {
       from: out.length ? out[0].from : null,
