@@ -801,14 +801,26 @@ async function handler(req, res) {
           // alert by the issuing authority". It says what it is.
           alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
           alertBasis: 'derived-from-intensity',
-          windKt: intensity,
           lat, lon,
           updated: s.lastUpdate || now.toISOString(),
           details: 'Active system · maximum sustained wind ' + (intensity === null ? '—' : intensity + ' kt') +
             (s.pressure ? ' · minimum pressure ' + s.pressure + ' mb' : '') +
             (s.movementDir != null ? ' · moving ' + s.movementDir + '° at ' + (s.movementSpeed || '—') + ' kt' : ''),
           sourceUrl: (s.publicAdvisory && s.publicAdvisory.url) || 'https://www.nhc.noaa.gov/',
-          windKt: intensity
+          /* The measures the hurricane centre publishes, as fields.
+           *
+           * Central pressure and the track were read from this feed and then
+           * written into the sentence above and nowhere else - so the one
+           * place a reader looks for a storm's numbers, the key-facts grid,
+           * showed the wind and marked everything else as though the centre
+           * had not published it. Central pressure is the measure forecasters
+           * actually watch for intensification, and where a storm is heading
+           * is the question anyone in its path is asking. Both were in hand
+           * the whole time. */
+          windKt: intensity,
+          pressureMb: num(s.pressure),
+          movementDirDeg: num(s.movementDir),
+          movementKt: num(s.movementSpeed)
         });
         n++;
       }

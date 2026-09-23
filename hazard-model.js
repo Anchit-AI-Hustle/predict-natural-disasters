@@ -350,32 +350,64 @@
    * publish still appears, marked not reported, because a silent omission reads
    * as a zero.
    */
+  /*
+   * What every disaster is measured by, whoever reported it.
+   *
+   * Each hazard names its own measures first and then this, so the impact
+   * block reads the same on a wildfire as on an earthquake. It is the same
+   * list the observed record tracks, and it is stated in full rather than
+   * per hazard because a count that is missing from the grid is a count the
+   * reader has no reason to ask about: an earthquake page that lists deaths
+   * and says nothing about injuries does not read as "we have no injury
+   * figure", it reads as though injuries were not a thing that happened.
+   */
+  var IMPACT = ['deaths', 'injuries', 'missing', 'displaced', 'evacuated', 'affected'];
+  /** This hazard's own measures, then the impact every hazard is measured by. */
+  function metrics() {
+    return Array.prototype.slice.call(arguments).concat(IMPACT);
+  }
+
   var METRICS = {
-    Earthquake: ['magnitude', 'depthKm', 'pagerAlert', 'deaths', 'missing', 'affected', 'tsunamiFlag'],
-    'Earthquake aftershock sequence': ['mainshockMagnitude', 'deaths', 'missing', 'affected'],
-    'Tropical Cyclone': ['windKt', 'category', 'deaths', 'missing', 'displaced', 'affected'],
-    Flood: ['deaths', 'missing', 'displaced', 'affected'],
-    'Flood / Landslide': ['deaths', 'missing', 'displaced', 'affected'],
-    Landslide: ['deaths', 'missing', 'displaced'],
-    Wildfire: ['areaHa', 'deaths', 'missing', 'displaced', 'affected'],
-    Drought: ['affected', 'displaced'],
-    Volcano: ['alertLevel', 'aviationColour', 'deaths', 'displaced', 'affected'],
-    'Extreme Heat': ['deaths', 'affected'],
-    'Extreme Cold': ['deaths', 'affected'],
-    'Severe Storm': ['deaths', 'missing', 'affected'],
-    Tornado: ['deaths', 'missing', 'affected'],
-    Tsunami: ['deaths', 'missing', 'displaced', 'affected']
+    Earthquake: metrics('magnitude', 'depthKm', 'pagerAlert', 'tsunamiFlag'),
+    'Earthquake aftershock sequence': metrics('mainshockMagnitude'),
+    'Tropical Cyclone': metrics('windKt', 'category', 'pressureMb', 'movement'),
+    Flood: metrics(),
+    'Flood / Landslide': metrics(),
+    Landslide: metrics(),
+    Wildfire: metrics('areaHa'),
+    Drought: metrics(),
+    Volcano: metrics('alertLevel', 'aviationColour'),
+    'Extreme Heat': metrics(),
+    'Extreme Cold': metrics(),
+    'Severe Storm': metrics(),
+    Tornado: metrics(),
+    Tsunami: metrics()
   };
 
   var LABELS = {
     magnitude: 'Magnitude', mainshockMagnitude: 'Mainshock magnitude',
     depthKm: 'Depth', pagerAlert: 'USGS impact alert',
     tsunamiFlag: 'Tsunami flag', windKt: 'Maximum sustained wind', category: 'Category',
+    pressureMb: 'Minimum central pressure', movement: 'Moving',
     areaHa: 'Area burned', alertLevel: 'Observatory alert level',
     aviationColour: 'Aviation colour code',
-    deaths: 'Lives lost', missing: 'Missing or unaccounted for',
-    displaced: 'People displaced', affected: 'People affected'
+    deaths: 'Lives lost', injuries: 'Injured', missing: 'Missing or unaccounted for',
+    displaced: 'People displaced', evacuated: 'People evacuated',
+    affected: 'People affected'
   };
+
+  /* Which of the sixteen compass points a bearing falls in. Published as a
+     bearing by the hurricane centre; "north-west" is what a reader in its
+     path reads without having to picture a protractor. */
+  var COMPASS = ['north', 'north-north-east', 'north-east', 'east-north-east',
+    'east', 'east-south-east', 'south-east', 'south-south-east',
+    'south', 'south-south-west', 'south-west', 'west-south-west',
+    'west', 'west-north-west', 'north-west', 'north-north-west'];
+  function compassOf(deg) {
+    var d = Number(deg);
+    if (!isFinite(d)) return null;
+    return COMPASS[Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
+  }
 
   function group(n) {
     var x = Math.round(Number(n));
@@ -435,6 +467,23 @@
       case 'category': {
         var c = cycloneCategory(e.windKt);
         return { key: key, label: label, reported: !!c, value: c };
+      }
+      case 'pressureMb': {
+        var mb = Number(v);
+        var okMb = has && isFinite(mb) && mb > 0;
+        return { key: key, label: label, reported: okMb, value: okMb ? group(mb) + ' mb' : null,
+          note: okMb ? null : 'This source publishes no central pressure for this system' };
+      }
+      case 'movement': {
+        /* Two published fields read as the one thing a reader wants: where it
+           is going and how fast. A bearing with no speed still says where,
+           and a speed with no bearing says nothing on its own. */
+        var where = compassOf(e.movementDirDeg);
+        var howFast = Number(e.movementKt);
+        var fast = isFinite(howFast) && howFast >= 0 ? Math.round(howFast) + ' kt' : null;
+        var moving = where ? (where + (fast ? ' at ' + fast : '')) : null;
+        return { key: key, label: label, reported: !!moving, value: moving,
+          note: moving ? null : 'This source publishes no track for this system' };
       }
       case 'areaHa': {
         var ha = Number(e.areaHa);

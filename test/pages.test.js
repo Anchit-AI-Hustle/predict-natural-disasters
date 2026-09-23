@@ -92,6 +92,65 @@ test('incident detail page fills in when, where and impact', async () => {
   r.close();
 });
 
+test('the action panel answers all seven questions, and names whose claim it is', async () => {
+  /* The panel named the hazard, the place, the severity and the confidence,
+     and left the last question - whose claim is this, and in what voice - to
+     a provenance paragraph at the foot of the page. A reader deciding whether
+     to act needs the agency AND what kind of statement it is: an observation
+     of something that happened, a warning that something is expected, or an
+     outlook this site derived. Those three carry very different weight. */
+  const official = pick(await events(), e => e.sourceType === 'official' && e.alert === 'Red');
+  const r = await renderPage('event-detail.html', { search: q(official.id), waitFor: settled('title') });
+  const doc = r.document;
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const panel = doc.getElementById('actionPanel');
+  assert.ok(panel, 'the action panel is gone');
+  for (const [id, what] of [['aWhat', 'what is happening'], ['aWhere', 'where'],
+    ['aSeverity', 'how serious'], ['aConfidence', 'how confident'],
+    ['aWho', 'who says this'], ['actionUpdated', 'when updated']]) {
+    const el = doc.getElementById(id);
+    assert.ok(el, 'the panel does not answer ' + what);
+    assert.ok(el.textContent.trim().length > 1 && el.textContent.trim() !== '\u2014',
+      'the panel leaves "' + what + '" unanswered: ' + JSON.stringify(el.textContent));
+  }
+  assert.ok(doc.getElementById('actionSteps').textContent.length > 20,
+    'the panel does not say what to do');
+  assert.ok(doc.getElementById('aWho').textContent.includes(official.source),
+    'the panel does not name the agency behind the record');
+  assert.match(doc.getElementById('aWho').textContent,
+    /observed event|official warning|derived by this site|not established/,
+    'the panel names a source without saying what kind of statement it is');
+  /* And the authoritative link is still offered. */
+  assert.ok(doc.getElementById('officialAction').textContent.length > 10);
+  r.close();
+});
+
+test('the life-safety instruction is shown on a life-safety record and not on every one', async () => {
+  /* The spec asks for one sentence, prominently, on life-safety events. Shown
+     on every record it becomes furniture a reader learns to skip, which costs
+     exactly the page where it matters. */
+  const evs = await events();
+  const serious = pick(evs, e => !e.forecast && e.alert === 'Red');
+  const hot = await renderPage('event-detail.html', { search: q(serious.id), waitFor: settled('title') });
+  const line = hot.document.getElementById('lifeSafety');
+  assert.ok(line, 'the life-safety instruction is not on the page at all');
+  assert.equal(line.hidden, false,
+    'a red-level record does not carry the life-safety instruction');
+  assert.equal(line.textContent.trim(),
+    'Follow instructions from the issuing authority and local emergency services.');
+  assert.equal(line.getAttribute('role'), 'note');
+  hot.close();
+
+  const quiet = evs.find(e => !e.forecast && e.alert === 'Green' &&
+    e.evidenceState !== 'official-warning');
+  if (quiet) {
+    const cool = await renderPage('event-detail.html', { search: q(quiet.id), waitFor: settled('title') });
+    assert.equal(cool.document.getElementById('lifeSafety').hidden, true,
+      'an informational green record carries a life-safety instruction');
+    cool.close();
+  }
+});
+
 test('incident detail page renders the full humanitarian context block', async () => {
   const official = pick(await events(), e => e.sourceType === 'official' && e.alert === 'Red');
   const r = await renderPage('event-detail.html', { search: q(official.id), waitFor: enriched });

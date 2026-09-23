@@ -110,8 +110,33 @@
       .replace(stateRe, function (m, s) { return ', ' + STATES[s]; });
   }
 
+  /*
+   * A run of capitals is a label, not prose.
+   *
+   * Field labels on this site are written in capitals and styled down - WHAT,
+   * WHERE, SEVERITY / STATUS - and one of them is the question "WHO SAYS
+   * THIS?". Measured on a phone, that label rendered as "World Health
+   * Organization (WHO) SAYS THIS": the glossary had no way to tell the
+   * English word from the agency, because in capitals there is nothing to
+   * tell them apart by. Lower case already protected "who said so"; capitals
+   * had the opposite effect and made every collision certain.
+   *
+   * The rule follows what this file already says about badges. A label is
+   * short on purpose, the full form belongs in the prose underneath it, and
+   * text with no lower-case letter in it offers no evidence that a token is
+   * an acronym rather than a word being shouted. So it is left alone - which
+   * also keeps an all-capitals heading from swallowing a line.
+   */
+  function isShouted(text) {
+    return /[A-Z]/.test(text) && !/[a-z]/.test(text);
+  }
+
   function rewrite(text) {
     var out = expandAlways(text);
+    /* Notation is expanded either way - "M 6.5" is a magnitude in any case,
+       and a bearing is a bearing - so the guard applies only to the acronym
+       pass below, which is the one that has a word to confuse. */
+    if (isShouted(out)) return out;
     return out.replace(onceRe, function (m, term, offset, whole) {
       if (spelled[term]) return m;
       /* The text already writes it out.
