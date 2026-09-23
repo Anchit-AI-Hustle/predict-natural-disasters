@@ -152,6 +152,47 @@ test('the tolerance is a published rule, the same for every forecast of a hazard
   assert.equal(a.originalThresholds.geographyToleranceKm, b.originalThresholds.geographyToleranceKm);
 });
 
+test('a compound claim is graded on the tolerance of the hazard observed', () => {
+  /* "Flood / Landslide" is one claim about two hazards, and the tolerance
+     table is a statement about how far each hazard's effects reach from its
+     centre. Grading the whole claim on the primary family gave an observed
+     landslide the flood radius: 200 km from the forecast point was a full hit
+     under 300 km when the published landslide tolerance is 150 - and the
+     reason line said "the published 300 km tolerance for this hazard" about a
+     hazard whose tolerance is not 300. */
+  const p = prediction({ id: 'OUT-compound', type: 'Flood / Landslide',
+    title: 'Flood / Landslide outlook \u2014 Nepal', forecastScope: 'event' });
+  const claim = V.frozenClaim(p, H);
+  assert.deepEqual(claim.hazards, ['flood', 'landslide'],
+    'control: this claim should name both hazards');
+  assert.deepEqual(claim.thresholds.geographyToleranceKmByHazard,
+    { flood: V.GEOGRAPHY_TOLERANCE_KM.flood, landslide: V.GEOGRAPHY_TOLERANCE_KM.landslide },
+    'the verdict must publish the tolerance for every hazard it accepts');
+
+  const at = { country: 'Nepal', region: 'Gandaki', lat: 29.5, lon: 85.3 };
+  const d = V.distanceKm(p.lat, p.lon, at.lat, at.lon);
+  assert.ok(d > V.GEOGRAPHY_TOLERANCE_KM.landslide && d < V.GEOGRAPHY_TOLERANCE_KM.flood,
+    'control: this distance has to fall between the two tolerances to prove anything');
+
+  const slide = grade(p, [disaster({ canonicalEventId: 'OBS-landslide-NEP-1',
+    hazard: 'landslide', geography: at })]);
+  assert.equal(slide.classification, 'PARTIAL_HIT',
+    'a landslide beyond its own published tolerance was a full hit under the flood radius');
+  assert.match(slide.classificationReason, /150 km tolerance for landslide/);
+  assert.match(slide.classificationReason, /^A significant landslide/,
+    'the verdict describes the wrong hazard as the one observed');
+
+  /* The other half of the same claim, at the same distance, still holds. */
+  const flood = grade(p, [disaster({ hazard: 'flood', geography: at })]);
+  assert.equal(flood.classification, 'HIT');
+  assert.match(flood.classificationReason, /300 km tolerance for flood/);
+
+  /* And a single-hazard claim is unchanged. */
+  const plain = grade(prediction({ forecastScope: 'event' }),
+    [disaster({ geography: at })]);
+  assert.equal(plain.classification, 'HIT');
+});
+
 test('an event below the significance bar cannot verify a forecast', () => {
   const v = grade(prediction(), [disaster({ significant: false })]);
   assert.equal(v.classification, 'MISS_FALSE_POSITIVE',

@@ -124,11 +124,6 @@ const TRACKED = ['end', 'severity', 'alert', 'deaths', 'injuries', 'missing', 'a
  * derived one changes, and the change is recorded rather than applied.
  */
 const byId = new Map(ledger.events.map(e => [e.canonicalEventId, e]));
-const byEvidence = new Map();
-for (const e of ledger.events) {
-  if (e.supersededBy) continue;
-  for (const ev of (e.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, e);
-}
 /* A superseded row is not an identity anything should be written to; the row
    that kept the identity is. */
 const keeperOf = row => {
@@ -141,6 +136,27 @@ const keeperOf = row => {
   }
   return row;
 };
+/*
+ * Every provider record this ledger has ever recorded, pointing at the row
+ * that holds the identity now.
+ *
+ * Superseded rows were skipped, so the records learned under them left the
+ * index altogether - and merging two rows carries over only the evidence the
+ * run that bridged them happened to be carrying. Measured: a flood recorded
+ * from rw-2 and rw-3, superseded into the row holding rw-1 by a run carrying
+ * rw-1 and rw-2, then rw-3 arriving alone one run later. It matched nothing,
+ * its position rounded to a different id than the row it came from, and the
+ * same disaster was appended a third time, active, in the recall denominator.
+ * Merging two rows does not unlearn what either of them knew.
+ */
+const byEvidence = new Map();
+for (const superseded of [true, false]) {
+  for (const e of ledger.events) {
+    if (!!e.supersededBy !== superseded) continue;
+    const keeper = keeperOf(e);
+    for (const ev of (e.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, keeper);
+  }
+}
 
 /*
  * An id hit is a question, not an answer.

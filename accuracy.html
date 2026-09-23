@@ -34,7 +34,11 @@ rows.innerHTML=list.map(r=>{const v2=vd(r);
  /* The verdict, what it required and what it matched, on the row itself: a
     classification a reader cannot check against its own criteria is an
     assertion, not a verification. */
- const thr=v2&&v2.originalThresholds?(v2.originalThresholds.geographyToleranceKm+' km · significant '+(v2.originalGeography&&v2.originalGeography.country||'—')):'—';
+ /* A compound claim is graded on the tolerance of the hazard observed, so
+    showing one number would hide the criterion the other half was judged by. */
+ const tolText=t=>{const by=t.geographyToleranceKmByHazard||{},ks=Object.keys(by);
+  return ks.length>1?ks.map(k=>by[k]+' km '+k).join(' · '):(t.geographyToleranceKm+' km');};
+ const thr=v2&&v2.originalThresholds?(tolText(v2.originalThresholds)+' · significant '+(v2.originalGeography&&v2.originalGeography.country||'—')):'—';
  const matched=v2&&v2.observedEventIds&&v2.observedEventIds.length?v2.observedEventIds.join(', '):(v2?(v2.gradeable?'None observed':'Not gradeable'):'—');
  return `<tr class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><td><b>${esc(r.id||r.eventId||'Observed')}</b><div class="sub">${esc(r.title||'')}</div></td><td><b>${esc(occurredText(r._state))}</b></td><td><span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span>${r._ledgerState?`<div class="sub">Graded by hand as ${esc(statusLabel(r._ledgerState))}; the engine’s verdict is the one counted.</div>`:''}${r._engineUnreproduced?'<div class="sub">Recorded by hand. The engine cannot reproduce this from the written record of observed disasters, so no rate on this page was computed from it.</div>':''}${v2&&!v2.gradeable&&v2.classificationReason?`<div class="sub">${esc(v2.classificationReason)}</div>`:''}</td><td>${esc(v2&&v2.forecastClass||V.forecastClassOf(r)||'—')}</td><td><span class="pill severity-${String(r.observedSeverity||'').toLowerCase()}">${esc(r.observedSeverity||'NOT OBSERVED')}</span></td><td>${esc(r.hazard||r.type||'—')}<div class="sub">${esc([r.region,r.country].filter(Boolean).join(' · '))}</div></td><td>${esc(r.freezeTimestamp?PND.fmtDate(r.freezeTimestamp):'—')}</td><td>${r.targetStart?esc(PND.windowText(r)):'Observed event'}</td><td class="sub">${esc(thr)}</td><td class="sub">${esc(matched)}</td><td>${esc(r.evidenceConfidence||'Not yet checked')}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No records match these filters.</td></tr>'}
 /* Predicted against observed, field by field, for every record that has been

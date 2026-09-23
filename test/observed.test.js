@@ -292,6 +292,88 @@ test('a disaster reported under fresh provider ids is still the same disaster', 
   fs.rmSync(path.dirname(led), { recursive: true, force: true });
 });
 
+/* Floods close enough to be one disaster under the 250 km / 96h window for
+   the hazard, but recorded on separate runs, so the ledger learns they are
+   one only when a later run carries two of them together. */
+const floodAt = (id, lat, lon, updated, deaths) => ({
+  id, type: 'Flood', title: 'Flooding in Assam', source: 'ReliefWeb',
+  sourceUrl: 'https://reliefweb.int/x/' + id, country: 'India', region: 'Assam',
+  lat, lon, deaths, startedAt: '2026-09-10T00:00:00Z', updated,
+  locationPrecision: 'incident', evidenceState: 'observed',
+  severity: 'SEVERE', alert: 'Orange'
+});
+
+test('merging two rows does not unlearn what either of them knew', () => {
+  /* A superseded row was skipped when the evidence index was built, and
+     merging carries over only the evidence the bridging run happened to be
+     holding. So a provider record recorded under the superseded row, arriving
+     alone one run later, matched nothing - and because better evidence is
+     what moves a derived id, its position rounded to a different id than the
+     row it came from, so the id did not save it either. The same disaster was
+     appended a third time, active, in the recall denominator. */
+  const F1 = floodAt('rw-1', 25.0, 91.5, '2026-09-10T01:00:00Z', 5);
+  const F2 = floodAt('rw-2', 26.2, 92.9, '2026-09-10T02:00:00Z', 3);
+  const F3 = floodAt('rw-3', 26.6, 93.4, '2026-09-10T01:30:00Z', 4);
+  const led = freshLedger();
+  const rows = () => JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  const active = () => rows().filter(e => !e.supersededBy);
+
+  recordObserved([F1], led, 'a');
+  recordObserved([F2, F3], led, 'b');
+  assert.equal(active().length, 2, 'control: these should start as two rows');
+  const strandedFrom = rows().find(r => r.evidence.some(e => e.id === 'rw-3')).canonicalEventId;
+
+  recordObserved([F1, F2], led, 'c');
+  const survivor = active()[0];
+  assert.equal(active().length, 1, 'control: the bridging run should have merged the two rows');
+  assert.equal(rows().find(r => r.canonicalEventId === strandedFrom).supersededBy,
+    survivor.canonicalEventId);
+  assert.equal(survivor.evidence.some(e => e.id === 'rw-3'), false,
+    'control: the bridging run was not carrying rw-3, so the survivor should not have it yet');
+
+  recordObserved([F3], led, 'd');
+  assert.equal(active().length, 1,
+    'a provider record already recorded under the superseded row came back as a second disaster');
+  assert.ok(active()[0].evidence.some(e => e.id === 'rw-3'),
+    'the survivor should have learned the record that reconciled to it');
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
+test('a superseded row never receives another write', () => {
+  /* The row marked superseded is excluded from the denominator, so sightings
+     and impact revisions written to it are lost while the surviving disaster
+     goes stale. A run whose derived id matches the superseded row has to
+     resolve to the survivor. */
+  const F1 = floodAt('rw-1', 25.0, 91.5, '2026-09-10T01:00:00Z', 5);
+  const F2 = floodAt('rw-2', 26.2, 92.9, '2026-09-10T02:00:00Z', 3);
+  const led = freshLedger();
+  const rows = () => JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  recordObserved([F1], led, 'a');
+  recordObserved([F2], led, 'b');
+  recordObserved([F1, F2], led, 'c');
+  const dead = rows().find(r => r.supersededBy);
+  assert.ok(dead, 'control: one row should have been superseded');
+  const before = JSON.stringify(dead);
+
+  /* A record the ledger has not seen before, placed where the superseded row
+     was, so the id it derives is that row's. */
+  const fresh = Object.assign(floodAt('rw-new', 26.2, 92.9, '2026-09-11T00:00:00Z', 9),
+    { title: 'Flooding in Assam — updated' });
+  assert.equal(OBS.canonicalise([fresh])[0].canonicalEventId, dead.canonicalEventId,
+    'control: this record has to derive the superseded row\'s id to prove anything');
+  recordObserved([fresh], led, 'd');
+
+  const after = rows();
+  assert.equal(after.length, 2, 'a third row was appended');
+  assert.equal(JSON.stringify(after.find(r => r.supersededBy)), before,
+    'the superseded row was written to again');
+  const survivor = after.find(r => !r.supersededBy);
+  assert.ok(survivor.evidence.some(e => e.id === 'rw-new'),
+    'the update went somewhere other than the surviving disaster');
+  assert.equal(survivor.deaths, 9, 'the survivor did not take up the revised toll');
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
 test('the ledger states how it decides what it holds', () => {
   const led = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
   assert.ok(Array.isArray(led.events), 'the observed ledger has no events array');

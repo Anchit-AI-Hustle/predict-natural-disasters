@@ -23,7 +23,11 @@
  */
 (function (root) {
 
-  var VERIFICATION_VERSION = 'verify-1.0.0';
+  /* 1.1.0: a compound claim is graded on the tolerance of the hazard actually
+     observed rather than on its primary family's. The published table is
+     unchanged; which of its rows applies is not, and a verdict reached under
+     the old reading is not the same verdict. */
+  var VERIFICATION_VERSION = 'verify-1.1.0';
 
   var CLASSIFICATION = {
     HIT: 'HIT',
@@ -121,11 +125,42 @@
       thresholds: {
         requires: 'A significant observed disaster of the same hazard family, by the observed ledger’s published bar.',
         geographyToleranceKm: GEOGRAPHY_TOLERANCE_KM[family] || GEOGRAPHY_TOLERANCE_KM.other,
+        /* One tolerance per family the claim names.
+         *
+         * The table is a statement about how far each hazard's effects reach
+         * from its centre, so a compound claim needs all of them: grading
+         * "Flood / Landslide" on the primary family alone gave an observed
+         * landslide the flood radius, and a landslide 200 km from the
+         * forecast point was a full hit under 300 km when its own published
+         * tolerance is 150 - with a reason line that said "the published 300
+         * km tolerance for this hazard" about a hazard whose tolerance is
+         * not 300. Neither number came from the outcome; which one applies is
+         * decided by the hazard observed. */
+        geographyToleranceKmByHazard: families.reduce(function (m, f) {
+          m[f] = GEOGRAPHY_TOLERANCE_KM[f] || GEOGRAPHY_TOLERANCE_KM.other;
+          return m;
+        }, {}),
         partialHitWeight: PARTIAL_WEIGHT
       },
       freezeTimestamp: p.freezeTimestamp || null,
       forecastClass: p.forecastClass || null
     };
+  }
+
+  /**
+   * Which published tolerance applies, given what was actually observed.
+   *
+   * A hazard the claim never named cannot borrow one of its radii, so the
+   * primary family's tolerance stands as the fallback - it is the one the
+   * record publishes and the one a single-hazard claim has always been
+   * graded on.
+   */
+  function toleranceFor(claim, hazard) {
+    var by = (claim.thresholds && claim.thresholds.geographyToleranceKmByHazard) || {};
+    if (hazard && Object.prototype.hasOwnProperty.call(by, hazard)) {
+      return { km: by[hazard], hazard: hazard };
+    }
+    return { km: claim.thresholds.geographyToleranceKm, hazard: claim.hazard };
   }
 
   /**
@@ -146,11 +181,12 @@
     var d = (g.lat !== null && g.lon !== null && eg.lat !== null && eg.lat !== undefined &&
              eg.lon !== null && eg.lon !== undefined)
       ? distanceKm(g.lat, g.lon, Number(eg.lat), Number(eg.lon)) : null;
-    var tol = claim.thresholds.geographyToleranceKm;
+    var tol = toleranceFor(claim, event.hazard);
 
-    if (d !== null && d <= tol) {
+    if (d !== null && d <= tol.km) {
       return { level: 'full',
-        why: 'Observed ' + Math.round(d) + ' km from the forecast position, inside the published ' + tol + ' km tolerance for this hazard.' };
+        why: 'Observed ' + Math.round(d) + ' km from the forecast position, inside the published ' +
+             tol.km + ' km tolerance for ' + tol.hazard + '.' };
     }
     /* The right country and the right hazard, but outside the area the
        forecast actually named. Part of the claim held and part did not, which
@@ -159,7 +195,8 @@
       return { level: 'partial',
         why: 'Observed in ' + eg.country + ', which the outlook named, but ' +
              (d === null ? 'its position cannot be compared with the forecast position'
-                         : Math.round(d) + ' km away, outside the published ' + tol + ' km tolerance') + '.' };
+                         : Math.round(d) + ' km away, outside the published ' + tol.km +
+                           ' km tolerance for ' + tol.hazard) + '.' };
     }
     return null;
   }
@@ -428,20 +465,24 @@
        is on record inside the frozen geography and window bears the forecast
        out whether or not anything could have proved the opposite. */
     var full = matched.filter(function (m) { return m.level === 'full'; });
+    /* Name the hazard that was actually observed, not the claim's primary
+       family: a compound claim accepts more than one, and "a significant
+       flood was observed" about a landslide describes the wrong event. */
+    var observedHazard = function (m) { return (m && m.event && m.event.hazard) || claim.hazard; };
     if (full.length) {
       return say(CLASSIFICATION.HIT,
-        'A significant ' + claim.hazard + ' was observed inside the frozen geography and window. ' + full[0].why, full);
+        'A significant ' + observedHazard(full[0]) + ' was observed inside the frozen geography and window. ' + full[0].why, full);
     }
     if (matched.length) {
       return say(CLASSIFICATION.PARTIAL_HIT,
-        'A significant ' + claim.hazard + ' was observed inside the window but only partly inside the geography this outlook named. ' + matched[0].why, matched);
+        'A significant ' + observedHazard(matched[0]) + ' was observed inside the window but only partly inside the geography this outlook named. ' + matched[0].why, matched);
     }
     /* From here every answer rests on nothing having been observed, so what
        the record could have seen decides whether that means anything. */
     if (gate) return gate;
     if (early.length) {
       return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
-        'The only matching ' + claim.hazard + ' began at ' + early[0].event.onset + ', before this forecast can be shown to have existed (' +
+        'The only matching ' + observedHazard(early[0]) + ' began at ' + early[0].event.onset + ', before this forecast can be shown to have existed (' +
         claim.window.effectiveForecastStart + '), so it cannot count as having been predicted.', []);
     }
     if (awaitingActivity.length) {
@@ -861,6 +902,7 @@
     CLASSIFICATION: CLASSIFICATION, COVERAGE: COVERAGE,
     PARTIAL_WEIGHT: PARTIAL_WEIGHT, GEOGRAPHY_TOLERANCE_KM: GEOGRAPHY_TOLERANCE_KM,
     effectiveStart: effectiveStart, frozenClaim: frozenClaim, geographyMatch: geographyMatch,
+    toleranceFor: toleranceFor,
     claimAccepts: claimAccepts,
     verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm,
     providerCovers: providerCovers, providerCoversHazard: providerCoversHazard,
