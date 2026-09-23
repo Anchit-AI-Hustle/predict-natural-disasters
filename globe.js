@@ -371,13 +371,19 @@
      * NASA's tiles keep failing and none has arrived, the mosaic stays up at
      * every height and the caption says it is the old picture rather than
      * letting it pass for today's.
+     *
+     * The mosaic is watched the same way. When it fails too, what the reader
+     * sees is the painted map underneath, and the caption says so: naming a
+     * photograph nobody can see is the claim the flat map already refuses to
+     * make.
      */
-    function todaysEarth(Cesium, satLayer) {
+    function todaysEarth(Cesium, satLayer, satProvider) {
       var daily = shared('dailyImagery', null);
       var latest = typeof daily === 'function' ? daily() : null;
       var provider = latest ? tiled(Cesium, latest.url, latest.credit, latest.maxZoom) : null;
       var dayLayer = provider ? viewer.imageryLayers.addImageryProvider(provider) : null;
       var failures = 0, loaded = false, failed = false, last = null;
+      var satFailures = 0, satLoaded = false, satFailed = !satLayer;
       function say(source) {
         if (source === last) return;
         last = source;
@@ -391,12 +397,19 @@
         var useDay = !!dayLayer && high && !failed;
         if (dayLayer) dayLayer.show = useDay;
         if (satLayer) satLayer.show = !useDay;
-        say(useDay ? 'daily' : (high && dayLayer ? 'fallback' : 'detail'));
+        say(useDay ? 'daily' : satFailed ? 'drawn' : (high && dayLayer ? 'fallback' : 'detail'));
       }
       if (provider && provider.errorEvent && provider.errorEvent.addEventListener) {
         provider.errorEvent.addEventListener(function () {
           if (loaded || failed || ++failures < 3) return;
           failed = true;
+          pick();
+        });
+      }
+      if (satProvider && satProvider.errorEvent && satProvider.errorEvent.addEventListener) {
+        satProvider.errorEvent.addEventListener(function () {
+          if (satLoaded || satFailed || ++satFailures < 3) return;
+          satFailed = true;
           pick();
         });
       }
@@ -406,6 +419,7 @@
       try {
         viewer.scene.globe.tileLoadProgressEvent.addEventListener(function (queued) {
           if (queued === 0 && dayLayer && dayLayer.show && failures === 0) loaded = true;
+          if (queued === 0 && satLayer && satLayer.show && satFailures === 0) satLoaded = true;
         });
       } catch (e) { /* older Globe: errors alone decide */ }
       try {
@@ -520,7 +534,7 @@
           var esri = shared('ESRI_CREDIT', '');
           var sat = tiled(Cesium, shared('IMAGERY', ''), esri, 18);
           var satLayer = sat ? viewer.imageryLayers.addImageryProvider(sat) : null;
-          reannounce = todaysEarth(Cesium, satLayer);
+          reannounce = todaysEarth(Cesium, satLayer, sat);
           /* Borders and place names, the same reference layer the flat map
              draws over its own satellite view. Without it the globe is
              photography with nothing named on it, and a reader zoomed in on a

@@ -207,6 +207,11 @@ const CESIUM_STUB = `
     /* Constructed, not fetched: the tiled provider takes its template as-is
        and asks for tiles from it, which is the reason the globe uses it. */
     UrlTemplateImageryProvider: function(o){
+      /* Cesium reports a tile that failed through the provider's errorEvent;
+         __fail raises it, so a test can take a tile host down. */
+      var heard = [];
+      this.errorEvent = { addEventListener: function(f){ heard.push(f); } };
+      this.__fail = function(n){ for (var i = 0; i < (n || 1); i++) heard.forEach(function(f){ f({}); }); };
       this.url = o && o.url; this.opts = o;
       this.tileWidth = 256; this.tileHeight = 256;
       this.maximumLevel = o && o.maximumLevel;
