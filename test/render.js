@@ -215,7 +215,16 @@ const CESIUM_STUB = `
 
 class RepoLoader extends ResourceLoader {
   fetch(url, options) {
-    if (/unpkg\.com\/leaflet.*\.js$/.test(url)) return Promise.resolve(Buffer.from(LEAFLET_STUB));
+    /* The map library, stubbed rather than served.
+       The real one is in this repository now (vendor/leaflet), so without
+       this it would be loaded from disk and overwrite the stub — and with it
+       the recorded maps, the reported container height and the observable
+       zoom state that every map and globe test reads. Real Leaflet is
+       exercised in a real browser instead, by tools/map-fallback-check.js and
+       tools/layout-browser-check.js; jsdom gets the stub it can see into. */
+    if (/(unpkg\.com\/leaflet[^/]*\/dist\/leaflet|\/vendor\/leaflet\/leaflet)\.js$/.test(url)) {
+      return Promise.resolve(Buffer.from(LEAFLET_STUB));
+    }
     if (url.startsWith(ORIGIN)) {
       const rel = decodeURIComponent(new URL(url).pathname).replace(/^\/+/, '');
       const file = path.join(ROOT, rel);

@@ -242,7 +242,12 @@
     return 0;
   }
 
-  /** Severity from the level the issuing authority actually published. */
+  /** Severity from the published level, rather than a number invented per
+      event: an authority's own alert where the provider issues one, and this
+      site's mapping of a measured intensity where it does not (a record says
+      which, under alertBasis). Both are evidence about how grave the hazard
+      is; only the first is evidence that an authority declared anything, and
+      that distinction is the observed ledger's business, not this ranking's. */
   function alertRank(e) {
     /* Every assessment on the record is weighed and the gravest wins. Returning
        on the first one that matched meant a record could be made *less* severe
@@ -528,24 +533,29 @@
   function geometryContains(g, lat, lon) {
     if (!g || !isFinite(lat) || !isFinite(lon)) return null;
     if (g.type === 'Polygon') return inPolygon(lon, lat, g.coordinates);
+    /* "Outside" means outside every part. One part that could not be decided
+       - an antimeridian-wrapping ring, a degenerate one - is not evidence that
+       the point is not in it, and reporting false here told a reader they were
+       outside a warning area on the strength of the parts that happened to be
+       decidable. Any undecidable part makes the whole undecidable. */
     if (g.type === 'MultiPolygon') {
       if (!Array.isArray(g.coordinates)) return null;
-      var decided = false;
+      var undecidable = false;
       for (var i = 0; i < g.coordinates.length; i++) {
         var r = inPolygon(lon, lat, g.coordinates[i]);
         if (r === true) return true;
-        if (r === false) decided = true;
+        if (r === null) undecidable = true;
       }
-      return decided ? false : null;
+      return undecidable ? null : false;
     }
     if (g.type === 'GeometryCollection' && Array.isArray(g.geometries)) {
-      var any = null;
+      var unknown = false;
       for (var k = 0; k < g.geometries.length; k++) {
         var c = geometryContains(g.geometries[k], lat, lon);
         if (c === true) return true;
-        if (c === false) any = false;
+        if (c === null) unknown = true;
       }
-      return any;
+      return unknown ? null : false;
     }
     return null;
   }
@@ -594,6 +604,9 @@
     undetermined: 'Regional warning — exact applicability to this location has not been established.',
     forecast: 'A window being watched, not a report that anything has happened.',
     outsideForecast: 'Your saved place is outside the published outlook area.',
+    countryForecast: 'This outlook was issued for the whole country your saved place is in, not for a point within it.',
+    countryUnknownPlace: 'This outlook covers a whole country. Your saved place has no country recorded \u2014 search for it by name rather than entering coordinates, and this can be answered.',
+    countryUnrecognisedPlace: 'This outlook covers a whole country. The country recorded for your saved place is not one this page can recognise \u2014 a place search made in another language records the country in that language \u2014 so whether the outlook covers you cannot be established. Search for the place by name again to record it afresh.',
     areaLevel: 'Area-level record: its coordinate marks an area centre, not an incident. Whether this place falls inside the affected area has not been established.'
   };
 
@@ -604,15 +617,112 @@
    * distanceKm is always computed where both points exist, but claimDistance
    * says whether it may be shown to the reader as a distance to the hazard.
    */
+  /*
+   * Two names for one country, told apart from two different countries.
+   *
+   * The saved place's country comes from a geocoder that answers in the
+   * browser's language, so a home saved in a German browser reads
+   * "Deutschland" while every record in the feed says "Germany". Exact
+   * lower-cased equality then failed, and the page did the quiet thing: it
+   * dropped every Germany-wide outlook for that reader rather than being
+   * wrong out loud. The place now carries the two-letter code the geocoder
+   * returns, which no language changes, and the English name is derived from
+   * it here. Names are compared on their letters alone, so "Viet Nam" and
+   * "Vietnam" are one country; nothing further is inferred, and two genuinely
+   * different names stay two countries.
+   */
+  function coordOf(v) {
+    if (v === null || v === undefined || v === '') return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+
+  function countryKey(name) {
+    var s = String(name || '').toLowerCase();
+    if (s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return s.replace(/[^a-z]/g, '');
+  }
+
+  function countryFromCode(code) {
+    var c = String(code || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(c)) return null;
+    try {
+      if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
+        var n = new Intl.DisplayNames(['en'], { type: 'region' }).of(c);
+        if (n && n !== c) return n;
+      }
+    } catch (err) { /* no ICU data for regions: fall back to the saved name */ }
+    return null;
+  }
+
+  /** Every spelling this saved place can be recognised by; empty when it
+      records no country at all, which is not the same as not matching. */
+  function placeCountryKeys(place) {
+    var keys = [], fromCode = countryFromCode(place && place.countryCode);
+    if (fromCode) keys.push(countryKey(fromCode));
+    var named = countryKey(place && place.country);
+    if (named && keys.indexOf(named) < 0) keys.push(named);
+    return keys;
+  }
+
+  function countryMatches(place, name) {
+    var want = countryKey(name);
+    return !!want && placeCountryKeys(place).indexOf(want) >= 0;
+  }
+
+  /* Every country name in English, keyed the same way, built once from the
+     two-letter codes the platform knows. It is what lets a name that does not
+     match be read correctly: "France" is a different country from Germany,
+     while "Deutschland" is a name this comparison cannot place at all, and
+     saying "does not apply" to the second would be the same silent drop in a
+     new disguise. */
+  var ENGLISH_COUNTRIES = null;
+  function englishCountryKeys() {
+    if (ENGLISH_COUNTRIES) return ENGLISH_COUNTRIES;
+    ENGLISH_COUNTRIES = {};
+    try {
+      if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
+        var dn = new Intl.DisplayNames(['en'], { type: 'region' });
+        for (var a = 65; a <= 90; a++) {
+          for (var b = 65; b <= 90; b++) {
+            var code = String.fromCharCode(a, b), name = dn.of(code);
+            if (name && name !== code) ENGLISH_COUNTRIES[countryKey(name)] = code;
+          }
+        }
+      }
+    } catch (err) { /* no region data: the check below stands down */ }
+    return ENGLISH_COUNTRIES;
+  }
+
+  /** Whether a name that did not match can be trusted to mean a different
+      country. A code always can; an English name can; anything else cannot be
+      told apart from this country under another name. */
+  function countryComparable(place) {
+    if (countryFromCode(place && place.countryCode)) return true;
+    var k = countryKey(place && place.country);
+    if (!k) return false;
+    var names = englishCountryKeys();
+    for (var any in names) {
+      if (Object.prototype.hasOwnProperty.call(names, any)) {
+        return Object.prototype.hasOwnProperty.call(names, k);
+      }
+    }
+    return true;   // nothing to check against; the saved name stands
+  }
+
   function riskRow(e, place, radiusKm) {
     e = e || {}; place = place || {};
     var R = isFinite(radiusKm) ? Number(radiusKm) : RISK_RADIUS_KM;
-    var pLat = Number(place.lat), pLon = Number(place.lon);
-    var eLat = Number(e.lat), eLon = Number(e.lon);
-    if (!isFinite(pLat) || !isFinite(pLon)) return null;
+    /* Number(null) and Number('') are both 0, and 0,0 is a real position in
+       the Gulf of Guinea, so an unlocated place or record would have been
+       measured from Null Island and could read as kilometres from a reader's
+       home. Absent is absent. */
+    var pLat = coordOf(place.lat), pLon = coordOf(place.lon);
+    var eLat = coordOf(e.lat), eLon = coordOf(e.lon);
+    if (pLat === null || pLon === null) return null;
 
     var contains = geometryContains(e.geometry, pLat, pLon);
-    var d = (isFinite(eLat) && isFinite(eLon)) ? distanceKm(pLat, pLon, eLat, eLon) : null;
+    var d = (eLat !== null && eLon !== null) ? distanceKm(pLat, pLon, eLat, eLon) : null;
     var near = d !== null && d <= R;
     var out = function (band, note, claim) {
       return {
@@ -625,6 +735,28 @@
     if (e.isForecast || e.forecast) {
       if (contains === true) return out('C', APPLICABILITY.forecast, false);
       if (contains === false) return near ? out('D', APPLICABILITY.outsideForecast, false) : null;
+      /* A country-wide outlook applies to the country, not to a radius around
+         whichever point it was anchored at. A United States outlook anchored
+         in Florida was dropped for a home in California - 3,500 km away and
+         squarely inside the area the outlook names. Where the saved place
+         records which country it is in, that is what decides it; where it does
+         not, neither answer is available and the row says so rather than
+         inventing one from the distance. */
+      if (e.forecastScope === 'country' && e.country) {
+        if (countryMatches(place, e.country)) return out('C', APPLICABILITY.countryForecast, false);
+        /* It did not match, and whether that means a different country
+           depends on whether the saved name can be placed at all. */
+        if (placeCountryKeys(place).length) {
+          if (countryComparable(place)) return null;
+          return near ? out('C', APPLICABILITY.countryUnrecognisedPlace, false) : null;
+        }
+        /* No country on the saved place: neither "it applies" nor "it does
+           not" can be established, so no row is invented for it. The page
+           says how many outlooks this leaves out and how to fix it, rather
+           than listing every country-wide outlook on earth against a place
+           it cannot locate. */
+        return near ? out('C', APPLICABILITY.countryUnknownPlace, false) : null;
+      }
       return near ? out('C', APPLICABILITY.forecast, !!e.proximityEligible) : null;
     }
 
@@ -639,6 +771,171 @@
     if (contains === false) return near ? out('D', APPLICABILITY.outsideWarning, false) : null;
     return near ? out('D', APPLICABILITY.areaLevel, false) : null;
   }
+  /* ------------------------------------------- what kind of forecast it is */
+
+  /*
+   * Not every forecast is a prediction.
+   *
+   * This project publishes outlooks derived from hazards that are already
+   * happening, aftershock outlooks that follow an observed mainshock, and one
+   * frozen benchmark written after its own window had opened. Grading all of
+   * them together and calling the result an accuracy figure credits the system
+   * for describing the present.
+   *
+   * So each forecast is placed in one of six classes, and only one of them -
+   * independent-prospective - may reach a headline prediction figure. The
+   * others are real forecasts and are graded, under their own labels.
+   */
+  var FORECAST_CLASSES = {
+    'independent-prospective': {
+      label: 'Independent prospective',
+      definition: 'Frozen before the qualifying hazard was observed.',
+      headline: true
+    },
+    'warning-derived': {
+      label: 'Warning-derived',
+      definition: 'Derived from an official warning that had already been issued.',
+      headline: false
+    },
+    'continuation-outlook': {
+      label: 'Continuation outlook',
+      definition: 'Written after the hazard existed, forecasting that it continues or escalates.',
+      headline: false
+    },
+    'post-event-conditional': {
+      label: 'Post-event conditional',
+      definition: 'Conditional on an event already observed, such as an aftershock sequence following a mainshock.',
+      headline: false
+    },
+    'retrospective-benchmark': {
+      label: 'Retrospective benchmark',
+      definition: 'A benchmark or backtest, not issued prospectively.',
+      headline: false
+    },
+    'invalid-post-event': {
+      label: 'Invalid post-event',
+      definition: 'Offered as prospective although nothing shows it existed before the window it claims.',
+      headline: false
+    }
+  };
+
+  function ms(v) { var t = Date.parse(v || ''); return isFinite(t) ? t : null; }
+
+  /**
+   * The class of one forecast, given the signal it was derived from where
+   * there is one. `parent` is the feed record named by forecastOf.
+   *
+   * Returns an object rather than a bare string, because a classification
+   * nobody can check is not much better than no classification: the reason is
+   * what a reader or an auditor needs.
+   */
+  function classifyForecast(f, parent) {
+    f = f || {};
+    if (!(f.forecast || f.isForecast)) return null;
+    var say = function (k, why) { return { forecastClass: k, classificationReason: why }; };
+
+    if (f.forecastKind === 'frozen-benchmark') {
+      return say('retrospective-benchmark',
+        'Recorded as a frozen benchmark rather than as a forecast issued ahead of its window.');
+    }
+    if (f.forecastKind === 'aftershock-sequence') {
+      return say('post-event-conditional',
+        'Conditional on an earthquake that had already been observed when this was written.');
+    }
+    if (f.forecastOf) {
+      if (parent && parent.evidenceState === 'official-warning') {
+        return say('warning-derived',
+          'Derived from an official warning that the issuing agency had already published.');
+      }
+      return say('continuation-outlook',
+        'Derived from a hazard already present in the feed, forecasting that it continues.');
+    }
+
+    /* Nothing declares where this came from, so it stands as its own claim and
+       has to be able to show it existed first. */
+    var freeze = ms(f.freezeTimestamp), start = ms(f.targetStart);
+    /* A freeze that nothing outside the running process can check is not a
+       freeze. Being unable to prove a forecast came first is the whole reason
+       this class exists, so an unevidenced one is never counted as one that
+       did. */
+    if (freeze === null || f.freezeEvidenced === false) {
+      return say('invalid-post-event',
+        'No immutable record establishes that this forecast existed before the window it claims, so it cannot be counted as a prediction.');
+    }
+    if (start === null) {
+      return say('invalid-post-event',
+        'The forecast names no window, so nothing can establish that it preceded one.');
+    }
+    if (freeze > start) {
+      return say('invalid-post-event',
+        'The earliest record of this forecast is later than the start of the window it claims.');
+    }
+    return say('independent-prospective',
+      'Frozen at ' + f.freezeTimestamp + ', before the window opening at ' + f.targetStart + '.');
+  }
+
+  /*
+   * What makes a frozen claim the claim it is.
+   *
+   * The ledger keyed a forecast on its id and the start of its window and
+   * treated that pair as the whole claim. Measured: a second run carrying the
+   * same id and start, a window eight days longer and a geography moved from
+   * Nepal to Bihar, recorded nothing at all - and the feed then served the
+   * revised claim carrying the original row's freeze timestamp, which is to
+   * say a claim nobody ever froze, presented as having existed for days. The
+   * key is every term the verifier grades on: change any of them and it is a
+   * new claim, which needs its own immutable row before it can be counted.
+   *
+   * A term a row never recorded reads as absent rather than as equal. Those
+   * rows cannot prove what they do not state, so a claim that now carries a
+   * scope is frozen afresh - later than the old row, which is the direction
+   * that can only cost a forecast credit, never grant it.
+   */
+  function coordToken(v) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(3) : '-';
+  }
+  function claimKey(f) {
+    f = f || {};
+    return [f.id, f.type, f.targetStart, f.targetEnd, f.country, f.region,
+      coordToken(f.lat), coordToken(f.lon), f.forecastScope]
+      .map(function (v) {
+        return (v === undefined || v === null || v === '') ? '-' : String(v).trim();
+      }).join('|');
+  }
+
+  /**
+   * The earliest moment an observation may be used to verify a forecast.
+   *
+   * An upstream issuedAt is what a provider says about itself; it is not proof
+   * this application held the forecast then. The defensible timestamp is the
+   * earliest immutable record of it - the append-only ledger in the repository
+   * - and a window cannot be credited from before the forecast is known to
+   * have existed.
+   */
+  function effectiveForecastStart(f) {
+    f = f || {};
+    var start = ms(f.targetStart), freeze = ms(f.freezeTimestamp);
+    if (start === null && freeze === null) return null;
+    if (start === null) return f.freezeTimestamp;
+    if (freeze === null) return f.targetStart;
+    return freeze > start ? f.freezeTimestamp : f.targetStart;
+  }
+
+  /** May an observation at this time be used to verify this forecast? */
+  function observationCanVerify(f, observedAt) {
+    var from = ms(effectiveForecastStart(f)), end = ms((f || {}).targetEnd), at = ms(observedAt);
+    if (at === null || from === null) return false;
+    if (at < from) return false;
+    return end === null ? true : at <= end;
+  }
+
+  /** How much of a claimed window the application can actually be credited for. */
+  function creditedWindowHours(f) {
+    var from = ms(effectiveForecastStart(f)), end = ms((f || {}).targetEnd);
+    if (from === null || end === null) return null;
+    return Math.max(0, (end - from) / H);
+  }
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
@@ -648,7 +945,14 @@
     keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,
     geometryContains: geometryContains, distanceKm: distanceKm,
     riskRow: riskRow, RISK_BANDS: RISK_BANDS, RISK_RADIUS_KM: RISK_RADIUS_KM,
-    APPLICABILITY: APPLICABILITY
+    countryMatches: countryMatches, countryFromCode: countryFromCode,
+    countryComparable: countryComparable,
+    APPLICABILITY: APPLICABILITY,
+    FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
+    claimKey: claimKey,
+    effectiveForecastStart: effectiveForecastStart,
+    observationCanVerify: observationCanVerify,
+    creditedWindowHours: creditedWindowHours
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PNDHazards = api;

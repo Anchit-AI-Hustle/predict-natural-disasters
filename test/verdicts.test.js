@@ -151,7 +151,16 @@ test('the published figures equal the ledgers, recomputed independently', async 
   assert.equal(num('mPartial'), t.partial);
   assert.equal(num('mFalse'), t.falseAlarm);
   assert.equal(num('mMissed'), t.missed);
-  assert.equal(num('mAwaiting'), t.awaiting);
+  /* The unchecked backlog is now split in two: windows the engine graded as
+     ungradeable (it looked, and the written record of observed disasters
+     cannot answer them) and windows carrying no verdict at all. The split is
+     the point - "nobody checked" and "nothing can answer this" are different
+     statements - but the total may not shrink, which is how the backlog would
+     quietly disappear. */
+  assert.equal(num('mAwaiting') + num('mUngradeable'), t.awaiting,
+    'the unchecked backlog changed size when it was split');
+  assert.ok(num('mUngradeable') > 0,
+    'every matured window is still reported as merely unchecked');
   /* The specific regression: the page reported none of these. */
   assert.ok(t.falseAlarm > 0 && num('mFalse') > 0, 'graded false alarms vanished again');
   assert.ok(t.missed > 0 && num('mMissed') > 0, 'missed events vanished again');
@@ -161,9 +170,14 @@ test('the published figures equal the ledgers, recomputed independently', async 
 test('no headline rate is shown as a bare percentage', async () => {
   const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
-  for (const id of ['mPrecision', 'mRecall']) {
+  /* The two unqualified tiles this used to guard were removed: they published
+     a hit rate over six hand-entered verdicts in the largest type on the page,
+     above the section that exists to explain why such a number is not a
+     prediction rate. The rule they were guarding is unchanged and now applies
+     to the rates that replaced them. */
+  for (const id of ['ipPrecision', 'ipRecall', 'ipF1', 'cdPrecision']) {
     const txt = doc.getElementById(id).textContent;
-    assert.match(txt, /\(\d+ of \d+\)|Not enough/,
+    assert.match(txt, /\([^)]*\d+[^)]*\)|Not computable|Not enough/,
       `${id} reads "${txt}" — a rate with no denominator`);
   }
   window.close();
@@ -175,7 +189,8 @@ test('the page never claims a perfect record while its ledger records failures',
   const failures = (LEDGER.verifications || []).filter(v => V.normalise(v.status) === 'FALSE_ALARM').length
     + (LEDGER.observedEvents || []).filter(o => V.normalise(o.status) === 'MISSED').length;
   if (failures > 0) {
-    assert.notEqual(doc.getElementById('mRecall').textContent.trim(), '100%');
+    assert.equal(/^100(\.0)?%/.test(doc.getElementById('ipRecall').textContent.trim()), false,
+      'the page claims perfect recall while its ledger records failures');
     assert.notEqual(Number(doc.getElementById('mFalse').textContent) + Number(doc.getElementById('mMissed').textContent), 0,
       'the ledger records failures the page reports as zero');
   }

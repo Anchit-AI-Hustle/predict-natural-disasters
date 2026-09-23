@@ -139,7 +139,7 @@ const FIXTURES = {
           id: 'urn:oid:2.49.0.1.840.0.bbb', event: 'Excessive Heat Warning', severity: 'Extreme',
           areaDesc: 'Maricopa, AZ', headline: 'Dangerous heat', sent: isoNow, expires: '2026-09-16T00:00:00Z',
           senderName: 'NWS Phoenix AZ',
-          affectedZones: ['https://api.weather.gov/zones/forecast/AZZ553']
+          affectedZones: ['https://api.weather.gov/zones/forecast/AZZ553', 'https://api.weather.gov/zones/forecast/AZZ554']
         },
         geometry: null // zone-based: the alert itself carries no polygon
       },
@@ -166,10 +166,21 @@ const FIXTURES = {
     Atlantis: { results: [] }
   },
 
-  nwsZone: {
-    id: 'https://api.weather.gov/zones/forecast/AZZ553',
-    properties: { id: 'AZZ553', name: 'Greater Phoenix Area' },
-    geometry: { type: 'Polygon', coordinates: [[[-112.4, 33.2], [-111.8, 33.2], [-111.8, 33.7], [-112.4, 33.7], [-112.4, 33.2]]] }
+  /* Two zones, far enough apart that a place inside the second is nowhere
+     near the first. An alert resolved from the first zone alone reports a
+     place in the second as outside the warning area, which is the failure
+     these fixtures exist to catch. */
+  nwsZones: {
+    AZZ553: {
+      id: 'https://api.weather.gov/zones/forecast/AZZ553',
+      properties: { id: 'AZZ553', name: 'Greater Phoenix Area' },
+      geometry: { type: 'Polygon', coordinates: [[[-112.4, 33.2], [-111.8, 33.2], [-111.8, 33.7], [-112.4, 33.7], [-112.4, 33.2]]] }
+    },
+    AZZ554: {
+      id: 'https://api.weather.gov/zones/forecast/AZZ554',
+      properties: { id: 'AZZ554', name: 'Tucson Metro Area' },
+      geometry: { type: 'Polygon', coordinates: [[[-111.2, 32.0], [-110.7, 32.0], [-110.7, 32.4], [-111.2, 32.4], [-111.2, 32.0]]] }
+    }
   },
 
   usgsVolcano: [
@@ -294,13 +305,27 @@ function makeFetch(opts) {
   const fn = async (url) => {
     const u = String(url);
     calls.push(u);
-    const route = (key, body) => (isDown(key) ? failure(503) : jsonResponse(body));
+    /* A test can replace one upstream's payload without rebuilding the rest:
+       some defects only appear when two agencies report the same event. */
+    const feeds = o.feeds || {};
+    const route = (key, body) => (isDown(key) ? failure(503)
+      : jsonResponse(Object.prototype.hasOwnProperty.call(feeds, key) ? feeds[key] : body));
 
     if (u.includes('gdacs.org/gdacsapi') || u.includes('gdacs.org/xml/rss')) return route('gdacs', FIXTURES.gdacs);
     if (u.includes('earthquake.usgs.gov')) return route('usgs', FIXTURES.usgs);
     if (u.includes('eonet.gsfc.nasa.gov')) return route('eonet', FIXTURES.eonet);
     if (u.includes('nhc.noaa.gov/CurrentStorms')) return route('nhc', FIXTURES.nhc);
-    if (u.includes('api.weather.gov/zones/')) return route('nws', FIXTURES.nwsZone);
+    if (u.includes('api.weather.gov/zones/')) {
+      /* Answer for the zone that was asked for: routing every zone URL to one
+         fixture would hide an alert that resolved only its first zone. */
+      const id = (u.match(/zones\/forecast\/([A-Z0-9]+)/) || [])[1];
+      /* One zone of a multi-zone warning failing is the case that decides
+         whether a partial area gets published as the whole one. */
+      if ((o.nwsZonesDown || []).includes(id)) return failure(503);
+      const zone = FIXTURES.nwsZones[id];
+      if (!zone) return failure(404);
+      return route('nws', zone);
+    }
     if (u.includes('api.weather.gov/alerts')) {
       // Reproduce production's HTTP 400: the API rejects one query parameter.
       if (o.nwsRejects && o.nwsRejects.some(p => u.includes(p))) {

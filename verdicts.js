@@ -32,10 +32,12 @@ const OCCURRED = {
   VERIFIED:         'Yes',
   PARTIAL:          'Partly',
   FALSE_ALARM:      'No',
-  MISSED:           'Yes — but nothing predicted it',
-  COVERAGE_FAILURE: 'Yes — outside what was scanned',
+  MISSED:           'Yes \u2014 but nothing predicted it',
+  COVERAGE_FAILURE: 'Yes \u2014 outside what was scanned',
   OPEN:             'Too early to say',
   AWAITING:         'Not yet checked',
+  UNGRADEABLE:      'Nothing on record can answer this',
+  NOT_A_PREDICTION: 'Not gradeable as a prediction',
   UNKNOWN:          'Unrecognised verdict'
 };
 
@@ -47,13 +49,48 @@ const LABELS = {
   COVERAGE_FAILURE: 'Coverage failure',
   OPEN:             'Window still open',
   AWAITING:         'Awaiting verification',
+  UNGRADEABLE:      'Not gradeable',
+  NOT_A_PREDICTION: 'Not a prediction',
   UNKNOWN:          'Unrecognised verdict'
 };
 
 const CSS = {
   VERIFIED:'verified', PARTIAL:'partial', FALSE_ALARM:'alarm', MISSED:'missed',
-  COVERAGE_FAILURE:'coverage', OPEN:'open', AWAITING:'awaiting', UNKNOWN:'unknown'
+  COVERAGE_FAILURE:'coverage', OPEN:'open', AWAITING:'awaiting',
+  UNGRADEABLE:'ungradeable', NOT_A_PREDICTION:'notprediction', UNKNOWN:'unknown'
 };
+
+/* The verification engine's classification, in this page's vocabulary.
+ *
+ * Headline precision and recall are computed by the engine, while each row in
+ * the history table kept whatever state the hand-written verification ledger
+ * gave it. The two can disagree: a window the engine grades as a hit could
+ * still read "Awaiting verification" in the table below the figure counting
+ * it, and be missing from the side-by-side comparison entirely. One grading
+ * drives both, and this is the only translation of it.
+ *
+ * The engine's PENDING is two different things and is never collapsed into
+ * one: a window that has not closed yet is open, and a window that closed
+ * with nothing on record to grade it against is ungradeable. Calling the
+ * second one "awaiting verification" would say somebody has yet to get round
+ * to it, when in fact nothing can be checked at all.
+ */
+const ENGINE_STATES = {
+  HIT:                 'VERIFIED',
+  PARTIAL_HIT:         'PARTIAL',
+  MISS_FALSE_POSITIVE: 'FALSE_ALARM',
+  INVALID_POST_EVENT:  'NOT_A_PREDICTION'
+};
+
+function engineState(verdict) {
+  const v = verdict || {};
+  const c = String(v.classification || '').trim().toUpperCase();
+  if (!c) return null;
+  if (c === 'PENDING') {
+    return v.ungradeableReason === 'WINDOW_STILL_OPEN' ? 'OPEN' : 'UNGRADEABLE';
+  }
+  return ENGINE_STATES[c] || 'UNKNOWN';
+}
 
 function normalise(status) {
   const s = String(status == null ? '' : status).trim().toUpperCase();
@@ -74,15 +111,76 @@ function stateOf(record, now) {
   return end > (now == null ? Date.now() : now) ? 'OPEN' : 'AWAITING';
 }
 
+/* The hazard model, wherever this file is running. The page loads it as a
+   script; node requires it. Looked up when asked rather than at load time,
+   because in the browser this file is parsed before it. */
+function hazards() {
+  if (typeof PNDHazards !== 'undefined' && PNDHazards) return PNDHazards;
+  if (typeof globalThis !== 'undefined' && globalThis.PNDHazards) return globalThis.PNDHazards;
+  if (typeof require === 'function') {
+    try { return require('./hazard-model.js'); } catch (e) { /* not available here */ }
+  }
+  return null;
+}
+
+/* What kind of forecast a ledger row holds.
+ *
+ * Rows written before the taxonomy existed carry only forecastKind, so the
+ * class is derived on read rather than written back: the ledger is
+ * append-only and a recorded claim is not edited to suit a later scheme.
+ *
+ * An unclassifiable row returns null and counts toward no headline. Being
+ * unable to establish that a forecast came first is exactly the case that
+ * must not be credited as one that did.
+ */
+function forecastClassOf(r) {
+  if (r && r.forecastClass) return r.forecastClass;
+  const H = hazards();
+  if (!H || !H.classifyForecast) return null;
+  const c = H.classifyForecast(Object.assign({ forecast: true }, r || {}));
+  return c ? c.forecastClass : null;
+}
+
+/* May this record count toward a headline "we predicted this" figure? */
+function headlineEligible(r) {
+  const H = hazards(), k = forecastClassOf(r);
+  if (!k || !H || !H.FORECAST_CLASSES) return false;
+  const def = H.FORECAST_CLASSES[k];
+  return !!(def && def.headline);
+}
+
+/* The same records split by what they are allowed to claim. Conditional
+   forecasts are graded too - they are simply graded under their own name. */
+function partitionByClass(records) {
+  const out = { headline: [], conditional: [], unclassified: [], byClass: {} };
+  for (const r of records || []) {
+    /* An observed event with no forecast behind it is a miss, not a forecast;
+       it belongs to recall on both sides of the split. */
+    const isForecastRow = !!(r && (r.targetStart || r.targetEnd || r.forecastKind || r.forecastClass));
+    const k = isForecastRow ? forecastClassOf(r) : null;
+    if (k) (out.byClass[k] = out.byClass[k] || []).push(r);
+    if (!isForecastRow) { out.headline.push(r); out.conditional.push(r); continue; }
+    if (!k) out.unclassified.push(r);
+    else if (headlineEligible(r)) out.headline.push(r);
+    else out.conditional.push(r);
+  }
+  return out;
+}
+
 /* Counts, plus every rate with the denominator it was computed from. A rate
    printed without its denominator hides that it came from three records. */
 function tally(records, now) {
   const t = { total: 0, open: 0, awaiting: 0, verified: 0, partial: 0,
-    falseAlarm: 0, missed: 0, coverageFailure: 0, unknown: 0, matured: 0 };
+    falseAlarm: 0, missed: 0, coverageFailure: 0, ungradeable: 0,
+    notPrediction: 0, unknown: 0, matured: 0 };
   const at = now == null ? Date.now() : now;
   for (const r of records || []) {
     t.total++;
-    const s = stateOf(r, at);
+    /* A state already resolved on the record wins: where the verification
+       engine has graded a window, recomputing the state from the row would
+       count the row as something other than what the page displays for it,
+       which is the disagreement this field exists to remove. */
+    const s = (r && r._state) || stateOf(r, at);
     const end = Date.parse((r && r.targetEnd) || '');
     if (Number.isFinite(end) && end <= at) t.matured++;
     if (s === 'OPEN') t.open++;
@@ -92,6 +190,8 @@ function tally(records, now) {
     else if (s === 'FALSE_ALARM') t.falseAlarm++;
     else if (s === 'MISSED') t.missed++;
     else if (s === 'COVERAGE_FAILURE') t.coverageFailure++;
+    else if (s === 'UNGRADEABLE') t.ungradeable++;
+    else if (s === 'NOT_A_PREDICTION') t.notPrediction++;
     else t.unknown++;
   }
   t.graded = t.verified + t.partial + t.falseAlarm;
@@ -114,8 +214,10 @@ function rate(hit, total) {
 /* What the ledger froze: exactly the fields tools/record-outlooks.js writes.
    A verdict may add to a record but never change any of these. */
 const CLAIM_FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region',
-  'lat', 'lon', 'alert', 'severity', 'severityRank', 'issuedAt', 'targetStart',
-  'targetEnd', 'forecastKind', 'forecastOf', 'source', 'sourceUrl',
+  'lat', 'lon', 'alert', 'severity', 'severityRank', 'issuedAt', 'sourceIssuedAt',
+  'targetStart', 'targetEnd', 'forecastKind', 'forecastClass',
+  'classificationReason', 'effectiveForecastStart', 'freezeTimestamp',
+  'freezeBasis', 'forecastOf', 'source', 'sourceUrl',
   'confidence', 'evidence', 'verificationRule'];
 
 /* Attaching a verdict to the window it judged.
@@ -181,8 +283,9 @@ function joinVerdicts(rows, verifications) {
   return { records: merged, unattached };
 }
 
-const V = { VERDICTS, OCCURRED, LABELS, CSS, normalise, stateOf, tally, rate,
-  windowKey, joinVerdicts, CLAIM_FIELDS };
+const V = { VERDICTS, OCCURRED, LABELS, CSS, ENGINE_STATES, normalise, stateOf,
+  engineState, tally, rate, windowKey, joinVerdicts, CLAIM_FIELDS,
+  forecastClassOf, headlineEligible, partitionByClass };
 if (typeof window !== 'undefined') window.PNDVerdicts = V;
 if (typeof module !== 'undefined' && module.exports) module.exports = V;
 })();

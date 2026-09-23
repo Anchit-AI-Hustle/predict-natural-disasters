@@ -3,12 +3,17 @@ name: Refresh disaster intelligence
 # Hourly: re-pull the live feed, record any newly-seen outlook and any movement
 # in the existing ones, and pre-warm the per-event enrichment cache.
 #
-# This asked for every five minutes and never got it. Measured from the
-# ledger's own write times over 15-20 September, GitHub actually ran it every
-# 2.0 to 5.6 hours, median 3.7 — about a fortieth of the declared rate, because
-# a schedule this aggressive on a free runner is throttled hard. Asking hourly
-# is both achievable and honest; the run also measures what it actually
-# achieves and publishes that rather than the intention.
+# This asked for every five minutes and never got it: a schedule that
+# aggressive on a free runner is throttled hard. Asking hourly is both
+# achievable and honest.
+#
+# What it actually achieves is measured rather than asserted here, because a
+# hand measurement goes stale: tools/record-changes.js records the gap between
+# runs and publishes it as observedCadenceHours, and /api/events serves it as
+# meta.refreshRecorded. Read from that record rather than from this comment —
+# as of the last run it was a median of about four hours, a shortest of 1.5
+# and a longest of nearly 35, which is a scheduled job on a shared runner
+# rather than a promise.
 #
 # The pages themselves are not stale in between: /api/events recomputes the
 # feed from the upstream sources on every request. What this job adds is the
@@ -53,17 +58,33 @@ jobs:
       - name: Record what changed in the forecast set
         run: node tools/record-changes.js /tmp/events.json data/forecast-changes.json
 
+      # Which providers were actually evaluated this run, and how completely.
+      # Without it, "nothing forecast this disaster" cannot be told apart from
+      # "nothing ever looked there", and the accuracy page has to guess which
+      # of the two it is reporting.
+      - name: Record what was scanned in the coverage ledger
+        run: node tools/record-scan.js /tmp/events.json data/scan-ledger.json
+
+      # One physical disaster, however many providers reported it. Recall needs
+      # a denominator of real-world events, and the feed only has provider
+      # records: the same flood arrives as a GDACS alert and a ReliefWeb
+      # country declaration, and three records is not three disasters.
+      - name: Record significant observed disasters
+        run: node tools/record-observed.js /tmp/events.json data/observed-disasters.json data/outlook-ledger.json
+
       - name: Commit the ledger when it changed
         run: |
           set -euo pipefail
-          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json; then
+          if git diff --quiet -- data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json data/observed-disasters.json; then
             echo "ledger unchanged"
             exit 0
           fi
           total=$(node -e "console.log(require('./data/outlook-ledger.json').length)")
+          scans=$(node -e "console.log((require('./data/scan-ledger.json').scans||[]).length)")
+          obs=$(node -e "console.log((require('./data/observed-disasters.json').events||[]).length)")
           git config user.name "disaster-refresh"
           git config user.email "noreply@anthropic.com"
-          git add data/outlook-ledger.json data/forecast-changes.json
+          git add data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json data/observed-disasters.json
           # Every run deploys, including the quiet ones.
           #
           # These used to be tagged "[ledger]" so vercel.json's ignoreCommand
@@ -78,7 +99,7 @@ jobs:
           # That marker was introduced when this ran every five minutes, which
           # would have been 288 deployments a day against a limit of 100. At
           # hourly it is at most 24, so the saving it existed for is gone.
-          git commit -m "Record outlooks and forecast changes ($total recorded)"
+          git commit -m "Record outlooks, coverage and observed disasters ($total outlooks, $scans scans, $obs disasters)"
           git push
 
       - name: Refresh live feed and warm every event's enrichment record

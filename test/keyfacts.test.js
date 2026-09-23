@@ -809,6 +809,9 @@ test('an alert raised by the merge is ordered as the alert it became', async () 
   assert.deepEqual(out, [], 'the feed is not ordered by alert:\n' + out.slice(0, 5).join('\n'));
 
   const src = read('api/events.js');
-  assert.match(src, /mergeSeismicReports\(out\.events\)\.sort\(/,
+  const merged = src.indexOf('mergeSeismicReports(out.events)');
+  const sorted = src.lastIndexOf('out.events.sort(byAlertThenTime)');
+  assert.ok(merged >= 0, 'the seismic merge must run over the whole feed');
+  assert.ok(sorted > merged,
     'the feed must be re-sorted after a merge can change an alert');
 });

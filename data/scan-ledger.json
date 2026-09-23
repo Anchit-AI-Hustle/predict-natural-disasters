@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "note": "Append-only record of what each run actually examined, written by tools/record-scan.js from the live feed's own scan record. Empty until the first production run writes to it; a fixture-derived row would describe a scan that never happened.",
+  "scans": []
+}

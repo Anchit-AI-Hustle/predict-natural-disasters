@@ -514,6 +514,24 @@ function mergeSeismicReports(events) {
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== g.lead.source);
     // Independent corroboration is worth stating, not discarding.
     if (others.length) g.lead.corroboratedBy = [...new Set(others)];
+    /* The provider records this one record stands for.
+     *
+     * Only the lead survives the merge, so the feed's account of an
+     * earthquake carries whichever agency's id happened to lead - and the
+     * lead changes the moment another agency publishes a death toll, which
+     * outranks agency priority outright. Measured: a USGS record at 25.49 and
+     * a GDACS record at 25.51 are one quake; GDACS then reports 12 deaths,
+     * takes the lead, and the feed serves a different id at a latitude that
+     * rounds to a different degree. Anything keeping its own record of what
+     * has been reported sees a second earthquake, and one disaster is counted
+     * twice for ever. The members are named so that identity survives a
+     * change of lead. */
+    if (g.members.length > 1) {
+      g.lead.mergedFrom = ranked.map(m => ({
+        id: m.id, source: m.source || null,
+        sourceUrl: m.sourceUrl || null, updated: m.updated || null
+      }));
+    }
   }
   // Rebuild in the caller's order so the newest-first sort survives the merge.
   return events.filter(e => { const g = groupOf.get(e); return !g || g.lead === e; });
@@ -596,6 +614,7 @@ async function handler(req, res) {
         country: p.country || p.countryname || p.iso3 || '',
         region: p.location || p.description || '',
         alert: p.alertlevel || p.alertLevel || 'Green',
+        alertBasis: 'issued',
         lat: coords[1], lon: coords[0],
         startedAt: p.fromdate || p.fromDate || null,
         updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
@@ -628,6 +647,7 @@ async function handler(req, res) {
         country: tag('gdacs:country', b) || '',
         region: tag('gdacs:location', b) || '',
         alert: tag('gdacs:alertlevel', b) || 'Green',
+        alertBasis: 'issued',
         lat, lon,
         startedAt: tag('gdacs:fromdate', b) || null,
         updated: tag('gdacs:todate', b) || tag('pubDate', b) || now.toISOString(),
@@ -677,7 +697,9 @@ async function handler(req, res) {
           id: 'usgs-' + f.id,
           source: 'USGS', sourceType: 'official', type: 'Earthquake',
           title: spellUsPlaces(f.properties.title), country, admin1, region: place,
+          /* USGS PAGER's own impact alert, renamed to this site's colours. */
           alert: pagerLevel(f.properties.alert),
+          alertBasis: 'issued',
           lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
           startedAt: new Date(f.properties.time).toISOString(),
           updated: new Date(f.properties.updated || f.properties.time).toISOString(),
@@ -769,7 +791,16 @@ async function handler(req, res) {
           region: [s.name, basinText(s.binNumber)].filter(Boolean).join(' ') || s.basin || '',
           // 64 kt and 96 kt are the Saffir-Simpson category 1 and category 3
           // boundaries, not thresholds of our own.
+          //
+          // It is still a colour this site computes from a wind speed, not an
+          // alert the hurricane centre issued, and the difference decides
+          // whether a storm counts as a disaster that happened: read as an
+          // authority's alert, a category-3 hurricane over open water with no
+          // reported impact entered the record of observed disasters and the
+          // recall denominator, described as having been "raised to a red
+          // alert by the issuing authority". It says what it is.
           alert: intensity >= 96 ? 'Red' : intensity >= 64 ? 'Orange' : 'Green',
+          alertBasis: 'derived-from-intensity',
           windKt: intensity,
           lat, lon,
           updated: s.lastUpdate || now.toISOString(),
@@ -818,14 +849,61 @@ async function handler(req, res) {
            unchecked — so a concave or multipart forecast zone could still
            send the reader to a place that is not under the warning. */
         const zoneGeometry = new Map();
-        await Promise.allSettled(zoneless.map(async f => {
-          const zone = ((f.properties || {}).affectedZones || [])[0];
-          if (!zone) return;
-          try {
-            const z = await timedFetch(zone, { timeout: 2500, headers: { accept: 'application/geo+json' } });
-            const c = centroid(z.geometry);
-            if (c) { zoneCentroids.set(f, c); zoneGeometry.set(f, z.geometry); }
-          } catch (e) { /* leave this alert unplaced */ }
+        /*
+         * All of the zones, or none of them.
+         *
+         * A warning routinely names several forecast zones, and resolving only
+         * the first one and publishing it as the affected area is worse than
+         * publishing nothing: a saved place in the second zone is tested
+         * against the first, found outside, and told it is outside the warning
+         * area. That is a false negative on the one question a warning exists
+         * to answer.
+         *
+         * So the polygon is only published when every zone resolved. The
+         * centroid still comes from the first zone, because it is a weaker
+         * claim that is already labelled a zone centre rather than an
+         * incident, and it is what keeps the alert on the map at all.
+         */
+        const ZONE_FETCH_BUDGET = 40;
+        let zoneBudget = ZONE_FETCH_BUDGET;
+        const zonePlan = zoneless.map(f => {
+          const zones = ((f.properties || {}).affectedZones || []).filter(Boolean);
+          /* Reserve the whole alert or none of it, so a partly-funded alert
+             never ends up with a partial area. */
+          const affordable = zones.length > 0 && zones.length <= zoneBudget;
+          if (affordable) zoneBudget -= zones.length;
+          return { f, zones, complete: affordable };
+        });
+        let zonePartialArea = 0;
+
+        const combinePolygons = geoms => {
+          const parts = [];
+          for (const g of geoms) {
+            if (!g) return null;
+            if (g.type === 'Polygon') parts.push(g.coordinates);
+            else if (g.type === 'MultiPolygon') { for (const q of g.coordinates) parts.push(q); }
+            else return null;   // a shape this cannot combine is not combined
+          }
+          return parts.length ? { type: 'MultiPolygon', coordinates: parts } : null;
+        };
+
+        await Promise.allSettled(zonePlan.map(async plan => {
+          const { f, zones, complete } = plan;
+          if (!zones.length) return;
+          const wanted = complete ? zones : zones.slice(0, 1);
+          const got = await Promise.all(wanted.map(async url => {
+            try {
+              const z = await timedFetch(url, { timeout: 2500, headers: { accept: 'application/geo+json' } });
+              return z.geometry || null;
+            } catch (e) { return null; }
+          }));
+          const first = got[0];
+          const c = first ? centroid(first) : null;
+          if (c) zoneCentroids.set(f, c);
+          if (!complete) { if (zones.length > 1) zonePartialArea++; return; }
+          if (got.some(g => !g)) { zonePartialArea++; return; }
+          const all = combinePolygons(got);
+          if (all) zoneGeometry.set(f, all); else zonePartialArea++;
         }));
 
         let n = 0, skipped = 0, viaZone = 0, withArea = 0, overBudget = 0;
@@ -842,7 +920,9 @@ async function handler(req, res) {
             type: normalizeType(p.event, p.event),
             title: p.event + (p.areaDesc ? ' — ' + spellUsPlaces(String(p.areaDesc).split(';')[0].trim()) : ''),
             country: 'United States', region: spellUsPlaces(p.areaDesc || ''),
+            /* The severity the alert itself carries, in this site's colours. */
             alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
+            alertBasis: 'issued',
             lat: c.lat, lon: c.lon,
             /* The affected area, not just its middle. It was already fetched -
                resolved from the zone where the alert carries no polygon of its
@@ -881,6 +961,7 @@ async function handler(req, res) {
         mark('nws', true, {
           records: n, placedViaZoneLookup: viaZone, unplaceable: skipped,
           withAffectedArea: withArea, areaOverBudget: overBudget,
+          areaWithheldIncompleteZones: zonePartialArea,
           query: query || '(no filters)'
         });
         return;
@@ -1080,6 +1161,7 @@ async function handler(req, res) {
           title: name + ' — ' + (level || 'elevated') + ' alert level',
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
+          alertBasis: 'issued',
           // The observatory's own wording, kept apart from the colour the UI
           // maps it to. Only a source that publishes a level gets one: every
           // EONET volcano carries alert 'Green', which EONET never assessed.
@@ -1208,6 +1290,25 @@ async function handler(req, res) {
 
   const outlookId = sourceId => 'OUT-' + String(sourceId).replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(-48);
 
+  /* One earthquake, one record, before anything is derived from it.
+   *
+   * The agencies' reports were merged only after the outlooks were built, so
+   * an aftershock outlook was derived from each agency's copy of one quake.
+   * The area guard below rounds a position to the nearest degree, which two
+   * solutions of the same earthquake straddle as easily as not: measured, a
+   * USGS record at -5.9/106.6 and a GDACS record at -5.45/106.45 - 52 km
+   * apart, the same event by the merge's own rule - produced
+   * OUT-aftershock-usgs-us7000abcd and OUT-aftershock-gdacs-EQ-9001, two
+   * frozen claims about one sequence, both recorded in the append-only ledger
+   * and both counted in the conditional rate. The second also pointed at a
+   * record the feed then stopped serving, because its own agency's copy had
+   * been merged away.
+   *
+   * Merging first also means an outlook is derived from the record as it is
+   * finally published, including any graver assessment the merge carried over
+   * from a discarded copy. */
+  out.events = mergeSeismicReports(out.events);
+
   const priority = { Red: 4, Orange: 3, High: 3, Green: 1 };
   const officialSignals = out.events.filter(e =>
     e.sourceType === 'official' && !e.forecast && Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
@@ -1335,8 +1436,9 @@ async function handler(req, res) {
 
   /* Merging can raise a record's alert — a leader that inherits a graver
      assessment from a discarded member — and the feed was sorted before that
-     happened, so a newly Red record kept the position it held while Green. */
-  out.events = mergeSeismicReports(out.events).sort(byAlertThenTime);
+     happened, so a newly Red record kept the position it held while Green.
+     The merge itself now runs before the outlooks are derived, above. */
+  out.events = out.events.sort(byAlertThenTime);
   out.meta.mergedSeismicReports =
     out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
 
@@ -1443,6 +1545,17 @@ async function handler(req, res) {
     if (e.forecast) return 'forecast';
     if (/Weather Service/i.test(String(e.source || ''))) return 'official-warning';
     if (e.expiresAt && e.sourceType === 'official') return 'official-warning';
+    /* A published hazard status is not an observation of a disaster.
+     *
+     * A volcano observatory's WATCH or WARNING says a hazardous eruption is
+     * imminent, under way or suspected - it does not establish which, and the
+     * record carries no impact of its own. Classified as observed, its red or
+     * orange colour cleared the significance bar on its own and Kilauea and
+     * Great Sitkin were recorded in the ledger of disasters that happened,
+     * inflating the recall denominator with two events that may not have
+     * occurred. An eruption that does cause harm is reported as an event by a
+     * provider that reports events, and that record is the observation. */
+    if (e.alertLevel && e.sourceType === 'official') return 'official-warning';
     if (e.sourceType === 'official' || e.sourceType === 'observed') return 'observed';
     return 'unknown';
   }
@@ -1464,6 +1577,343 @@ async function handler(req, res) {
   out.meta.areaEligible = out.events.filter(e => e.areaEligible).length;
   out.meta.evidenceState = out.events.reduce((m, e) => {
     m[e.evidenceState] = (m[e.evidenceState] || 0) + 1; return m;
+  }, {});
+
+  /* ------------------------------------------------- forecast causality */
+
+  /*
+   * When can this application prove it held a forecast?
+   *
+   * Not from issuedAt. For a derived outlook, issuedAt is the anchor time of
+   * the upstream signal - the moment the hazard was reported, which is before
+   * the outlook existed at all. Grading a window from there credits the system
+   * for the stretch between the hazard appearing and anything being written
+   * down about it.
+   *
+   * The defensible timestamp is the earliest immutable record: a row in the
+   * append-only outlook ledger, which lives in git. Where a record documents
+   * its own repository provenance - the frozen benchmark names the commit that
+   * introduced it - that stands. Failing both, the forecast is not known to
+   * have existed before this response computed it, and says so.
+   */
+  const ledgerFreeze = new Map();
+  if (Array.isArray(OUTLOOK_LEDGER)) {
+    for (const row of OUTLOOK_LEDGER) {
+      /* Every term the verifier grades on, not the id and the window's start:
+         a row proves the claim it recorded, and cannot prove one whose window
+         or geography has since moved. Shared with the ledger writer so the
+         two cannot disagree about what a claim is. */
+      const k = HAZARD_MODEL.claimKey(row);
+      const at = row.freezeTimestamp || row.recordedAt;
+      /* Append-only, but a row can only ever have been written once; if two
+         carry the same key the earlier one is the one that proves existence. */
+      if (at && (!ledgerFreeze.has(k) || at < ledgerFreeze.get(k))) ledgerFreeze.set(k, at);
+    }
+  }
+
+  const byIdForClass = new Map(out.events.map(e => [e.id, e]));
+  const generatedAt = now.toISOString();
+
+  for (const e of out.events) {
+    if (!e.forecast) continue;
+    e.generatedAt = generatedAt;
+    /* What the upstream signal said about itself, kept under a name that says
+       whose claim it is. issuedAt stays put so older readers are unaffected. */
+    if (e.issuedAt && e.sourceIssuedAt === undefined) e.sourceIssuedAt = e.issuedAt;
+
+    /* The EARLIEST proof, not the first one looked at. A record can be backed
+       by more than one immutable artefact - the frozen benchmark names the
+       commit that introduced it and was also written to the ledger two days
+       later - and taking whichever came to hand would move a freeze later than
+       the repository can already show. Later is the safer direction, but it is
+       still not what the evidence says. */
+    const k = HAZARD_MODEL.claimKey(e);
+    const proofs = [];
+    if (ledgerFreeze.has(k)) {
+      proofs.push({ at: ledgerFreeze.get(k), basis: 'Earliest row in the append-only outlook ledger in the repository.' });
+    }
+    if (e.issuedAtBasis && e.issuedAt) {
+      proofs.push({ at: e.issuedAt, basis: e.issuedAtBasis });
+    }
+    proofs.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+    if (proofs.length) {
+      e.freezeTimestamp = proofs[0].at;
+      e.freezeBasis = proofs[0].basis;
+      e.freezeEvidenced = true;
+    } else {
+      /* A timestamp, but not a proof: this is when the response ran, which
+         nothing outside the response can check. Readers downstream - the
+         ledger writer, the classifier - need to be able to tell the two
+         apart, so the difference is stated rather than left to be inferred
+         from the wording. */
+      e.freezeTimestamp = generatedAt;
+      e.freezeBasis = 'Nothing in the repository records this forecast yet, so it is not established before the moment this response computed it.';
+      e.freezeEvidenced = false;
+    }
+
+    if (HAZARD_MODEL && HAZARD_MODEL.classifyForecast) {
+      const c = HAZARD_MODEL.classifyForecast(e, byIdForClass.get(e.forecastOf));
+      if (c) { e.forecastClass = c.forecastClass; e.classificationReason = c.classificationReason; }
+      e.effectiveForecastStart = HAZARD_MODEL.effectiveForecastStart(e);
+      const credited = HAZARD_MODEL.creditedWindowHours(e);
+      if (credited !== null) e.creditedWindowHours = Math.round(credited * 10) / 10;
+      const cls = HAZARD_MODEL.FORECAST_CLASSES[e.forecastClass];
+      e.countsTowardHeadlineAccuracy = !!(cls && cls.headline);
+    }
+  }
+
+  out.meta.forecastClass = out.events.reduce((m, e) => {
+    if (e.forecastClass) m[e.forecastClass] = (m[e.forecastClass] || 0) + 1;
+    return m;
+  }, {});
+  out.meta.headlineEligibleForecasts = out.events.filter(e => e.countsTowardHeadlineAccuracy).length;
+
+  /* ------------------------------------------------------- scan provenance */
+
+  /*
+   * What was actually looked at, and what it can and cannot cover.
+   *
+   * The app reported which upstreams answered, and nothing else. That is
+   * enough to say a provider was reachable and not nearly enough to say a
+   * disaster would have been seen: a flood in a country ReliefWeb has not
+   * declared, an earthquake below USGS's 2.5 threshold, or a storm outside the
+   * two basins the National Hurricane Center publishes are all invisible here,
+   * and the absence of a record for them says nothing about the world.
+   *
+   * That distinction is what separates a missed forecast from an unscanned
+   * place, so each provider states its own reach in terms the code can be held
+   * to, and the scan records which of them were actually evaluated on this
+   * run. There is no global cell-level scan and this never claims one.
+   */
+  const ENGINE_VERSION = 'scan-1.0.0';
+
+  const COVERAGE_STATUS = {
+    SCANNED: 'SCANNED',                 // evaluated, within the reach stated below
+    INCOMPLETE_SCAN: 'INCOMPLETE_SCAN', // evaluated, but the run is known to have missed part of it
+    NOT_SCANNED: 'NOT_SCANNED',         // not attempted on this run
+    DATA_UNAVAILABLE: 'DATA_UNAVAILABLE'// attempted and the provider did not answer
+  };
+
+  const PROVIDERS = {
+    gdacs: {
+      label: 'GDACS (Global Disaster Alert and Coordination System)',
+      inputKind: 'observation',
+      inputBasis: 'GDACS raises alerts on events it has already detected, so its records say what is happening rather than what will.',
+      hazards: ['Earthquake', 'Tropical Cyclone', 'Flood', 'Drought', 'Wildfire', 'Volcano'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'Only events GDACS itself raises to an alert level. Flood, drought and wildfire records describe alert areas, not incident points.',
+      endpoint: 'https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP',
+      scope: { kind: 'global' },
+      completeness: 'selective',
+      recordsObservations: true,
+      completenessBasis: 'GDACS lists only events it raises to an alert level, so a disaster it does not carry may simply be below that threshold.'
+    },
+    usgs: {
+      label: 'USGS Earthquake Hazards Program',
+      inputKind: 'observation',
+      inputBasis: 'A catalogue of earthquakes that have occurred.',
+      hazards: ['Earthquake'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'Every earthquake of magnitude 2.5 or above in the past seven days, at its epicentre. Anything smaller, or older, is outside this feed.',
+      endpoint: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson',
+      scope: { kind: 'global' },
+      completeness: 'exhaustive',
+      recordsObservations: true,
+      completenessBasis: 'A complete catalogue of earthquakes of magnitude 2.5 and above for the past seven days, so an absence above that threshold is meaningful.'
+    },
+    emsc: {
+      label: 'EMSC (European-Mediterranean Seismological Centre)',
+      inputKind: 'observation',
+      inputBasis: 'A catalogue of earthquakes that have occurred.',
+      hazards: ['Earthquake'],
+      geographicCoverage: 'Global, with the densest network in Europe and the Mediterranean',
+      coverageResolution: 'Earthquakes of magnitude 4.5 or above, at epicentre.',
+      endpoint: 'https://www.emsc-csem.org/',
+      scope: { kind: 'global' },
+      completeness: 'exhaustive',
+      recordsObservations: true,
+      completenessBasis: 'A complete catalogue above magnitude 4.5.'
+    },
+    eonet: {
+      label: 'NASA EONET',
+      inputKind: 'observation',
+      inputBasis: 'A curated catalogue of natural events already under way.',
+      hazards: ['Wildfire', 'Volcano', 'Severe Storm', 'Ice', 'Landslide'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.',
+      endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events',
+      scope: { kind: 'global' },
+      completeness: 'selective',
+      recordsObservations: true,
+      completenessBasis: 'A curated set; EONET does not claim to list every event, so its silence is not evidence.'
+    },
+    nhc: {
+      label: 'NOAA National Hurricane Center',
+      inputKind: 'forecast',
+      inputBasis: 'The hurricane centre publishes advisories for active systems, including where a storm is expected to go, which is an input to a forecast of what it has not yet done.',
+      hazards: ['Tropical Cyclone'],
+      geographicCoverage: 'Atlantic, eastern Pacific and central Pacific basins only',
+      coverageResolution: 'Active tropical cyclones, at storm centre. Storms in the western Pacific, Indian Ocean and southern hemisphere are outside this provider entirely.',
+      endpoint: 'https://www.nhc.noaa.gov/CurrentStorms.json',
+      /* The published basin bounds, approximated as boxes. Approximate in the
+         safe direction: a storm this cannot place is treated as outside the
+         provider's reach, which makes coverage unestablished rather than
+         blaming the forecasting engine for missing it. */
+      scope: { kind: 'boxes', boxes: [
+        { name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 },
+        { name: 'Eastern and central Pacific', minLat: -5, maxLat: 60, minLon: -180, maxLon: -75 }
+      ] },
+      completeness: 'exhaustive',
+      recordsObservations: true,
+      completenessBasis: 'Every active tropical cyclone in the basins it publishes for.'
+    },
+    nws: {
+      label: 'NOAA / National Weather Service',
+      inputKind: 'forecast',
+      inputBasis: 'A watch or warning states that severe weather is expected, which is a statement about what has not happened yet.',
+      hazards: ['Flood', 'Severe Weather', 'Extreme Heat', 'Winter Storm', 'Tornado'],
+      geographicCoverage: 'United States and its territories only',
+      coverageResolution: 'Alerts at severe or extreme severity, carrying the affected-area polygon where the agency published one and a forecast-zone centre where it did not.',
+      endpoint: 'https://api.weather.gov/alerts/active',
+      scope: { kind: 'countries', countries: ['United States'] },
+      completeness: 'selective',
+      recordsObservations: false,
+      completenessBasis: 'Exhaustive for active warnings, but a warning is not an observation: these records never enter the observed-disaster ledger, so this provider cannot establish that no disaster occurred.'
+    },
+    reliefweb: {
+      label: 'ReliefWeb (UN OCHA)',
+      inputKind: 'observation',
+      inputBasis: 'Situation reports and declarations published after a disaster has occurred.',
+      hazards: ['Flood', 'Drought', 'Earthquake', 'Tropical Cyclone', 'Complex Emergency'],
+      geographicCoverage: 'Global',
+      coverageResolution: 'Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.',
+      endpoint: 'https://reliefweb.int/disasters/feed',
+      scope: { kind: 'global' },
+      completeness: 'selective',
+      recordsObservations: true,
+      completenessBasis: 'Only disasters ReliefWeb has declared, which is a subset of those that occur.'
+    },
+    usgs_volcano: {
+      label: 'USGS Volcano Hazards Program',
+      inputKind: 'forecast',
+      inputBasis: 'A volcano alert level states expected activity - a watch or warning is issued for unrest before an eruption, not after it.',
+      hazards: ['Volcano'],
+      geographicCoverage: 'Volcanoes monitored by the United States volcano observatories',
+      coverageResolution: 'Volcanoes currently at an elevated alert level. Volcanoes outside the US observatory network are not covered by this provider.',
+      endpoint: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes',
+      scope: { kind: 'countries', countries: ['United States'] },
+      completeness: 'exhaustive',
+      recordsObservations: false,
+      completenessBasis: 'Exhaustive for elevated alert levels in the observatory network it covers, which is not the same as exhaustive for eruptions that caused harm: an alert level is a published status, these records never enter the observed-disaster ledger, and their silence establishes only that nothing was elevated.'
+    }
+  };
+
+  /* Which provider a served record came from, decided once from the source
+     label so the freshness and record counts below cannot drift from the
+     events themselves. Volcano is tested before the general USGS pattern,
+     since its label contains both. */
+  const PROVIDER_OF_SOURCE = [
+    [/USGS Volcano/i, 'usgs_volcano'],
+    [/GDACS/i, 'gdacs'],
+    [/USGS/i, 'usgs'],
+    [/EMSC/i, 'emsc'],
+    [/EONET/i, 'eonet'],
+    [/Hurricane Center/i, 'nhc'],
+    [/Weather Service/i, 'nws'],
+    [/ReliefWeb/i, 'reliefweb']
+  ];
+
+  function providerOf(source) {
+    const s = String(source || '');
+    /* A derived outlook names the signal it came from inside its own source
+       string. It is this engine's own record, not the provider's, and counting
+       it as one would inflate what the provider was seen to deliver. */
+    if (/^Predict Natural Disasters/i.test(s)) return null;
+    for (const [re, key] of PROVIDER_OF_SOURCE) if (re.test(s)) return key;
+    return null;
+  }
+
+  /* A run that fell back to a thinner feed, or dropped records it could not
+     place, scanned less than the provider covers, and says so rather than
+     reporting a clean sweep. */
+  function scanStatusOf(key, s) {
+    if (!s) return { status: COVERAGE_STATUS.NOT_SCANNED, reason: 'Not attempted on this run.' };
+    if (!s.ok) {
+      return { status: COVERAGE_STATUS.DATA_UNAVAILABLE,
+        reason: s.error ? String(s.error) : 'The provider did not answer.' };
+    }
+    if (key === 'gdacs' && s.endpoint === 'rss') {
+      return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+        reason: 'The JSON endpoints did not answer and the RSS fallback carries fewer fields per event.' };
+    }
+    if (key === 'nws') {
+      if (s.query && s.query !== 'status=actual&message_type=alert&severity=Extreme,Severe') {
+        return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+          reason: 'The full alert query was rejected and a broader fallback was used: ' + s.query };
+      }
+      if (s.unplaceable > 0) {
+        return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+          reason: s.unplaceable + ' alert(s) could not be placed and were left out.' };
+      }
+    }
+    if (key === 'reliefweb' && s.unplacedCountries > 0) {
+      return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+        reason: s.unplacedCountries + ' declaration(s) named a country that could not be resolved and were left out.' };
+    }
+    return { status: COVERAGE_STATUS.SCANNED, reason: '' };
+  }
+
+  const scanId = 'scan-' + now.toISOString().replace(/[:.]/g, '-');
+  const freshest = {};
+  const served = {};
+  for (const e of out.events) {
+    const key = providerOf(e.source);
+    if (!key) continue;
+    served[key] = (served[key] || 0) + 1;
+    const t = Date.parse(e.updated || '');
+    if (Number.isFinite(t) && (!freshest[key] || t > freshest[key])) freshest[key] = t;
+  }
+
+  out.meta.scan = {
+    scanId: scanId,
+    scanTimestamp: now.toISOString(),
+    engineVersion: ENGINE_VERSION,
+    /* Said once, plainly, so nothing downstream has to infer it: this engine
+       evaluates what these providers publish. It does not sweep the world. */
+    coverageLimitation: 'This engine evaluates what the providers below publish. There is no global cell-by-cell scan, ' +
+      'and no claim is made about hazards outside each provider’s stated reach. A place absent from every provider ' +
+      'was not examined and must not be read as quiet.',
+    providers: Object.keys(PROVIDERS).map(key => {
+      const s = out.meta.sources[key];
+      const st = scanStatusOf(key, s);
+      return {
+        provider: key,
+        label: PROVIDERS[key].label,
+        hazards: PROVIDERS[key].hazards,
+        /* Whether this source can support a forecast at all, or only report
+           what has already happened. A scan of a catalogue of things that
+           have occurred puts nothing in a position to predict one. */
+        inputKind: PROVIDERS[key].inputKind,
+        inputBasis: PROVIDERS[key].inputBasis,
+        geographicCoverage: PROVIDERS[key].geographicCoverage,
+        coverageResolution: PROVIDERS[key].coverageResolution,
+        scope: PROVIDERS[key].scope,
+        completeness: PROVIDERS[key].completeness,
+        completenessBasis: PROVIDERS[key].completenessBasis,
+        recordsObservations: PROVIDERS[key].recordsObservations,
+        endpoint: PROVIDERS[key].endpoint,
+        status: st.status,
+        success: !!(s && s.ok),
+        failureReason: st.reason || null,
+        recordsEvaluated: (s && typeof s.records === 'number') ? s.records : (served[key] || 0),
+        recordsServed: served[key] || 0,
+        dataFreshness: freshest[key] ? new Date(freshest[key]).toISOString() : null,
+        checkedAt: (s && s.checkedAt) || null
+      };
+    })
+  };
+  out.meta.scan.coverage = out.meta.scan.providers.reduce((m, p) => {
+    m[p.status] = (m[p.status] || 0) + 1; return m;
   }, {});
 
   // Severity is comparable across hazards; alert level is not, because each

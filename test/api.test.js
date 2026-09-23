@@ -692,3 +692,45 @@ test('two earthquakes from the same agency are never merged into one', () => {
   assert.equal(mixed.length, 2, 'expected the two USGS records to stay and the EMSC one to merge');
   assert.equal(mixed.filter(e => e.corroboratedBy).length, 1);
 });
+
+
+test('one earthquake produces one aftershock outlook, however many agencies report it', async () => {
+  /* The agencies' reports were merged only after the outlooks were built, and
+     the guard that stops a swarm producing twenty outlooks rounds a position
+     to the nearest degree - which two solutions of one earthquake straddle as
+     easily as not. Measured: a USGS record at -5.9/106.6 and a GDACS record
+     at -5.45/106.45, 52 km apart and the same event by the merge's own rule,
+     produced two frozen claims about one sequence, both recorded in the
+     append-only ledger and both counted in the conditional rate. The second
+     also pointed at a record the feed then stopped serving, because its own
+     agency's copy had been merged away. */
+  const sameQuakeFromGdacs = {
+    features: [{ properties: {
+      eventid: 9001, eventtype: 'EQ', name: 'M 6.5 earthquake, Java', country: 'Indonesia',
+      location: 'Banten', alertlevel: 'Orange', latitude: -5.45, longitude: 106.45,
+      fromdate: new Date(Date.now() - 60 * 36e5).toISOString(), todate: new Date().toISOString(),
+      description: 'Magnitude 6.5 earthquake',
+      severitydata: { severity: 6.5, severitytext: 'Magnitude 6.5' }
+    } }]
+  };
+  const body = (await runEvents({ feeds: { gdacs: sameQuakeFromGdacs } })).body;
+  const quake = body.events.find(e => e.id === 'usgs-us7000abcd');
+  assert.ok(quake, 'control: the USGS record should still be the one served');
+  assert.ok((quake.corroboratedBy || []).includes('GDACS'),
+    'control: the two agencies must be merged for this to prove anything');
+
+  const aftershocks = body.events.filter(e => e.forecast && e.type === 'Earthquake aftershock sequence');
+  const ids = aftershocks.map(e => e.id);
+  assert.equal(new Set(ids).size, ids.length, 'duplicate outlook ids');
+  assert.equal(ids.filter(id => /gdacs/i.test(id)).length, 0,
+    'an aftershock outlook was derived from an agency copy that was merged away: ' + ids.join(', '));
+  assert.equal(aftershocks.filter(o => o.forecastOf === quake.id).length, 1,
+    'one earthquake, one aftershock outlook');
+
+  /* And nothing derived points at a record the feed does not carry. */
+  const served = new Set(body.events.map(e => e.id));
+  for (const o of body.events.filter(e => e.forecast && e.forecastOf)) {
+    assert.ok(served.has(o.forecastOf),
+      o.id + ' is derived from ' + o.forecastOf + ', which the feed does not carry');
+  }
+});
