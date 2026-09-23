@@ -33,8 +33,15 @@
      follows, and to no other; and a figure carried between two ledger rows
      that turned out to be one disaster is no longer read as impact that
      occurred. Both make grading stricter and both change verdicts, so the
-     version moves rather than the record quietly meaning something else. */
-  var VERIFICATION_VERSION = 'verify-1.2.0';
+     version moves rather than the record quietly meaning something else.
+
+     1.3.0: a ledger row with no freezeTimestamp - every row written before
+     that field existed - is credited from its own recordedAt rather than from
+     targetStart, since the row is the only proof the forecast existed; and
+     recall counts only disasters from the first independent prediction on
+     record. The first can turn a hit into a miss, the second changes a rate's
+     denominator, so verdicts and figures from 1.2.0 are not comparable. */
+  var VERIFICATION_VERSION = 'verify-1.3.0';
 
   var CLASSIFICATION = {
     HIT: 'HIT',

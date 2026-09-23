@@ -1021,3 +1021,14 @@ test('a claim that follows no particular disaster is not gated on attribution', 
   assert.equal(grade(prediction(), [disaster()]).classification, 'HIT',
     'an independent prospective forecast now needs an attribution it never had');
 });
+
+test('a change to what a verdict means changes the version it is stamped with', () => {
+  /* 1.3.0 credits legacy rows from recordedAt and measures recall only from
+     the first independent prediction. Verdicts under the old reading would
+     otherwise carry the same stamp as the new ones. */
+  assert.equal(V.VERIFICATION_VERSION, 'verify-1.3.0');
+  const legacy = { id: 'x', type: 'Flood', targetStart: '2026-09-14T00:00:00Z', targetEnd: '2026-09-20T00:00:00Z',
+    recordedAt: '2026-09-15T00:00:00Z', lat: 1, lon: 1 };
+  assert.equal(V.verify(legacy, [], { now: Date.parse('2026-09-16T00:00:00Z'), hazardFamilyOf: H,
+    observedCoverage: { from: null, to: null } }).verificationVersion, 'verify-1.3.0');
+});
