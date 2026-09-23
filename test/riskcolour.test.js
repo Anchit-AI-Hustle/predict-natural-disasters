@@ -29,6 +29,10 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const RISK = require(path.join(ROOT, 'risk.js'));
+/* jsdom windows keep interval timers alive; without this the runner hangs
+   after the last test rather than exiting. */
+const { renderPage, closeAllWindows } = require('./render.js');
+test.after(closeAllWindows);
 const CSS = read('risk.css');
 const PAGES = fs.readdirSync(ROOT).filter(n => /\.html$/.test(n));
 
@@ -251,6 +255,76 @@ test('no page draws its own event marker', () => {
   const usesShared = PAGES.filter(f => /PNDMap\.riskMarker\(/.test(read(f)));
   assert.ok(usesShared.length >= 12,
     'only ' + usesShared.length + ' pages draw markers from the shared scale');
+});
+
+/* ------------------------------------- the badge says what it means */
+
+test('a badge never shows a provider\u2019s colour word as its label', async () => {
+  /* Measured on the live feed: one card read "Green" beside "Informational",
+     the next "Orange" beside "Moderate", and a third "Moderate" beside
+     "Moderate" - the same fact printed twice. "Green" and "Orange" are
+     GDACS's internal vocabulary and tell a reader nothing about what to do.
+     The badge names the level on this site's scale; the provider's own word
+     is what it was derived from, and lives in the title. */
+  const LEVELS = RISK.LEVELS.map(l => l.label).concat(['Not rated']);
+  const COLOUR_WORDS = /^(red|orange|green|yellow|amber|purple|blue)$/i;
+  const bad = [];
+  for (const page of ['events.html', 'alerts.html', 'live-map.html', 'recent-events.html']) {
+    const r = await renderPage(page, { timeoutMs: 6000,
+      waitFor: d => d.querySelectorAll('.risk').length > 0 });
+    for (const el of r.document.querySelectorAll('.risk')) {
+      const text = (el.textContent || '').trim();
+      if (COLOUR_WORDS.test(text)) bad.push(page + ': badge reads "' + text + '"');
+      else if (!LEVELS.includes(text)) bad.push(page + ': badge reads "' + text + '", not a level on the scale');
+      const title = el.getAttribute('title') || '';
+      if (!/risk scale|No alert level was published/.test(title)) {
+        bad.push(page + ': badge "' + text + '" does not say what it was derived from');
+      }
+    }
+    r.close();
+  }
+  assert.deepEqual(bad, [], bad.join('\n'));
+});
+
+test('one record gets one risk badge, not two saying the same thing', async () => {
+  const r = await renderPage('events.html', { timeoutMs: 6000,
+    waitFor: d => d.querySelectorAll('.event-card').length > 0 });
+  const many = [];
+  for (const card of r.document.querySelectorAll('.event-card')) {
+    const n = card.querySelectorAll('.risk').length;
+    if (n > 1) many.push((card.querySelector('h3') || {}).textContent + ' has ' + n + ' risk badges');
+  }
+  assert.deepEqual(many, [], many.join('\n'));
+  assert.ok(r.document.querySelectorAll('.event-card .risk').length > 0,
+    'no card carries a risk level at all');
+  r.close();
+});
+
+test('a record with no level published is not given one', async () => {
+  const r = await renderPage('events.html', { timeoutMs: 6000,
+    waitFor: d => d.querySelectorAll('.risk').length > 0 });
+  const PND = r.window.PND;
+  const tag = PND.riskTag({ title: 'x' });
+  assert.match(tag, /risk-unknown/, 'an unrated record was given a level from the scale');
+  assert.match(tag, />Not rated</, 'an unrated record does not say it is unrated');
+  /* The words these lists used to invent for a record with no level. */
+  for (const invented of ['>Live<', '>Watch<']) {
+    assert.ok(!tag.includes(invented), 'an unrated record was labelled ' + invented);
+  }
+  r.close();
+});
+
+test('the source pill is short enough to be a pill, with the full name kept', async () => {
+  const r = await renderPage('events.html', { timeoutMs: 6000,
+    waitFor: d => d.querySelectorAll('.source').length > 0 });
+  const long = [];
+  for (const el of r.document.querySelectorAll('.source')) {
+    const text = (el.textContent || '').trim();
+    if (text.length > 30) long.push('"' + text + '" (' + text.length + ' chars)');
+    if (!el.getAttribute('title')) long.push('"' + text + '" has no full name behind it');
+  }
+  assert.deepEqual(long, [], 'source pills that will wrap:\n' + long.join('\n'));
+  r.close();
 });
 
 /* --------------------------------------------- provenance is not a level */

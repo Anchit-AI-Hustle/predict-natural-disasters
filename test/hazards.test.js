@@ -14,7 +14,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const H = require('../hazard-model.js');
-const { callApi } = require('./render.js');
+const { callApi, sampleEvents } = require('./render.js');
 
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
@@ -237,4 +237,63 @@ test('no page describes the benchmark as written before its window opened', () =
     .filter(f => /before its window opened|ahead of the target window/i.test(read(f)));
   assert.deepEqual(offenders, [],
     'the repository history contradicts that claim: ' + offenders.join(', '));
+});
+
+test('a derived outlook is never published as grave as the signal it came from', async () => {
+  /* api/events.js steps a derived outlook down on purpose: a Red signal
+     produces a High outlook, an Orange one a Moderate outlook. The severity
+     table then ranked High and Red the same, so the step was erased and every
+     outlook came out carrying the warning's own severity word. Measured on
+     the feed before this: five outlooks derived from Red and Orange signals
+     all published as Severe, and the risk badge said Severe on every card. */
+  const R = require(path.join(ROOT, 'risk.js'));
+
+  /* The step-down api/events.js applies, and what each side must rank. */
+  const PAIRS = [['Red', 'High'], ['Orange', 'Moderate'], ['Green', 'Watch']];
+  const wrong = [];
+  for (const [official, derived] of PAIRS) {
+    const o = H.severityRank({ alert: official });
+    const d = H.severityRank({ alert: derived });
+    /* Informational is the floor of the scale, so a Green signal and the
+       Watch outlook derived from it can only be equal - there is nothing
+       below it to step down to. Everywhere above the floor, the outlook must
+       be strictly milder than its own source. */
+    const ok = o <= 1 ? d === o : d < o;
+    if (!ok) {
+      wrong.push('a ' + derived + ' outlook ranks ' + d + ', the ' + official +
+        ' signal it came from ranks ' + o);
+    }
+  }
+  assert.deepEqual(wrong, [],
+    'the derived outlook is as grave as its own source:\n' + wrong.join('\n'));
+
+  /* And the same on the live feed, through the badge a reader actually sees. */
+  const events = await sampleEvents();
+  const resolve = e => {
+    const sv = R.levelOf(e.severity), a = R.levelOf(e.alert);
+    return sv !== 'UNKNOWN' ? sv : a;
+  };
+  const outlooks = events.filter(e => e.forecast && e.alert === 'High');
+  assert.ok(outlooks.length, 'fixture should carry an outlook derived from a red signal');
+  for (const e of outlooks) {
+    assert.notEqual(resolve(e), 'SEVERE',
+      e.id + ' publishes the severity of the warning it was derived from');
+    assert.equal(resolve(e), 'MODERATE', e.id + ' should sit one step below it');
+  }
+  const warnings = events.filter(e => !e.forecast && e.alert === 'Red');
+  assert.ok(warnings.length, 'fixture should carry a red official warning');
+  for (const e of warnings) {
+    assert.equal(resolve(e), 'SEVERE', e.title + ' is a red official warning and must read as one');
+  }
+});
+
+test('the forecast alert vocabulary is used by forecasts only', async () => {
+  /* Lowering the rank of High, Moderate and Watch is safe only while nothing
+     observed carries them; if an observed record ever does, it would be
+     quietly downgraded by a rule written for outlooks. */
+  const events = await sampleEvents();
+  const stray = events.filter(e => !e.forecast && ['High', 'Moderate', 'Watch'].includes(e.alert))
+    .map(e => e.source + ' · ' + e.title + ' · ' + e.alert);
+  assert.deepEqual(stray, [],
+    'these observed records carry the forecast vocabulary:\n' + stray.join('\n'));
 });

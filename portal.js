@@ -25,6 +25,123 @@ const PND={
      are a display scale and what the provider published is the fact. */
   riskBadge(v,opts){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.badge(v,opts):this.esc(String(v||''));},
+  /*
+   * One resolved risk level for a record, in words a reader already knows.
+   *
+   * Every list showed two badges: the provider's own alert word and this
+   * site's severity word, in the same visual style, unlabelled. Measured on
+   * the live feed that produced, on one card, "Green" beside "Informational",
+   * and on the next "Orange" beside "Moderate" - and on a third, "Moderate"
+   * beside "Moderate", the same fact printed twice. "Green" and "Orange" are
+   * GDACS's internal vocabulary; they tell a reader nothing, and side by side
+   * with a second badge they read as two different claims about one record.
+   *
+   * There is one badge now and it names the level on this site's six-level
+   * scale. The provider's own word is not discarded - it is what the badge is
+   * derived from, so it goes in the badge's title and on the detail page,
+   * where it is attributable.
+   *
+   * Where the two inputs disagree the higher one decides, because a record
+   * carrying an agency's Orange alert and this site's Severe assessment is
+   * not a Moderate record; and the title says both, so the reader can see the
+   * disagreement rather than having it averaged away silently.
+   */
+  riskTag(e,opts){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return '';
+    const o=opts||{};
+    const rawAlert=e&&e.alert,rawSev=e&&e.severity;
+    const a=R.levelOf(rawAlert),sv=R.levelOf(rawSev);
+    /* Not the higher of the two: severityOf already takes the worse of what
+       was observed and what the authority assessed, so the severity subsumes
+       the alert. Taking the maximum across both counted the alert twice, on
+       two scales that name the same rank differently - a forecast carrying
+       alert "High" was published as "Severe" because the severity table calls
+       rank 4 Severe. The severity is the record's answer where it has one. */
+    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
+    if(!known.length){
+      /* Never a made-up level. These lists used to print "Live" or "Watch"
+         where a record carried no level at all, which invents one. */
+      return R.badgeForLevel('UNKNOWN',{text:'Not rated',className:o.className,
+        title:'No alert level was published for this record and no severity has been assessed for it.'});
+    }
+    const top=known.reduce((x,y)=>R.BY_KEY[x].rank>=R.BY_KEY[y].rank?x:y);
+    const from=[];
+    if(a!=='UNKNOWN')from.push('the alert level \u201c'+rawAlert+'\u201d'+
+      (e.source?' published by '+this.shortSource(e.source):''));
+    if(sv!=='UNKNOWN')from.push('an assessed severity of \u201c'+rawSev+'\u201d');
+    const title=R.BY_KEY[top].label+' on this site\u2019s six-level risk scale, from '+
+      from.join(' and ')+(a!=='UNKNOWN'&&sv!=='UNKNOWN'&&a!==sv?'. Where these differ the higher decides.':'.');
+    return R.badgeForLevel(top,{className:o.className,title});
+  },
+  /*
+   * A source name short enough to sit in a row of pills.
+   *
+   * The feed's own names run to "Predict Natural Disasters \u00b7 derived from
+   * NOAA / National Weather Service", which wrapped across two lines on a
+   * phone and broke mid-phrase. The full name is kept as the pill's title, so
+   * nothing about provenance is lost by shortening what is drawn.
+   */
+  /* The agencies' own abbreviations, not invented ones. Which office inside
+     NOAA issued a record is provenance worth keeping, and "NOAA" alone loses
+     it while the full name does not fit in a pill. */
+  SOURCE_ABBR:{
+    'NOAA / National Weather Service':'NOAA/NWS',
+    'NOAA National Weather Service':'NOAA/NWS',
+    'NOAA National Hurricane Center':'NOAA/NHC',
+    'National Weather Service':'NWS',
+    'National Hurricane Center':'NHC',
+    'USGS Volcano Hazards Program':'USGS Volcano',
+    'USGS verified recent snapshot':'USGS (verified)',
+    'GDACS verified snapshot':'GDACS (verified)',
+    'ReliefWeb (UN OCHA)':'ReliefWeb',
+    'Predict Natural Disasters':'This site'
+  },
+  shortSource(name){
+    const s=String(name||'').trim();
+    if(!s)return 'Source not stated';
+    if(this.SOURCE_ABBR[s])return this.SOURCE_ABBR[s];
+    const derived=/^(.*?)\s*[\u00b7|]\s*derived from\s+(.*)$/i.exec(s);
+    if(derived)return this.clipSource('Derived \u00b7 '+this.shortSource(derived[2]));
+    const paren=/\(([A-Z][A-Za-z0-9/&. -]{1,24})\)\s*$/.exec(s);
+    if(paren)return paren[1];
+    const slash=s.split(/\s*\/\s*/);
+    if(slash.length>1&&slash[0].length<=12)return slash[0];
+    return this.clipSource(s);
+  },
+  /* A pill that wraps is not a pill. 28 characters is what fits beside a risk
+     badge at 320px, measured. */
+  clipSource(s){return s.length<=28?s:s.slice(0,27).replace(/[\s,;:.\u00b7-]+$/,'')+'\u2026';},
+  /*
+   * The filter speaks the same vocabulary as the badges.
+   *
+   * Every list offered "Red / Orange / Green" while the badges beside them
+   * said Severe, Moderate and Low - so a reader who saw a Severe card could
+   * not filter for Severe, and the two controls in the same toolbar used two
+   * different languages for one thing. The options are the six levels of the
+   * scale, and matching resolves the record the same way the badge does, so
+   * "Moderate" finds a GDACS Orange as well as a record already called
+   * Moderate.
+   */
+  riskLevelOptions(selected){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return '';
+    return R.LEVELS.slice().reverse().map(l=>
+      `<option value="${l.key}"${selected===l.key?' selected':''}>${l.label}</option>`).join('')+
+      `<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`;
+  },
+  /** Does this record sit at the level the filter asks for? */
+  matchesRiskLevel(e,key){
+    if(!key)return true;
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return true;
+    /* The same resolution the badge uses, or the filter and the badge
+       disagree about the same record. */
+    const a=R.levelOf(e&&e.alert),sv=R.levelOf(e&&e.severity);
+    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
+    if(!known.length)return key==='UNKNOWN';
+    return known[0]===key;
+  },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},
   slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
@@ -231,15 +348,69 @@ const PND={
      places the hazard at this place - inside a published area, or at an
      incident coordinate close by - and never off an area centroid. */
     const H=typeof PNDHazards!=='undefined'?PNDHazards:null;if(!H)return;const locs=this.savedLocations(),seen=JSON.parse(localStorage.getItem('pnd_notified')||'{}'),now=Date.now();locs.forEach(x=>events.forEach(e=>{const r=H&&H.riskRow(e,x);if(!r)return;const ser=String(e.alert||e.severity||'').toLowerCase(),key=x.id+'|'+e.id+'|'+ser;let body='';if(r.band==='B'&&r.containment===true)body=(e.type||'Hazard')+' · your saved place is inside the warned area · '+(e.alert||e.severity||'active');else if(r.band==='A'&&r.containment===true)body=(e.type||'Hazard')+' · your saved place is inside the reported affected area · '+(e.alert||e.severity||'active');else if(r.band==='A'&&r.claimDistance&&r.distanceKm<=100&&(/red|orange|severe|extreme|catastrophic/.test(ser)||r.distanceKm<=30))body=(e.type||'Hazard')+' · '+Math.round(r.distanceKm)+' km away · '+(e.alert||e.severity||'active');if(body&&(!seen[key]||now-seen[key]>21600000)){new Notification('Hazard near '+x.name,{body:body});seen[key]=now}}));localStorage.setItem('pnd_notified',JSON.stringify(seen))},
-  startTour(force=false){
+  /*
+   * Three coachmarks, and each one arrives where it is earned.
+   *
+   * There were five, shown in a row on first load, and they were a tour of the
+   * product rather than help with the thing the reader was doing: the map, the
+   * Personal Risk link, an events card, the forecasts link and the accuracy
+   * page, before the reader had done anything at all. Two of them named
+   * header links that are display:none on a phone.
+   *
+   * These three follow the one journey the product is for. The first is shown
+   * on arrival and points at the search field. The second and third are not
+   * shown until there is something to point at - a place has been found, and
+   * an answer has been given for it - and each is shown once, ever.
+   */
+  COACH_STEPS:{
+    search:{sel:'#placeQ,#topSearch,.top-search input',title:'Start here',
+      text:'Search Home, Family, Office or anywhere you care about.',fallback:'/personal-risk'},
+    save:{sel:'#savePlace',title:'Keep watch over this place.',
+      text:'Saving it adds the place to your Personal Risk page, where it is checked again every time the feed updates.',fallback:'/personal-risk'},
+    evidence:{sel:'#viewEvidence,#placeResult .pr-block:nth-last-child(3)',title:'Know why we\u2019re showing this.',
+      text:'Every answer names the record behind it and who published it. Open the evidence and read it yourself rather than taking this page\u2019s word for it.',fallback:'/accuracy'}
+  },
+  /*
+   * One coachmark, once, when the moment for it arrives.
+   *
+   * Kept apart from the first-run flag: a reader who skipped the opening
+   * coachmark has not thereby been shown the one about saving a place, and
+   * dismissing that one should not silently mark the other as seen.
+   */
+  coach(key){
+    try{
+      if(localStorage.getItem('pnd_coach_'+key))return false;
+      if(!this.COACH_STEPS[key])return false;
+      if(!document.querySelector(this.COACH_STEPS[key].sel))return false;
+      localStorage.setItem('pnd_coach_'+key,'1');
+      this.startTour(true,[key]);
+      return true;
+    }catch(e){return false}
+  },
+  startTour(force=false,keys=null){
     if(!force&&localStorage.getItem('pnd_tour_done'))return;
-    const steps=[
-      {sel:'#leafletMap,#map',title:'Global Live Hazard Map',text:'See active hazards worldwide. Pan, zoom and select a marker for the underlying event.',fallback:'/live-map'},
-      {sel:'button[onclick*="personal-risk"],.side-item[onclick*="personal-risk"]',title:'Personal Risk',text:'Save Home, Office, Family or Travel locations and monitor hazards relevant to those places.',fallback:'/personal-risk'},
-      {sel:'.utility-home-grid button:nth-child(2)',title:'What should I do now?',text:'Open an active event to see severity, evidence, official sources and immediate safety priorities.',fallback:'/events'},
-      {sel:'button[onclick*="forecasts"],a[href="/forecasts"]',title:'Forecasts + provenance',text:'See what may happen next and whether the information is an official warning, observed event or model outlook.',fallback:'/forecasts'},
-      {sel:'button[onclick*="accuracy"],a[href="/accuracy"]',title:'Verification & Track Record',text:'Audit verified predictions, partials, false alarms, missed events and coverage failures.',fallback:'/accuracy'}
-    ];
+    /* Only steps that have something on this page to point at.
+     *
+     * The old tour ran the same five steps everywhere and pointed at nothing
+     * on the pages that did not have them: measured on /personal-risk, the
+     * count of real highlights was zero, with the card explaining homepage
+     * furniture that was not there. A coachmark with no target is not a
+     * quieter tutorial, it is a wrong one, so it is not shown at all. */
+    /* Whether this environment can measure anything at all. jsdom reports
+       every rectangle as 0x0, so asking "is it visible" there answers no for
+       everything and would drop all three steps - the tutorial would simply
+       stop existing under test while looking fine in a browser. */
+    const hasLayout=(()=>{try{return (document.body.getBoundingClientRect().width||0)>0}catch(e){return false}})();
+    const steps=(keys||['search']).map(k=>this.COACH_STEPS[k]).filter(Boolean)
+      .filter(st=>{try{
+        const all=document.querySelectorAll(st.sel);
+        if(!all.length)return false;
+        if(!hasLayout)return true;
+        for(let k=0;k<all.length;k++){const r=all[k].getBoundingClientRect();
+          if(r.width>0&&r.height>0)return true}
+        return false;
+      }catch(e){return false}});
+    if(!steps.length)return;
     let i=0,old=document.activeElement,scrollY=window.scrollY;
     /* The frame callback is optional too, for the same reason as the
        scrolling calls above: a harness with no visual loop has none. */
@@ -261,7 +432,30 @@ const PND={
      * buttons at -154px and -41px: the tutorial was unreadable and unusable on
      * every phone, and only on phones.
      */
+    /* Below 600px the card is a bottom sheet rather than a box chased around
+       the viewport.
+     *
+     * Measured on an iPhone SE at 375x667: the evidence step's target sat in
+     * the middle of a 667px screen with a 276px card, so neither above nor
+     * below had room and the card was pinned to the top - directly over the
+     * thing it was describing. On a phone there is no arrangement of a
+     * free-floating card that always clears its target; a sheet pinned to the
+     * bottom edge always does, as long as the target is put above it. */
+    const isSheet=()=>innerWidth<=600;
     const put=(r)=>{
+      if(isSheet()){
+        card.style.width='auto';card.style.transform='none';
+        card.style.left='12px';card.style.right='12px';
+        card.style.top='auto';
+        card.style.bottom='calc(12px + env(safe-area-inset-bottom))';
+        card.style.maxHeight='min(56vh, 420px)';
+        card.classList.add('sheet');
+        card.classList.remove('above');
+        card.classList.add('no-arrow');
+        return;
+      }
+      card.style.right='auto';card.style.bottom='auto';card.style.maxHeight='';
+      card.classList.remove('sheet');
       const cw=Math.min(390,innerWidth-24);
       card.style.width=cw+'px';
       card.style.transform='none';
@@ -337,6 +531,9 @@ const PND={
          centring would not leave room, the target goes to the top instead and
          the card sits under it. */
       const roomIfCentred=(innerHeight-r0.height)/2;
+      /* With the card pinned to the bottom, the target belongs in the upper
+         part of the screen where the sheet cannot reach it. */
+      const sheetTop=isSheet();
       /* matchMedia is not guaranteed: it is absent in the test harness, and
          asking for it unguarded threw a ReferenceError that took the whole
          tour down. A missing media-query API is not a reason to lose the
@@ -352,7 +549,12 @@ const PND={
          scroll having happened -- the position is measured afterwards either
          way. */
       try{
-        if(roomIfCentred<246){if(typeof scrollTo==='function')scrollTo({top:Math.max(0,scrollY+r0.top-16),behavior:smooth})}
+        if(sheetTop){
+          /* A fifth of the way down, which leaves the target clear of the
+             sheet at every phone height this is tested at. */
+          if(typeof scrollTo==='function')scrollTo({top:Math.max(0,window.scrollY+r0.top-innerHeight*0.2),behavior:smooth});
+        }
+        else if(roomIfCentred<246){if(typeof scrollTo==='function')scrollTo({top:Math.max(0,scrollY+r0.top-16),behavior:smooth})}
         else if(typeof target.scrollIntoView==='function')target.scrollIntoView({block:'center',inline:'center',behavior:smooth});
       }catch(e){ /* a harness without a scrolling view */ }
       /* Measured once the scroll has stopped, not 80ms after it started. A
@@ -385,9 +587,16 @@ const PND={
     const onResize=()=>place();addEventListener('resize',onResize);addEventListener('orientationchange',onResize);
     draw();setTimeout(()=>root.querySelector('[data-a=next]').focus(),100)
   },
-  replayTour(){localStorage.removeItem('pnd_tour_done');this.startTour(true)},
+  /* Replaying means all three again, in order, whatever has been seen or
+     dismissed before - including the two that normally wait for their moment. */
+  replayTour(){
+    localStorage.removeItem('pnd_tour_done');
+    ['search','save','evidence'].forEach(k=>{try{localStorage.removeItem('pnd_coach_'+k)}catch(e){}});
+    this.startTour(true,['search','save','evidence']);
+  },
   nav(active=''){return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Personal Risk','/personal-risk'],['Verification','/accuracy'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
-  sourceBadge(e){return `<span class="source" data-source="${this.esc(e&&e.source||'Source')}">${this.esc(e&&e.source||'Source')}</span>`;},
+  sourceBadge(e){const full=(e&&e.source)||'Source not stated';
+    return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(full)}">${this.esc(this.shortSource(full))}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
      a date range: a joined pair of dates reads as one continuous event, and a second
      occurrence of the same hazard is a separate record with its own start. */
@@ -469,6 +678,29 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
     s.src='/event-enrichment.js?v=8';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
     document.body.appendChild(s);
   }
-  function init(){wire();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1)wire(n)});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
+  /* Fill every risk filter from the one scale.
+   *
+   * The pages carry an HTML comment where their options used to be, so the
+   * list cannot drift page by page the way "Red / Orange / Green" did - one
+   * page had a stray "High" option that matched nothing the feed ever set. */
+  function fillRiskFilters(root){
+    const scope=root&&root.querySelectorAll?root:document;
+    scope.querySelectorAll('select').forEach(sel=>{
+      for(const node of Array.from(sel.childNodes)){
+        if(node.nodeType!==8||String(node.data).trim()!=='risk-levels')continue;
+        /* Whatever was chosen stays chosen. Adding options moved the
+           selection to the last one, so every list opened filtered to "Not
+           rated" and showed nothing at all. */
+        const was=sel.value;
+        const box=document.createElement('select');
+        box.innerHTML=PND.riskLevelOptions();
+        while(box.firstChild)sel.insertBefore(box.firstChild,node);
+        node.remove();
+        sel.value=was;
+        if(sel.selectedIndex<0)sel.selectedIndex=0;
+      }
+    });
+  }
+  function init(){wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

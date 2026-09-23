@@ -63,7 +63,7 @@ function forecastRow(e,opts){
  const win=e.targetStart||e.targetEnd?PND.windowText(e):'No window recorded';
  const status=!e.forecast?'Observed':(e.windowClosed?'Window closed':'Window open');
  var html={
-  Risk:'<span class="badge '+PND.riskClass(e.alert)+'">'+PND.esc(e.alert||'Watch')+'</span>',
+  Risk:PND.riskTag(e),
   /* A real link, not only a clickable row: a row opens on click and on
      Enter, but it cannot be opened in a new tab, copied, or read out as a
      link by a screen reader. The name of the thing is the link. */

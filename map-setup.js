@@ -242,8 +242,19 @@
     return best;
   }
 
-  function political(map) {
+  /* `named` false draws the world without country names: under satellite
+     imagery the drawn world is a fallback for tiles that never arrive, and
+     its labels would otherwise sit on top of the imagery's own alongside a
+     second copy of every name. */
+  function political(map, named) {
+    var withNames = named !== false;
     var group = L.layerGroup();
+    /* The world file is fetched asynchronously, so a showNames() call can
+       arrive before there is anything to name; it is remembered instead. */
+    group.showNames = function () {
+      group.__wantNames = true;
+      if (group.__showNames) group.__showNames();
+    };
     if (typeof L.rectangle === 'function') {
       L.rectangle(WORLD, { fillColor: OCEAN, fillOpacity: 1, stroke: false, interactive: false }).addTo(group);
     }
@@ -296,9 +307,16 @@
           }).addTo(labels);
         });
       }
-      labels.addTo(group);
-      map.on('zoomend moveend', relabel);
-      relabel();
+      /* Turned on now, or later by showNames() if the imagery above this
+         layer turns out not to be arriving. */
+      group.__showNames = function () {
+        if (group.hasLayer(labels)) return;
+        labels.addTo(group);
+        map.on('zoomend moveend', relabel);
+        relabel();
+      };
+      if (withNames) group.__showNames();
+      else if (group.__wantNames) group.__showNames();
     }).catch(function () { /* offline: the ocean and the markers still draw */ });
 
     group.getAttribution = function () { return NE_CREDIT; };
@@ -335,14 +353,31 @@
      panes know nothing about. */
   var GLOBE_CSS = [
     /* Above the globe host, which is itself above every Leaflet pane. */
-    '.pnd-view-toggle{position:absolute;top:10px;left:10px;z-index:1300;',
+    /* Below the zoom control, not on top of it.
+       Measured at 1280x900 on /live-map and /: the zoom-in button sat at
+       (29,359) 30x30 and this toggle at (27,357) 109x31 with z-index 1300, so
+       elementFromPoint over BOTH zoom buttons returned the toggle. The zoom
+       control is the first thing a reader reaches for on a map and it was
+       unclickable on every map page in the site. Leaflet's zoom control is
+       two 30px buttons at top:10px, so the toggle starts below that. */
+    '.pnd-view-toggle{position:absolute;top:84px;left:10px;z-index:1300;',
     'display:inline-flex;gap:0;border:1px solid #2c5c4c;border-radius:8px;',
     'overflow:hidden;font:600 11px/1 system-ui,sans-serif}',
     '.pnd-view-toggle button{appearance:none;border:0;padding:7px 11px;cursor:pointer;',
     'background:#07231b;color:#9db9ad;letter-spacing:.04em}',
     '.pnd-view-toggle button[aria-pressed="true"]{background:#25e29c;color:#04120e}',
     '.pnd-view-toggle button:focus-visible{outline:2px solid #25e29c;outline-offset:-2px}',
-    '.pnd-globe .cesium-widget-credits{font-size:10px;opacity:.75}'
+    '.pnd-globe .cesium-widget-credits{font-size:10px;opacity:.75}',
+    /* The wheel hint, shown only when a reader tries the plain wheel over
+       the map. Above the panes, below the controls, and never in the way
+       of a pointer. */
+    '.pnd-wheel-hint{position:absolute;inset:auto 0 0 0;z-index:1200;pointer-events:none;',
+    'display:flex;align-items:center;justify-content:center;',
+    'padding:10px 12px;margin:0;background:rgba(3,18,14,.86);color:#eaf7f1;',
+    'font:700 12px/1.3 system-ui,sans-serif;text-align:center;',
+    'opacity:0;transition:opacity .16s ease}',
+    '.pnd-wheel-hint[data-shown]{opacity:1}',
+    '@media (prefers-reduced-motion:reduce){.pnd-wheel-hint{transition:none}}'
   ].join('');
 
   function injectStyle() {
@@ -363,16 +398,37 @@
       views['Political'] = plain;
 
       if (typeof L.tileLayer === 'function') {
+        /* The political world sits UNDERNEATH the imagery rather than being
+           replaced by it. Esri's tiles come from a third-party host that a
+           network can refuse, and a satellite view whose tiles never answer
+           is a black panel; with the drawn world beneath it, a reader who
+           loses the imagery still gets coastlines, borders and names. The
+           globe already works this way. */
+        var under = political(map, false);
+        var imagery = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: 18, noWrap: true });
+        /* Esri's tiles come from a third-party host that a network can refuse.
+           When they do not arrive the drawn world underneath is all there is,
+           and an unlabelled one is a puzzle - so its own country names come
+           back the moment the imagery is shown not to be answering. */
+        if (typeof imagery.on === 'function') {
+          imagery.on('tileerror', function () { try { under.showNames(); } catch (e) {} });
+        }
         views['Satellite'] = L.layerGroup([
-          L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: 18, noWrap: true }),
+          under, imagery,
           L.tileLayer(PLACES, { maxZoom: 18, pane: pane, opacity: 0.95, noWrap: true })
         ]);
       }
 
-      plain.addTo(map);
+      /* Satellite is what a reader means by looking at a map of a disaster:
+         the real ground, as it is, rather than a coloured abstraction of it.
+         It is the default wherever it can be built, and Political remains one
+         click away for anyone who wants the plain political world. */
+      var start = views['Satellite'] || plain;
+      start.addTo(map);
       if (map.attributionControl && map.attributionControl.addAttribution) map.attributionControl.addAttribution(NE_CREDIT);
       if (L.control && typeof L.control.layers === 'function' && views['Satellite']) {
-        L.control.layers(views, null, { position: 'topright' }).addTo(map);
+        L.control.layers({ 'Satellite': views['Satellite'], 'Political': plain }, null,
+          { position: 'topright' }).addTo(map);
       }
     } catch (e) { /* stub layers in the test harness */ }
     attachGlobe(map);
@@ -472,6 +528,76 @@
     } catch (e) { /* the flat map is already up; leave it alone */ }
   }
 
+  /*
+   * The wheel, the way every other map on the web handles it.
+   *
+   * A map inside a scrolling page has to answer two things at once: the wheel
+   * is how a reader moves down the page, and it is also how a reader zooms a
+   * map. Taking it for zoom traps the page; ignoring it makes the map feel
+   * dead. The settled convention - Google Maps, Mapbox and Leaflet's own
+   * documentation all do this - is that the modifier key decides: plain wheel
+   * scrolls the page, Ctrl (or Command) plus wheel zooms the map, and the map
+   * says so the first time a reader tries the plain wheel over it.
+   *
+   * This replaces a click-to-arm behaviour, which had the same intent and was
+   * not a convention anybody arrives knowing: the wheel did nothing until the
+   * map had been clicked, and clicking a map is how you open an event.
+   *
+   * A trackpad pinch arrives as a wheel event with ctrlKey set, so pinch to
+   * zoom works on a laptop without any extra handling. Dragging, two-finger
+   * pinch on a touchscreen, double-click zoom, keyboard arrows and the zoom
+   * buttons are Leaflet's own and are deliberately left alone.
+   */
+  var HINT_CLASS = 'pnd-wheel-hint';
+  function wheelGesture(map, container) {
+    if (!container || !container.addEventListener || typeof map.scrollWheelZoom !== 'object') return;
+    /* Leaflet's own handler stays off until a modifier is actually held. */
+    try { map.scrollWheelZoom.disable(); } catch (e) { /* stub */ }
+
+    var hint = null, hideTimer = null;
+    function say(text) {
+      if (!document || !document.createElement) return;
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.className = HINT_CLASS;
+        hint.setAttribute('role', 'status');
+        container.appendChild(hint);
+      }
+      hint.textContent = text;
+      hint.setAttribute('data-shown', '1');
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () { if (hint) hint.removeAttribute('data-shown'); }, 1600);
+    }
+
+    container.addEventListener('wheel', function (ev) {
+      var zooming = ev.ctrlKey || ev.metaKey;
+      try {
+        if (zooming) {
+          if (!map.scrollWheelZoom.enabled()) map.scrollWheelZoom.enable();
+          /* Without this the browser zooms the whole page instead. */
+          if (ev.cancelable) ev.preventDefault();
+        } else {
+          if (map.scrollWheelZoom.enabled()) map.scrollWheelZoom.disable();
+          say(WHEEL_HINT);
+        }
+      } catch (e) { /* a stub map has no handler to toggle */ }
+    }, { passive: false, capture: true });
+
+    /* Leaving the map must not leave the handler armed for the next page
+       scroll that happens to pass over it. */
+    container.addEventListener('mouseleave', function () {
+      try { map.scrollWheelZoom.disable(); } catch (e) {}
+      if (hint) hint.removeAttribute('data-shown');
+    });
+
+    /* Reachable without a pointer at all: Leaflet gives a focused map arrow
+       keys and +/-, and the container needs to be focusable for that. */
+    if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '0');
+  }
+  var WHEEL_HINT = (typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform || ''))
+    ? 'Use ⌘ + scroll to zoom the map'
+    : 'Use Ctrl + scroll to zoom the map';
+
   var base = L.map;
   if (base.__pndMapSetup) return;
 
@@ -510,17 +636,7 @@
         ro.observe(container);
       }
 
-      if (!explicitWheel) {
-        var enable = function () { try { map.scrollWheelZoom.enable(); } catch (e) {} };
-        var disable = function () { try { map.scrollWheelZoom.disable(); } catch (e) {} };
-        map.on('click', enable);
-        map.on('focus', enable);
-        map.on('blur', disable);
-        if (container && container.addEventListener) {
-          container.addEventListener('mouseleave', disable);
-          if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '0');
-        }
-      }
+      if (!explicitWheel) wheelGesture(map, container);
     } catch (e) { /* a map stub without an event bus still returns a usable map */ }
 
     return map;

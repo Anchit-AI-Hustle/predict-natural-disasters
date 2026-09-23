@@ -139,6 +139,17 @@
       '<i class="risk-shape" aria-hidden="true"></i>' + esc(text) + '</span>';
   }
 
+  /** A badge for a level that has already been decided, by its key. */
+  function badgeForLevel(key, opts) {
+    var lv = BY_KEY[key] || UNKNOWN;
+    var o = opts || {};
+    var text = o.text === undefined || o.text === null ? lv.label : o.text;
+    var extra = o.className ? ' ' + o.className : '';
+    return '<span class="risk risk-' + lv.key.toLowerCase() + extra + '" title="' +
+      esc(o.title || lv.label) + '">' +
+      '<i class="risk-shape" aria-hidden="true"></i>' + esc(text) + '</span>';
+  }
+
   /*
    * A map marker, on the same scale and with the same shape.
    *
@@ -165,7 +176,7 @@
 
   var R = { LEVELS: LEVELS, UNKNOWN: UNKNOWN, VOCABULARY: VOCABULARY, BY_KEY: BY_KEY,
     levelOf: levelOf, level: level, classOf: classOf, rankOf: rankOf,
-    badge: badge, markerIcon: markerIcon };
+    badge: badge, badgeForLevel: badgeForLevel, markerIcon: markerIcon };
   if (typeof window !== 'undefined') window.PNDRisk = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })();

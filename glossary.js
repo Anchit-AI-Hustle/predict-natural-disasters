@@ -137,6 +137,25 @@
   }
 
   var SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1, CODE: 1, PRE: 1, OPTION: 1 };
+  /*
+   * A badge is a label, not prose, and it is not where a term gets explained.
+   *
+   * Expanding the first "GDACS" on a page turned a source pill into "Global
+   * Disaster Alert and Coordination System (GDACS)", and the first derived
+   * outlook's pill into "Predict Natural Disasters \u00b7 derived from NOAA /
+   * National Weather Service" - measured on a phone, that one wrapped across
+   * two lines and broke mid-phrase, and the row of pills stopped reading as a
+   * row. The full name is already on these pills as their title attribute and
+   * is written out in the prose below them, so nothing is lost by leaving the
+   * label short.
+   */
+  var LABEL = { risk: 1, badge: 1, source: 1, prov: 1, verdict: 1, provenance: 1,
+    sev: 1, pill: 1, 'provenance-badge': 1 };
+  function isLabel(el) {
+    if (!el || !el.classList) return false;
+    for (var i = 0; i < el.classList.length; i++) if (LABEL[el.classList[i]]) return true;
+    return false;
+  }
 
   function walk(root) {
     if (!root || !root.ownerDocument && root.nodeType !== 9 && root.nodeType !== 1) return;
@@ -144,7 +163,7 @@
     var walker = doc.createTreeWalker(root, 4 /* SHOW_TEXT */, {
       acceptNode: function (node) {
         for (var p = node.parentNode; p && p.nodeType === 1; p = p.parentNode) {
-          if (SKIP[p.tagName] || p.hasAttribute('data-keep-acronyms')) return 2 /* REJECT */;
+          if (SKIP[p.tagName] || p.hasAttribute('data-keep-acronyms') || isLabel(p)) return 2 /* REJECT */;
         }
         return /[A-Za-z]/.test(node.data) ? 1 /* ACCEPT */ : 2;
       }
@@ -179,9 +198,59 @@
     }
   }
 
+  /*
+   * The acronyms that only ever appear inside a label, written out once.
+   *
+   * Leaving a badge short is right - it is a label, not prose - but a reader
+   * who has only ever seen "GDACS" in a pill has not been told what it is,
+   * and on /alerts and /calamities that was every source on the page. So the
+   * page states them itself, in one line at the end of the content, built
+   * from what is actually on it rather than from a fixed list: no source that
+   * is not shown is named, and nothing has to be maintained per page.
+   */
+  var NOTE_ID = 'pnd-acronym-note';
+  function noteLabelAcronyms() {
+    if (typeof document === 'undefined' || !document.body) return;
+    var note = document.getElementById(NOTE_ID);
+    /* The note's own text does not count as the page stating the full form.
+       Without this it does: the note appears, the next pass sees every full
+       form present, removes it, the pass after that adds it back, and the
+       observer runs between the two for ever. */
+    var text = document.body.textContent || '';
+    if (note && note.textContent) text = text.split(note.textContent).join(' ');
+    var wanted = [];
+    for (var i = 0; i < ONCE.length; i++) {
+      var term = ONCE[i][0], full = ONCE[i][1];
+      /* On the page at all, and its full form nowhere on it. */
+      if (text.indexOf(term) < 0) continue;
+      if (text.indexOf(full) >= 0) continue;
+      /* Longest first, so a term already covered by one being written out -
+         "OCHA" inside "UN OCHA" - is not repeated. */
+      var covered = false;
+      for (var j = 0; j < wanted.length; j++) if (wanted[j][0].indexOf(term) >= 0) covered = true;
+      if (!covered) wanted.push([term, full]);
+    }
+    if (!wanted.length) { if (note) note.remove(); return; }
+    /* "stands for" rather than "is the": the list holds proper names and
+       common nouns alike, and "AI is the artificial intelligence" is not a
+       sentence. */
+    var say = wanted.map(function (w) { return w[0] + ' stands for ' + w[1] + '.'; }).join(' ');
+    if (!note) {
+      note = document.createElement('p');
+      note.id = NOTE_ID;
+      note.className = 'muted';
+      note.setAttribute('data-keep-acronyms', '');
+      note.style.cssText = 'font-size:11px;line-height:1.5;margin:10px 16px 18px;max-width:80ch';
+      var host = document.querySelector('main') || document.body;
+      host.appendChild(note);
+    }
+    if (note.textContent !== say) note.textContent = say;
+  }
+
   function pass() {
     refreshSpelled();
     walk(document.body);
+    noteLabelAcronyms();
   }
 
   /** Does this mutation carry any text worth looking at? */

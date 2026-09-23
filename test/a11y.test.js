@@ -59,11 +59,16 @@ test('a control is never named by the text inside it', () => {
      every filter on the site passed. */
   const doc = docOf('events.html');
   const sel = doc.getElementById('level');
-  assert.ok(sel, 'fixture: the alert-level filter should exist');
-  assert.ok(sel.options.length > 1, 'fixture: it should have options to be named by');
+  assert.ok(sel, 'fixture: the risk-level filter should exist');
+  /* The levels are filled in from the one scale at load, so in the static
+     document this select carries a marker rather than its options. Either
+     shape is a control whose name cannot come from its contents. */
+  const filled = sel.options.length > 1;
+  const marked = [...sel.childNodes].some(n => n.nodeType === 8 && String(n.data).trim() === 'risk-levels');
+  assert.ok(filled || marked, 'fixture: it should have options, or the marker they are filled from');
   assert.ok((sel.getAttribute('aria-label') || '').trim(),
-    'the alert-level filter relies on its option text for a name');
-  assert.equal(/All alert levels|Red|Orange/.test(sel.getAttribute('aria-label')), false,
+    'the risk-level filter relies on its option text for a name');
+  assert.equal(/All risk levels|Red|Orange|Severe|Moderate/.test(sel.getAttribute('aria-label')), false,
     'the name is a list of the options rather than what the control does');
 });
 
