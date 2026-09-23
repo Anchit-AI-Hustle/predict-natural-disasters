@@ -32,7 +32,22 @@ const AFTERSHOCK_HORIZON_HOURS = 168;
 /* ------------------------------------------------------------------ utils */
 
 const iso = d => new Date(d).toISOString().slice(0, 10);
-const num = v => (Number.isFinite(+v) ? +v : null);
+/*
+ * A number a provider published, or null where it published none.
+ *
+ * `+null` and `+''` are both 0, so the one-line version of this turned every
+ * absent field into a measurement: a storm the hurricane centre had not yet
+ * given a track was served as moving NORTH at 0 kt, a coordinate left blank
+ * became 0,0 off West Africa, and an empty depth read as a surface quake.
+ * Two callers below had already been bitten and guard for it themselves;
+ * every other caller was still exposed. A genuine 0 is still 0.
+ */
+const num = v => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'string' && v.trim() === '') return null;
+  const n = +v;
+  return Number.isFinite(n) ? n : null;
+};
 
 async function timedFetch(url, opts) {
   const o = opts || {};
