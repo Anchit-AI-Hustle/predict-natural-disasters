@@ -497,6 +497,59 @@ test('a withdrawn or reduced impact figure is not an additional impact', () => {
   assert.equal(V.reportsMoreImpact({ field: 'deaths', from: 12, to: 20 }), true);
 });
 
+test('an ordinary aftershock is what an aftershock outlook claims', () => {
+  /* The published rule is "grade against observed aftershock activity and any
+     additional impacts in the window", and the record it was graded against
+     holds only significant disasters - so an ordinary aftershock, which is
+     what a sequence is mostly made of, was invisible. Only an aftershock big
+     enough to be a disaster of its own, or the mainshock's toll rising, could
+     bear such an outlook out, and every ordinary successful one stayed
+     ungradeable against a rule that had promised to accept it. */
+  const p = prediction({ id: 'OUT-after', type: 'Earthquake aftershock sequence',
+    title: 'Aftershock-sequence outlook \u2014 Nepal', forecastClass: 'post-event-conditional',
+    forecastScope: 'event', freezeTimestamp: '2026-09-03T00:00:00Z',
+    targetStart: '2026-09-03T00:00:00Z', targetEnd: '2026-09-10T00:00:00Z' });
+  const mainshock = disaster({ canonicalEventId: 'OBS-main', hazard: 'earthquake',
+    onset: '2026-09-02T00:00:00Z' });
+  const aftershock = { canonicalEventId: 'OBS-af-1', hazard: 'earthquake', significant: false,
+    onset: '2026-09-05T00:00:00Z', magnitude: 4.4,
+    geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.8, lon: 85.4 } };
+  const grade2 = (sup) => V.verify(p, [mainshock], { now: Date.parse('2026-09-12T00:00:00Z'),
+    hazardFamilyOf: H, observedCoverage: FULL_COVER, supportingEvents: sup });
+
+  assert.equal(grade2([]).classification, 'PENDING',
+    'control: with nothing but the mainshock there is nothing to grade on');
+  const v = grade2([aftershock]);
+  assert.equal(v.classification, 'HIT', 'the activity this outlook is about did not count');
+  assert.deepEqual(v.observedEventIds, ['OBS-af-1']);
+  /* And it says what it counted: calling a magnitude-4 aftershock "a
+     significant earthquake" would be the flattering misdescription. */
+  assert.match(v.classificationReason, /^Observed earthquake activity/);
+  assert.match(v.classificationReason, /not itself a disaster/i);
+  assert.match(v.classificationReason, /counts towards no recall figure/i);
+
+  /* It is evidence for this class alone. A continuation outlook says the
+     hazard itself carries on and is graded on the disaster's own record; an
+     independent prediction claims a disaster, and a record that is not one
+     cannot bear it out. */
+  for (const cls of ['independent-prospective', 'continuation-outlook', 'warning-derived']) {
+    const other = V.verify(prediction({ id: 'OUT-' + cls, forecastClass: cls,
+      freezeTimestamp: '2026-09-03T00:00:00Z', forecastScope: 'event',
+      targetStart: '2026-09-03T00:00:00Z', targetEnd: '2026-09-10T00:00:00Z' }),
+      [], { now: Date.parse('2026-09-12T00:00:00Z'), hazardFamilyOf: H,
+        observedCoverage: FULL_COVER, supportingEvents: [aftershock] });
+    assert.notEqual(other.classification, 'HIT',
+      cls + ' was borne out by an observation that is not a disaster');
+  }
+
+  /* Outside the window, or outside the geography, it is not evidence either. */
+  assert.equal(grade2([Object.assign({}, aftershock, { onset: '2026-09-11T00:00:00Z' })]).classification,
+    'PENDING', 'an aftershock after the window closed was counted');
+  assert.equal(grade2([Object.assign({}, aftershock,
+    { geography: { country: 'Chile', lat: -33, lon: -70 } })]).classification,
+    'PENDING', 'an aftershock on another continent was counted');
+});
+
 test('an aftershock outlook is not verified by the mainshock still being in the feed', () => {
   /* Its published rule is "grade against observed aftershock activity and any
      additional impacts in the window". The mainshock sits in the USGS feed

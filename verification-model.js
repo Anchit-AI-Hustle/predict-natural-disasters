@@ -514,18 +514,63 @@
     /* Positive evidence first, and without the coverage gate: a disaster that
        is on record inside the frozen geography and window bears the forecast
        out whether or not anything could have proved the opposite. */
+    /*
+     * Observed activity that is not a disaster in its own right.
+     *
+     * An aftershock outlook's published rule is "grade against observed
+     * aftershock activity and any additional impacts in the window", and the
+     * record it was graded against holds only significant disasters - so an
+     * ordinary aftershock, which is what such a sequence is mostly made of,
+     * was invisible. The class could be borne out only by an aftershock large
+     * enough to be a disaster of its own, or by the mainshock's impact
+     * figures rising, leaving every ordinary successful outlook permanently
+     * ungradeable against a rule that had promised to accept it.
+     *
+     * These observations are kept apart from the record of disasters and
+     * never enter the recall denominator: they are evidence that something
+     * happened, not claims that a disaster did.
+     */
+    if (claim.forecastClass === 'post-event-conditional' && !matched.length) {
+      var support = (o.supportingEvents || []);
+      for (var sIdx = 0; sIdx < support.length; sIdx++) {
+        var sup = support[sIdx];
+        if (!sup || !claimAccepts(claim, sup.hazard)) continue;
+        var sOnset = ms(sup.onset);
+        if (sOnset === null || start === null || sOnset < start) continue;
+        if (end !== null && sOnset > end) continue;
+        var sGeo = geographyMatch(claim, sup);
+        if (!sGeo) continue;
+        matched.push({ event: sup, level: sGeo.level, supporting: true,
+          why: sGeo.why + ' Observed activity of the sequence this outlook is about, recorded ' +
+            'at ' + sup.onset + '. It is not itself a disaster by the observed record\u2019s bar, ' +
+            'and counts towards no recall figure.' });
+        break;
+      }
+    }
+
     var full = matched.filter(function (m) { return m.level === 'full'; });
     /* Name the hazard that was actually observed, not the claim's primary
        family: a compound claim accepts more than one, and "a significant
        flood was observed" about a landslide describes the wrong event. */
     var observedHazard = function (m) { return (m && m.event && m.event.hazard) || claim.hazard; };
+    /* Evidence that is not a disaster says so: a supporting observation is
+       activity of the sequence, not a significant event of its own, and
+       opening with "a significant earthquake was observed" about a
+       magnitude-4 aftershock would be the flattering misdescription this
+       whole file exists to prevent. */
+    var opener = function (m, where) {
+      return (m && m.supporting)
+        ? 'Observed ' + observedHazard(m) + ' activity, which is what this outlook claims, was recorded ' + where + '. '
+        : 'A significant ' + observedHazard(m) + ' was observed ' + where + '. ';
+    };
     if (full.length) {
       return say(CLASSIFICATION.HIT,
-        'A significant ' + observedHazard(full[0]) + ' was observed inside the frozen geography and window. ' + full[0].why, full);
+        opener(full[0], 'inside the frozen geography and window') + full[0].why, full);
     }
     if (matched.length) {
       return say(CLASSIFICATION.PARTIAL_HIT,
-        'A significant ' + observedHazard(matched[0]) + ' was observed inside the window but only partly inside the geography this outlook named. ' + matched[0].why, matched);
+        opener(matched[0], 'inside the window but only partly inside the geography this outlook named') +
+        matched[0].why, matched);
     }
     /* From here every answer rests on nothing having been observed, so what
        the record could have seen decides whether that means anything. */

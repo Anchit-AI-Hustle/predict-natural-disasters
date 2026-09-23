@@ -70,7 +70,7 @@ jobs:
       # records: the same flood arrives as a GDACS alert and a ReliefWeb
       # country declaration, and three records is not three disasters.
       - name: Record significant observed disasters
-        run: node tools/record-observed.js /tmp/events.json data/observed-disasters.json
+        run: node tools/record-observed.js /tmp/events.json data/observed-disasters.json data/outlook-ledger.json
 
       - name: Commit the ledger when it changed
         run: |

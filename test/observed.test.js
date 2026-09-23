@@ -638,6 +638,82 @@ test('a disaster that eases below the bar goes on being reconciled', () => {
   fs.rmSync(path.dirname(led), { recursive: true, force: true });
 });
 
+test('an observation a frozen claim is graded on is kept, and only that one', () => {
+  /* The bar keeps ordinary aftershocks out of the record of disasters, and
+     should. But an aftershock outlook's published rule is graded on exactly
+     those, so the rule could never be met by the thing it names. Such an
+     observation is kept beside the ledger - apart from the disasters, in no
+     recall figure - and only where a recorded conditional claim is graded on
+     it. */
+  const BASE = Date.now();
+  const at = h => new Date(BASE + h * 36e5).toISOString();
+  const quake = (id, mag, lat, lon, h, deaths) => ({
+    id, type: 'Earthquake', title: 'M ' + mag + ' earthquake', source: 'USGS',
+    sourceUrl: 'https://earthquake.usgs.gov/' + id, country: 'Nepal', region: 'Bagmati',
+    lat, lon, magnitude: mag, deaths, startedAt: at(h), updated: at(h),
+    locationPrecision: 'incident', evidenceState: 'observed', severity: 'SEVERE'
+  });
+  const outlook = { id: 'OUT-af-1', type: 'Earthquake aftershock sequence',
+    title: 'Aftershock-sequence outlook \u2014 Bagmati', country: 'Nepal', region: 'Bagmati',
+    lat: 27.7, lon: 85.3, forecast: true, forecastKind: 'aftershock-sequence',
+    forecastOf: 'usgs-main', forecastScope: 'event', targetStart: at(0), targetEnd: at(168),
+    source: 'Derived',
+    verificationRule: 'Grade against observed aftershock activity and any additional impacts in the window.' };
+
+  const led = freshLedger();
+  const dir = path.dirname(led);
+  const outlooks = path.join(dir, 'outlooks.json');
+  fs.writeFileSync(outlooks, '[]\n');
+  const feed = (events, scan, h) => ({ generatedAt: at(h), events,
+    meta: { scan: { scanId: scan, scanTimestamp: at(h) } } });
+  const run = (tool, body, tag, ledger, extra) => {
+    const f = path.join(dir, tag + '.json');
+    fs.writeFileSync(f, JSON.stringify(body));
+    return require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', tool), f, ledger].concat(extra || []), { encoding: 'utf8' });
+  };
+
+  run('record-outlooks.js', feed([outlook], 's0', 0), 'o1', outlooks);
+  run('record-observed.js', feed([quake('usgs-main', 6.4, 27.7, 85.3, 0, 9)], 's1', 0), 'a', led, [outlooks]);
+  /* Two days later: an ordinary aftershock, nobody hurt. */
+  run('record-observed.js', feed([quake('usgs-af1', 4.4, 27.8, 85.4, 48)], 's2', 48), 'b', led, [outlooks]);
+
+  const state = JSON.parse(fs.readFileSync(led, 'utf8'));
+  assert.equal(state.events.filter(e => !e.supersededBy).length, 1,
+    'the aftershock was recorded as a disaster of its own');
+  assert.equal((state.supporting || []).length, 1, 'the aftershock was not kept at all');
+  const sup = state.supporting[0];
+  assert.equal(sup.significant, false, 'a supporting observation is not a disaster');
+  assert.ok(sup.keptFor.some(k => k.startsWith('OUT-af-1@')),
+    'the observation does not say which claim keeps it');
+  assert.match(sup.significanceReason, /No reported casualties/);
+  assert.equal(state.lastRun.supportingObservationsKept, 1);
+  assert.ok(state.method.supporting.length > 100, 'the ledger does not state this rule');
+
+  /* It is what makes the outlook gradeable, and it grades it as its own rule
+     promised. */
+  const V = require(path.join(ROOT, 'verification-model.js'));
+  const row = JSON.parse(fs.readFileSync(outlooks, 'utf8'))[0];
+  const opts = supportingEvents => ({ now: BASE + 200 * 36e5, hazardFamilyOf: OBS.familyOf,
+    observedCoverage: { from: at(-24), to: at(220) }, supportingEvents });
+  assert.equal(V.verify(row, state.events, opts([])).classification, 'PENDING',
+    'control: without the observation there is nothing to grade on');
+  assert.equal(V.verify(row, state.events, opts(state.supporting)).classification, 'HIT');
+
+  /* And nothing is kept that no claim is graded on: the same run with no
+     outlook ledger keeps none. */
+  const bare = freshLedger();
+  run('record-observed.js', feed([quake('usgs-main', 6.4, 27.7, 85.3, 0, 9)], 's1', 0), 'c', bare);
+  run('record-observed.js', feed([quake('usgs-af1', 4.4, 27.8, 85.4, 48)], 's2', 48), 'd', bare);
+  const bareState = JSON.parse(fs.readFileSync(bare, 'utf8'));
+  assert.equal((bareState.supporting || []).length, 0,
+    'an observation nothing is graded on was kept anyway');
+  assert.equal(bareState.lastRun.belowBarNotRecorded, 1,
+    'control: the aftershock is still below the bar');
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(path.dirname(bare), { recursive: true, force: true });
+});
+
 test('the ledger states how it decides what it holds', () => {
   const led = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
   assert.ok(Array.isArray(led.events), 'the observed ledger has no events array');

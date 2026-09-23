@@ -25,10 +25,15 @@
 const fs = require('fs');
 const path = require('path');
 const OBS = require(path.join(__dirname, '..', 'observed-model.js'));
+/* The same geography rule the verifier grades on, so what is kept as
+   supporting evidence and what would be accepted as it cannot diverge. */
+let VER = null;
+try { VER = require(path.join(__dirname, '..', 'verification-model.js')); }
+catch (e) { VER = null; }
 
-const [, , eventsPath, ledgerPath] = process.argv;
+const [, , eventsPath, ledgerPath, outlookLedgerPath] = process.argv;
 if (!eventsPath || !ledgerPath) {
-  console.error('usage: record-observed.js <events.json> <observed-disasters.json>');
+  console.error('usage: record-observed.js <events.json> <observed-disasters.json> [outlook-ledger.json]');
   process.exit(2);
 }
 
@@ -133,6 +138,52 @@ const notObservations = events.reduce((m, e) => {
 }, {});
 const canonical = OBS.canonicalise(observed);
 const significant = canonical.filter(c => c.significant);
+
+/*
+ * Observed activity that is not a disaster, kept because a frozen claim is
+ * graded on it.
+ *
+ * An aftershock outlook's published rule is "grade against observed
+ * aftershock activity and any additional impacts in the window". Most of a
+ * sequence is ordinary aftershocks that hurt nobody, and this ledger's bar -
+ * rightly - keeps those out of the record of disasters. The effect was that
+ * the rule could never be met by the thing it names: only an aftershock large
+ * enough to be a disaster in its own right, or the mainshock's toll rising,
+ * could bear such an outlook out, so an ordinary successful one stayed
+ * ungradeable for ever.
+ *
+ * Those observations are kept here, apart from the disasters, and only where
+ * some recorded conditional claim is graded on them: the hazard it accepts,
+ * inside its window, inside the geography it named, by the verifier's own
+ * rule. Nothing else is kept, so the list is bounded by the claims rather
+ * than by the feed. They are never counted as disasters, never enter the
+ * recall denominator, and each says which claim keeps it.
+ */
+const conditionalClaims = (function () {
+  if (!outlookLedgerPath || !VER) return [];
+  let rows = [];
+  try { rows = JSON.parse(fs.readFileSync(outlookLedgerPath, 'utf8')); } catch (e) { return []; }
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .filter(r => r && (r.forecastClass === 'post-event-conditional' || r.forecastKind === 'aftershock-sequence'))
+    .map(r => ({ row: r, claim: VER.frozenClaim(Object.assign({ forecast: true }, r), OBS.familyOf) }));
+})();
+
+function claimsNeeding(c) {
+  const out = [];
+  for (const { row, claim } of conditionalClaims) {
+    const hazards = claim.hazards || [claim.hazard];
+    if (hazards.indexOf(c.hazard) < 0) continue;
+    const onset = Date.parse(c.onset || '');
+    const from = Date.parse(claim.window.effectiveForecastStart || claim.window.targetStart || '');
+    const to = Date.parse(claim.window.targetEnd || '');
+    if (!Number.isFinite(onset) || !Number.isFinite(from) || !Number.isFinite(to)) continue;
+    if (onset < from || onset > to) continue;
+    if (!VER.geographyMatch(claim, c)) continue;
+    out.push(row.id + '@' + row.targetStart);
+  }
+  return out;
+}
 
 /* Frozen once: what the event is. Everything else is still being learned. */
 const FROZEN = ['canonicalEventId', 'hazard', 'onset', 'firstRecordedAt', 'geographyAtFirstRecord',
@@ -349,7 +400,37 @@ const differenceNote = (a, b) => {
 };
 
 let added = 0, updated = 0, changes = 0, superseded = 0, reidentified = 0, distinguished = 0;
-let belowBarNew = 0, belowBarUpdated = 0;
+let belowBarNew = 0, belowBarUpdated = 0, supportingKept = 0;
+
+ledger.supporting = Array.isArray(ledger.supporting) ? ledger.supporting : [];
+const supportingById = new Map(ledger.supporting.map(r => [r.canonicalEventId, r]));
+
+function noteSupporting(c, needed) {
+  let row = supportingById.get(c.canonicalEventId);
+  if (!row) {
+    row = {
+      canonicalEventId: c.canonicalEventId, hazard: c.hazard, hazardLabel: c.hazardLabel,
+      onset: c.onset, end: c.end, geography: c.geography,
+      magnitude: c.magnitude === undefined ? null : c.magnitude,
+      source: c.source, sourceUrl: c.sourceUrl, evidence: c.evidence || [],
+      significant: false, significanceReason: c.significanceReason,
+      firstRecordedAt: now, lastSeenAt: observedAt,
+      sightings: [Object.assign({ from: observedAt, to: observedAt },
+        scanId ? { fromScan: scanId, toScan: scanId } : {})],
+      keptFor: []
+    };
+    ledger.supporting.push(row);
+    supportingById.set(row.canonicalEventId, row);
+    supportingKept++;
+  } else {
+    noteSighting(row, observedAt, scanId);
+    const seen = new Map((row.evidence || []).map(e => [e.id, e]));
+    for (const ev of (c.evidence || [])) if (ev && ev.id) seen.set(ev.id, ev);
+    row.evidence = [...seen.values()];
+    if (c.end && !row.end) row.end = c.end;
+  }
+  for (const k of needed) if (!row.keptFor.includes(k)) row.keptFor.push(k);
+}
 
 /*
  * The bar decides what ENTERS this ledger, not what may go on being learned
@@ -372,7 +453,15 @@ for (const c of canonical) {
      visible and nothing silently disappears from the denominator. */
   candidates.sort((a, b) => String(a.firstRecordedAt || '').localeCompare(String(b.firstRecordedAt || '')));
   const existing = candidates[0];
-  if (!existing && !c.significant) { belowBarNew++; continue; }
+  if (!existing && !c.significant) {
+    belowBarNew++;
+    /* Not a disaster, and not therefore nothing: where a recorded conditional
+       claim is graded on activity like this, the observation is kept beside
+       the ledger so that claim can be answered. */
+    const needed = claimsNeeding(c);
+    if (needed.length) noteSupporting(c, needed);
+    continue;
+  }
   if (existing && !c.significant) belowBarUpdated++;
   for (const extra of candidates.slice(1)) {
     if (extra.supersededBy) continue;
@@ -490,6 +579,7 @@ ledger.method = {
   significance: 'An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.',
   sightings: 'Each event records the runs during which it was actually being carried by a provider, not only the last time it was seen. A single latest timestamp is overwritten on the next run, which destroys the evidence that a disaster was in the feed throughout a forecast window that has since closed. Consecutive sightings more than ' + SIGHTING_GAP_HOURS + ' hours apart start a new run rather than being joined.',
   frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions.',
+  supporting: 'Observations below the bar are not disasters and are not recorded as any, but a frozen conditional claim - an aftershock outlook - is graded on \u201cobserved aftershock activity\u201d, which is mostly made of events that hurt nobody. Where such a claim accepts the hazard, the observation falls inside its window, and it falls inside the geography that claim named, the observation is kept under supporting, apart from the disasters. Each says which claim keeps it. They enter no recall figure and are never counted as disasters; where no conditional claim needs one, nothing is kept.',
   identity: 'A canonical id is a country, a rounded position and a minute, so two separate disasters can derive the same one. An id already held is believed only where the provider records overlap or the two rows can be the same occurrence under this hazard\u2019s matching window; otherwise the new disaster is recorded under a distinguished id, carrying the id it derived and the measured reason the two were not merged.',
   notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed. The bar decides what enters: a disaster already recorded goes on being reconciled on every run even when it eases below it, because what is still being learned about it - how long it was carried, when it ended, what it did - does not stop being true. Each row keeps the reason it qualified on entry, under significanceAtEntry, beside the current assessment.',
   observationsOnly: 'Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations.'
@@ -502,6 +592,9 @@ ledger.lastRun = {
   significant: significant.length,
   belowBarNotRecorded: belowBarNew,
   belowBarStillReconciled: belowBarUpdated,
+  supportingObservationsKept: supportingKept,
+  supportingObservationsHeld: ledger.supporting.length,
+  conditionalClaimsRead: conditionalClaims.length,
   supersededThisRun: superseded,
   reidentifiedThisRun: reidentified,
   distinguishedFromCollidingIdThisRun: distinguished,
@@ -511,7 +604,8 @@ ledger.lastRun = {
 fs.writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + '\n');
 console.log('observed ledger: ' + added + ' new, ' + updated + ' seen again, ' + changes +
   ' figure(s) revised, ' + reidentified + ' re-identified, ' + distinguished +
-  ' id collision(s) distinguished, ' + superseded + ' superseded — ' +
+  ' id collision(s) distinguished, ' + superseded + ' superseded, ' + supportingKept +
+  ' supporting observation(s) kept — ' +
   ledger.events.filter(e => !e.supersededBy).length + ' significant disasters recorded ' +
   '(' + observed.length + ' provider records → ' + canonical.length + ' events, ' +
   (canonical.length - significant.length) + ' below the bar; ' +

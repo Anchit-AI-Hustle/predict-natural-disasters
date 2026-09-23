@@ -91,6 +91,12 @@ const VER=window.PNDVerification,OBSM=window.PNDObserved;
    one, and counting both would leave the denominator wrong in the other
    direction. It stays in the file and out of the arithmetic. */
 const obsEvents=((obsLedger&&obsLedger.events)||[]).filter(e=>!e.supersededBy);
+/* Observed activity that is not a disaster: an aftershock outlook is graded
+   on "observed aftershock activity", and most of a sequence hurts nobody, so
+   the record keeps those apart from the disasters. They are evidence for that
+   one class and enter no rate: obsEvents above is what recall is measured
+   against, and this list is not in it. */
+const supportingEvents=(obsLedger&&obsLedger.supporting)||[];
 /* Coverage is asked per hazard and place, not taken as one window over
    everything. The observed ledger's updatedAt advances on every run including
    ones where the providers for a hazard were down, so using it would make a
@@ -109,7 +115,7 @@ const preds=l.map(r=>Object.assign({},r,{forecastClass:classOf(r)}));
  * it had never read, under a banner saying it could not read it. Nothing is
  * graded at all unless both written records are in hand. */
 const canGrade=!ledgerUnavailable.length;
-const verdicts=canGrade?preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor})):[];
+const verdicts=canGrade?preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor,supportingEvents})):[];
 const byId=new Map(verdicts.map((vd,i)=>[preds[i].id+'@'+preds[i].targetStart,vd]));
 const observed=(v.observedEvents||[]).map(x=>Object.assign({},x,{status:x.status||'MISSED_EVENT'}));
 /* One grading drives the figures and the rows alike.
