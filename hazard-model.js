@@ -350,32 +350,78 @@
    * publish still appears, marked not reported, because a silent omission reads
    * as a zero.
    */
+  /*
+   * What every disaster is measured by, whoever reported it.
+   *
+   * Each hazard names its own measures first and then this, so the impact
+   * block reads the same on a wildfire as on an earthquake. It is the same
+   * list the observed record tracks, and it is stated in full rather than
+   * per hazard because a count that is missing from the grid is a count the
+   * reader has no reason to ask about: an earthquake page that lists deaths
+   * and says nothing about injuries does not read as "we have no injury
+   * figure", it reads as though injuries were not a thing that happened.
+   */
+  var IMPACT = ['deaths', 'injuries', 'missing', 'displaced', 'evacuated', 'affected'];
+  /** This hazard's own measures, then the impact every hazard is measured by. */
+  function metrics() {
+    return Array.prototype.slice.call(arguments).concat(IMPACT);
+  }
+
   var METRICS = {
-    Earthquake: ['magnitude', 'depthKm', 'pagerAlert', 'deaths', 'missing', 'affected', 'tsunamiFlag'],
-    'Earthquake aftershock sequence': ['mainshockMagnitude', 'deaths', 'missing', 'affected'],
-    'Tropical Cyclone': ['windKt', 'category', 'deaths', 'missing', 'displaced', 'affected'],
-    Flood: ['deaths', 'missing', 'displaced', 'affected'],
-    'Flood / Landslide': ['deaths', 'missing', 'displaced', 'affected'],
-    Landslide: ['deaths', 'missing', 'displaced'],
-    Wildfire: ['areaHa', 'deaths', 'missing', 'displaced', 'affected'],
-    Drought: ['affected', 'displaced'],
-    Volcano: ['alertLevel', 'aviationColour', 'deaths', 'displaced', 'affected'],
-    'Extreme Heat': ['deaths', 'affected'],
-    'Extreme Cold': ['deaths', 'affected'],
-    'Severe Storm': ['deaths', 'missing', 'affected'],
-    Tornado: ['deaths', 'missing', 'affected'],
-    Tsunami: ['deaths', 'missing', 'displaced', 'affected']
+    Earthquake: metrics('magnitude', 'depthKm', 'pagerAlert', 'tsunamiFlag'),
+    'Earthquake aftershock sequence': metrics('mainshockMagnitude'),
+    'Tropical Cyclone': metrics('windKt', 'category', 'pressureMb', 'movement'),
+    Flood: metrics(),
+    'Flood / Landslide': metrics(),
+    Landslide: metrics(),
+    Wildfire: metrics('areaHa'),
+    Drought: metrics(),
+    Volcano: metrics('alertLevel', 'aviationColour'),
+    'Extreme Heat': metrics(),
+    'Extreme Cold': metrics(),
+    'Severe Storm': metrics(),
+    Tornado: metrics(),
+    Tsunami: metrics()
   };
 
   var LABELS = {
     magnitude: 'Magnitude', mainshockMagnitude: 'Mainshock magnitude',
     depthKm: 'Depth', pagerAlert: 'USGS impact alert',
     tsunamiFlag: 'Tsunami flag', windKt: 'Maximum sustained wind', category: 'Category',
+    pressureMb: 'Minimum central pressure', movement: 'Moving',
     areaHa: 'Area burned', alertLevel: 'Observatory alert level',
     aviationColour: 'Aviation colour code',
-    deaths: 'Lives lost', missing: 'Missing or unaccounted for',
-    displaced: 'People displaced', affected: 'People affected'
+    deaths: 'Lives lost', injuries: 'Injured', missing: 'Missing or unaccounted for',
+    displaced: 'People displaced', evacuated: 'People evacuated',
+    affected: 'People affected'
   };
+
+  /* Which of the sixteen compass points a bearing falls in. Published as a
+     bearing by the hurricane centre; "north-west" is what a reader in its
+     path reads without having to picture a protractor. */
+  var COMPASS = ['north', 'north-north-east', 'north-east', 'east-north-east',
+    'east', 'east-south-east', 'south-east', 'south-south-east',
+    'south', 'south-south-west', 'south-west', 'west-south-west',
+    'west', 'west-north-west', 'north-west', 'north-north-west'];
+  /*
+   * Absent is absent, and Number(null) is 0.
+   *
+   * The API writes null where the hurricane centre published nothing, and
+   * every one of those nulls became a zero here: a storm with no bearing was
+   * reported as moving NORTH, and a bearing with no forward speed as moving
+   * at 0 kt. Both are numbers nobody published, on the one field a reader in
+   * a storm's path acts on. The test for this only ever passed `undefined`,
+   * which Number turns into NaN, so it never saw what the feed actually
+   * sends.
+   */
+  function published(v) {
+    return v !== undefined && v !== null && v !== '' && isFinite(Number(v));
+  }
+  function compassOf(deg) {
+    if (!published(deg)) return null;
+    var d = Number(deg);
+    return COMPASS[Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
+  }
 
   function group(n) {
     var x = Math.round(Number(n));
@@ -436,6 +482,23 @@
         var c = cycloneCategory(e.windKt);
         return { key: key, label: label, reported: !!c, value: c };
       }
+      case 'pressureMb': {
+        var mb = Number(v);
+        var okMb = has && isFinite(mb) && mb > 0;
+        return { key: key, label: label, reported: okMb, value: okMb ? group(mb) + ' mb' : null,
+          note: okMb ? null : 'This source publishes no central pressure for this system' };
+      }
+      case 'movement': {
+        /* Two published fields read as the one thing a reader wants: where it
+           is going and how fast. A bearing with no speed still says where,
+           and a speed with no bearing says nothing on its own. */
+        var where = compassOf(e.movementDirDeg);
+        var fast = published(e.movementKt) && Number(e.movementKt) >= 0
+          ? Math.round(Number(e.movementKt)) + ' kt' : null;
+        var moving = where ? (where + (fast ? ' at ' + fast : '')) : null;
+        return { key: key, label: label, reported: !!moving, value: moving,
+          note: moving ? null : 'This source publishes no track for this system' };
+      }
       case 'areaHa': {
         var ha = Number(e.areaHa);
         var ok = isFinite(ha) && ha > 0;
@@ -474,7 +537,13 @@
    */
   function keyFacts(e) {
     var h = hazardOf(e && e.type);
-    var keys = METRICS[hazardName(h)] || ['deaths', 'affected'];
+    /* A hazard this table does not model is still a disaster, and is still
+       measured by what it did. The fallback was two of the six, so an EONET
+       "Ice" record, an unmapped provider category or a record with no type at
+       all quietly went back to omitting injuries, missing, displaced and
+       evacuated - the same silence the impact block exists to break. What a
+       hazard outside the table lacks is its OWN measures, not these. */
+    var keys = METRICS[hazardName(h)] || IMPACT;
     return keys.map(function (k) { return factOf(e || {}, k); }).filter(Boolean);
   }
 
@@ -847,6 +916,20 @@
    * nobody can check is not much better than no classification: the reason is
    * what a reader or an auditor needs.
    */
+  /*
+   * The providers whose records are warnings rather than observations.
+   *
+   * Held here, beside the classification that needs it, and pinned to the
+   * feed's own evidence classification by test/forecastclass.js: if a
+   * provider ever starts or stops publishing warnings, the test fails rather
+   * than this list quietly going stale. Matched against the outlook's source
+   * string, which the API builds from the parent record's own source.
+   */
+  var WARNING_PROVIDERS = /(?:National Weather Service|Volcano Hazards Program)/i;
+  function warningProvider(source) {
+    return WARNING_PROVIDERS.test(String(source || '')) ? 'official-warning' : null;
+  }
+
   function classifyForecast(f, parent) {
     f = f || {};
     if (!(f.forecast || f.isForecast)) return null;
@@ -861,7 +944,26 @@
         'Conditional on an earthquake that had already been observed when this was written.');
     }
     if (f.forecastOf) {
-      if (parent && parent.evidenceState === 'official-warning') {
+      var parentState = (parent && parent.evidenceState) ||
+        /* No parent to read.
+         *
+         * The append-only ledger records an outlook, not the record it was
+         * derived from, and that record leaves the rolling feed within days.
+         * Classifying a ledger row therefore had no parent to consult and
+         * fell straight through to continuation-outlook - "written after the
+         * hazard existed, forecasting that it continues" - for all 495
+         * derived rows on record, including the 110 derived from National
+         * Weather Service warnings and the 14 from volcano alert levels. A
+         * warning says severe weather is EXPECTED; it is not a hazard
+         * observed to exist, so that label claimed more for those outlooks
+         * than the record supports.
+         *
+         * What the row does carry is the provider it came from, because the
+         * API writes the parent's own source into it. For the providers whose
+         * records are warnings rather than observations that is enough to
+         * answer, and where it is not the row still says only what it can. */
+        warningProvider(f.source);
+      if (parentState === 'official-warning') {
         return say('warning-derived',
           'Derived from an official warning that the issuing agency had already published.');
       }
@@ -986,6 +1088,7 @@
     FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
     claimKey: claimKey,
     TYPE_NAMES_NO_HAZARD: TYPE_NAMES_NO_HAZARD,
+    WARNING_PROVIDERS: WARNING_PROVIDERS,
     effectiveForecastStart: effectiveForecastStart,
     observationCanVerify: observationCanVerify,
     creditedWindowHours: creditedWindowHours

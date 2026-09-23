@@ -815,3 +815,118 @@ test('an alert raised by the merge is ordered as the alert it became', async () 
   assert.ok(sorted > merged,
     'the feed must be re-sorted after a merge can change an alert');
 });
+
+/* ----------------------- the measures a provider published and we discarded */
+
+test('a storm shows the pressure and the track the hurricane centre published', async () => {
+  /* Central pressure and movement were read from the NHC feed and written
+     into the record's prose sentence and nowhere else - so the one place a
+     reader looks for a storm's numbers, the key-facts grid, showed the wind
+     and marked everything else as though the centre had not published it.
+     Central pressure is the measure forecasters watch for intensification,
+     and where a storm is heading is the question anyone in its path asks. */
+  const { events } = await feed();
+  const storm = events.find(e => e.source === 'NOAA National Hurricane Center');
+  assert.ok(storm, 'fixture: the feed should carry a hurricane-centre storm');
+  assert.equal(storm.pressureMb, 948, 'the published central pressure is not on the record');
+  assert.equal(storm.movementDirDeg, 315, 'the published bearing is not on the record');
+  assert.equal(storm.movementKt, 12, 'the published forward speed is not on the record');
+
+  const facts = H.keyFacts(storm);
+  const by = k => facts.find(f => f.key === k);
+  assert.equal(by('pressureMb').value, '948 mb', 'the pressure is not shown as a measurement');
+  assert.equal(by('movement').value, 'north-west at 12 kt',
+    'the track is not readable without a protractor');
+  /* And the sentence still says it too, so nothing was moved out of view. */
+  assert.match(storm.details, /minimum pressure 948 mb/);
+});
+
+test('a bearing is read as a compass point, and half a track is still a track', () => {
+  const facts = e => H.keyFacts(Object.assign({ type: 'Tropical Cyclone' }, e));
+  const move = e => facts(e).find(f => f.key === 'movement');
+  for (const [deg, word] of [[0, 'north'], [90, 'east'], [180, 'south'], [270, 'west'],
+    [315, 'north-west'], [22, 'north-north-east'], [359, 'north'], [-45, 'north-west']]) {
+    assert.equal(move({ movementDirDeg: deg, movementKt: 10 }).value, word + ' at 10 kt',
+      deg + ' degrees is not ' + word);
+  }
+  /* A bearing with no speed still says where it is going. A speed with no
+     bearing says nothing on its own and must not read as though it did. */
+  assert.equal(move({ movementDirDeg: 90 }).value, 'east');
+  assert.equal(move({ movementKt: 10 }).reported, false,
+    'a forward speed with no bearing was published as a track');
+  assert.match(move({}).note, /publishes no track/);
+});
+
+test('every hazard is measured by the same impact, and says so when it has none', () => {
+  /* A grid that lists deaths and says nothing about injuries does not read as
+     "we have no injury figure" - it reads as though injuries were not a thing
+     that happened. None of the connected providers publishes an injury or an
+     evacuation count today, which is exactly why the rows have to be there. */
+  const IMPACT = ['deaths', 'injuries', 'missing', 'displaced', 'evacuated', 'affected'];
+  const types = ['Earthquake', 'Flood', 'Wildfire', 'Tropical Cyclone', 'Volcano',
+    'Drought', 'Severe Storm', 'Tornado', 'Tsunami', 'Landslide', 'Extreme Heat'];
+  for (const type of types) {
+    const keys = H.keyFacts({ type }).map(f => f.key);
+    for (const k of IMPACT) {
+      assert.ok(keys.includes(k), type + ' does not report ' + k + ' either way');
+    }
+    /* The hazard's own measures come first, then the impact. */
+    assert.deepEqual(keys.slice(-IMPACT.length), IMPACT,
+      type + ' does not end with the impact block in one order');
+  }
+  /* And an unreported count is never a zero. */
+  const facts = H.keyFacts({ type: 'Earthquake', magnitude: 6.1 });
+  for (const f of facts.filter(x => IMPACT.includes(x.key))) {
+    assert.equal(f.reported, false);
+    assert.equal(f.value, null, f.key + ' was given a value nobody published');
+  }
+});
+
+test('no connected source publishes an injury or evacuation count, which is why they are shown', async () => {
+  /* The claim the two rows above rest on, measured rather than assumed. If a
+     provider ever starts publishing one, this fails and the rows start
+     carrying real numbers - which is the point of having them. */
+  const { events } = await feed();
+  const observed = events.filter(e => !e.forecast);
+  assert.ok(observed.length > 5, 'fixture: the feed should carry records to check');
+  for (const k of ['injuries', 'evacuated']) {
+    const published = observed.filter(e => e[k] !== undefined && e[k] !== null);
+    assert.deepEqual(published.map(e => e.id), [],
+      'a provider now publishes ' + k + ': the grid should carry it as a number');
+  }
+});
+
+test('a movement field the source did not publish is absent, not north at zero knots', () => {
+  /* Number(null) is 0, and the API writes null where the hurricane centre
+     published nothing - so every missing bearing became NORTH and every
+     missing forward speed became 0 kt, on the one field a reader in a
+     storm's path acts on. The first test for this only ever passed
+     `undefined`, which Number turns into NaN, so it never saw what the feed
+     actually sends. */
+  const move = e => H.keyFacts(Object.assign({ type: 'Tropical Cyclone' }, e))
+    .find(f => f.key === 'movement');
+  for (const absent of [null, undefined, '']) {
+    assert.equal(move({ movementDirDeg: absent, movementKt: 12 }).reported, false,
+      'a storm with a ' + JSON.stringify(absent) + ' bearing was given a direction');
+    assert.equal(move({ movementDirDeg: absent, movementKt: 12 }).value, null);
+    assert.equal(move({ movementDirDeg: 315, movementKt: absent }).value, 'north-west',
+      'a ' + JSON.stringify(absent) + ' forward speed was published as a number');
+  }
+  /* A genuine zero is still a number somebody published. */
+  assert.equal(move({ movementDirDeg: 0, movementKt: 0 }).value, 'north at 0 kt');
+  assert.equal(move({ movementDirDeg: 315, movementKt: 12 }).value, 'north-west at 12 kt');
+});
+
+test('a hazard this table does not model is measured by the same impact', () => {
+  /* The fallback for an unmapped type was two of the six, so an EONET "Ice"
+     record, an unrecognised provider category or a record with no type at all
+     quietly went back to omitting injuries, missing, displaced and evacuated
+     - the same silence the impact block exists to break. What a hazard
+     outside the table lacks is its OWN measures, not these. */
+  const IMPACT = ['deaths', 'injuries', 'missing', 'displaced', 'evacuated', 'affected'];
+  for (const type of ['Ice', 'Gas Pipeline', 'Local Area Emergency', '', undefined, null,
+    'Some Category Nobody Has Mapped']) {
+    assert.deepEqual(H.keyFacts({ type }).map(f => f.key), IMPACT,
+      JSON.stringify(type) + ' is measured by a different impact from every other hazard');
+  }
+});

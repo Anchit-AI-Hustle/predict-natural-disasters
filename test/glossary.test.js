@@ -153,3 +153,37 @@ test('a name that already writes itself out is left alone', () => {
   assert.equal(fresh().rewrite('ReliefWeb (UN OCHA)'),
     'ReliefWeb (United Nations Office for the Coordination of Humanitarian Affairs)');
 });
+
+test('a field label in capitals is not read as an acronym', async () => {
+  /* Measured on a phone: the action panel's "WHO SAYS THIS" label rendered as
+     "World Health Organization (WHO) SAYS THIS". In capitals there is nothing
+     to tell the English word from the agency, and lower case - which already
+     protected "who said so" - is exactly what a label does not have. A run of
+     capitals with no lower-case letter in it is a label on this site, and a
+     label is left short, as it already is for badges and pills. */
+  const r = await renderPage('event-detail.html',
+    { search: '?id=nhc-al072026', timeoutMs: 8000 });
+  const body = r.document.body.textContent;
+  assert.ok(body.includes('WHO SAYS THIS'),
+    'the action panel no longer asks who says this');
+  assert.equal(/World Health Organization \(WHO\) SAYS THIS/.test(body), false,
+    'a capitalised label was expanded as though it were an acronym');
+  r.close();
+});
+
+test('an acronym in prose is still written out', async () => {
+  /* The other half: the rule above must not switch the glossary off. */
+  const G = require('../glossary.js');
+  const one = G.rewriteForTest
+    ? G.rewriteForTest('The GDACS record was read this morning.')
+    : null;
+  if (one) {
+    assert.match(one, /Global Disaster Alert and Coordination System \(GDACS\)/,
+      'an acronym in ordinary prose stopped being written out');
+  }
+  const r = await renderPage('alerts.html', { timeoutMs: 8000 });
+  const text = r.document.body.textContent;
+  assert.ok(/Global Disaster Alert and Coordination System|GDACS stands for/.test(text),
+    'no page prose or footnote writes GDACS out any more');
+  r.close();
+});
