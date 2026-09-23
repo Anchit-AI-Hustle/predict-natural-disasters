@@ -23,7 +23,10 @@ test.after(closeAllWindows);
 
 const ROOT = path.join(__dirname, '..');
 const feed = async () => (await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events')).json();
-const observedOf = events => events.filter(e => !e.forecast && e.evidenceState !== 'forecast');
+/* Exactly what tools/record-observed.js records, so these tests are held to
+   the tool's own definition rather than a looser copy of it: a warning has
+   evidenceState 'official-warning' and is not an observation. */
+const observedOf = events => events.filter(e => e && !e.forecast && e.evidenceState === 'observed');
 
 /* ------------------------------------------------------------- deduping */
 
@@ -208,6 +211,53 @@ test('a forecast never enters the observed ledger', async () => {
   for (const f of forecasts) {
     assert.equal(ids.has(f.id), false, 'a forecast was recorded as an observed disaster: ' + f.id);
   }
+});
+
+test('an official warning is not a disaster that happened', async () => {
+  /* Excluding forecasts was not enough. A National Weather Service alert is
+     neither a forecast nor an observation: it carries evidenceState
+     'official-warning' and a red or orange level, so it cleared the
+     significance bar and entered the ledger as a disaster that occurred —
+     when what it says is that severe weather is expected. Each one inflates
+     the recall denominator and manufactures a false negative against
+     forecasts that had nothing to miss. */
+  const { events } = await feed();
+  const warnings = events.filter(e => !e.forecast && e.evidenceState === 'official-warning');
+  assert.ok(warnings.length > 0, 'control: the fixture should contain official warnings');
+  /* And they would have been recorded, which is what makes the exclusion do
+     work rather than being a no-op. */
+  const wouldHaveCounted = OBS.canonicalise(warnings).filter(c => OBS.significanceOf(c).significant);
+  assert.ok(wouldHaveCounted.length > 0,
+    'no warning in the fixture clears the significance bar, so this proves nothing');
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-warn-'));
+  const eventsPath = path.join(dir, 'events.json');
+  const ledgerPath = path.join(dir, 'observed.json');
+  fs.writeFileSync(eventsPath, JSON.stringify({ events }));
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, events: [] }));
+  require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-observed.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
+
+  const led = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  assert.ok(led.events.length > 0, 'control: the run recorded no disasters at all');
+  const recorded = new Set(led.events.flatMap(e => (e.evidence || []).map(x => x.id)));
+  for (const w of warnings) {
+    assert.equal(recorded.has(w.id), false,
+      'a warning was recorded as a disaster that happened: ' + w.id + ' — ' + w.title);
+  }
+  const ids = new Set(led.events.map(e => e.canonicalEventId));
+  for (const c of wouldHaveCounted) {
+    assert.equal(ids.has(c.canonicalEventId), false,
+      'a warning-derived disaster is in the ledger: ' + c.canonicalEventId);
+  }
+  /* And the exclusion is reported rather than silent, so that an observing
+     provider dropped by a future change to the evidence states would show up
+     here instead of disappearing from the denominator unnoticed. */
+  assert.equal((led.lastRun.providerRecordsNotObservations || {})['official-warning'],
+    warnings.length, 'the run does not report how many warnings it set aside');
+  assert.match(String(led.method.observationsOnly || ''), /warning/i,
+    'the ledger does not state that warnings are not observations');
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test('the hourly run records and commits observed disasters', () => {

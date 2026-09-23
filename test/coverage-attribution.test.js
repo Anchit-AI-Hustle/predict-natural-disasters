@@ -117,47 +117,130 @@ test('an undecidable scope is never read as coverage', () => {
 /* ------------------------- coverage is per hazard, not one window for all */
 
 test('a run where a hazard\'s providers were down extends no coverage for it', () => {
-  /* Codex's case exactly: only USGS online. Earthquakes were watched; floods
-     were not, and an absence of floods that day is not evidence. */
+  /* Codex's case exactly: only USGS online. Earthquakes were watched; tropical
+     cyclones were not, and an absence of them that day is not evidence.
+     Both providers are exhaustive within their own bounds, so the only thing
+     separating the two hazards here is whether anyone actually scanned. */
   const led = {
     providers: {
-      usgs: { hazards: ['Earthquake'], scope: { kind: 'global' } },
-      gdacs: { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' } }
+      usgs: { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' },
+      nhc: { hazards: ['Tropical Cyclone'], completeness: 'exhaustive',
+        scope: { kind: 'boxes', boxes: [{ name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 }] } }
     },
     /* Two cycles, so the earthquake side covers a span rather than an
-       instant; the flood provider is down for both. */
+       instant; the cyclone provider is down for both. */
     scans: [
       { scanTimestamp: '2026-09-01T00:00:00Z', providers: [
         { provider: 'usgs', status: 'SCANNED' },
-        { provider: 'gdacs', status: 'DATA_UNAVAILABLE' }] },
+        { provider: 'nhc', status: 'DATA_UNAVAILABLE' }] },
       { scanTimestamp: '2026-09-03T00:00:00Z', providers: [
         { provider: 'usgs', status: 'SCANNED' },
-        { provider: 'gdacs', status: 'DATA_UNAVAILABLE' }] }]
+        { provider: 'nhc', status: 'DATA_UNAVAILABLE' }] }]
   };
-  const quake = V.observedCoverageFor(led, 'earthquake', { country: 'Nepal' });
-  const fl = V.observedCoverageFor(led, 'flood', { country: 'Nepal' });
+  const where = { country: 'Bahamas', lat: 24, lon: -75 };
+  const quake = V.observedCoverageFor(led, 'earthquake', where);
+  const cyclone = V.observedCoverageFor(led, 'tropical-cyclone', where);
   assert.equal(quake.scans, 2, 'the earthquake scans were not counted');
-  assert.equal(fl.scans, 0, 'a cycle with no flood source was counted as flood coverage');
-  assert.equal(fl.from, null);
+  assert.equal(cyclone.scans, 0, 'a cycle with no cyclone source was counted as cyclone coverage');
+  assert.equal(cyclone.from, null);
 
   // And a forecast over that period stays ungradeable rather than failing.
-  const floodOutlook = { id: 'o', type: 'Flood', country: 'Nepal', lat: 27.7, lon: 85.3,
+  const cycloneOutlook = { id: 'o', type: 'Tropical Cyclone', country: 'Bahamas', lat: 24, lon: -75,
     forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-01T00:00:00Z',
     targetStart: '2026-09-01T12:00:00Z', targetEnd: '2026-09-02T12:00:00Z' };
-  const v = V.verify(floodOutlook, [], { now: Date.parse('2026-09-10T00:00:00Z'),
+  const v = V.verify(cycloneOutlook, [], { now: Date.parse('2026-09-10T00:00:00Z'),
     hazardFamilyOf: OBS.familyOf,
     observedCoverage: claim => V.observedCoverageFor(led, claim.hazard, claim.geography) });
   assert.equal(v.classification, 'PENDING',
-    'a flood outlook was failed for an absence on a day no flood source answered');
+    'a cyclone outlook was failed for an absence on a day no cyclone source answered');
   assert.equal(v.gradeable, false);
 
   // Control: the earthquake equivalent, which genuinely was watched, grades.
-  const quakeOutlook = Object.assign({}, floodOutlook, { id: 'q', type: 'Earthquake' });
+  const quakeOutlook = Object.assign({}, cycloneOutlook, { id: 'q', type: 'Earthquake' });
   const vq = V.verify(quakeOutlook, [], { now: Date.parse('2026-09-10T00:00:00Z'),
     hazardFamilyOf: OBS.familyOf,
     observedCoverage: claim => V.observedCoverageFor(led, claim.hazard, claim.geography) });
   assert.equal(vq.classification, 'MISS_FALSE_POSITIVE',
     'a hazard that was watched should still be gradeable');
+});
+
+/* --------------------- and looking is not the same as being able to see all */
+
+test('a selective feed\'s silence is not evidence that nothing happened', () => {
+  /* A scan of GDACS was being read as proof that no flood occurred. GDACS
+     carries only what it raises to an alert level, so its silence is
+     consistent with a flood it never rated — and a matured flood outlook was
+     being scored a false positive on the strength of it. Watching and being
+     able to establish an absence are two different questions, and only the
+     first one a selective feed answers. */
+  const gdacs = { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' },
+    completeness: 'selective' };
+  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' };
+  const nepalFlood = flood();
+
+  assert.equal(V.providerCovers(gdacs, nepalFlood), true,
+    'control: GDACS does publish floods worldwide, so it was watching');
+  assert.equal(V.providerCanEstablishAbsence(gdacs, nepalFlood), false,
+    'a selective feed\'s silence was accepted as proof that no flood happened');
+  assert.equal(V.providerCanEstablishAbsence(usgs, { hazard: 'earthquake', geography: nepalFlood.geography }), true,
+    'control: an exhaustive catalogue can support an absence');
+  // Exhaustive is not enough on its own: it still has to reach the place.
+  assert.equal(V.providerCanEstablishAbsence(usgs, nepalFlood), false,
+    'an exhaustive earthquake catalogue was credited with establishing that no flood happened');
+
+  const led = { providers: { gdacs: gdacs, usgs: usgs },
+    scans: [{ scanTimestamp: '2026-09-02T00:00:00Z', providers: [
+      { provider: 'gdacs', status: 'SCANNED' }, { provider: 'usgs', status: 'SCANNED' }] },
+      { scanTimestamp: '2026-09-06T00:00:00Z', providers: [
+        { provider: 'gdacs', status: 'SCANNED' }, { provider: 'usgs', status: 'SCANNED' }] }] };
+  assert.equal(V.observedCoverageFor(led, 'flood', nepalFlood.geography).scans, 0,
+    'successful scans of a selective feed were counted as flood coverage');
+  assert.equal(V.observedCoverageFor(led, 'earthquake', nepalFlood.geography).scans, 2,
+    'control: the exhaustive catalogue\'s scans were not counted');
+
+  const outlook = { id: 'o', type: 'Flood', country: 'Nepal', lat: 27.7, lon: 85.3,
+    forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-02T12:00:00Z',
+    targetStart: '2026-09-03T00:00:00Z', targetEnd: '2026-09-05T00:00:00Z' };
+  const graded = V.verify(outlook, [], { now: Date.parse('2026-09-10T00:00:00Z'),
+    hazardFamilyOf: OBS.familyOf,
+    observedCoverage: claim => V.observedCoverageFor(led, claim.hazard, claim.geography) });
+  assert.equal(graded.classification, 'PENDING',
+    'a flood outlook was failed for an absence only a selective feed could speak to');
+  assert.equal(graded.gradeable, false);
+});
+
+test('a warning source can never establish that nothing happened', () => {
+  /* NWS is exhaustive for active warnings, which is not the same claim: a
+     warning is not an observation, warning records never enter the observed
+     ledger, and a ledger that would not have recorded the disaster cannot
+     show that none occurred. */
+  const nws = { hazards: ['Flood', 'Extreme Heat', 'Severe Weather'],
+    scope: { kind: 'countries', countries: ['United States'] } };
+  const usFlood = flood({ geography: { country: 'United States', lat: 29.7, lon: -95.4 } });
+  assert.equal(V.providerCovers(Object.assign({}, nws, { completeness: 'selective' }), usFlood), true,
+    'control: NWS does publish US flood warnings');
+  assert.equal(V.providerCanEstablishAbsence(Object.assign({}, nws, { completeness: 'selective' }), usFlood), false,
+    'a warning feed was accepted as proof that no flood happened');
+});
+
+test('the served feed says, for every provider, whether its silence is evidence', async () => {
+  const { meta } = await feed();
+  const kinds = {};
+  for (const p of meta.scan.providers) {
+    assert.ok(['exhaustive', 'selective'].includes(p.completeness),
+      p.provider + ' does not say whether it is exhaustive: ' + p.completeness);
+    assert.ok(String(p.completenessBasis || '').length > 40,
+      p.provider + ' states a completeness with no basis for it');
+    kinds[p.completeness] = (kinds[p.completeness] || 0) + 1;
+  }
+  assert.ok(kinds.exhaustive > 0 && kinds.selective > 0,
+    'every provider carries the same completeness, so the field distinguishes nothing');
+  const byName = Object.fromEntries(meta.scan.providers.map(p => [p.provider, p]));
+  assert.equal(byName.usgs.completeness, 'exhaustive');
+  assert.equal(byName.gdacs.completeness, 'selective',
+    'GDACS publishes only what it rates, and is recorded as exhaustive');
+  assert.equal(byName.nws.completeness, 'selective',
+    'a warning feed is recorded as able to establish an absence');
 });
 
 /* ------------------------------- one disaster keeps one identity */

@@ -147,6 +147,49 @@
     return null;
   }
 
+  /*
+   * Classes whose qualifying disaster is expected to predate them.
+   *
+   * A continuation outlook says a hazard already under way carries on; an
+   * aftershock outlook follows an observed mainshock. Their disaster began
+   * before the freeze by definition, so applying the onset rule to them made
+   * every one a false positive whatever happened - a foregone verdict, not a
+   * verification, and the mirror image of crediting a forecast for something
+   * that had already happened.
+   *
+   * What they actually claim is continued activity inside the window, so that
+   * is what they are graded on: a report of the disaster dated at or after the
+   * moment the forecast can be shown to have existed. Where the observed
+   * record carries no such report the outlook stays ungradeable, because
+   * nothing establishes either that it held or that it failed.
+   */
+  var CONTINUATION_CLASSES = ['continuation-outlook', 'warning-derived', 'post-event-conditional'];
+
+  function continuedActivity(event, from, to) {
+    if (from === null) return null;
+    var onset = ms(event.onset);
+    if (onset !== null && to !== null && onset > to) return null;
+    var end = ms(event.end);
+    if (end !== null && end < from) return null;          // over before the window opened
+    var marks = [
+      { at: ms(event.impactLastUpdated), what: 'its impact figures were last updated' },
+      { at: ms(event.end), what: 'it was recorded as ending' },
+      { at: ms(event.lastSeenAt), what: 'it was last seen in the feed' }
+    ];
+    for (var r = 0; r < (event.revisions || []).length; r++) {
+      marks.push({ at: ms(event.revisions[r].at), what: 'its ' + event.revisions[r].field + ' was revised' });
+    }
+    var best = null;
+    for (var i = 0; i < marks.length; i++) {
+      if (marks[i].at === null || marks[i].at < from) continue;
+      if (best === null || marks[i].at < best.at) best = marks[i];
+    }
+    if (!best) return null;
+    return { at: best.at,
+      why: 'It was still being reported inside the window: ' + best.what + ' at ' +
+           new Date(best.at).toISOString() + '.' };
+  }
+
   /**
    * Grade one frozen prediction against the canonical observed disasters.
    * `now` makes the result reproducible; `hazardFamilyOf` is the observed
@@ -234,7 +277,8 @@
       }
     }
 
-    var matched = [], early = [];
+    var matched = [], early = [], awaitingActivity = [];
+    var continuation = CONTINUATION_CLASSES.indexOf(claim.forecastClass) >= 0;
     for (var i = 0; i < (observedEvents || []).length; i++) {
       var ev = observedEvents[i];
       if (!ev.significant) continue;
@@ -243,7 +287,16 @@
       if (onset === null) continue;
       var geo = geographyMatch(claim, ev);
       if (!geo) continue;
-      if (start !== null && onset < start) { early.push({ event: ev, level: geo.level, why: geo.why }); continue; }
+      if (start !== null && onset < start) {
+        if (!continuation) { early.push({ event: ev, level: geo.level, why: geo.why }); continue; }
+        /* The disaster this outlook is about. It predates the freeze because
+           that is what a continuation outlook is; what has to fall inside the
+           window is the evidence that it carried on. */
+        var act = continuedActivity(ev, start, end);
+        if (act) { matched.push({ event: ev, level: geo.level, why: geo.why + ' ' + act.why }); }
+        else { awaitingActivity.push({ event: ev, level: geo.level, why: geo.why }); }
+        continue;
+      }
       if (onset > end) continue;
       matched.push({ event: ev, level: geo.level, why: geo.why });
     }
@@ -261,6 +314,11 @@
       return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
         'The only matching ' + claim.hazard + ' began at ' + early[0].event.onset + ', before this forecast can be shown to have existed (' +
         claim.window.effectiveForecastStart + '), so it cannot count as having been predicted.', []);
+    }
+    if (awaitingActivity.length) {
+      return say(CLASSIFICATION.PENDING,
+        'The ' + claim.hazard + ' this outlook follows is on record, but nothing dated inside the window shows whether it continued, ' +
+        'so this can be graded neither way yet.', [], 'CONTINUATION_EVIDENCE_UNAVAILABLE');
     }
     return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
       'The window closed with no significant ' + claim.hazard + ' observed inside the frozen geography.', []);
@@ -320,7 +378,7 @@
       var s = scans[i], t = ms(s.scanTimestamp);
       if (t === null) continue;
       var covered = (s.providers || []).some(function (p) {
-        return p.status === 'SCANNED' && providerCovers(meta[p.provider] || {}, probe);
+        return p.status === 'SCANNED' && providerCanEstablishAbsence(meta[p.provider] || {}, probe);
       });
       if (!covered) continue;
       n++;
@@ -382,10 +440,34 @@
     return null;
   }
 
-  /** Did this provider both cover the hazard and reach the place? */
+  /**
+   * Did this provider cover the hazard and reach the place?
+   *
+   * This is the scanning question: was anything looking here that a forecast
+   * could have been derived from. A selective feed still answers it.
+   */
   function providerCovers(meta, event) {
     return providerCoversHazard(meta, event.hazard) === true &&
            providerCoversPlace(meta, event) === true;
+  }
+
+  /**
+   * Can this provider's silence establish that no disaster occurred?
+   *
+   * A different and much stronger question. GDACS carries only what it raises
+   * to an alert level, EONET does not claim to list every event, and ReliefWeb
+   * holds only declared disasters - so none of their silences is evidence, and
+   * treating a successful scan of any of them as proof of absence turns a
+   * matured outlook into a false positive on the strength of a feed that never
+   * claimed to be complete. Only a provider that is exhaustive within its own
+   * stated bounds can support an absence.
+   *
+   * A warning source cannot either, whatever its completeness: its records are
+   * warnings, they never enter the observed-disaster ledger, and a ledger that
+   * would not have recorded the disaster cannot show that none happened.
+   */
+  function providerCanEstablishAbsence(meta, event) {
+    return !!(meta && meta.completeness === 'exhaustive' && providerCovers(meta, event));
   }
 
   /* ------------------------------------------------------- false negatives */
@@ -523,7 +605,9 @@
     effectiveStart: effectiveStart, frozenClaim: frozenClaim, geographyMatch: geographyMatch,
     verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm,
     providerCovers: providerCovers, providerCoversHazard: providerCoversHazard,
+    providerCanEstablishAbsence: providerCanEstablishAbsence,
     observedCoverageFor: observedCoverageFor,
+    continuedActivity: continuedActivity, CONTINUATION_CLASSES: CONTINUATION_CLASSES,
     providerCoversPlace: providerCoversPlace
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

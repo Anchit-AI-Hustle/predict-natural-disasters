@@ -270,3 +270,71 @@ test('the committed record cannot be graded yet, and says so', async () => {
   assert.equal(s.miss, 0,
     'matured forecasts were called false positives against an empty disaster record');
 });
+
+/* ------------------- a continuation outlook is about a disaster that began
+                       before it was written                                */
+
+test('a continuation outlook is graded on whether the disaster carried on', () => {
+  /* Every continuation outlook was guaranteed to fail. It exists because a
+     disaster is already under way, so the only matching event always has an
+     onset before the freeze - and the engine treated a pre-freeze onset as
+     proof the forecast had not predicted anything, which is the right rule
+     for an independent prediction and a category error for this one. What
+     must fall inside the window is not the onset: it is evidence that the
+     disaster was still going. */
+  const cont = prediction({
+    forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
+  });
+  const began = disaster({ onset: '2026-09-03T00:00:00Z' });
+
+  const quiet = grade(cont, [began]);
+  assert.equal(quiet.classification, 'PENDING',
+    'a continuation outlook was graded although nothing shows whether the disaster continued');
+  assert.equal(quiet.ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+  assert.equal(quiet.gradeable, false);
+
+  const carried = grade(cont, [disaster({ onset: '2026-09-03T00:00:00Z',
+    impactLastUpdated: '2026-09-05T12:00:00Z' })]);
+  assert.equal(carried.classification, 'HIT',
+    'a disaster still being reported inside the window did not bear out the outlook that said it would continue');
+  assert.match(carried.classificationReason, /still being reported inside the window/i);
+  assert.deepEqual(carried.observedEventIds, [began.canonicalEventId]);
+});
+
+test('every continuation class is graded the same way, and only those', () => {
+  const began = disaster({ onset: '2026-09-03T00:00:00Z', impactLastUpdated: '2026-09-05T12:00:00Z' });
+  const windowed = extra => prediction(Object.assign({
+    freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
+  }, extra));
+  for (const k of ['continuation-outlook', 'warning-derived', 'post-event-conditional']) {
+    assert.equal(grade(windowed({ forecastClass: k }), [began]).classification, 'HIT',
+      k + ' cannot be borne out by the disaster it follows');
+  }
+  /* And the rule does not leak. An independent prospective prediction frozen
+     after the disaster began has still predicted nothing, however long that
+     disaster then ran. */
+  const indep = grade(windowed({ forecastClass: 'independent-prospective' }), [began]);
+  assert.equal(indep.classification, 'MISS_FALSE_POSITIVE',
+    'an independent prediction was credited with a disaster that began before it existed');
+  assert.match(indep.classificationReason, /before this forecast can be shown to have existed/i);
+});
+
+test('a disaster that was over before the window opened did not continue into it', () => {
+  const cont = prediction({
+    forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
+  });
+  const finished = disaster({ onset: '2026-09-01T00:00:00Z', end: '2026-09-02T00:00:00Z' });
+  const v = grade(cont, [finished]);
+  assert.equal(v.classification, 'PENDING',
+    'an outlook was credited with a disaster that had already ended before its window opened');
+  assert.equal(v.ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+  /* A revision dated inside the window is evidence of its own. */
+  const revised = disaster({ onset: '2026-09-01T00:00:00Z',
+    revisions: [{ at: '2026-09-05T09:00:00Z', field: 'deaths', from: 3, to: 11 }] });
+  const w = grade(cont, [revised]);
+  assert.equal(w.classification, 'HIT');
+  assert.match(w.classificationReason, /deaths was revised/);
+});

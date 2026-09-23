@@ -62,6 +62,8 @@ for (const p of scan.providers) {
     geographicCoverage: p.geographicCoverage,
     coverageResolution: p.coverageResolution,
     scope: p.scope,
+    completeness: p.completeness,
+    completenessBasis: p.completenessBasis,
     endpoint: p.endpoint
   };
 }

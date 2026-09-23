@@ -1632,7 +1632,9 @@ async function handler(req, res) {
       geographicCoverage: 'Global',
       coverageResolution: 'Only events GDACS itself raises to an alert level. Flood, drought and wildfire records describe alert areas, not incident points.',
       endpoint: 'https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP',
-      scope: { kind: 'global' }
+      scope: { kind: 'global' },
+      completeness: 'selective',
+      completenessBasis: 'GDACS lists only events it raises to an alert level, so a disaster it does not carry may simply be below that threshold.'
     },
     usgs: {
       label: 'USGS Earthquake Hazards Program',
@@ -1640,7 +1642,9 @@ async function handler(req, res) {
       geographicCoverage: 'Global',
       coverageResolution: 'Every earthquake of magnitude 2.5 or above in the past seven days, at its epicentre. Anything smaller, or older, is outside this feed.',
       endpoint: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson',
-      scope: { kind: 'global' }
+      scope: { kind: 'global' },
+      completeness: 'exhaustive',
+      completenessBasis: 'A complete catalogue of earthquakes of magnitude 2.5 and above for the past seven days, so an absence above that threshold is meaningful.'
     },
     emsc: {
       label: 'EMSC (European-Mediterranean Seismological Centre)',
@@ -1648,7 +1652,9 @@ async function handler(req, res) {
       geographicCoverage: 'Global, with the densest network in Europe and the Mediterranean',
       coverageResolution: 'Earthquakes of magnitude 4.5 or above, at epicentre.',
       endpoint: 'https://www.emsc-csem.org/',
-      scope: { kind: 'global' }
+      scope: { kind: 'global' },
+      completeness: 'exhaustive',
+      completenessBasis: 'A complete catalogue above magnitude 4.5.'
     },
     eonet: {
       label: 'NASA EONET',
@@ -1656,7 +1662,9 @@ async function handler(req, res) {
       geographicCoverage: 'Global',
       coverageResolution: 'A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.',
       endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events',
-      scope: { kind: 'global' }
+      scope: { kind: 'global' },
+      completeness: 'selective',
+      completenessBasis: 'A curated set; EONET does not claim to list every event, so its silence is not evidence.'
     },
     nhc: {
       label: 'NOAA National Hurricane Center',
@@ -1671,7 +1679,9 @@ async function handler(req, res) {
       scope: { kind: 'boxes', boxes: [
         { name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 },
         { name: 'Eastern and central Pacific', minLat: -5, maxLat: 60, minLon: -180, maxLon: -75 }
-      ] }
+      ] },
+      completeness: 'exhaustive',
+      completenessBasis: 'Every active tropical cyclone in the basins it publishes for.'
     },
     nws: {
       label: 'NOAA / National Weather Service',
@@ -1679,7 +1689,9 @@ async function handler(req, res) {
       geographicCoverage: 'United States and its territories only',
       coverageResolution: 'Alerts at severe or extreme severity, carrying the affected-area polygon where the agency published one and a forecast-zone centre where it did not.',
       endpoint: 'https://api.weather.gov/alerts/active',
-      scope: { kind: 'countries', countries: ['United States'] }
+      scope: { kind: 'countries', countries: ['United States'] },
+      completeness: 'selective',
+      completenessBasis: 'Exhaustive for active warnings, but a warning is not an observation: these records never enter the observed-disaster ledger, so this provider cannot establish that no disaster occurred.'
     },
     reliefweb: {
       label: 'ReliefWeb (UN OCHA)',
@@ -1687,7 +1699,9 @@ async function handler(req, res) {
       geographicCoverage: 'Global',
       coverageResolution: 'Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.',
       endpoint: 'https://reliefweb.int/disasters/feed',
-      scope: { kind: 'global' }
+      scope: { kind: 'global' },
+      completeness: 'selective',
+      completenessBasis: 'Only disasters ReliefWeb has declared, which is a subset of those that occur.'
     },
     usgs_volcano: {
       label: 'USGS Volcano Hazards Program',
@@ -1695,7 +1709,9 @@ async function handler(req, res) {
       geographicCoverage: 'Volcanoes monitored by the United States volcano observatories',
       coverageResolution: 'Volcanoes currently at an elevated alert level. Volcanoes outside the US observatory network are not covered by this provider.',
       endpoint: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes',
-      scope: { kind: 'countries', countries: ['United States'] }
+      scope: { kind: 'countries', countries: ['United States'] },
+      completeness: 'exhaustive',
+      completenessBasis: 'Every volcano at an elevated alert level in the observatory network it covers.'
     }
   };
 
@@ -1784,6 +1800,8 @@ async function handler(req, res) {
         geographicCoverage: PROVIDERS[key].geographicCoverage,
         coverageResolution: PROVIDERS[key].coverageResolution,
         scope: PROVIDERS[key].scope,
+        completeness: PROVIDERS[key].completeness,
+        completenessBasis: PROVIDERS[key].completenessBasis,
         endpoint: PROVIDERS[key].endpoint,
         status: st.status,
         success: !!(s && s.ok),

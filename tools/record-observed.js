@@ -42,8 +42,31 @@ try {
   if (raw && Array.isArray(raw.events)) ledger = raw;
 } catch (e) { /* first run */ }
 
-/* A forecast is not an observation, whatever its coordinate looks like. */
-const observed = events.filter(e => e && !e.forecast && e.evidenceState !== 'forecast');
+/*
+ * Only observations, and a warning is not one.
+ *
+ * Excluding forecasts was not enough. A National Weather Service alert has
+ * evidenceState 'official-warning' and carries a red or orange level, so it
+ * cleared the significance bar and was recorded as a disaster that happened -
+ * when what it actually says is that severe weather is expected. An
+ * unmaterialised warning sitting in this ledger inflates the recall
+ * denominator and manufactures false negatives against forecasts that had
+ * nothing to miss.
+ *
+ * A warning that does materialise is reported by an observing provider too,
+ * and that record is what belongs here.
+ */
+const observed = events.filter(e => e && !e.forecast && e.evidenceState === 'observed');
+/* What was left out, and under which evidence state, so that the exclusion is
+   auditable rather than silent. Today that is warnings; if an observing
+   provider ever arrived classified as something else, its records would be
+   dropped here too, and this count is what would show it. */
+const notObservations = events.reduce((m, e) => {
+  if (!e || e.forecast || e.evidenceState === 'observed') return m;
+  const k = e.evidenceState || 'unstated';
+  m[k] = (m[k] || 0) + 1;
+  return m;
+}, {});
 const canonical = OBS.canonicalise(observed);
 const significant = canonical.filter(c => c.significant);
 
@@ -161,11 +184,13 @@ ledger.method = {
   canonicalisation: 'Provider records are grouped into one disaster when they share a hazard family and fall inside that hazard’s matching window. Where either record is placed at an area centre, kilometres between them say nothing, so the match is by country and time instead.',
   significance: 'An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.',
   frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions.',
-  notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed.'
+  notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed.',
+  observationsOnly: 'Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations.'
 };
 ledger.lastRun = {
   at: now,
   providerRecordsEvaluated: observed.length,
+  providerRecordsNotObservations: notObservations,
   canonicalEventsFound: canonical.length,
   significant: significant.length,
   supersededThisRun: superseded,
@@ -178,4 +203,6 @@ console.log('observed ledger: ' + added + ' new, ' + updated + ' seen again, ' +
   ' figure(s) revised, ' + reidentified + ' re-identified, ' + superseded + ' superseded — ' +
   ledger.events.filter(e => !e.supersededBy).length + ' significant disasters recorded ' +
   '(' + observed.length + ' provider records → ' + canonical.length + ' events, ' +
-  (canonical.length - significant.length) + ' below the bar)');
+  (canonical.length - significant.length) + ' below the bar; ' +
+  (Object.entries(notObservations).map(([k, n]) => n + ' ' + k).join(', ') ||
+   'no non-observation records') + ' set aside)');

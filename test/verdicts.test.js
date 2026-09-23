@@ -151,7 +151,16 @@ test('the published figures equal the ledgers, recomputed independently', async 
   assert.equal(num('mPartial'), t.partial);
   assert.equal(num('mFalse'), t.falseAlarm);
   assert.equal(num('mMissed'), t.missed);
-  assert.equal(num('mAwaiting'), t.awaiting);
+  /* The unchecked backlog is now split in two: windows the engine graded as
+     ungradeable (it looked, and the written record of observed disasters
+     cannot answer them) and windows carrying no verdict at all. The split is
+     the point - "nobody checked" and "nothing can answer this" are different
+     statements - but the total may not shrink, which is how the backlog would
+     quietly disappear. */
+  assert.equal(num('mAwaiting') + num('mUngradeable'), t.awaiting,
+    'the unchecked backlog changed size when it was split');
+  assert.ok(num('mUngradeable') > 0,
+    'every matured window is still reported as merely unchecked');
   /* The specific regression: the page reported none of these. */
   assert.ok(t.falseAlarm > 0 && num('mFalse') > 0, 'graded false alarms vanished again');
   assert.ok(t.missed > 0 && num('mMissed') > 0, 'missed events vanished again');

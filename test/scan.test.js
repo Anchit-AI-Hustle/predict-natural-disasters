@@ -162,6 +162,15 @@ test('the coverage ledger records a scan and never rewrites one', async () => {
   assert.equal(first.aggregate.scansRecorded, 1);
   assert.ok(first.providers.nhc.geographicCoverage, 'the ledger does not describe its providers');
   assert.ok(first.coverageLimitation, 'the ledger does not carry the limitation');
+  /* Whether a provider's silence is evidence has to survive into the written
+     ledger, because that file - not the live feed - is what the verification
+     engine reads when it decides whether an absence means anything. */
+  for (const [name, p] of Object.entries(first.providers)) {
+    assert.ok(['exhaustive', 'selective'].includes(p.completeness),
+      name + ' reached the ledger with no completeness: ' + p.completeness);
+    assert.ok(String(p.completenessBasis || '').length > 40,
+      name + ' reached the ledger with a completeness and no basis for it');
+  }
 
   // The same scan again is the same scan.
   const out = run();
