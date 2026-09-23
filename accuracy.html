@@ -28,11 +28,20 @@ PND.SORT_DEFS.observed={label:'Observed severity — highest first',cmp:(a,b)=>o
    vocabulary now lives in verdicts.js and both spellings map to it. */
 const V=window.PNDVerdicts;const statusLabel=s=>V.LABELS[s]||s;const cls=s=>V.CSS[s]||'';
 const occurredText=s=>V.OCCURRED[s]||'Unknown';
+/* A verdict belongs to the claim it graded, and a claim is all of its frozen
+   terms. Two rows can share an id and a window start - that is what makes
+   them a revision rather than a re-issue - and keying on that pair collapsed
+   their verdicts into one, so the table and the overview could show a hit or
+   a false alarm against the wrong claim while the rates below were computed
+   from both. The engine and the ledger writer already agree on what a claim
+   is; this now uses the same answer. */
+const claimId=r=>(window.PNDHazards&&PNDHazards.claimKey)?PNDHazards.claimKey(r)
+  :((r&&r.id)+'@'+(r&&r.targetStart));
 
 function card(r){return `<div style="padding:12px 0;border-bottom:1px solid #17372e" class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><div><span class="pill severity-${String(r.observedSeverity||'').toLowerCase()}">${esc(r.observedSeverity||'NOT YET OBSERVED')}</span> <span class="pill ${cls(r._state||r.status)}">${esc(statusLabel(r._state||r.status))}</span></div><div class="status-title" style="margin-top:8px">${esc(r.id||r.eventId||'Observed event')} · ${esc(r.region||r.country||'Global')}</div><div class="sub">${esc(r.hazard||r.type||'Natural hazard')} · ${esc(r.evidenceConfidence||'Pending evidence')}</div></div>`}
 function render(){const text=q.value.toLowerCase(),o=outcome.value,sev=severity.value;
 const list=PND.sortBy('sortBy',records.filter(r=>PND.matches(r,text)&&(!o||r._state===o)&&(!sev||r.observedSeverity===sev)),LEDGER_SORTS);
-const vd=r=>((window.__verification&&window.__verification.byId)||new Map()).get(r.id+'@'+r.targetStart)||null;
+const vd=r=>((window.__verification&&window.__verification.byId)||new Map()).get(claimId(r))||null;
 rows.innerHTML=list.map(r=>{const v2=vd(r);
  /* The verdict, what it required and what it matched, on the row itself: a
     classification a reader cannot check against its own criteria is an
@@ -116,7 +125,7 @@ const preds=l.map(r=>Object.assign({},r,{forecastClass:classOf(r)}));
  * graded at all unless both written records are in hand. */
 const canGrade=!ledgerUnavailable.length;
 const verdicts=canGrade?preds.map(p=>VER.verify(p,obsEvents,{now,hazardFamilyOf:OBSM.familyOf,observedCoverage:coverageFor,supportingEvents})):[];
-const byId=new Map(verdicts.map((vd,i)=>[preds[i].id+'@'+preds[i].targetStart,vd]));
+const byId=new Map(verdicts.map((vd,i)=>[claimId(preds[i]),vd]));
 const observed=(v.observedEvents||[]).map(x=>Object.assign({},x,{status:x.status||'MISSED_EVENT'}));
 /* One grading drives the figures and the rows alike.
  *
@@ -136,7 +145,7 @@ const observed=(v.observedEvents||[]).map(x=>Object.assign({},x,{status:x.status
 const ENGINE_DECIDED=['VERIFIED','PARTIAL','FALSE_ALARM','NOT_A_PREDICTION'];
 const LEDGER_GRADED=['VERIFIED','PARTIAL','FALSE_ALARM','MISSED','COVERAGE_FAILURE'];
 records=joined.records.concat(observed).map(r=>{
-  const led=V.stateOf(r,now),eng=V.engineState(byId.get(r.id+'@'+r.targetStart));
+  const led=V.stateOf(r,now),eng=V.engineState(byId.get(claimId(r)));
   const decided=!!eng&&ENGINE_DECIDED.includes(eng),ledGraded=LEDGER_GRADED.includes(led);
   return Object.assign({},r,{
     _state:decided?eng:(ledGraded?led:(eng||led)),

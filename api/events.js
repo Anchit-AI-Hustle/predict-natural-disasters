@@ -1290,6 +1290,25 @@ async function handler(req, res) {
 
   const outlookId = sourceId => 'OUT-' + String(sourceId).replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(-48);
 
+  /* One earthquake, one record, before anything is derived from it.
+   *
+   * The agencies' reports were merged only after the outlooks were built, so
+   * an aftershock outlook was derived from each agency's copy of one quake.
+   * The area guard below rounds a position to the nearest degree, which two
+   * solutions of the same earthquake straddle as easily as not: measured, a
+   * USGS record at -5.9/106.6 and a GDACS record at -5.45/106.45 - 52 km
+   * apart, the same event by the merge's own rule - produced
+   * OUT-aftershock-usgs-us7000abcd and OUT-aftershock-gdacs-EQ-9001, two
+   * frozen claims about one sequence, both recorded in the append-only ledger
+   * and both counted in the conditional rate. The second also pointed at a
+   * record the feed then stopped serving, because its own agency's copy had
+   * been merged away.
+   *
+   * Merging first also means an outlook is derived from the record as it is
+   * finally published, including any graver assessment the merge carried over
+   * from a discarded copy. */
+  out.events = mergeSeismicReports(out.events);
+
   const priority = { Red: 4, Orange: 3, High: 3, Green: 1 };
   const officialSignals = out.events.filter(e =>
     e.sourceType === 'official' && !e.forecast && Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
@@ -1417,8 +1436,9 @@ async function handler(req, res) {
 
   /* Merging can raise a record's alert — a leader that inherits a graver
      assessment from a discarded member — and the feed was sorted before that
-     happened, so a newly Red record kept the position it held while Green. */
-  out.events = mergeSeismicReports(out.events).sort(byAlertThenTime);
+     happened, so a newly Red record kept the position it held while Green.
+     The merge itself now runs before the outlooks are derived, above. */
+  out.events = out.events.sort(byAlertThenTime);
   out.meta.mergedSeismicReports =
     out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
 

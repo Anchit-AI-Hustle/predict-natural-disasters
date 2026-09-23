@@ -234,9 +234,13 @@ test('a window the engine graded is shown graded on its own row', async () => {
     .filter(x => Object.prototype.hasOwnProperty.call(V.ENGINE_STATES, x.v.classification));
   assert.ok(decided.length > 0, 'the fixture graded nothing, so this proves nothing');
 
-  const byWindow = new Map(ver.records.map(rec => [rec.id + '@' + rec.targetStart, rec]));
+  /* Keyed by the whole claim, because two rows can share an id and a window
+     start: that is what makes one a revision of the other rather than a
+     re-issue, and it is exactly the pair that used to collapse them. */
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const byWindow = new Map(ver.records.map(rec => [H.claimKey(rec), rec]));
   for (const { v, p } of decided) {
-    const rec = byWindow.get(p.id + '@' + p.targetStart);
+    const rec = byWindow.get(H.claimKey(p));
     assert.ok(rec, 'a graded window is missing from the records the page renders: ' + p.id);
     assert.equal(rec._state, V.ENGINE_STATES[v.classification],
       p.id + ' was graded ' + v.classification + ' but its row carries ' + rec._state);
@@ -247,7 +251,7 @@ test('a window the engine graded is shown graded on its own row', async () => {
     .find(tr => tr.children[0] && tr.children[0].textContent.includes(fx.target.id));
   assert.ok(row, 'the graded window has no row in the history table');
   const shown = row.children[2].textContent;
-  const want = V.LABELS[V.ENGINE_STATES[ver.byId.get(fx.target.id + '@' + fx.target.targetStart).classification]];
+  const want = V.LABELS[V.ENGINE_STATES[ver.byId.get(H.claimKey(fx.target)).classification]];
   assert.ok(shown.startsWith(want), 'the row for ' + fx.target.id + ' displays "' + shown.slice(0, 40) + '", not "' + want + '"');
   assert.equal(/Awaiting verification/.test(shown), false,
     'a window the engine graded still reads as awaiting verification');
@@ -346,6 +350,59 @@ test('a ledger it could not read is not a ledger that is empty', async () => {
   assert.equal(banner.getAttribute('role'), 'alert');
   assert.match(text(r, 'obNote'), /could not read/i,
     'the observed-disasters note still reads as though the record were empty');
+  r.close();
+});
+
+test('two claims under one id keep their own verdicts', async () => {
+  /* A claim is all of its frozen terms, so an outlook whose window is
+     extended is recorded as a second claim rather than an edit of the first.
+     The page keyed its engine verdicts on the id and the window's start,
+     which those two share - so one verdict overwrote the other and both rows
+     were shown the survivor's, while the rates below were computed from two
+     distinct verdicts. The table could report a hit against the claim that
+     failed. */
+  const fx = gradingFixture();
+  const base = fx.target;
+  const revised = Object.assign({}, base, {
+    targetEnd: new Date(Date.parse(base.targetEnd) + 3 * 864e5).toISOString()
+  });
+  const ledger = [base, revised];
+  const r = await renderPage('accuracy.html', {
+    mock: {},
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    beforeParse(w) {
+      const real = w.fetch;
+      w.fetch = async (input) => {
+        const url = String(input && input.url ? input.url : input);
+        const serve = body => ({ ok: true, status: 200, headers: { get: () => null },
+          json: async () => body, text: async () => JSON.stringify(body) });
+        if (url.includes('outlook-ledger.json')) return serve(ledger);
+        if (url.includes('observed-disasters.json')) return serve(fx.observed);
+        if (url.includes('scan-ledger.json')) return serve(fx.scan);
+        return real(input);
+      };
+    }
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const state = r.window.__verification;
+  assert.ok(state, 'the page published no verification state');
+  assert.equal(state.preds.length, 2, 'control: the ledger should hold two claims');
+  assert.equal(state.byId.size, 2,
+    'the two claims collapsed into one verdict, so a row can be shown the wrong one');
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  assert.notEqual(H.claimKey(base), H.claimKey(revised),
+    'control: these must be different claims for this to prove anything');
+  for (const p of state.preds) {
+    assert.ok(state.byId.has(H.claimKey(p)), 'a claim has no verdict of its own');
+  }
+  /* Both rows are in the table, each with its own window. */
+  const windows = [...r.document.querySelectorAll('#rows tr')]
+    .map(tr => (tr.children[7] || {}).textContent || '');
+  assert.ok(windows.some(w => w.includes(String(new Date(base.targetEnd).getFullYear()))),
+    'control: the table should show the recorded windows');
+  assert.equal(new Set([...r.document.querySelectorAll('#rows tr')].map(tr => tr.textContent)).size,
+    [...r.document.querySelectorAll('#rows tr')].length,
+    'the two claims rendered as identical rows');
   r.close();
 });
 

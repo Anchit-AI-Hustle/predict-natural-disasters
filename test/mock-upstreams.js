@@ -305,7 +305,11 @@ function makeFetch(opts) {
   const fn = async (url) => {
     const u = String(url);
     calls.push(u);
-    const route = (key, body) => (isDown(key) ? failure(503) : jsonResponse(body));
+    /* A test can replace one upstream's payload without rebuilding the rest:
+       some defects only appear when two agencies report the same event. */
+    const feeds = o.feeds || {};
+    const route = (key, body) => (isDown(key) ? failure(503)
+      : jsonResponse(Object.prototype.hasOwnProperty.call(feeds, key) ? feeds[key] : body));
 
     if (u.includes('gdacs.org/gdacsapi') || u.includes('gdacs.org/xml/rss')) return route('gdacs', FIXTURES.gdacs);
     if (u.includes('earthquake.usgs.gov')) return route('usgs', FIXTURES.usgs);
