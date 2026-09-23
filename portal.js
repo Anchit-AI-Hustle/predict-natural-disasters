@@ -12,19 +12,21 @@ const PND={
   fmtDate(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   fmtTime(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
-  riskClass(v=''){const s=String(v).toLowerCase();
-    /* Word boundaries, not substrings: "yellow" contains "low", and a bare
-       includes() check would paint a yellow alert as routine. */
-    if(/\b(red|critical|extreme)\b/.test(s))return 'critical';
-    if(/\b(purple|very)\b/.test(s))return 'veryhigh';
-    if(/\b(orange|high|severe)\b/.test(s))return 'high';
-    if(/\b(moderate|yellow)\b/.test(s))return 'moderate';
-    if(/\b(watch|advisory|minor)\b/.test(s))return 'watch';
-    if(/\b(green|low|informational|routine)\b/.test(s))return 'routine';
-    /* An unrecognised level is not a warning. It used to fall through to the
-       amber "moderate" badge, so 732 Green records in the live feed were
-       painted as warnings while their own label read Green. */
-    return 'neutral';},
+  /* The one risk scale, from risk.js. This used to be a second vocabulary
+     mapping onto a second palette, which is how `.badge.watch` came to be
+     blue on one page while the same level was yellow on the next. Two
+     classes, because `.risk` carries the shape that keeps the level from
+     being colour alone. An unrecognised level is still not a warning: it
+     returns risk-unknown, which has no colour from the scale at all. */
+  riskClass(v=''){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    return R?('risk '+R.classOf(v)):'risk risk-unknown';},
+  /* Colour, text and shape together, which is the only way a level is ever
+     shown. `text` defaults to the record's own word, because the six levels
+     are a display scale and what the provider published is the fact. */
+  riskBadge(v,opts){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    return R?R.badge(v,opts):this.esc(String(v||''));},
+  riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    return R?R.levelOf(v):'UNKNOWN';},
   slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
   enc(v=''){return encodeURIComponent(String(v))},
   eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;},
@@ -49,7 +51,13 @@ const PND={
   rankOf(e){const r=Number(e&&e.severityRank);if(Number.isFinite(r)&&r>0)return r;return this.RISK_RANK[String(e&&e.alert||'').toLowerCase()]||0},
   /* A chip for the cross-hazard severity, with the scale's own wording as its
      tooltip so the level is never just a colour. */
-  severityBadge(e){const v=e&&e.severity;if(!v)return '';const M=(typeof window!=='undefined'&&window.PNDHazards)||null;const def=M&&(M.SEVERITY.find(x=>x.key===v)||{}).meaning||'';return `<span class="sev sev-${this.slug(v)}" title="${this.esc(def)}">${this.esc(v)}</span>`;},
+  severityBadge(e){const v=e&&e.severity;if(!v)return '';const M=(typeof window!=='undefined'&&window.PNDHazards)||null;const def=M&&(M.SEVERITY.find(x=>x.key===v)||{}).meaning||'';
+    /* The scale's own wording stays as the tooltip, and the level's word
+       stays as the text; what changes is that the colour is now the shared
+       one and comes with the shape that goes with it. */
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    return R?R.badge(v,{text:v,className:'sev',title:def||undefined})
+      :`<span class="sev sev-${this.slug(v)}" title="${this.esc(def)}">${this.esc(v)}</span>`;},
   /* How far ahead of its own window a forecast was issued. Zero means it
      describes something already happening. */
   leadText(e){const M=(typeof window!=='undefined'&&window.PNDHazards)||null;return M?M.leadTimeText(e):'';},

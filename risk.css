@@ -1,0 +1,71 @@
+/* The one risk scale, and the two vocabularies that are deliberately not on
+   it. Its own file because portal.css and app-pages.css each held a copy,
+   which is two places for one palette to drift from itself, and because
+   dashboard.html carries neither of them. See risk.js for the reasoning. */
+/* ---------------------------------------------------------- risk scale ---
+   One scale, six levels, defined once and shared by every page. See risk.js
+   for why there is only one and why nothing here is colour alone.
+
+   Each level is a filled swatch with its own ink, because on this page's
+   background SEVERE is 2.6:1 and EXTREME 2.9:1 - unusable as text or as a
+   bare border. The inks below clear 4.5:1 against their own swatch, which
+   test/risk.test.js measures rather than assumes.
+
+   The shape is a ::before with no text content: a glyph character there is
+   announced by screen readers, so "black diamond suit High" would be the
+   level's name. Drawn from currentColor, it inherits each level's ink. */
+:root{--risk-low:#22C55E;--risk-watch:#FACC15;--risk-moderate:#F97316;--risk-high:#EF4444;--risk-severe:#B91C1C;--risk-extreme:#7C3AED;--risk-ink-dark:#000;--risk-ink-light:#fff;--risk-unknown-line:#2b624e}
+.risk{display:inline-flex;align-items:center;border-radius:7px;padding:3px 7px;font-weight:800;font-size:9px;letter-spacing:.03em;line-height:1.35}
+.risk::before{content:"";display:inline-block;width:.72em;height:.72em;margin-right:.45em;flex:0 0 auto;background:currentColor}
+.risk-low{background:var(--risk-low);color:var(--risk-ink-dark)}
+.risk-watch{background:var(--risk-watch);color:var(--risk-ink-dark)}
+.risk-moderate{background:var(--risk-moderate);color:var(--risk-ink-dark)}
+.risk-high{background:var(--risk-high);color:var(--risk-ink-dark)}
+.risk-severe{background:var(--risk-severe);color:var(--risk-ink-light)}
+.risk-extreme{background:var(--risk-extreme);color:var(--risk-ink-light)}
+/* Not a seventh level: no level at all, so no colour from the scale. */
+.risk-unknown{background:transparent;color:var(--muted);border:1px solid var(--risk-unknown-line)}
+.risk-low::before{border-radius:50%}
+.risk-watch::before{border-radius:50%;background:radial-gradient(circle,currentColor 0 28%,transparent 30% 58%,currentColor 60% 100%)}
+.risk-moderate::before{clip-path:polygon(50% 0,100% 100%,0 100%)}
+.risk-high::before{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.risk-severe::before{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.risk-extreme::before{clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+.risk-unknown::before{border-radius:50%;background:transparent;box-shadow:inset 0 0 0 1px currentColor}
+/* On a map the swatch is the marker, so the shape is the whole element. */
+.risk-mk{background:none!important;border:0!important}
+.risk-mk .risk-shape{display:block;width:100%;height:100%;box-shadow:0 0 0 1.5px #0b1f19,0 1px 3px rgba(0,0,0,.55)}
+.risk-mk.risk-low .risk-shape{background:var(--risk-low);border-radius:50%}
+.risk-mk.risk-watch .risk-shape{background:var(--risk-watch);border-radius:50%;box-shadow:0 0 0 1.5px #0b1f19,inset 0 0 0 2px #0b1f19}
+.risk-mk.risk-moderate .risk-shape{background:var(--risk-moderate);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.risk-mk.risk-high .risk-shape{background:var(--risk-high);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.risk-mk.risk-severe .risk-shape{background:var(--risk-severe);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.risk-mk.risk-extreme .risk-shape{background:var(--risk-extreme);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+.risk-mk.risk-unknown .risk-shape{background:#8fa8a0;border-radius:50%}
+/* The selected marker, shown as a ring rather than a colour change: the
+   colour already means the level. */
+.risk-mk.mk-selected .risk-shape{box-shadow:0 0 0 2px #fff,0 0 0 4px #0b1f19}
+/* The legacy class names still emitted by some pages, pointed at the same
+   scale so no corner of the site keeps a palette of its own. */
+.badge.critical,.sev-severe{background:var(--risk-severe);color:var(--risk-ink-light);border-color:var(--risk-severe)}
+.badge.veryhigh,.sev-extreme,.severity-catastrophic,.severity-extreme{background:var(--risk-extreme);color:var(--risk-ink-light);border-color:var(--risk-extreme)}
+.badge.high,.severity-severe{background:var(--risk-high);color:var(--risk-ink-dark);border-color:var(--risk-high)}
+.badge.moderate,.sev-moderate,.severity-significant{background:var(--risk-moderate);color:var(--risk-ink-dark);border-color:var(--risk-moderate)}
+.badge.watch,.sev-minor{background:var(--risk-watch);color:var(--risk-ink-dark);border-color:var(--risk-watch)}
+.badge.routine,.badge.low{background:var(--risk-low);color:var(--risk-ink-dark);border-color:var(--risk-low)}
+.badge.neutral,.sev-informational{background:transparent;color:var(--muted);border:1px solid var(--risk-unknown-line)}
+
+/* ------------------------------------------------------- not the scale ---
+   Provenance - who said it, and how - is not a risk level. An "OFFICIAL
+   WARNING" badge painted red would state a severity nobody published, and a
+   blue "EXPERIMENTAL FORECAST" badge invites a reader to compare its hue with
+   the hazard colours beside it. These are outlined and neutral on purpose. */
+.prov,.provenance-badge{display:inline-block;border:1px solid #2b624e;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#cfe3da;background:transparent;text-transform:uppercase}
+
+/* Verdicts are a third vocabulary again: what grading found, not how bad the
+   hazard is. Outlined, so they never read as a level on the scale above. */
+.verdict{display:inline-flex;align-items:center;border:1px solid #9aa7a2;border-radius:999px;padding:3px 8px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#c2cfca;background:transparent;text-transform:uppercase}
+.verdict-verified{border-color:#25e29c;color:#8ff0cb}
+.verdict-partial{border-color:#e9b949;color:#f2d894}
+.verdict-false-alarm{border-color:#ef5261;color:#ffa7b0}
+.verdict-missed{border-color:#c168ff;color:#dcb6ff}
