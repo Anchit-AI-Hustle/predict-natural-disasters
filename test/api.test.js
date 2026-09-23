@@ -734,3 +734,48 @@ test('one earthquake produces one aftershock outlook, however many agencies repo
       o.id + ' is derived from ' + o.forecastOf + ', which the feed does not carry');
   }
 });
+
+test('two separate earthquakes in one degree cell each get their own outlook', () => {
+  /* The other half of the test above, and the cost of how it used to be paid.
+     A whole degree is about 111 km, so the guard that kept one quake from
+     producing two outlooks also kept two quakes from producing one each -
+     and which of the two happened was decided by where a degree boundary
+     fell. Measured on two M6 shocks 46 km and ten hours apart - two records
+     after the seismic merge, and two disasters by this project's own
+     earthquake rule of 100 km and two hours - only the larger was given a
+     sequence outlook, and the second quake's sequence was not published at
+     all. (It is not a missed prediction: an earthquake onset is not
+     forecastable and the recall side says so. It is a product this site
+     publishes for one quake and silently withholds for its neighbour.) */
+  const OBSM = require(path.join(__dirname, '..', 'observed-model.js'));
+  const agoH = h => Date.now() - h * 3600e3;
+  const shock = (id, mag, lat, lon, hoursAgo) => ({
+    id, geometry: { coordinates: [lon, lat, 20] },
+    properties: { place: 'Hindu Kush region, Afghanistan', mag, time: agoH(hoursAgo),
+      updated: agoH(hoursAgo - 1), title: 'M ' + mag + ' - Hindu Kush region, Afghanistan',
+      url: 'https://earthquake.usgs.gov/earthquakes/eventpage/' + id, tsunami: 0, alert: 'orange' }
+  });
+  const a = shock('us-doublet-a', 6.2, 36.2, 70.2, 20);
+  const b = shock('us-doublet-b', 6.0, 36.3, 69.7, 10);
+
+  /* The fixture has to be two disasters and one cell, or it proves nothing. */
+  assert.ok(OBSM.distanceKm(36.2, 70.2, 36.3, 69.7) > OBSM.MATCH.earthquake.km * 0.3 &&
+    OBSM.distanceKm(36.2, 70.2, 36.3, 69.7) < OBSM.MATCH.earthquake.km,
+    'fixture: the two shocks are no longer inside one degree cell and apart');
+  assert.equal(Math.round(36.2) + ',' + Math.round(70.2), Math.round(36.3) + ',' + Math.round(69.7),
+    'fixture: the two shocks no longer round to one cell');
+
+  return runEvents({ feeds: { usgs: { features: [a, b] }, gdacs: [], eonet: { events: [] },
+    nhc: { activeStorms: [] } } }).then(res => {
+    const body = res.body;
+    const quakes = ['usgs-us-doublet-a', 'usgs-us-doublet-b']
+      .filter(id => body.events.some(e => e.id === id));
+    assert.deepEqual(quakes, ['usgs-us-doublet-a', 'usgs-us-doublet-b'],
+      'control: the two shocks were merged, so they are one disaster and this proves nothing');
+    for (const id of quakes) {
+      assert.equal(body.events.filter(e => e.forecastKind === 'aftershock-sequence' &&
+        e.forecastOf === id).length, 1,
+        'the sequence following ' + id + ' was not forecast at all');
+    }
+  });
+});

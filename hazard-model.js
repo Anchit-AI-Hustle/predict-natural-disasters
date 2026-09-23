@@ -913,10 +913,27 @@
     var n = Number(v);
     return isFinite(n) ? n.toFixed(3) : '-';
   }
+  /*
+   * The types that name no hazard at all, kept in step with the observed
+   * model's own list by test/ledger.js rather than by hope.
+   *
+   * The hazard a claim is graded on is read from its type, and from its title
+   * only where the type is one of these. So for every other row the title is
+   * prose and a rewording is not a new claim - but for these it is the only
+   * thing that says what the outlook is about, and two rows sharing an id, a
+   * window and a geography under type "Other" were one key and two different
+   * hazards: measured, "Flood risk outlook" and "Landslide risk outlook"
+   * collapsed onto one claim, so the second was never frozen and the feed
+   * served it under the first one's freeze timestamp.
+   */
+  var TYPE_NAMES_NO_HAZARD = /^(?:|natural hazard|other|others|unknown|unspecified|unclassified|complex emergency)$/i;
+
   function claimKey(f) {
     f = f || {};
+    /* Part of the claim exactly where it is part of what the claim says. */
+    var title = TYPE_NAMES_NO_HAZARD.test(String(f.type || '').trim()) ? f.title : null;
     return [f.id, f.type, f.targetStart, f.targetEnd, f.country, f.region,
-      coordToken(f.lat), coordToken(f.lon), f.forecastScope]
+      coordToken(f.lat), coordToken(f.lon), f.forecastScope, title]
       .map(function (v) {
         return (v === undefined || v === null || v === '') ? '-' : String(v).trim();
       }).join('|');
@@ -968,6 +985,7 @@
     APPLICABILITY: APPLICABILITY,
     FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
     claimKey: claimKey,
+    TYPE_NAMES_NO_HAZARD: TYPE_NAMES_NO_HAZARD,
     effectiveForecastStart: effectiveForecastStart,
     observationCanVerify: observationCanVerify,
     creditedWindowHours: creditedWindowHours

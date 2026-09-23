@@ -86,7 +86,25 @@ function comparisons(list){const graded=list.filter(r=>['VERIFIED','PARTIAL','FA
     <tr><td>Scanned?</td><td>${esc(r.coverageStatus||'—')}</td></tr>
     <tr><td>Finding</td><td>${esc(r.summary||'—')}</td></tr>
     ${critRows}</table></div></div></article>`}).join('')}
-async function load(){const [l,v,obsLedger,scanLedger]=await Promise.all([fetch('/data/outlook-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()),fetch('/data/verification-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()),/* The two records the engine grades against. A page that cannot read
+/* Read, or said to be unreadable - never quietly turned into an empty one.
+   A body that is not 200 is not a record, and a JSON parse that fails on an
+   error page is not an empty file. */
+const readLedger=path=>fetch(path+'?ts='+Date.now(),{cache:'no-store'})
+ .then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))
+ .catch(e=>({__unavailable:String(e&&e.message||e)}));
+async function load(){const [l0,v0,obsLedger,scanLedger]=await Promise.all([
+/* The record of what was claimed, and the hand-written verdicts.
+ *
+ * These two were awaited bare, so a 404 or a deployment mid-swap rejected the
+ * whole Promise.all before the "which record could not be read" list was ever
+ * built. The page then fell into its outermost catch, which writes three
+ * strings and leaves everything else as it stands - so every headline figure
+ * stayed at its placeholder dash and the observed-disasters table went on
+ * saying "no significant observed disaster has been recorded yet. An empty
+ * record is not a claim that nothing happened", which is precisely the
+ * substitution it was written to refuse, made by a page that had read
+ * nothing. They are read the same way as the other two now. */
+readLedger('/data/outlook-ledger.json'),readLedger('/data/verification-ledger.json'),/* The two records the engine grades against. A page that cannot read
    them must say so rather than quietly score against nothing. */
 /* A request that failed is not a record that is empty.
    Catching into {events:[]} made a transient network or deployment error
@@ -94,9 +112,17 @@ async function load(){const [l,v,obsLedger,scanLedger]=await Promise.all([fetch(
    then explained, at length, that an empty record is not a claim that
    nothing happened. It was not reporting an empty record; it had not read
    one. The failure is carried through and said out loud instead. */
-fetch('/data/observed-disasters.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status))).catch(e=>({__unavailable:String(e&&e.message||e)})),fetch('/data/scan-ledger.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status))).catch(e=>({__unavailable:String(e&&e.message||e)}))]);
-const ledgerUnavailable=[obsLedger&&obsLedger.__unavailable?'the record of observed disasters':null,
+readLedger('/data/observed-disasters.json'),readLedger('/data/scan-ledger.json')]);
+const ledgerUnavailable=[l0&&l0.__unavailable?'the record of forecast windows':null,
+  v0&&v0.__unavailable?'the record of hand-written verdicts':null,
+  obsLedger&&obsLedger.__unavailable?'the record of observed disasters':null,
   scanLedger&&scanLedger.__unavailable?'the record of what was scanned':null].filter(Boolean);
+/* Whatever did load, in the shape the rest of this function expects. A record
+   that failed contributes nothing and is named above; it is never read as an
+   empty one, because canGrade below stops before any figure is computed. */
+const outlookLedgerRead=Array.isArray(l0);
+const l=outlookLedgerRead?l0:[];
+const v=(v0&&!v0.__unavailable)?v0:{verifications:[]};
 /* The ledger re-records a rolling outlook each time it is re-issued, so one id
    can hold several windows. Joining a verdict on the id alone stamped it onto
    every one of them and turned five graded false alarms into nine. */
@@ -185,19 +211,25 @@ if(!canGrade){
    'cdTotal','cdMatured','cdHit','cdPartial','cdMiss','cdPending','cdPrecision',
    'obTotal','obFalseNeg','obCoverage','obForecast','obUnknown','obNotForecastable','obNoInput']
    .forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='Unavailable';});
-  /* What the outlook ledger itself says is still true: it loaded. */
-  mTotal.textContent=l.length;mSample.textContent=l.length+' windows';
+  /* What the outlook ledger itself says, where it is the one record that did
+     load. Where it is not, its own figures are unavailable too rather than a
+     zero: "0 forecast windows have been recorded" is a claim about the
+     record, and this page has not read it. */
+  mTotal.textContent=outlookLedgerRead?l.length:'Unavailable';
+  mSample.textContent=outlookLedgerRead?l.length+' windows':'Unavailable';
   mUpdated.textContent=PND.fmtDate(new Date().toISOString());
   const os=l.map(r=>Date.parse(r.targetStart||'')).filter(Number.isFinite);
   const oe=l.map(r=>Date.parse(r.targetEnd||'')).filter(Number.isFinite);
-  mPeriod.textContent=os.length&&oe.length
+  mPeriod.textContent=!outlookLedgerRead?'Unavailable':(os.length&&oe.length
    ?PND.fmtDate(new Date(Math.min(...os)).toISOString())+' — '+PND.fmtDate(new Date(Math.max(...oe)).toISOString())
-   :'No recorded windows';
+   :'No recorded windows');
   mEarliest.textContent='Unavailable';
   const cannot='This page could not read '+ledgerUnavailable.join(' or ')+
     ', so nothing here has been graded and no figure below is a statement about what happened. Reload, or try again later.';
-  honesty.textContent=l.length+' forecast windows have been recorded ('+distinct+
-    ' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '+cannot;
+  honesty.textContent=(outlookLedgerRead
+    ?l.length+' forecast windows have been recorded ('+distinct+
+      ' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '
+    :'')+cannot;
   ipNote.textContent=cannot;cdNote.textContent=cannot;obNote.textContent=cannot;
   methodNote.textContent='No grading was performed: '+cannot;
   classBreak.textContent='';

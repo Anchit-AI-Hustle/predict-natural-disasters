@@ -148,6 +148,35 @@ const canonical = OBS.canonicalise(observed);
 const significant = canonical.filter(c => c.significant);
 
 /*
+ * A retained snapshot is not a provider carrying the disaster now.
+ *
+ * api/events.js keeps a small number of verified fallback records - the
+ * August Nepal flood, a recent M6.5 off Java - and pushes each one into the
+ * feed WHEN THE LIVE PROVIDERS DO NOT CARRY IT. They are marked `cached` and
+ * their own `updated` timestamps are fixed in the source file.
+ *
+ * Recording them as observed at this scan's timestamp therefore wrote down
+ * the opposite of what had happened: measured on two runs with every upstream
+ * unreachable, both fallback records gained a fresh sighting run at each
+ * scan, so the ledger asserted that a provider was carrying them at moments
+ * when nothing had been reached at all. That assertion is not idle - a
+ * sighting run inside a window is exactly the evidence a continuation outlook
+ * is graded on, so the site's own fallback would have gone on manufacturing
+ * "it was still being reported" for as long as the providers stayed down.
+ *
+ * The snapshot is still evidence that the disaster happened, so the row is
+ * still recorded. What it is not is evidence of when it was last seen, and a
+ * row backed only by snapshots this run is left with its sighting history
+ * untouched.
+ */
+const retainedIds = new Set(events.filter(e => e && e.cached && e.id).map(e => e.id));
+function sightedLive(c) {
+  const ids = [...evidenceIds(c)];
+  if (!ids.length) return true;
+  return ids.some(id => !retainedIds.has(id));
+}
+
+/*
  * Observed activity that is not a disaster, kept because a frozen claim is
  * graded on it.
  *
@@ -177,10 +206,34 @@ const conditionalClaims = (function () {
     .map(r => ({ row: r, claim: VER.frozenClaim(Object.assign({ forecast: true }, r), OBS.familyOf) }));
 })();
 
+/* The provider records this observation was built from, by id. A conditional
+   claim names the feed record it follows in forecastOf, so an observation
+   whose evidence carries that id IS the disaster the claim is about - which
+   is a fact, not a geometric guess. */
+function evidenceIds(c) {
+  return new Set((c.evidence || []).map(e => e && e.id).filter(Boolean));
+}
+
 function claimsNeeding(c) {
   const out = [];
+  const ids = evidenceIds(c);
   for (const { row, claim } of conditionalClaims) {
     const hazards = claim.hazards || [claim.hazard];
+    /*
+     * The disaster the claim follows is the claim's own subject.
+     *
+     * The window test below rejects it, by design: a post-event-conditional
+     * outlook starts at its mainshock, so the mainshock's onset is at or
+     * before the window opens. But the verifier grades such an outlook partly
+     * on that very disaster's impact rising inside the window, and without an
+     * association recorded it cannot tell that mainshock from a neighbouring
+     * one. So the subject is associated on the evidence, before the window
+     * test that would otherwise drop it.
+     */
+    if (row.forecastOf && ids.has(row.forecastOf)) {
+      out.push({ claim: claimKeyOf(row), subject: row.forecastOf || row.id || null });
+      continue;
+    }
     if (hazards.indexOf(c.hazard) < 0) continue;
     const onset = Date.parse(c.onset || '');
     const from = Date.parse(claim.window.effectiveForecastStart || claim.window.targetStart || '');
@@ -429,13 +482,41 @@ const differenceNote = (a, b) => {
 };
 
 let added = 0, updated = 0, changes = 0, superseded = 0, reidentified = 0, distinguished = 0;
-let belowBarNew = 0, belowBarUpdated = 0, supportingKept = 0;
+let belowBarNew = 0, belowBarUpdated = 0, supportingKept = 0, retainedSightings = 0;
+
+/* Said on the row itself, so a reader of the ledger is not left to infer it
+   from an empty sightings list. */
+const RETAINED_NOTE = 'Recorded from a verified fallback snapshot held in the application, which is ' +
+  'served only when the live providers do not carry this event. It is evidence that the disaster ' +
+  'happened, not evidence that a provider was carrying it at the time of this scan, so no sighting ' +
+  'is recorded for it.';
 
 ledger.supporting = Array.isArray(ledger.supporting) ? ledger.supporting : [];
 const supportingById = new Map(ledger.supporting.map(r => [r.canonicalEventId, r]));
 
+/*
+ * Which conditional claims are graded on this observation, on the row itself.
+ *
+ * This used to be written only on the observations kept BESIDE the ledger -
+ * the ones below the significance bar. But a significant aftershock is graded
+ * on too, and with no association recorded the verifier could only fall back
+ * on hazard, window and distance, which two neighbouring sequences satisfy
+ * equally: measured, a magnitude-6 aftershock of quake A, 161 km from quake
+ * B, graded B's outlook a HIT, and so did quake A's own death toll rising
+ * inside B's window. A row a claim might be graded on has to say whose it is,
+ * whether or not it is a disaster in its own right.
+ */
+function noteKeptFor(row, needed) {
+  if (!row || !needed || !needed.length) return;
+  row.keptFor = Array.isArray(row.keptFor) ? row.keptFor : [];
+  for (const k of needed) {
+    if (!row.keptFor.some(x => x && x.claim === k.claim)) row.keptFor.push(k);
+  }
+}
+
 function noteSupporting(c, needed) {
   let row = supportingById.get(c.canonicalEventId);
+  const live = sightedLive(c);
   if (!row) {
     row = {
       canonicalEventId: c.canonicalEventId, hazard: c.hazard, hazardLabel: c.hazardLabel,
@@ -443,24 +524,27 @@ function noteSupporting(c, needed) {
       magnitude: c.magnitude === undefined ? null : c.magnitude,
       source: c.source, sourceUrl: c.sourceUrl, evidence: c.evidence || [],
       significant: false, significanceReason: c.significanceReason,
-      firstRecordedAt: now, lastSeenAt: observedAt,
-      sightings: [Object.assign({ from: observedAt, to: observedAt },
-        scanId ? { fromScan: scanId, toScan: scanId } : {})],
+      firstRecordedAt: now,
+      lastSeenAt: live ? observedAt : null,
+      sightings: live
+        ? [Object.assign({ from: observedAt, to: observedAt },
+          scanId ? { fromScan: scanId, toScan: scanId } : {})]
+        : [],
       keptFor: []
     };
+    if (!live) { row.retainedSnapshotOnly = RETAINED_NOTE; retainedSightings++; }
     ledger.supporting.push(row);
     supportingById.set(row.canonicalEventId, row);
     supportingKept++;
   } else {
-    noteSighting(row, observedAt, scanId);
+    if (live) noteSighting(row, observedAt, scanId);
+    else retainedSightings++;
     const seen = new Map((row.evidence || []).map(e => [e.id, e]));
     for (const ev of (c.evidence || [])) if (ev && ev.id) seen.set(ev.id, ev);
     row.evidence = [...seen.values()];
     if (c.end && !row.end) row.end = c.end;
   }
-  for (const k of needed) {
-    if (!row.keptFor.some(x => x && x.claim === k.claim)) row.keptFor.push(k);
-  }
+  noteKeptFor(row, needed);
 }
 
 /*
@@ -478,6 +562,9 @@ function noteSupporting(c, needed) {
  */
 for (const c of canonical) {
   const { candidates, idMatch, collision } = findExisting(c);
+  /* Whether any provider actually carried this disaster on this scan, or it
+     arrived only as a retained fallback snapshot. */
+  const live = sightedLive(c);
   /* A record that bridges two previously separate events means they were one
      disaster all along. The earliest-recorded row keeps the identity; the
      others are marked superseded rather than deleted, so the correction is
@@ -513,10 +600,13 @@ for (const c of canonical) {
          time the disaster eased. */
       significanceAtEntry: c.significanceReason,
       geographyAtFirstRecord: c.geography,
-      lastSeenAt: observedAt,
-      sightings: [Object.assign({ from: observedAt, to: observedAt },
-        scanId ? { fromScan: scanId, toScan: scanId } : {})]
+      lastSeenAt: live ? observedAt : null,
+      sightings: live
+        ? [Object.assign({ from: observedAt, to: observedAt },
+          scanId ? { fromScan: scanId, toScan: scanId } : {})]
+        : []
     });
+    if (!live) { row.retainedSnapshotOnly = RETAINED_NOTE; retainedSightings++; }
     /* Recording this disaster under an id another one already holds would
        hand both to whichever lookup ran first, so it is written under a
        distinguished id instead - carrying the id it derived and the measured
@@ -533,6 +623,7 @@ for (const c of canonical) {
       };
       distinguished++;
     }
+    noteKeptFor(row, claimsNeeding(c));
     ledger.events.push(row);
     byId.set(row.canonicalEventId, row);
     for (const ev of (row.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, row);
@@ -540,7 +631,17 @@ for (const c of canonical) {
     continue;
   }
 
-  noteSighting(existing, observedAt, scanId);
+  if (live) {
+    noteSighting(existing, observedAt, scanId);
+    /* It is being carried again, so the note that it never had been no longer
+       describes the row. */
+    if (existing.retainedSnapshotOnly) delete existing.retainedSnapshotOnly;
+  } else {
+    retainedSightings++;
+    if (!(existing.sightings || []).length && !existing.lastSeenAt) {
+      existing.retainedSnapshotOnly = RETAINED_NOTE;
+    }
+  }
   /* Recognised by the id alone: no provider record this run overlaps the ones
      already recorded, so the reason the two are one disaster is the match
      itself, and it is written down rather than assumed. */
@@ -600,6 +701,9 @@ for (const c of canonical) {
   for (const f of FROZEN) {
     if (existing[f] === undefined && c[f] !== undefined) existing[f] = c[f];
   }
+  /* Re-asked every run: a conditional claim frozen after this row was first
+     recorded still has to be able to find the observation it is graded on. */
+  noteKeptFor(existing, claimsNeeding(c));
   updated++;
 }
 
@@ -610,6 +714,7 @@ ledger.method = {
   significance: 'An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.',
   sightings: 'Each event records the runs during which it was actually being carried by a provider, not only the last time it was seen. A single latest timestamp is overwritten on the next run, which destroys the evidence that a disaster was in the feed throughout a forecast window that has since closed. Consecutive sightings more than ' + SIGHTING_GAP_HOURS + ' hours apart start a new run rather than being joined.',
   frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions. A revision marked administrative is bookkeeping rather than an observation: a figure carried across when two rows turned out to be one disaster, stamped with the merge time and not with any reading. Nothing reads it as impact that occurred.',
+  retainedSnapshots: 'A verified fallback record held in the application is served only when the live providers do not carry the event, so it is evidence that the disaster happened and not evidence of when it was last seen. A row backed on a run by nothing but such records gains no sighting for that run and keeps whatever sighting history it already had; a row that has never been carried live says so, under retainedSnapshotOnly. Counted each run under lastRun.sightingsWithheldFromRetainedSnapshots.',
   supporting: 'Observations below the bar are not disasters and are not recorded as any, but a frozen conditional claim - an aftershock outlook - is graded on \u201cobserved aftershock activity\u201d, which is mostly made of events that hurt nobody. Where such a claim accepts the hazard, the observation falls inside its window, and it falls inside the geography that claim named, the observation is kept under supporting, apart from the disasters. Each says which claim keeps it and which disaster that claim follows, because hazard, window and distance alone cannot tell two neighbouring sequences apart - two aftershock outlooks for mainshocks 150 km apart accept each other\u2019s aftershocks in full. An observation that more than one sequence claims is graded for neither. They enter no recall figure and are never counted as disasters; where no conditional claim needs one, nothing is kept.',
   identity: 'A canonical id is a country, a rounded position and a minute, so two separate disasters can derive the same one. An id already held is believed only where the provider records overlap or the two rows can be the same occurrence under this hazard\u2019s matching window; otherwise the new disaster is recorded under a distinguished id, carrying the id it derived and the measured reason the two were not merged.',
   notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed. The bar decides what enters: a disaster already recorded goes on being reconciled on every run even when it eases below it, because what is still being learned about it - how long it was carried, when it ended, what it did - does not stop being true. Each row keeps the reason it qualified on entry, under significanceAtEntry, beside the current assessment.',
@@ -624,6 +729,7 @@ ledger.lastRun = {
   belowBarNotRecorded: belowBarNew,
   belowBarStillReconciled: belowBarUpdated,
   supportingObservationsKept: supportingKept,
+  sightingsWithheldFromRetainedSnapshots: retainedSightings,
   supportingObservationsHeld: ledger.supporting.length,
   conditionalClaimsRead: conditionalClaims.length,
   supersededThisRun: superseded,

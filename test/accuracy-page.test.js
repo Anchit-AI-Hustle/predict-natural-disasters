@@ -143,6 +143,7 @@ const USGS = {
 function gradingFixture() {
   const ledger = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'outlook-ledger.json'), 'utf8'));
   const OBSM = require(path.join(ROOT, 'observed-model.js'));
+  const HZ = require(path.join(ROOT, 'hazard-model.js'));
   const matured = ledger.filter(o => Date.parse(o.targetEnd) < Date.now() &&
     OBSM.familyOf(o.type, o.title) === 'earthquake');
   assert.ok(matured.length > 0, 'the recorded ledger holds no matured earthquake window to grade');
@@ -170,7 +171,17 @@ function gradingFixture() {
       onset: new Date(Date.parse(target.targetStart) + 3600e3).toISOString(),
       geography: { country: target.country, region: target.region,
         lat: target.lat, lon: target.lon },
-      deaths: 12, displaced: null, evidenceConfidence: 'CONFIRMED'
+      deaths: 12, displaced: null, evidenceConfidence: 'CONFIRMED',
+      /* Which disaster this observation belongs to.
+       *
+       * A post-event-conditional outlook - an aftershock sequence, a
+       * continuing flood - is about one particular prior disaster, and is
+       * borne out only by that disaster's own continued activity. The
+       * recorder writes that association down beside every observation it
+       * keeps, so a fixture that leaves it out is not a record the engine can
+       * grade: it would be asking the engine to assume the sequence. This
+       * event is the target's own, and says so. */
+      keptFor: [{ claim: HZ.claimKey(target), subject: target.forecastOf || target.id }]
     }],
     retention: null
   };
@@ -351,6 +362,57 @@ test('a ledger it could not read is not a ledger that is empty', async () => {
   assert.match(text(r, 'obNote'), /could not read/i,
     'the observed-disasters note still reads as though the record were empty');
   r.close();
+});
+
+test('every record this page reads is reported when it cannot be read', async () => {
+  /* The other two fetches were awaited bare, so a 404 on the outlook ledger
+     or the hand-written verdicts rejected the whole Promise.all BEFORE the
+     list of unreadable records was built. The page fell to its outermost
+     catch, which writes three strings - leaving every headline figure at its
+     placeholder dash and the observed-disasters table still saying "no
+     significant observed disaster has been recorded yet. An empty record is
+     not a claim that nothing happened", which is exactly the substitution
+     this page exists to refuse, made by a page that had read nothing.
+
+     Each record is tested on its own, because one that rejects is enough. */
+  for (const [file, named] of [
+    ['outlook-ledger.json', /record of forecast windows/i],
+    ['verification-ledger.json', /hand-written verdicts/i],
+    ['observed-disasters.json', /record of observed disasters/i],
+    ['scan-ledger.json', /what was scanned/i]]) {
+    const r = await renderPage('accuracy.html', {
+      mock: {},
+      waitFor: d => !!d.getElementById('ledgerError'),
+      beforeParse(w) {
+        const real = w.fetch;
+        w.fetch = async (input) => {
+          const url = String(input && input.url ? input.url : input);
+          if (url.includes(file)) {
+            return { ok: false, status: 404, headers: { get: () => null },
+              json: async () => ({}), text: async () => 'not here' };
+          }
+          return real(input);
+        };
+      }
+    });
+    assert.equal(r.errors.length, 0, file + ': ' + r.errors.map(String).join('|'));
+    const banner = r.document.getElementById('ledgerError');
+    assert.ok(banner, 'a failed fetch of ' + file + ' is not reported at all');
+    assert.match(banner.textContent, named,
+      'the warning does not name ' + file + ' as the record it could not read');
+
+    /* And no figure is left reading as a fact, or as a zero. */
+    for (const id of ['ipTotal', 'cdMatured', 'obTotal']) {
+      assert.equal(text(r, id), 'Unavailable',
+        file + ': ' + id + ' reads "' + text(r, id) + '" on a page that graded nothing');
+    }
+    const obs = r.document.getElementById('obsRows').textContent;
+    assert.equal(/no significant observed disaster has been recorded yet/i.test(obs), false,
+      file + ': the page reported an empty record it had not read');
+    assert.match(text(r, 'honesty'), /could not read/i,
+      file + ': the honesty note does not say a record was unreadable');
+    r.close();
+  }
 });
 
 test('two claims under one id keep their own verdicts', async () => {

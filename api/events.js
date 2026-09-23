@@ -1372,16 +1372,46 @@ async function handler(req, res) {
   const strongQuakes = officialSignals
     .filter(e => /earthquake/i.test(e.type) && num(e.magnitude) !== null && num(e.magnitude) >= 5.5)
     .sort((a, b) => (num(b.magnitude) || 0) - (num(a.magnitude) || 0));
-  const seenQuakeArea = new Set();
+  /*
+   * One outlook per earthquake, and the earthquake is the merged record.
+   *
+   * This used to skip any quake whose position rounded to a whole-degree cell
+   * already used - a stand-in for "the same quake reported twice", written
+   * before mergeSeismicReports ran above and made that case impossible here.
+   * What it decides now is where a degree boundary happens to fall: a degree
+   * is about 111 km, so two separate earthquakes share a cell as easily as
+   * not. Measured on two M6 shocks 46 km and ten hours apart - two records
+   * after the merge, and two disasters by this project's own earthquake rule
+   * of 100 km and two hours - only the larger was given a sequence outlook.
+   * The second quake's sequence was not published at all, and would have been
+   * had the same two epicentres straddled a boundary.
+   *
+   * The duplicate this guard was written for is handled by the merge above,
+   * so the identity here is the merged record's: anything still holding a
+   * separate record is a separate earthquake by the same definition the rest
+   * of the system uses - the observed ledger records it as its own disaster
+   * and the verifier grades its sequence under its own subject - and this
+   * guard is only a safety net against one arriving twice.
+   *
+   * The cost, stated rather than hidden: a swarm now produces an outlook per
+   * shock instead of one for the cell. Measured on twenty M5.6+ shocks over
+   * two and a half days, 22 aftershock outlooks against the old one, with the
+   * run's total held at 32 by the cap this loop already breaks on. They are
+   * not duplicates - each follows a different earthquake and is graded on
+   * that earthquake's own activity - but they do overlap, and if that ever
+   * needs narrowing it should be narrowed on the published tolerance and
+   * window, which say what a sequence is, and not on a grid, which says only
+   * where a boundary fell.
+   */
+  const seenQuake = new Set();
 
   for (const e of strongQuakes) {
     if (outlooks.length >= MAX_OUTLOOKS + 8) break;
     const shockMs = Date.parse(e.startedAt || e.updated) || now.getTime();
     const shockEndMs = shockMs + AFTERSHOCK_HORIZON_HOURS * 3600e3;
     if (shockEndMs <= now.getTime()) continue;
-    const area = (Math.round(e.lat) + ',' + Math.round(e.lon));
-    if (seenQuakeArea.has(area)) continue;
-    seenQuakeArea.add(area);
+    if (seenQuake.has(e.id)) continue;
+    seenQuake.add(e.id);
     outlooks.push({
       id: outlookId('aftershock-' + e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,

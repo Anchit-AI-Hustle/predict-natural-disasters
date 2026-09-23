@@ -39,6 +39,18 @@ const prediction = over => Object.assign({
   targetStart: '2026-09-02T00:00:00Z', targetEnd: '2026-09-05T00:00:00Z'
 }, over || {});
 
+/*
+ * The association tools/record-observed.js writes on a disaster that a
+ * conditional claim follows: which claim, and which feed record that claim is
+ * about. Without it the verifier cannot tell this mainshock from a
+ * neighbouring one, so it declines to grade rather than crediting the wrong
+ * sequence - which is the behaviour these fixtures have to carry to exercise
+ * the grading at all. The default subject is prediction()'s own id, because
+ * frozenClaim falls back to the id where a claim names no forecastOf.
+ */
+const followed = (d, subject) => Object.assign({}, d,
+  { keptFor: [{ claim: 'ledger-key', subject: subject || 'OUT-test-1' }] });
+
 const disaster = over => Object.assign({
   canonicalEventId: 'OBS-flood-NEP-20260903T0000-n28e085',
   hazard: 'flood', significant: true, onset: '2026-09-03T00:00:00Z',
@@ -373,11 +385,11 @@ test('each class that follows a disaster is graded by its own rule', () => {
   }
   /* An aftershock outlook claims new activity or new impacts, so the same
      reassessment is not enough for it — that is the whole difference. */
-  assert.equal(grade(windowed({ forecastClass: 'post-event-conditional' }), [began]).classification,
+  assert.equal(grade(windowed({ forecastClass: 'post-event-conditional' }), [followed(began)]).classification,
     'PENDING', 'an aftershock outlook was credited with a routine reassessment');
-  assert.equal(grade(windowed({ forecastClass: 'post-event-conditional' }), [disaster({
+  assert.equal(grade(windowed({ forecastClass: 'post-event-conditional' }), [followed(disaster({
     onset: '2026-09-03T00:00:00Z',
-    revisions: [{ at: '2026-09-05T12:00:00Z', field: 'deaths', from: 1, to: 6 }] })]).classification,
+    revisions: [{ at: '2026-09-05T12:00:00Z', field: 'deaths', from: 1, to: 6 }] }))]).classification,
     'HIT', 'an impact that actually moved was not credited');
   /* And the rule does not leak. An independent prospective prediction frozen
      after the disaster began has still predicted nothing, however long that
@@ -470,8 +482,8 @@ test('a withdrawn or reduced impact figure is not an additional impact', () => {
     freezeTimestamp: '2026-09-04T00:00:00Z',
     targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
   }, extra));
-  const withRevision = rev => disaster({ onset: '2026-09-03T00:00:00Z',
-    revisions: [Object.assign({ at: '2026-09-05T12:00:00Z' }, rev)] });
+  const withRevision = rev => followed(disaster({ onset: '2026-09-03T00:00:00Z',
+    revisions: [Object.assign({ at: '2026-09-05T12:00:00Z' }, rev)] }));
 
   assert.equal(grade(windowed(), [withRevision({ field: 'deaths', from: 12, to: null,
     note: 'No longer reported upstream; the recorded figure is kept.' })]).classification,
@@ -623,11 +635,11 @@ test('an aftershock outlook is not verified by the mainshock still being in the 
     forecastClass: 'post-event-conditional', freezeTimestamp: '2026-09-04T00:00:00Z',
     targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-08T00:00:00Z'
   });
-  const mainshock = over => Object.assign({
+  const mainshock = over => followed(Object.assign({
     canonicalEventId: 'OBS-eq-main', hazard: 'earthquake', significant: true,
     onset: '2026-09-03T12:00:00Z',
     geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.7, lon: 85.3 }
-  }, over || {});
+  }, over || {}));
 
   const seenAgain = grade(outlook, [mainshock({ lastSeenAt: '2026-09-06T00:00:00Z' })]);
   assert.notEqual(seenAgain.classification, 'HIT',
@@ -694,11 +706,11 @@ test('a routine refresh is not an additional impact', () => {
     forecastClass: 'post-event-conditional', freezeTimestamp: '2026-09-04T00:00:00Z',
     targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-08T00:00:00Z'
   });
-  const mainshock = over => Object.assign({
+  const mainshock = over => followed(Object.assign({
     canonicalEventId: 'OBS-eq-main', hazard: 'earthquake', significant: true,
     onset: '2026-09-03T12:00:00Z',
     geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.7, lon: 85.3 }
-  }, over || {});
+  }, over || {}));
 
   assert.equal(grade(outlook, [mainshock({ impactLastUpdated: '2026-09-06T00:00:00Z' })]).classification,
     'PENDING', 'a refreshed timestamp was counted as an additional impact');
@@ -826,4 +838,124 @@ test('a hazard nobody forecasts is not the engine failing to forecast it', () =>
      Two different exceptions, and this record meets both. */
   assert.equal(V.assessCoverage(quake, [], led, { hazardFamilyOf: H }).status,
     'NO_PROSPECTIVE_INPUT');
+});
+
+/* ------------------- one sequence's activity is not another sequence's */
+
+/*
+ * Two earthquakes 167 km and a day apart, each with its own seven-day
+ * aftershock outlook.
+ *
+ * Every test in this group is about the same hole. Hazard, window and
+ * geography are satisfied by a neighbouring sequence just as fully as by the
+ * right one - the published earthquake tolerance is 300 km, and two quakes in
+ * the same belt are routinely closer together than that - so those three
+ * tests alone cannot tell whose activity was observed. Measured before this:
+ * quake A's magnitude-6 aftershock graded quake B's outlook a HIT at 161 km,
+ * and so did quake A's own death toll rising inside B's window, at 167 km.
+ * Both verdicts read "a significant earthquake was observed inside the frozen
+ * geography and window", which was true, and about the wrong earthquake.
+ */
+const T0 = Date.parse('2026-09-01T00:00:00Z');
+const iso = ms => new Date(ms).toISOString();
+const seqOutlook = (id, of, lat, at) => ({
+  id, forecast: true, forecastKind: 'aftershock-sequence', forecastOf: of,
+  forecastClass: 'post-event-conditional', forecastScope: 'event',
+  type: 'Earthquake aftershock sequence', title: 'Aftershock-sequence outlook',
+  country: 'Afghanistan', region: 'Hindu Kush', lat, lon: 70,
+  issuedAt: iso(at), freezeTimestamp: iso(at),
+  targetStart: iso(at), targetEnd: iso(at + 7 * 864e5)
+});
+const OUT_A = seqOutlook('OUT-A', 'quake-A', 35.0, T0);
+const OUT_B = seqOutlook('OUT-B', 'quake-B', 36.5, T0 + 864e5);
+const keptBy = subjects => subjects.map(s => ({ claim: 'k-' + s, subject: s }));
+const quake = (id, over) => Object.assign({
+  canonicalEventId: id, hazard: 'earthquake', significant: true,
+  geography: { country: 'Afghanistan', region: 'Hindu Kush', lat: 35.05, lon: 70.05 }
+}, over || {});
+const seqGrade = (p, events) => V.verify(p, events,
+  { now: Date.parse('2026-09-15T00:00:00Z'), hazardFamilyOf: H, observedCoverage: FULL_COVER });
+
+test('fixture: the two sequences are close enough for each to accept the other’s events', () => {
+  /* If this ever stops being true the three tests below stop testing
+     anything, because geography alone would separate the sequences. */
+  const apart = OBS.distanceKm(OUT_A.lat, OUT_A.lon, OUT_B.lat, OUT_B.lon);
+  assert.ok(apart > 100 && apart < 300,
+    'the fixture quakes are ' + Math.round(apart) + ' km apart, outside the range this tests');
+  const claimB = V.frozenClaim(OUT_B, H);
+  assert.ok(V.geographyMatch(claimB, quake('OBS-probe')),
+    'quake A’s epicentre no longer falls inside outlook B’s frozen geography');
+});
+
+test('a significant aftershock of one sequence does not verify a neighbouring sequence', () => {
+  const big = quake('OBS-eq-A-big', { onset: iso(T0 + 2 * 864e5), magnitude: 6,
+    keptFor: keptBy(['quake-A']) });
+
+  assert.equal(seqGrade(OUT_A, [big]).classification, 'HIT',
+    'the sequence this aftershock actually belongs to was not credited with it');
+
+  const b = seqGrade(OUT_B, [big]);
+  assert.notEqual(b.classification, 'HIT',
+    'one sequence’s aftershock was credited to a different quake’s outlook');
+  assert.equal(b.observedEventIds.length, 0,
+    'an event recorded as another sequence’s is cited as this outlook’s evidence');
+  assert.match(b.classificationReason, /quake-B/,
+    'the verdict does not say which disaster this outlook was about');
+});
+
+test('one disaster’s impact rising does not verify another disaster’s outlook', () => {
+  /* The mainshock's own death toll, revised upward inside the neighbouring
+     outlook's window. Its onset predates both windows, so it is graded on
+     continued activity - which is exactly the path that read one quake's
+     revision as evidence about another. */
+  const mainA = quake('OBS-eq-A-main', { onset: iso(T0 - 3600e3), magnitude: 6.6, deaths: 40,
+    geography: { country: 'Afghanistan', region: 'Hindu Kush', lat: 35, lon: 70 },
+    revisions: [{ at: iso(T0 + 3 * 864e5), field: 'deaths', from: 12, to: 40 }],
+    keptFor: keptBy(['quake-A']) });
+
+  assert.equal(seqGrade(OUT_A, [mainA]).classification, 'HIT',
+    'the sequence whose mainshock this is was not credited with its own toll rising');
+
+  const b = seqGrade(OUT_B, [mainA]);
+  assert.notEqual(b.classification, 'HIT',
+    'a different quake’s death toll rising was read as this sequence continuing');
+  assert.equal(b.observedEventIds.length, 0);
+});
+
+test('an observation the record does not attribute leaves the claim waiting, not failed', () => {
+  /* The regression this pair of tests nearly shipped. "Recorded as someone
+     else's" and "nothing recorded" were collapsed into one answer, so an
+     observation with no association on record was dropped - and the window
+     then closed with nothing matched and was called a false positive. That
+     asserts an absence the record cannot establish, which is the one move
+     this file exists to refuse. It waits instead. */
+  const unattached = quake('OBS-eq-unattached', { onset: iso(T0 + 2 * 864e5), magnitude: 6 });
+  const v = seqGrade(OUT_A, [unattached]);
+  assert.equal(v.classification, 'PENDING',
+    'an unattributed observation was turned into a verdict in either direction');
+
+  /* And a blank subject is not an attribution either. */
+  const blank = quake('OBS-eq-blank', { onset: iso(T0 + 2 * 864e5),
+    keptFor: [{ claim: 'k-A', subject: null }] });
+  assert.equal(seqGrade(OUT_A, [blank]).classification, 'PENDING',
+    'an association with no subject was treated as naming one');
+});
+
+test('an observation two sequences both claim is counted for neither, and says so', () => {
+  const shared = quake('OBS-eq-shared', { onset: iso(T0 + 2 * 864e5), magnitude: 6,
+    keptFor: keptBy(['quake-A', 'quake-B']) });
+  const v = seqGrade(OUT_A, [shared]);
+  assert.equal(v.classification, 'PENDING',
+    'an event two sequences both claim was credited to one of them');
+  assert.equal(v.ungradeableReason, 'SEQUENCE_ATTRIBUTION_AMBIGUOUS');
+  assert.match(v.classificationReason, /quake-B/,
+    'the verdict does not name the other sequence that claims it');
+});
+
+test('a claim that follows no particular disaster is not gated on attribution', () => {
+  /* Only the post-event-conditional class names a subject. A flood outlook is
+     not about one prior flood, so requiring an association from it would make
+     every ordinary forecast ungradeable. */
+  assert.equal(grade(prediction(), [disaster()]).classification, 'HIT',
+    'an independent prospective forecast now needs an attribution it never had');
 });
