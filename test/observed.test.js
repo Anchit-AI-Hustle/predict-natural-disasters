@@ -194,6 +194,104 @@ test('an event\'s identity is frozen and its impact is not', async () => {
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+/* Two magnitude-6 earthquakes, the same morning, 142 km apart: far enough
+   apart to be two disasters under this hazard's 100 km window, close enough
+   that the canonical id - a country, a position rounded to the degree and a
+   minute - comes out identical for both. */
+const quake = (id, lat, lon, deaths) => ({
+  id, type: 'Earthquake', title: 'M 6.4 earthquake', source: 'USGS',
+  sourceUrl: 'https://earthquake.usgs.gov/x/' + id,
+  country: 'India', region: 'Andaman Sea', lat, lon, magnitude: 6.4, deaths,
+  startedAt: '2026-09-10T00:00:00Z', updated: '2026-09-10T00:00:00Z',
+  locationPrecision: 'incident', evidenceState: 'observed',
+  severity: 'SEVERE', alert: 'Orange'
+});
+const recordObserved = (events, ledgerPath, tag) => {
+  const evPath = path.join(path.dirname(ledgerPath), 'events-' + tag + '.json');
+  fs.writeFileSync(evPath, JSON.stringify({ events }));
+  return require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-observed.js'), evPath, ledgerPath],
+    { encoding: 'utf8' });
+};
+const freshLedger = () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-obs-id-'));
+  const p = path.join(dir, 'observed.json');
+  fs.writeFileSync(p, JSON.stringify({ schemaVersion: 1, events: [] }));
+  return p;
+};
+
+test('two disasters that derive one id are not one disaster', () => {
+  const near = quake('usgs-a', 0.55, 0.55, 3), far = quake('usgs-b', 1.45, 1.45, 7);
+  /* The premise, measured rather than asserted. */
+  const groups = OBS.canonicalise([near, far]);
+  assert.equal(groups.length, 2, 'control: these should be two events');
+  assert.equal(groups[0].canonicalEventId, groups[1].canonicalEventId,
+    'control: this test is about an id collision and there is none');
+  assert.ok(OBS.distanceKm(near.lat, near.lon, far.lat, far.lon) > OBS.MATCH.earthquake.km,
+    'control: these are inside the matching window, so they are one disaster');
+
+  /* Believing the id merged them here: the second quake\'s seven deaths were
+     written over the first\'s three as a revision, and one real disaster left
+     the recall denominator without leaving a trace. */
+  const led = freshLedger();
+  recordObserved([near, far], led, 'both');
+  const rows = JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  assert.equal(rows.length, 2, 'two separate disasters were recorded as one');
+  assert.equal(new Set(rows.map(r => r.canonicalEventId)).size, 2,
+    'both rows carry the same id, so every lookup by id answers with one of them at random');
+  assert.deepEqual(rows.map(r => r.deaths).sort((a, b) => a - b), [3, 7],
+    'a death toll was overwritten by the other disaster\'s');
+  assert.ok(rows.every(r => (r.revisions || []).length === 0),
+    'one disaster was recorded as a revision of the other');
+
+  /* And the split is auditable: which id it derived, who holds it, and the
+     measured distance that decided it. */
+  const distinguished = rows.find(r => r.derivedIdCollision);
+  assert.ok(distinguished, 'nothing records that this row was given a distinguished id');
+  assert.equal(distinguished.derivedIdCollision.derivedId, groups[0].canonicalEventId);
+  assert.match(distinguished.derivedIdCollision.reason, /142 km apart/);
+  assert.match(distinguished.derivedIdCollision.reason, /100 km \/ 2h/);
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
+test('a colliding id is not believed across runs either', () => {
+  /* The same collision, arriving as two runs rather than one feed: the first
+     quake has aged out of the provider window by the time the second is
+     reported, so nothing but the id links them. */
+  const led = freshLedger();
+  recordObserved([quake('usgs-a', 0.55, 0.55, 3)], led, 'one');
+  recordObserved([quake('usgs-b', 1.45, 1.45, 7)], led, 'two');
+  const rows = JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  assert.equal(rows.length, 2, 'the second disaster was absorbed into the first');
+  assert.equal(rows.filter(r => !r.supersededBy).length, 2,
+    'one of two separate disasters was marked superseded by the other');
+  assert.deepEqual(rows.map(r => r.deaths).sort((a, b) => a - b), [3, 7]);
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
+test('a disaster reported under fresh provider ids is still the same disaster', () => {
+  /* The other direction, which is the reason the id is consulted at all. The
+     provider replaced its record - a new id for the same quake - so no
+     evidence links the runs. The rows can be the same occurrence, so the id
+     is believed, and the reason for believing it is written down rather than
+     assumed. */
+  const led = freshLedger();
+  recordObserved([quake('usgs-a', 0.55, 0.55, 3)], led, 'first');
+  const again = Object.assign(quake('usgs-a-reissued', 0.55, 0.55, 5),
+    { updated: '2026-09-10T06:00:00Z' });
+  recordObserved([again], led, 'second');
+  const rows = JSON.parse(fs.readFileSync(led, 'utf8')).events;
+  assert.equal(rows.length, 1, 'one disaster was recorded twice in the recall denominator');
+  assert.equal(rows[0].deaths, 5, 'the revised toll was not taken up');
+  assert.ok((rows[0].matchedById || []).length === 1,
+    'the run matched this row by its id alone and recorded no reason for it');
+  assert.match(rows[0].matchedById[0].why, /0 km and 0h apart/);
+  assert.ok(rows[0].evidence.some(e => e.id === 'usgs-a') &&
+    rows[0].evidence.some(e => e.id === 'usgs-a-reissued'),
+    'the evidence for this disaster should carry both provider records');
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
 test('the ledger states how it decides what it holds', () => {
   const led = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
   assert.ok(Array.isArray(led.events), 'the observed ledger has no events array');

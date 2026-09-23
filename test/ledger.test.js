@@ -143,6 +143,57 @@ test('a moved window is recorded as a new claim, not an edit of the old one', as
   assert.notEqual(rows[0].targetStart, rows[1].targetStart);
 });
 
+test('the freeze this ledger performs is what settles the forecast\'s class', async () => {
+  /* The recorder claimed to settle the class against the row as written, and
+     could not: the row is built from FIELDS, which carries what a forecast
+     says and not the marker that it is one, so classifyForecast answered null
+     on every row and the whole block did nothing.
+     
+     For a forecast derived from something already in the feed the stored class
+     happened to agree, which is why this stayed invisible. For an independent
+     one it does not. The feed has no freeze to point at - writing the ledger
+     row is what creates it - so the feed must call such a forecast
+     invalid-post-event, and verdicts.js keeps a stored class in preference to
+     re-deriving one. A genuinely prospective forecast would therefore have
+     been filed as "not a prediction" for ever, and the headline rate, which
+     counts independent-prospective forecasts and nothing else, could never
+     have contained a single one. */
+  const { events } = await feed();
+  const proto = events.find(e => e.forecast && e.forecastOf);
+  assert.ok(proto, 'fixture should produce at least one outlook to model this on');
+
+  const soon = Date.now() + 48 * 36e5;
+  const independent = Object.assign({}, proto, {
+    id: 'TEST-INDEPENDENT-OUTLOOK',
+    targetStart: new Date(soon).toISOString(),
+    targetEnd: new Date(soon + 24 * 36e5).toISOString()
+  });
+  delete independent.forecastOf;
+  delete independent.forecastKind;
+  delete independent.freezeTimestamp;
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  independent.forecastClass = H.classifyForecast(independent).forecastClass;
+  assert.equal(independent.forecastClass, 'invalid-post-event',
+    'control: until something freezes it, the feed cannot call this a prediction');
+
+  const p = tempLedger();
+  runRecorder([independent], p);
+  const row = JSON.parse(fs.readFileSync(p, 'utf8'))
+    .find(r => r.id === 'TEST-INDEPENDENT-OUTLOOK');
+  assert.ok(row, 'the outlook was not recorded at all');
+  assert.equal(row.forecastClass, 'independent-prospective',
+    'the ledger froze this forecast before its window and still files it as not a prediction');
+  assert.match(String(row.classificationReason), /before the window opening/,
+    'the class changed with no stated reason');
+  assert.ok(Date.parse(row.freezeTimestamp) < Date.parse(row.targetStart),
+    'the recorded freeze is not earlier than the window it claims');
+  /* What actually decides whether it can ever be counted. */
+  const V = require(path.join(ROOT, 'verdicts.js'));
+  assert.equal(V.forecastClassOf(row), 'independent-prospective');
+  assert.equal(V.headlineEligible(row), true,
+    'a forecast frozen before its window is still excluded from the headline rate');
+});
+
 test('a recorded outlook keeps what is needed to grade it later', async () => {
   const { events } = await feed();
   const p = tempLedger();

@@ -100,7 +100,15 @@ for (const e of events) {
      find it inconsistent with itself. */
   if (HAZARDS) {
     row.freezeEvidenced = true;
-    const c = HAZARDS.classifyForecast(row, byId.get(row.forecastOf));
+    /* The row is built from FIELDS, which carries what a forecast says and
+       not the marker that it is one, so classifying the row itself answered
+       null every time and this whole block quietly did nothing: a forecast
+       the feed had called invalid-post-event - which is what the feed must
+       call it, having no freeze yet - kept that class for ever, even though
+       writing this row is precisely the proof that it existed first. The
+       marker is supplied here, as the pages and the API already do. */
+    const c = HAZARDS.classifyForecast(Object.assign({ forecast: true }, row),
+      byId.get(row.forecastOf));
     if (c) { row.forecastClass = c.forecastClass; row.classificationReason = c.classificationReason; }
     const start = HAZARDS.effectiveForecastStart(row);
     if (start) row.effectiveForecastStart = start;

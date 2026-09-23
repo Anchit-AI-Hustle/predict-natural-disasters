@@ -176,12 +176,19 @@
     return null;
   }
 
-  function sameEvent(a, b) {
-    var fa = familyOf(a.type, a.title), fb = familyOf(b.type, b.title);
-    if (fa !== fb) return null;
-    var w = MATCH[fa] || MATCH.other;
-    var ta = onsetOf(a), tb = onsetOf(b);
-    if (ta === null || tb === null) return null;
+  /**
+   * Are two placements of one hazard family the same occurrence?
+   *
+   * Each placement carries an onset in milliseconds and a place - country,
+   * region, lat, lon, locationPrecision. The family is passed in rather than
+   * read off a label, because the ledger compares rows whose family was
+   * decided when they were first written and must not be re-derived from a
+   * string afterwards.
+   */
+  function sameOccurrence(family, a, b) {
+    var w = MATCH[family] || MATCH.other;
+    var ta = a && a.onset, tb = b && b.onset;
+    if (ta === null || ta === undefined || tb === null || tb === undefined) return null;
     var apart = Math.abs(ta - tb) / 3600e3;
     if (apart > w.hours) return null;
 
@@ -202,15 +209,43 @@
        * this file's own policy applies and they stay separate. */
       var r = regionsCompatible(a, b);
       if (!r) return null;
-      return 'Same ' + fa + ' in ' + a.country + ', reported ' + Math.round(apart) +
+      return 'Same ' + family + ' in ' + a.country + ', reported ' + Math.round(apart) +
              'h apart; at least one record is area-level, so matched by country and time. ' + r;
     }
     var la = num(a.lat), lo = num(a.lon), lb = num(b.lat), ob = num(b.lon);
     if (la === null || lo === null || lb === null || ob === null) return null;
     var d = distanceKm(la, lo, lb, ob);
     if (d > w.km) return null;
-    return 'Same ' + fa + ' reported ' + Math.round(d) + ' km and ' + Math.round(apart) +
+    return 'Same ' + family + ' reported ' + Math.round(d) + ' km and ' + Math.round(apart) +
            'h apart, within the ' + w.km + ' km / ' + w.hours + 'h window for this hazard.';
+  }
+
+  function placementOf(e, onset) {
+    return { onset: onset, country: e.country, region: e.region,
+             lat: e.lat, lon: e.lon, locationPrecision: e.locationPrecision };
+  }
+
+  function sameEvent(a, b) {
+    var fa = familyOf(a.type, a.title), fb = familyOf(b.type, b.title);
+    if (fa !== fb) return null;
+    return sameOccurrence(fa, placementOf(a, onsetOf(a)), placementOf(b, onsetOf(b)));
+  }
+
+  /**
+   * Do two canonical rows - this run's grouping and one already recorded -
+   * describe the same disaster?
+   *
+   * The canonical id is not an identity. It is built from a country, a
+   * rounded position and a minute, so two genuinely separate disasters - two
+   * magnitude-6 earthquakes 150 km apart the same morning - derive the same
+   * string. Anything reconciling a run against the ledger has to ask whether
+   * the rows are the same event, and an id collision is not that question.
+   */
+  function sameCanonical(a, b) {
+    if (!a || !b || !a.hazard || a.hazard !== b.hazard) return null;
+    var ga = a.geography || {}, gb = b.geography || {};
+    return sameOccurrence(a.hazard,
+      placementOf(ga, ms(a.onset)), placementOf(gb, ms(b.onset)));
   }
 
   /*
@@ -451,7 +486,9 @@
   var api = {
     regionsCompatible: regionsCompatible,
     FAMILIES: FAMILIES.map(function (f) { return f[0]; }), MATCH: MATCH,
-    familyOf: familyOf, familiesOf: familiesOf, sameEvent: sameEvent, significanceOf: significanceOf,
+    familyOf: familyOf, familiesOf: familiesOf, sameEvent: sameEvent,
+    sameOccurrence: sameOccurrence, sameCanonical: sameCanonical,
+    significanceOf: significanceOf,
     canonicalise: canonicalise, distanceKm: distanceKm, impactOf: impactOf
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

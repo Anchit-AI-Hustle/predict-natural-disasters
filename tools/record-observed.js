@@ -129,22 +129,82 @@ for (const e of ledger.events) {
   if (e.supersededBy) continue;
   for (const ev of (e.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, e);
 }
+/* A superseded row is not an identity anything should be written to; the row
+   that kept the identity is. */
+const keeperOf = row => {
+  const seen = new Set();
+  while (row && row.supersededBy && !seen.has(row.canonicalEventId)) {
+    seen.add(row.canonicalEventId);
+    const keeper = byId.get(row.supersededBy);
+    if (!keeper) break;
+    row = keeper;
+  }
+  return row;
+};
+
+/*
+ * An id hit is a question, not an answer.
+ *
+ * The canonical id is a country, a rounded position and a minute, so two
+ * separate disasters derive the same string: two magnitude-6 earthquakes the
+ * same morning, far enough apart to be two events under this hazard's 100 km
+ * window, both come out as OBS-earthquake-IND-20260910T0000-n01e001, and the
+ * grouping that produced them had correctly kept them apart. Reading that
+ * collision as identity merged them again here - the second quake's impact
+ * figures were written over the first's as revisions, and one real disaster
+ * left the recall denominator without leaving a trace.
+ *
+ * The provider records underneath are the evidence of identity. Where they do
+ * not overlap, the two rows have to be able to be the same occurrence before
+ * the shared id may be believed.
+ */
 const findExisting = c => {
-  const direct = byId.get(c.canonicalEventId);
-  if (direct && !direct.supersededBy) return [direct];
   const hits = new Set();
   for (const ev of (c.evidence || [])) {
     const found = ev && ev.id ? byEvidence.get(ev.id) : null;
-    if (found) hits.add(found);
+    if (found) hits.add(keeperOf(found));
   }
-  if (direct) hits.add(direct);
-  return [...hits];
+  const direct = byId.get(c.canonicalEventId);
+  const keeper = direct ? keeperOf(direct) : null;
+  let idMatch = null;
+  if (direct && !hits.has(keeper)) {
+    idMatch = OBS.sameCanonical(c, direct);
+    if (idMatch) hits.add(keeper);
+  }
+  return {
+    candidates: [...hits],
+    idMatch: idMatch,
+    /* Someone else holds the id this grouping derives, and it is not this
+       disaster. */
+    collision: direct && !idMatch && !hits.has(keeper) ? direct : null
+  };
 };
 
-let added = 0, updated = 0, changes = 0, superseded = 0, reidentified = 0;
+/* Why two rows that derive one id are not one disaster, stated in the terms
+   the matching window is set in, so the split can be argued with rather than
+   taken on trust. */
+const differenceNote = (a, b) => {
+  /* The id carries the hazard family, so two rows that derive one id always
+     share it; what can differ is when and where. */
+  const parts = [];
+  const ta = Date.parse(a.onset || ''), tb = Date.parse(b.onset || '');
+  parts.push(Number.isFinite(ta) && Number.isFinite(tb)
+    ? 'onsets ' + Math.round(Math.abs(ta - tb) / 3600e3) + 'h apart'
+    : 'an onset missing from one of them');
+  const ga = a.geography || {}, gb = b.geography || {};
+  const placed = [ga, gb].every(g => Number.isFinite(g.lat) && Number.isFinite(g.lon));
+  if (placed) parts.push(Math.round(OBS.distanceKm(ga.lat, ga.lon, gb.lat, gb.lon)) + ' km apart');
+  else parts.push('placed in ' + (ga.region || ga.country || 'an unstated area') + ' and ' +
+    (gb.region || gb.country || 'an unstated area') + ', which cannot be shown to be one area');
+  const w = OBS.MATCH[a.hazard] || OBS.MATCH.other;
+  return parts.join(', ') + '. Nothing establishes these as one occurrence under the ' +
+    w.km + ' km / ' + w.hours + 'h matching window for ' + a.hazard + '.';
+};
+
+let added = 0, updated = 0, changes = 0, superseded = 0, reidentified = 0, distinguished = 0;
 
 for (const c of significant) {
-  const candidates = findExisting(c);
+  const { candidates, idMatch, collision } = findExisting(c);
   /* A record that bridges two previously separate events means they were one
      disaster all along. The earliest-recorded row keeps the identity; the
      others are marked superseded rather than deleted, so the correction is
@@ -166,6 +226,22 @@ for (const c of significant) {
       lastSeenAt: now,
       sightings: [{ from: now, to: now }]
     });
+    /* Recording this disaster under an id another one already holds would
+       hand both to whichever lookup ran first, so it is written under a
+       distinguished id instead - carrying the id it derived and the measured
+       reason the two were not merged, so the split is auditable. */
+    if (collision) {
+      let n = 2;
+      while (byId.has(c.canonicalEventId + '-' + n)) n++;
+      row.canonicalEventId = c.canonicalEventId + '-' + n;
+      row.derivedIdCollision = {
+        at: now,
+        derivedId: c.canonicalEventId,
+        heldBy: collision.canonicalEventId,
+        reason: differenceNote(c, collision)
+      };
+      distinguished++;
+    }
     ledger.events.push(row);
     byId.set(row.canonicalEventId, row);
     for (const ev of (row.evidence || [])) if (ev && ev.id) byEvidence.set(ev.id, row);
@@ -174,6 +250,15 @@ for (const c of significant) {
   }
 
   noteSighting(existing, now);
+  /* Recognised by the id alone: no provider record this run overlaps the ones
+     already recorded, so the reason the two are one disaster is the match
+     itself, and it is written down rather than assumed. */
+  if (idMatch) {
+    existing.matchedById = existing.matchedById || [];
+    if (!existing.matchedById.some(m => m.why === idMatch)) {
+      existing.matchedById.push({ at: now, why: idMatch });
+    }
+  }
   /* The id this run would have generated. Recorded when it differs, never
      applied: the identity a disaster was first written under is what every
      other record refers to. */
@@ -232,6 +317,7 @@ ledger.method = {
   significance: 'An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.',
   sightings: 'Each event records the runs during which it was actually being carried by a provider, not only the last time it was seen. A single latest timestamp is overwritten on the next run, which destroys the evidence that a disaster was in the feed throughout a forecast window that has since closed. Consecutive sightings more than ' + SIGHTING_GAP_HOURS + ' hours apart start a new run rather than being joined.',
   frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions.',
+  identity: 'A canonical id is a country, a rounded position and a minute, so two separate disasters can derive the same one. An id already held is believed only where the provider records overlap or the two rows can be the same occurrence under this hazard\u2019s matching window; otherwise the new disaster is recorded under a distinguished id, carrying the id it derived and the measured reason the two were not merged.',
   notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed.',
   observationsOnly: 'Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations.'
 };
@@ -243,12 +329,14 @@ ledger.lastRun = {
   significant: significant.length,
   supersededThisRun: superseded,
   reidentifiedThisRun: reidentified,
+  distinguishedFromCollidingIdThisRun: distinguished,
   belowSignificanceBar: canonical.length - significant.length
 };
 
 fs.writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + '\n');
 console.log('observed ledger: ' + added + ' new, ' + updated + ' seen again, ' + changes +
-  ' figure(s) revised, ' + reidentified + ' re-identified, ' + superseded + ' superseded — ' +
+  ' figure(s) revised, ' + reidentified + ' re-identified, ' + distinguished +
+  ' id collision(s) distinguished, ' + superseded + ' superseded — ' +
   ledger.events.filter(e => !e.supersededBy).length + ' significant disasters recorded ' +
   '(' + observed.length + ' provider records → ' + canonical.length + ' events, ' +
   (canonical.length - significant.length) + ' below the bar; ' +
