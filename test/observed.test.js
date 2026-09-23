@@ -390,3 +390,95 @@ test('a compound hazard record keeps every family it names', () => {
   assert.equal(typeof OBS.familyOf.families, 'function',
     'the classifier does not carry its compound form, so callers cannot use it');
 });
+
+test('a hazard family is a whole word, not a substring', async () => {
+  /* "hail" and "wind" both sit inside "Thailand", so a flood outlook for
+     Thailand named two hazard families and a complex-emergency declaration
+     there was classified as severe weather outright. */
+  assert.deepEqual(OBS.familiesOf('', '3-day Flood risk outlook — Thailand'), ['flood'],
+    'a place name was read as a hazard');
+  assert.deepEqual(OBS.familiesOf('', 'Thailand: Complex Emergency'), ['other']);
+  assert.deepEqual(OBS.familiesOf('', 'Winding River advisory'), ['other']);
+  assert.equal(OBS.familyOf('', 'Campfire in Oregon'), 'other');
+
+  // The words that are hazards still are.
+  assert.deepEqual(OBS.familiesOf('Flood / Landslide', ''), ['flood', 'landslide']);
+  assert.equal(OBS.familyOf('', 'Severe storm warning'), 'severe-weather');
+  assert.equal(OBS.familyOf('', 'M 5.9 earthquake'), 'earthquake');
+  assert.equal(OBS.familyOf('Tropical Cyclone', 'RAI-26'), 'tropical-cyclone');
+
+  /* A title may not widen a claim; only a compound type may. */
+  assert.deepEqual(OBS.familiesOf('Flood', 'Nepal: Floods and Landslides - Sep 2026'), ['flood'],
+    'a title mentioning a second hazard widened the claim');
+});
+
+test('a country-wide record does not bridge two regional disasters', async () => {
+  /* After the pairwise fix, a national declaration was still compatible with
+     every regional record in its country — so India, Assam and Gujarat all
+     joined one group through the record that matched both, and a real
+     disaster left the denominator again. */
+  const rec = (region, t, id, precision) => ({ id: id, type: 'Flood', title: 'Flood in ' + region,
+    country: 'India', region: region, locationPrecision: precision || 'regional',
+    lat: 26, lon: 92, startedAt: t, updated: t });
+  const groups = OBS.canonicalise([
+    rec('India', '2026-09-10T12:00:00Z', 'rw-india', 'country'),
+    rec('Assam', '2026-09-10T00:00:00Z', 'assam'),
+    rec('Gujarat', '2026-09-11T00:00:00Z', 'gujarat')
+  ]);
+  assert.equal(groups.length, 3,
+    'the two regional disasters were bridged into one through the national declaration');
+  const unattached = groups.filter(g => g.unattachedReason);
+  assert.equal(unattached.length, 1,
+    'the record that could have belonged to either was attached to one of them anyway');
+  assert.match(unattached[0].unattachedReason, /could belong to 2 separate disasters/i);
+  assert.deepEqual(unattached[0].evidence.map(e => e.id), ['rw-india']);
+
+  /* The case merging exists for is untouched: one agency's province record
+     and one national declaration of the same single event. */
+  const pair = OBS.canonicalise([
+    { id: 'gd', type: 'Tropical Cyclone', title: 'TC RAI-26', country: 'Philippines',
+      region: 'Eastern Visayas', locationPrecision: 'regional', lat: 11, lon: 125,
+      startedAt: '2026-09-12T00:00:00Z', updated: '2026-09-12T00:00:00Z' },
+    { id: 'rw', type: 'Tropical Cyclone', title: 'Philippines: Tropical Cyclone', country: 'Philippines',
+      region: 'Philippines', locationPrecision: 'country', lat: 12, lon: 122,
+      startedAt: '2026-09-12T00:00:00Z', updated: '2026-09-12T00:00:00Z' }
+  ]);
+  assert.equal(pair.length, 1, 'a province record and its national declaration stopped merging');
+});
+
+test('provider records learned on earlier runs are not forgotten', async () => {
+  /* The evidence list was replaced with whatever this run's feed carried, and
+     those ids are the index the ledger reconciles on. A disaster seen from A
+     and B, then from B alone, lost A — and the next A-only feed appended the
+     same physical disaster a second time. */
+  const { events } = await feed();
+  const observed = events.filter(e => e && !e.forecast && e.evidenceState === 'observed');
+  const canon = OBS.canonicalise(observed).filter(c => c.significant);
+  const pair = canon.find(c => c.evidence.length > 1);
+  assert.ok(pair, 'the fixture no longer has a disaster reported by two providers');
+  const [a, b] = pair.evidence.map(e => e.id);
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-eviction-'));
+  const ledgerPath = path.join(dir, 'observed.json');
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, events: [] }));
+  const run = (keep) => {
+    const p = path.join(dir, 'events-' + keep.join('-') + '.json');
+    fs.writeFileSync(p, JSON.stringify({ events: events.filter(e => !pair.evidence.some(x => x.id === e.id) || keep.includes(e.id)) }));
+    require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', 'record-observed.js'), p, ledgerPath], { stdio: 'pipe' });
+    return JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  };
+
+  run([a, b]);
+  const only = run([b]);
+  const row = only.events.find(e => (e.evidence || []).some(x => x.id === b));
+  assert.ok((row.evidence || []).some(x => x.id === a),
+    'a provider record learned on an earlier run was dropped from the evidence');
+
+  const back = run([a]);
+  const carrying = back.events.filter(e => !e.supersededBy &&
+    (e.evidence || []).some(x => x.id === a || x.id === b));
+  assert.equal(carrying.length, 1,
+    'the same disaster was recorded twice after its providers alternated');
+  fs.rmSync(dir, { recursive: true, force: true });
+});

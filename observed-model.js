@@ -24,16 +24,22 @@
 
   /* Hazard families. Two records can only be the same disaster if they are the
      same kind of thing, and the providers each spell their types differently. */
+  /* Whole words only.
+   *
+   * Without the boundaries these matched inside ordinary place names: "hail"
+   * and "wind" both sit inside "Thailand", so "3-day Flood risk outlook -
+   * Thailand" named two hazard families and "Thailand: Complex Emergency"
+   * was classified as severe weather outright. A substring is not a hazard. */
   var FAMILIES = [
-    ['earthquake', /earthquake|seismic|quake/i],
-    ['tropical-cyclone', /cyclone|hurricane|typhoon|tropical storm/i],
-    ['flood', /flood|inundation|flash.?flood/i],
-    ['landslide', /landslide|mudslide|slope failure/i],
-    ['wildfire', /wildfire|fire|bushfire/i],
-    ['volcano', /volcan/i],
-    ['drought', /drought/i],
-    ['extreme-heat', /heat/i],
-    ['severe-weather', /storm|tornado|wind|hail|winter/i]
+    ['earthquake', /\b(?:earthquakes?|seismic|quakes?)\b/i],
+    ['tropical-cyclone', /\b(?:cyclones?|hurricanes?|typhoons?|tropical storms?)\b/i],
+    ['flood', /\b(?:floods?|flooding|inundation|flash.?floods?)\b/i],
+    ['landslide', /\b(?:landslides?|mudslides?|slope failure)\b/i],
+    ['wildfire', /\b(?:wildfires?|bushfires?|forest fires?|fires?)\b/i],
+    ['volcano', /\b(?:volcano|volcanoes|volcanic|volcan\w*)\b/i],
+    ['drought', /\b(?:droughts?)\b/i],
+    ['extreme-heat', /\b(?:heat|heatwaves?|extreme heat)\b/i],
+    ['severe-weather', /\b(?:storms?|tornado(?:es)?|winds?|hail|winter)\b/i]
   ];
 
   /*
@@ -49,10 +55,19 @@
    * graded against.
    */
   function familiesOf(type, title) {
-    var s = String(type || '') + ' ' + String(title || '');
+    var both = String(type || '') + ' ' + String(title || '');
     var out = [];
+    /* The primary family is read from the type and the title together, as it
+       always has been. Any FURTHER family has to come from the type alone:
+       a claim is widened only where the thing it names is itself compound
+       ("Flood / Landslide"), never because its title mentions another hazard
+       in passing or happens to contain the letters of one. */
     for (var i = 0; i < FAMILIES.length; i++) {
-      if (FAMILIES[i][1].test(s) && out.indexOf(FAMILIES[i][0]) < 0) out.push(FAMILIES[i][0]);
+      if (FAMILIES[i][1].test(both)) { out.push(FAMILIES[i][0]); break; }
+    }
+    var t = String(type || '');
+    for (var j = 0; j < FAMILIES.length; j++) {
+      if (FAMILIES[j][1].test(t) && out.indexOf(FAMILIES[j][0]) < 0) out.push(FAMILIES[j][0]);
     }
     return out.length ? out : ['other'];
   }
@@ -299,24 +314,59 @@
   function canonicalise(records, opts) {
     var o = opts || {};
     var groups = [];
+    /* The most precisely placed records form the groups first, and area-level
+       ones join afterwards.
+       
+       Order decided attribution otherwise: a national declaration met the one
+       regional disaster recorded so far and joined it, before the second
+       regional disaster it equally covers had been seen at all. Seeing every
+       precise record first is what lets the ambiguity below be noticed. */
+    var PRECISION_RANK = { incident: 0, polygon: 1, admin2: 2, admin1: 3, regional: 4, country: 5, unknown: 6 };
+    var rankOf = function (e) {
+      var r = PRECISION_RANK[e && e.locationPrecision];
+      return r === undefined ? 9 : r;
+    };
     var list = (records || []).slice().sort(function (a, b) {
-      return (onsetOf(a) || 0) - (onsetOf(b) || 0);
+      return rankOf(a) - rankOf(b) || (onsetOf(a) || 0) - (onsetOf(b) || 0);
     });
 
+    /* A record joins a group only if it matches EVERY record already in it.
+     *
+     * Matching any one member let a country-wide record bridge two that
+     * contradict each other: a ReliefWeb declaration for India, then floods
+     * in Assam and in Gujarat, and all three became one disaster through the
+     * record that was compatible with both. Requiring every pair keeps the
+     * two regional disasters apart while the ordinary case - one agency's
+     * province record and one national declaration of the same event - still
+     * merges, because those two do match each other. */
     for (var i = 0; i < list.length; i++) {
-      var e = list[i], placed = false;
-      for (var g = 0; g < groups.length && !placed; g++) {
+      var e = list[i], hits = [];
+      for (var g = 0; g < groups.length; g++) {
+        var reason = null, all = true;
         for (var m = 0; m < groups[g].records.length; m++) {
           var why = sameEvent(groups[g].records[m], e);
-          if (why) {
-            groups[g].records.push(e);
-            groups[g].mergeReasons.push(why);
-            placed = true;
-            break;
-          }
+          if (!why) { all = false; break; }
+          if (reason === null) reason = why;
         }
+        if (all && reason !== null) hits.push({ g: g, why: reason });
       }
-      if (!placed) groups.push({ records: [e], mergeReasons: [] });
+      if (hits.length === 1) {
+        groups[hits[0].g].records.push(e);
+        groups[hits[0].g].mergeReasons.push(hits[0].why);
+        continue;
+      }
+      /* Matching two groups at once is not a reason to pick one.
+       *
+       * A national declaration covering a whole country is compatible with
+       * every regional disaster inside it, so joining the first one met would
+       * attribute its casualties to whichever record happened to sort first.
+       * An ambiguous record stays its own row and says so - a visible extra
+       * row can be reconciled later, while a wrong attribution cannot be seen
+       * at all. */
+      var extra = hits.length > 1
+        ? 'This record could belong to ' + hits.length + ' separate disasters in the same country and window, so it has not been attached to any of them.'
+        : null;
+      groups.push({ records: [e], mergeReasons: [], ambiguous: extra });
     }
 
     return groups.map(function (grp) {
@@ -392,7 +442,8 @@
           return { id: r.id, source: r.source, sourceUrl: r.sourceUrl || null,
             updated: r.updated || null, locationPrecision: r.locationPrecision || null };
         }),
-        mergeReasons: grp.mergeReasons
+        mergeReasons: grp.mergeReasons,
+        unattachedReason: grp.ambiguous || null
       };
     });
   }

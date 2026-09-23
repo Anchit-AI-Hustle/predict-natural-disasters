@@ -43,4 +43,14 @@ function draw(){const a=PND.savedLocations();
    a home in California. A place entered as bare coordinates has none, and the
    row for such an outlook says so rather than guessing. */
 let foundCountry='';
+/* The geocoded country belongs to the coordinates it came back with, and to
+   nothing else. It survived any later edit, so searching Paris and then
+   pasting Tokyo's coordinates saved Tokyo as being in France — and a
+   country-wide French outlook would then have been shown for it while every
+   Japanese one was withheld. Any change to the place clears it. */
+['input','change'].forEach(ev=>[placeName,lat,lon].forEach(f=>f.addEventListener(ev,()=>{
+  if(!foundCountry)return;
+  foundCountry='';
+  placeResult.textContent='Place changed, so the country it was in is no longer known. Search by name again to record it.';
+})));
 findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.textContent='Enter a place first.';return}placeResult.textContent='Finding place…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}),a=await r.json();if(!a.length)throw new Error('not found');lat.value=(+a[0].lat).toFixed(6);lon.value=(+a[0].lon).toFixed(6);foundCountry=(a[0].address&&a[0].address.country)||'';placeResult.textContent='Found: '+a[0].display_name+' · confirm and Save.'}catch(e){foundCountry='';placeResult.textContent='Place search unavailable. Enter latitude/longitude manually.'}};notifyBtn.onclick=async()=>{if(!('Notification' in window)){notifyBtn.textContent='This browser cannot show alerts';return}const p=await Notification.requestPermission();notifyBtn.textContent=p==='granted'?'Alerting while this page is open':'Alerts not enabled'};PND.initSort('sortBy',RISK_SORTS,draw);draw();setTimeout(()=>PND.startTour(),500);</script><script src="/glossary.js"></script></body></html>

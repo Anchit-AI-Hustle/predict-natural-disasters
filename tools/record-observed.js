@@ -186,8 +186,22 @@ for (const c of significant) {
     }
   }
   existing.geography = c.geography;
-  existing.evidence = c.evidence;
-  existing.mergeReasons = c.mergeReasons;
+  /* Evidence accumulates; it is never replaced.
+   *
+   * Assigning this run's evidence dropped the provider records learned on
+   * earlier runs, and those ids are the index this ledger reconciles on. A
+   * disaster first seen from providers A and B, then carried by B alone,
+   * lost A from the index - and the next feed carrying only A appended the
+   * same physical disaster as a second row, under a second id, in the recall
+   * denominator for good. */
+  const byEvidenceId = new Map();
+  for (const ev of (existing.evidence || [])) if (ev && ev.id) byEvidenceId.set(ev.id, ev);
+  for (const ev of (c.evidence || [])) if (ev && ev.id) byEvidenceId.set(ev.id, ev);
+  existing.evidence = [...byEvidenceId.values()];
+  for (const why of (c.mergeReasons || [])) {
+    existing.mergeReasons = existing.mergeReasons || [];
+    if (!existing.mergeReasons.includes(why)) existing.mergeReasons.push(why);
+  }
   for (const f of TRACKED) {
     const before = existing[f] === undefined ? null : existing[f];
     const after = c[f] === undefined ? null : c[f];

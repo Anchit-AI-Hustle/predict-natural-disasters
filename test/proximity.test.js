@@ -461,3 +461,49 @@ test('the page says which country-wide outlooks it could not place', async () =>
     'a place with a country recorded was still reported as unplaceable');
   r.close(); r2.close();
 });
+
+test('the country a place was found in is forgotten when the place changes', async () => {
+  /* The geocoded country survived any later edit, so searching Paris and then
+     pasting Tokyo's coordinates saved Tokyo as being in France — and a
+     country-wide French outlook would then be shown for it while every
+     Japanese one was withheld. */
+  const r = await renderPage('personal-risk.html', { waitFor: d => !!d.getElementById('placeName') });
+  const d = r.document, w = r.window;
+  w.fetch = async (u) => String(u).includes('nominatim')
+    ? { ok: true, json: async () => [{ lat: '48.85', lon: '2.35', display_name: 'Paris, France',
+        address: { country: 'France' } }] }
+    : { ok: true, status: 200, headers: { get: () => null }, json: async () => ({ events: [], meta: {} }) };
+
+  d.getElementById('placeName').value = 'Paris';
+  d.getElementById('findPlace').click();
+  await new Promise(res => setTimeout(res, 200));
+  assert.equal(d.getElementById('lat').value, '48.850000', 'the search did not fill the coordinates');
+
+  const save = () => {
+    d.getElementById('f').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
+    const all = JSON.parse(w.localStorage.getItem('pnd_saved_locations') || '[]');
+    return all[all.length - 1];
+  };
+
+  /* The coordinates are replaced by hand before saving, which is the case
+     that went wrong: the country from the search was still attached. */
+  d.getElementById('placeName').value = 'Tokyo';
+  const lat = d.getElementById('lat');
+  lat.value = '35.68';
+  lat.dispatchEvent(new w.Event('input', { bubbles: true }));
+  d.getElementById('lon').value = '139.69';
+  const moved = save();
+  assert.equal(moved.lat, 35.68);
+  assert.equal(moved.country, '',
+    'a place moved to Tokyo was saved as being in France');
+  assert.match(d.getElementById('placeResult').textContent, /no longer known/i,
+    'nothing told the reader the country had been dropped');
+
+  /* And saved straight from the search, the country is still recorded. */
+  d.getElementById('placeName').value = 'Paris';
+  d.getElementById('findPlace').click();
+  await new Promise(res => setTimeout(res, 200));
+  assert.equal(save().country, 'France',
+    'a place saved exactly as it was found lost the country it was found in');
+  r.close();
+});

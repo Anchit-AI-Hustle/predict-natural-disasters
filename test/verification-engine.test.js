@@ -525,3 +525,74 @@ test('a claim naming two hazards needs both of them watched', () => {
   assert.equal(both.intervals[0].from, '2026-09-01T03:00:00.000Z',
     'a compound claim was credited with coverage of only one of its hazards');
 });
+
+/* ------------- what a hit needs, and what a false positive needs */
+
+test('a disaster on record bears a forecast out whether or not an absence could have been shown', () => {
+  /* The coverage gate ran before the matching loop, so a window the record
+     could not cover came back PENDING even with a matching disaster sitting
+     in the ledger. No flood, wildfire or volcano source is exhaustive, so no
+     outlook for those hazards could ever be a hit — only ungradeable —
+     however plainly it had been borne out. */
+  const nothingWatching = { from: null, to: null, scans: 0, intervals: [] };
+  const borneOut = grade(prediction(), [disaster()], { observedCoverage: nothingWatching });
+  assert.equal(borneOut.classification, 'HIT',
+    'a disaster inside the frozen geography and window did not bear out the forecast');
+  assert.equal(borneOut.absenceEstablishable, false,
+    'the verdict does not record that the opposite could not have been shown');
+
+  /* And the asymmetry is not silently averaged away: a rate made only of the
+     outcomes that could be found is not a rate. */
+  const s = V.score([borneOut], []);
+  assert.equal(s.precision, null, 'a precision was published from hits alone');
+  assert.equal(s.hit, 0);
+  assert.equal(s.hitsOutsideCoverage, 1, 'the hit was dropped rather than counted and named');
+
+  // Nothing observed, and nothing watching: still ungradeable.
+  const quiet = grade(prediction(), [], { observedCoverage: nothingWatching });
+  assert.equal(quiet.classification, 'PENDING');
+  assert.equal(quiet.ungradeableReason, 'OBSERVED_RECORD_EMPTY');
+
+  // Nothing observed, with coverage: a false positive, and countable.
+  const failed = grade(prediction(), []);
+  assert.equal(failed.classification, 'MISS_FALSE_POSITIVE');
+  assert.equal(failed.absenceEstablishable, true);
+  assert.equal(V.score([failed], []).precision, 0);
+});
+
+test('a hazard nobody forecasts is not the engine failing to forecast it', () => {
+  /* The hazard table states which onsets can be anticipated at all, and the
+     methodology page says plainly that no agency forecasts the onset of an
+     individual earthquake. Blaming the engine for that would have dominated
+     the reason a disaster went unforecast, earthquakes being the hazard this
+     record sees most of. */
+  const HAZ = require(path.join(ROOT, 'hazard-model.js'));
+  assert.equal(HAZ.HAZARDS.Earthquake.forecastable, false, 'fixture: the table should say so');
+  const led = {
+    retention: { detailFrom: '2026-09-01T00:00:00Z' },
+    providers: { usgs: { hazards: ['Earthquake'], scope: { kind: 'global' },
+      completeness: 'exhaustive', recordsObservations: true } },
+    scans: [{ scanTimestamp: '2026-09-02T23:00:00Z', providers: [{ provider: 'usgs', status: 'SCANNED' }] }]
+  };
+  const quake = { canonicalEventId: 'OBS-eq', hazard: 'earthquake', hazardLabel: 'Earthquake',
+    significant: true, onset: '2026-09-03T00:00:00Z',
+    geography: { country: 'Nepal', lat: 27.7, lon: 85.3 } };
+  const forecastable = e => {
+    const h = HAZ.HAZARDS[e.hazardLabel];
+    return h ? h.forecastable !== false : true;
+  };
+
+  const a = V.assessCoverage(quake, [], led, { hazardFamilyOf: H, hazardForecastable: forecastable });
+  assert.equal(a.status, 'NOT_FORECASTABLE',
+    'an unpredicted earthquake was attributed to the engine failing to forecast it');
+  assert.equal(a.falseNegative, true,
+    'it still happened and nothing predicted it: that is still a false negative');
+  assert.match(a.reason, /not forecastable/i);
+
+  /* A hazard the table does say is forecastable is unchanged, and so is the
+     behaviour where no table is supplied. */
+  const flood = Object.assign({}, quake, { hazard: 'flood', hazardLabel: 'Flood' });
+  assert.notEqual(V.assessCoverage(flood, [], led, { hazardFamilyOf: H, hazardForecastable: forecastable }).status,
+    'NOT_FORECASTABLE');
+  assert.equal(V.assessCoverage(quake, [], led, { hazardFamilyOf: H }).status, 'FORECAST_FAILURE');
+});

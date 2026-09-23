@@ -283,8 +283,14 @@
     var at = o.now === undefined ? Date.now() : o.now;
     var claim = frozenClaim(prediction, hazardFamilyOf);
 
+    var absenceEstablishable = null;      // decided lazily, below
     var say = function (classification, reason, matched, ungradeable) {
       return {
+        /* Could the opposite have been shown? A hit found where nothing could
+           have established an absence is a true statement about this window
+           and an unsafe one to average: counting it in a precision whose
+           misses were all refused would report the hits and hide the rest. */
+        absenceEstablishable: absenceEstablishable,
         verificationId: 'VER-' + String(prediction.id) + '@' + String(prediction.targetStart),
         predictionId: prediction.id,
         forecastClass: claim.forecastClass,
@@ -333,49 +339,60 @@
      * precision from that would have been a fabricated number, not a poor
      * one. The record becomes gradeable as the observed ledger fills.
      */
-    /* A window may be given directly, or resolved for this forecast's own
-       hazard and place — which is the only form that can tell "nothing
-       happened" apart from "nothing was watching for it". */
-    var cov = typeof o.observedCoverage === 'function'
-      ? o.observedCoverage(claim)
-      : o.observedCoverage;
-    if (cov) {
-      var covFrom = ms(cov.from), covTo = ms(cov.to);
-      if (covFrom === null || covTo === null) {
-        return say(CLASSIFICATION.PENDING,
-          'The record of observed disasters is empty, so there is nothing this window can be graded against.', [],
-          'OBSERVED_RECORD_EMPTY');
-      }
-      if (start !== null && start < covFrom) {
-        return say(CLASSIFICATION.PENDING,
-          'This window opens before the record of observed disasters begins (' + cov.from +
-          '), so an absence of matching disasters would say nothing about what happened.', [],
-          'OBSERVED_RECORD_STARTS_LATER');
-      }
-      if (end > covTo) {
-        return say(CLASSIFICATION.PENDING,
-          'This window closes after the record of observed disasters was last updated (' + cov.to + ').', [],
-          'OBSERVED_RECORD_NOT_YET_UPDATED');
-      }
-      /* Inside the outer bounds is not the same as watched throughout. A
-         provider that succeeded either side of a two-day outage covers the
-         days it answered on and not the ones in between, and a window in the
-         gap cannot be failed for an absence nobody was there to see. */
-      if (cov.intervals && cov.intervals.length) {
-        var opens = start === null ? end : start;
-        var whole = null;
-        for (var c = 0; c < cov.intervals.length; c++) {
-          var iv = cov.intervals[c], a = ms(iv.from), b = ms(iv.to);
-          if (a !== null && b !== null && a <= opens && b >= end) { whole = iv; break; }
-        }
-        if (!whole) {
+    /* Coverage decides what an ABSENCE is worth, and nothing else.
+     *
+     * This ran before the matching loop, so a window the record could not
+     * cover came back PENDING even when a matching disaster was sitting in
+     * the ledger. Since no flood, wildfire or volcano source is exhaustive,
+     * no outlook for those hazards could ever be a hit - only ungradeable -
+     * however plainly it had been borne out. A positive observation needs no
+     * proof that nothing else happened; only "nothing happened" does. So the
+     * matching runs first, and this gate is consulted only on the way to a
+     * false positive.
+     */
+    var coverageGate = function () {
+      var cov = typeof o.observedCoverage === 'function'
+        ? o.observedCoverage(claim)
+        : o.observedCoverage;
+      if (cov) {
+        var covFrom = ms(cov.from), covTo = ms(cov.to);
+        if (covFrom === null || covTo === null) {
           return say(CLASSIFICATION.PENDING,
-            'No unbroken run of scans covers this window: the record of what was examined has a gap of more than ' +
-            (cov.maxGapHours || MAX_SCAN_GAP_HOURS) + ' hours inside it, so an absence of matching disasters would say nothing about what happened.',
-            [], 'OBSERVED_RECORD_HAS_A_GAP');
+            'The record of observed disasters is empty, so there is nothing this window can be graded against.', [],
+            'OBSERVED_RECORD_EMPTY');
+        }
+        if (start !== null && start < covFrom) {
+          return say(CLASSIFICATION.PENDING,
+            'This window opens before the record of observed disasters begins (' + cov.from +
+            '), so an absence of matching disasters would say nothing about what happened.', [],
+            'OBSERVED_RECORD_STARTS_LATER');
+        }
+        if (end > covTo) {
+          return say(CLASSIFICATION.PENDING,
+            'This window closes after the record of observed disasters was last updated (' + cov.to + ').', [],
+            'OBSERVED_RECORD_NOT_YET_UPDATED');
+        }
+        /* Inside the outer bounds is not the same as watched throughout. A
+           provider that succeeded either side of a two-day outage covers the
+           days it answered on and not the ones in between, and a window in the
+           gap cannot be failed for an absence nobody was there to see. */
+        if (cov.intervals && cov.intervals.length) {
+          var opens = start === null ? end : start;
+          var whole = null;
+          for (var c = 0; c < cov.intervals.length; c++) {
+            var iv = cov.intervals[c], a = ms(iv.from), b = ms(iv.to);
+            if (a !== null && b !== null && a <= opens && b >= end) { whole = iv; break; }
+          }
+          if (!whole) {
+            return say(CLASSIFICATION.PENDING,
+              'No unbroken run of scans covers this window: the record of what was examined has a gap of more than ' +
+              (cov.maxGapHours || MAX_SCAN_GAP_HOURS) + ' hours inside it, so an absence of matching disasters would say nothing about what happened.',
+              [], 'OBSERVED_RECORD_HAS_A_GAP');
+          }
         }
       }
-    }
+      return null;
+    };
 
     var matched = [], early = [], awaitingActivity = [];
     var continuationKind = CONTINUATION_EVIDENCE[claim.forecastClass] || null;
@@ -402,6 +419,14 @@
       matched.push({ event: ev, level: geo.level, why: geo.why });
     }
 
+    /* Asked before any verdict is returned, so every verdict carries it, but
+       acted on only where an absence is being read. */
+    var gate = coverageGate();
+    absenceEstablishable = !gate;
+
+    /* Positive evidence first, and without the coverage gate: a disaster that
+       is on record inside the frozen geography and window bears the forecast
+       out whether or not anything could have proved the opposite. */
     var full = matched.filter(function (m) { return m.level === 'full'; });
     if (full.length) {
       return say(CLASSIFICATION.HIT,
@@ -411,6 +436,9 @@
       return say(CLASSIFICATION.PARTIAL_HIT,
         'A significant ' + claim.hazard + ' was observed inside the window but only partly inside the geography this outlook named. ' + matched[0].why, matched);
     }
+    /* From here every answer rests on nothing having been observed, so what
+       the record could have seen decides whether that means anything. */
+    if (gate) return gate;
     if (early.length) {
       return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
         'The only matching ' + claim.hazard + ' began at ' + early[0].event.onset + ', before this forecast can be shown to have existed (' +
@@ -655,7 +683,11 @@
   var COVERAGE = {
     COVERAGE_FAILURE: 'COVERAGE_FAILURE',
     FORECAST_FAILURE: 'FORECAST_FAILURE',
-    DATA_UNAVAILABLE: 'DATA_UNAVAILABLE'
+    DATA_UNAVAILABLE: 'DATA_UNAVAILABLE',
+    /* The hazard's own onset cannot be forecast, by this system or anyone
+       else's. Calling that a forecasting failure asserts the engine could
+       have predicted something the project states plainly that nobody can. */
+    NOT_FORECASTABLE: 'NOT_FORECASTABLE'
   };
 
   /**
@@ -681,6 +713,23 @@
     if (matched.length) {
       return { falseNegative: false, status: null, matched: matched,
         reason: 'An independent prospective forecast covering this disaster existed beforehand.' };
+    }
+
+    /* Nothing forecast it, and nothing could have.
+     *
+     * The hazard table states which onsets can be anticipated at all: an
+     * individual earthquake cannot, and this project says so on its own
+     * methodology page. Attributing every unpredicted earthquake to a
+     * forecasting failure blamed the engine for not doing the one thing it
+     * states that nobody can do - and, because earthquakes are the hazard
+     * this record sees most of, that single misattribution would have
+     * dominated the reason a disaster went unforecast. It remains a false
+     * negative: the disaster happened and nothing predicted it. What changes
+     * is the reason given for it, which is counted and shown separately. */
+    var forecastable = (opts || {}).hazardForecastable;
+    if (typeof forecastable === 'function' && forecastable(event) === false) {
+      return { falseNegative: true, status: COVERAGE.NOT_FORECASTABLE, matched: [],
+        reason: 'The onset of this hazard is not forecastable. No agency forecasts it and neither does this project, so nothing here was in a position to predict it; it is counted as unforecast, not as a forecasting failure.' };
     }
 
     var onset = ms(event.onset);
@@ -733,14 +782,22 @@
   function score(verifications, observedAssessments) {
     var hit = 0, partial = 0, miss = 0, pending = 0, invalid = 0, ungradeable = 0;
     var ungradeableBy = {};
+    /* A hit can be established from the disaster record alone; a false
+       positive cannot - it needs a source whose silence is evidence. So the
+       two are not always available on the same windows, and averaging over a
+       set where only hits were reachable would report a precision made
+       entirely of the outcomes that could be found. Those hits are counted,
+       named and kept out of the rate. */
+    var hitsOutsideCoverage = 0;
     for (var i = 0; i < (verifications || []).length; i++) {
       var v = verifications[i], c = v.classification;
       if (v.gradeable === false && v.ungradeableReason && v.ungradeableReason !== 'WINDOW_STILL_OPEN') {
         ungradeable++;
         ungradeableBy[v.ungradeableReason] = (ungradeableBy[v.ungradeableReason] || 0) + 1;
       }
-      if (c === 'HIT') hit++;
-      else if (c === 'PARTIAL_HIT') partial++;
+      var symmetric = v.absenceEstablishable !== false;
+      if (c === 'HIT') { if (symmetric) hit++; else hitsOutsideCoverage++; }
+      else if (c === 'PARTIAL_HIT') { if (symmetric) partial++; else hitsOutsideCoverage++; }
       else if (c === 'MISS_FALSE_POSITIVE') miss++;
       else if (c === 'PENDING') pending++;
       else if (c === 'INVALID_POST_EVENT') invalid++;
@@ -748,7 +805,7 @@
     var eligible = hit + partial + miss;
 
     var predicted = 0, partlyPredicted = 0, falseNegatives = 0;
-    var coverage = { COVERAGE_FAILURE: 0, FORECAST_FAILURE: 0, DATA_UNAVAILABLE: 0 };
+    var coverage = { COVERAGE_FAILURE: 0, FORECAST_FAILURE: 0, DATA_UNAVAILABLE: 0, NOT_FORECASTABLE: 0 };
     for (var j = 0; j < (observedAssessments || []).length; j++) {
       var a = observedAssessments[j];
       if (!a.falseNegative) {
@@ -768,6 +825,7 @@
 
     return {
       hit: hit, partial: partial, miss: miss, pending: pending, invalid: invalid,
+      hitsOutsideCoverage: hitsOutsideCoverage,
       ungradeable: ungradeable, ungradeableBy: ungradeableBy,
       eligibleMaturedPredictions: eligible,
       significantObservedEvents: significant,
