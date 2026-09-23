@@ -607,7 +607,19 @@ const PND={
     ['search','save','evidence'].forEach(k=>{try{localStorage.removeItem('pnd_coach_'+k)}catch(e){}});
     this.startTour(true,['search','save','evidence']);
   },
-  nav(active=''){return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Personal Risk','/personal-risk'],['Verification','/accuracy'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
+  /* Five destinations, each a question a reader arrives with: what is
+     happening and where (Map), what has been reported or warned (Alerts &
+     events), what may come (Forecasts), what bears on my places (My places),
+     and whether any of this can be trusted (Track record). The logo is the
+     sixth: it is "check a place", the question the home page answers first.
+     Everything else is one tap away in the footer rather than eleven links
+     across the top. */
+  NAV:[['Map','/live-map'],['Alerts & events','/alerts'],['Forecasts','/forecasts'],['My places','/personal-risk'],['Track record','/accuracy']],
+  NAV_ALIAS:{'Live Map':'Map','Alerts':'Alerts & events','Calamities':'Alerts & events','Events':'Alerts & events','Personal Risk':'My places','Verification':'Track record','Accuracy':'Track record'},
+  nav(active=''){const on=this.NAV_ALIAS[active]||active;return `<header class="top"><a class="logo" href="/" aria-label="Predict Natural Disasters — check a place"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Check a place · live hazards · forecasts</small></span></a><nav aria-label="Main">${this.NAV.map(([n,u])=>`<a class="${on===n?'active':''}" href="${u}"${on===n?' aria-current="page"':''}>${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
+  /* Everything that left the top bar, kept one tap away on every page. */
+  FOOT:[['Check a place','/'],['Live events','/events'],['Official warnings','/official-warnings'],['Calamities','/calamities'],['Regions','/regions'],['Forecast calendar','/forecast-calendar'],['Methodology','/methodology'],['Sources & coverage','/resources'],['Insights','/insights'],['About','/about']],
+  footer(){return `<footer class="sitefoot" aria-label="More of this site"><nav>${this.FOOT.map(([n,u])=>`<a href="${u}">${n}</a>`).join('')}</nav><p>Situational awareness from public sources. Not an official warning service — in an emergency, follow your local authorities.</p></footer>`;},
   sourceBadge(e){const full=(e&&e.source)||'Source not stated';
     return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(full)}">${this.esc(this.shortSource(full))}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
@@ -652,6 +664,12 @@ const PND={
     return f.map(x=>{const v=String(x.value);
       const named=x.key==='category'||v.toLowerCase().indexOf(String(x.label).toLowerCase())===0;
       return named?this.esc(v):this.esc(x.label)+' '+this.esc(v);}).join(' · ');},
+  /* What a card says about a record: its first sentence, and no more than
+     a line and a half. A card is a way into the record, and the whole
+     description - often 50 or 60 words - is on the record's own page. */
+  summary(text,max=160){let t=String(text||'').replace(/\s*This is not a deterministic prediction and must not replace official warnings\.?\s*$/,'').replace(/\s+/g,' ').trim();
+    const first=t.match(/^.{20,}?[.!?](?=\s+[A-Z(]|$)/);if(first)t=first[0];
+    if(t.length<=max)return t;const cut=t.slice(0,max);return cut.slice(0,Math.max(cut.lastIndexOf(' '),max*0.6|0)).replace(/[\s,;:·—-]+$/,'')+'…';},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };
@@ -719,6 +737,6 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
       }
     });
   }
-  function init(){wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
+  function init(){if(document.body&&!document.querySelector('.sitefoot,.seo-nav'))document.body.insertAdjacentHTML('beforeend',PND.footer());wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

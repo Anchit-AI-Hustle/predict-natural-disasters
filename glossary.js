@@ -186,6 +186,24 @@
     for (var i = 0; i < el.classList.length; i++) if (LABEL[el.classList[i]]) return true;
     return false;
   }
+  /* A card in a list is a label for the record behind it, and so is a
+     heading. With acronyms written out there, the first card for each source
+     became the longest thing on the page - "Experimental 5-day outlook derived
+     from an active National Oceanic and Atmospheric Administration (NOAA)
+     National Hurricane Center..." ran to 62 words on /live-map, and a list of
+     mixed sources expanded one acronym per card until every card was a
+     paragraph. Acronyms stay short there; the line at the end of the page
+     says what each stands for, and prose everywhere else still writes them
+     out. Bearings, magnitudes and state codes are still expanded: those read
+     naturally in full wherever they are. */
+  var SHORT_CLASSES = { card: 1, 'event-card': 1 };
+  var SHORT_TAGS = { H1: 1, H2: 1, H3: 1, H4: 1 };
+  function keepsAcronymsShort(el) {
+    if (!el || !el.classList) return false;
+    if (SHORT_TAGS[el.tagName]) return true;
+    for (var i = 0; i < el.classList.length; i++) if (SHORT_CLASSES[el.classList[i]]) return true;
+    return false;
+  }
 
   function walk(root) {
     if (!root || !root.ownerDocument && root.nodeType !== 9 && root.nodeType !== 1) return;
@@ -201,7 +219,11 @@
     var node, pending = [];
     while ((node = walker.nextNode())) pending.push(node);
     for (var i = 0; i < pending.length; i++) {
-      var next = rewrite(pending[i].data);
+      var short = false;
+      for (var q = pending[i].parentNode; q && q.nodeType === 1; q = q.parentNode) {
+        if (keepsAcronymsShort(q)) { short = true; break; }
+      }
+      var next = short ? expandAlways(pending[i].data) : rewrite(pending[i].data);
       if (next !== pending[i].data) pending[i].data = next;   // in place: adds no nodes
     }
   }
