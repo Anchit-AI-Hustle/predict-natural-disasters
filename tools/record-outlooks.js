@@ -48,11 +48,21 @@ try {
 } catch (e) { /* first run: start empty */ }
 
 /**
- * An outlook is identified by its id *and* the window it covers. When the
- * signal behind it is updated the window moves with it, and that is a new
- * claim about a new period — separately gradeable, not an edit of the old one.
+ * An outlook is identified by every term it is graded on, not by its id and
+ * the moment its window opens.
+ *
+ * When the signal behind it is updated the window moves with it, and that is
+ * a new claim about a new period — separately gradeable, not an edit of the
+ * old one. The same is true of the rest: a window that now ends eight days
+ * later, or a geography that has moved to another country, is a different
+ * claim under the same id, and recording nothing for it leaves the revised
+ * terms with no immutable row while the feed serves them under the original
+ * row's freeze. HAZARDS.claimKey is that identity, shared with the API so the
+ * two cannot drift into different ideas of what a claim is.
  */
-const key = o => String(o.id) + '@' + String(o.targetStart);
+const key = o => (HAZARDS && HAZARDS.claimKey)
+  ? HAZARDS.claimKey(o)
+  : String(o.id) + '@' + String(o.targetStart);
 const seen = new Set(ledger.map(key));
 
 const FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region', 'lat', 'lon',

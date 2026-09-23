@@ -225,7 +225,11 @@ test('a disaster before the scan record begins cannot be attributed either way',
 test('scanned and nothing forecast is a forecasting failure, not a coverage one', () => {
   const led = {
     retention: { detailFrom: '2026-09-01T00:00:00Z' },
-    providers: { gdacs: { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' } } },
+    /* A source that states what is expected: a catalogue of disasters already
+       under way puts nobody in a position to forecast one, which this test is
+       not about. */
+    providers: { gdacs: { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' },
+      inputKind: 'forecast' } },
     /* An hour before onset: a scan that ran afterwards could not have put
        anyone in a position to forecast the thing it missed. */
     scans: [{ scanTimestamp: '2026-09-02T23:00:00Z',
@@ -693,10 +697,17 @@ test('a hazard nobody forecasts is not the engine failing to forecast it', () =>
     'it still happened and nothing predicted it: that is still a false negative');
   assert.match(a.reason, /not forecastable/i);
 
-  /* A hazard the table does say is forecastable is unchanged, and so is the
-     behaviour where no table is supplied. */
+  /* A hazard the table does say is forecastable does not take this exit: the
+     only provider up here covers earthquakes, so a flood is a gap in the
+     sources rather than a hazard nobody forecasts. */
   const flood = Object.assign({}, quake, { hazard: 'flood', hazardLabel: 'Flood' });
-  assert.notEqual(V.assessCoverage(flood, [], led, { hazardFamilyOf: H, hazardForecastable: forecastable }).status,
-    'NOT_FORECASTABLE');
-  assert.equal(V.assessCoverage(quake, [], led, { hazardFamilyOf: H }).status, 'FORECAST_FAILURE');
+  assert.equal(V.assessCoverage(flood, [], led, { hazardFamilyOf: H, hazardForecastable: forecastable }).status,
+    'COVERAGE_FAILURE');
+
+  /* And without the table the earthquake is still not the forecaster's
+     failure, for the other reason: USGS is a catalogue of earthquakes that
+     have happened, and scanning it puts nobody in a position to predict one.
+     Two different exceptions, and this record meets both. */
+  assert.equal(V.assessCoverage(quake, [], led, { hazardFamilyOf: H }).status,
+    'NO_PROSPECTIVE_INPUT');
 });

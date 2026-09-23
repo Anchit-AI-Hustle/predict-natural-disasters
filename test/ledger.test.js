@@ -194,6 +194,72 @@ test('the freeze this ledger performs is what settles the forecast\'s class', as
     'a forecast frozen before its window is still excluded from the headline rate');
 });
 
+test('a claim is its terms, not its id and the day it starts', async () => {
+  /* The ledger keyed an outlook on id and targetStart and treated that pair
+     as the whole claim. Measured: a second run carrying the same id and
+     start, a window eight days longer and a geography moved from Nepal to
+     Bihar, recorded nothing at all - and the feed then served the revised
+     claim under the original row's freeze, which is a claim nobody froze
+     presented as having existed for days. */
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const base = { id: 'OUT-x1', type: 'Flood', title: '3-day Flood risk outlook \u2014 Nepal',
+    country: 'Nepal', region: 'Bagmati Province', lat: 27.7, lon: 85.3, forecast: true,
+    forecastScope: 'event', severity: 'SEVERE', alert: 'Orange', source: 'Derived',
+    targetStart: '2026-09-25T00:00:00Z', targetEnd: '2026-09-27T00:00:00Z',
+    verificationRule: 'Graded on a significant flood inside the corridor.' };
+
+  /* Every term the verifier grades on moves the key; cosmetic ones do not. */
+  assert.equal(H.claimKey(base), H.claimKey(Object.assign({}, base)));
+  assert.equal(H.claimKey(base), H.claimKey(Object.assign({}, base,
+    { title: 'Flood outlook, reworded', alert: 'Red', updated: '2026-09-24T00:00:00Z' })),
+    'a reworded title or a changed display level is not a different claim');
+  for (const [field, value] of [['targetEnd', '2026-10-05T00:00:00Z'],
+    ['targetStart', '2026-09-26T00:00:00Z'], ['country', 'India'], ['region', 'Bihar'],
+    ['lat', 26], ['lon', 88], ['forecastScope', 'country'], ['type', 'Landslide'],
+    ['id', 'OUT-x2']]) {
+    assert.notEqual(H.claimKey(Object.assign({}, base, { [field]: value })), H.claimKey(base),
+      'a changed ' + field + ' is graded differently and must be a different claim');
+  }
+  /* A term a row never recorded is absent, not equal: it cannot prove what it
+     does not state. */
+  const noScope = Object.assign({}, base); delete noScope.forecastScope;
+  assert.notEqual(H.claimKey(noScope), H.claimKey(base),
+    'a row that records no scope was read as proving the scope');
+
+  const p = tempLedger();
+  runRecorder([base], p);
+  const widened = Object.assign({}, base, { targetEnd: '2026-10-05T00:00:00Z',
+    country: 'India', region: 'Bihar', lat: 26, lon: 88 });
+  runRecorder([widened], p);
+  const rows = JSON.parse(fs.readFileSync(p, 'utf8'));
+  assert.equal(rows.length, 2, 'the revised claim was never written down');
+  assert.equal(rows[0].targetEnd, base.targetEnd);
+  assert.equal(rows[1].targetEnd, widened.targetEnd);
+  assert.ok(Date.parse(rows[1].freezeTimestamp) >= Date.parse(rows[0].freezeTimestamp),
+    'the revised claim inherited the original freeze');
+  /* And running the same feed again still adds nothing. */
+  const out = runRecorder([base, widened], p);
+  assert.match(out, /no new outlooks/);
+});
+
+test('a freeze is only claimed from a row that records the same claim', async () => {
+  /* The invariant behind it, over whatever the feed is serving: where a
+     forecast says its freeze is proved by the ledger, the ledger holds a row
+     with that exact claim. */
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const ledger = JSON.parse(read('data/outlook-ledger.json'));
+  const keys = new Set(ledger.map(r => H.claimKey(r)));
+  const { events } = await feed();
+  let checked = 0;
+  for (const e of events.filter(x => x.forecast)) {
+    if (!/ledger/i.test(String(e.freezeBasis || ''))) continue;
+    checked++;
+    assert.ok(keys.has(H.claimKey(e)),
+      e.id + ' claims a freeze from the ledger, which holds no row for these terms');
+  }
+  assert.ok(checked >= 0);
+});
+
 test('a recorded outlook keeps what is needed to grade it later', async () => {
   const { events } = await feed();
   const p = tempLedger();

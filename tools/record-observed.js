@@ -229,6 +229,104 @@ const findExisting = c => {
   };
 };
 
+/*
+ * What a superseded row had learned belongs to the disaster, not to the row.
+ *
+ * Marking a row superseded took it out of the denominator - and out of
+ * grading, because the verification page reads only rows that survive - while
+ * everything it had recorded stayed on it. A sighting run held only by that
+ * row vanished from a window it covered, so a continuation outlook that had
+ * been borne out could turn ungradeable weeks later; impact figures it alone
+ * carried were stranded the same way. The two rows are one disaster, so
+ * everything either of them established is now the survivor's before the
+ * other is set aside. Nothing is deleted: the superseded row keeps its own
+ * copy, and the survivor records what it took and from where.
+ */
+function mergeRuns(runs) {
+  const list = runs.filter(r => r && r.from && r.to)
+    .slice().sort((a, b) => Date.parse(a.from) - Date.parse(b.from));
+  const out = [];
+  for (const run of list) {
+    const last = out[out.length - 1];
+    const from = Date.parse(run.from), to = Date.parse(run.to);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
+    if (last && from - Date.parse(last.to) <= SIGHTING_GAP_HOURS * 3600e3) {
+      /* Overlapping or continuous watching: one run, and the scan that ends
+         it is the later one's. */
+      if (to > Date.parse(last.to)) { last.to = run.to; if (run.toScan) last.toScan = run.toScan; }
+      continue;
+    }
+    out.push(Object.assign({}, run));
+  }
+  return out;
+}
+
+const IMPACT_CARRIED = ['deaths', 'injuries', 'missing', 'affected', 'displaced',
+  'evacuated', 'infrastructureImpact', 'impactLastUpdated', 'end'];
+
+function absorb(keeper, extra) {
+  const took = { sightings: 0, revisions: 0, fields: [] };
+
+  const before = (keeper.sightings || []).length;
+  const runs = mergeRuns((keeper.sightings || []).concat(extra.sightings || []));
+  if (runs.length) {
+    keeper.sightings = runs;
+    took.sightings = Math.max(0, (extra.sightings || []).length);
+    const latest = runs[runs.length - 1].to;
+    if (!keeper.lastSeenAt || Date.parse(latest) > Date.parse(keeper.lastSeenAt)) keeper.lastSeenAt = latest;
+  }
+  if (!before && !runs.length) delete keeper.sightings;
+
+  const seen = new Set((keeper.revisions || []).map(r => JSON.stringify([r.at, r.field, r.from, r.to])));
+  for (const rev of (extra.revisions || [])) {
+    const k = JSON.stringify([rev.at, rev.field, rev.from, rev.to]);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    (keeper.revisions = keeper.revisions || []).push(Object.assign({}, rev, { from_: undefined,
+      absorbedFrom: extra.canonicalEventId }));
+    took.revisions++;
+  }
+  if (keeper.revisions) {
+    keeper.revisions.sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
+  }
+
+  /* A figure the survivor never had. It is not overwritten where it has one:
+     this run's record is the current reading, and an older row's figure
+     cannot correct it. */
+  for (const f of IMPACT_CARRIED) {
+    const mine = keeper[f], theirs = extra[f];
+    if (mine !== null && mine !== undefined) continue;
+    if (theirs === null || theirs === undefined) continue;
+    keeper[f] = theirs;
+    took.fields.push(f);
+    (keeper.revisions = keeper.revisions || []).push({ at: now, field: f, from: null, to: theirs,
+      absorbedFrom: extra.canonicalEventId,
+      note: 'Carried across from ' + extra.canonicalEventId + ', which turned out to be this disaster.' });
+  }
+
+  for (const why of (extra.mergeReasons || [])) {
+    keeper.mergeReasons = keeper.mergeReasons || [];
+    if (!keeper.mergeReasons.includes(why)) keeper.mergeReasons.push(why);
+  }
+  for (const h of (extra.derivedIdHistory || [])) {
+    keeper.derivedIdHistory = keeper.derivedIdHistory || [];
+    if (!keeper.derivedIdHistory.some(x => x.derivedId === h.derivedId)) keeper.derivedIdHistory.push(h);
+  }
+  for (const ev of (extra.evidence || [])) {
+    if (!ev || !ev.id) continue;
+    keeper.evidence = keeper.evidence || [];
+    if (!keeper.evidence.some(x => x && x.id === ev.id)) keeper.evidence.push(ev);
+  }
+
+  took.summary = took.sightings + ' sighting run(s), ' + took.revisions + ' revision(s)' +
+    (took.fields.length ? ', and ' + took.fields.join(', ') : '');
+  (keeper.absorbed = keeper.absorbed || []).push({
+    at: now, from: extra.canonicalEventId, onset: extra.onset || null,
+    sightings: took.sightings, revisions: took.revisions, fields: took.fields
+  });
+  return took;
+}
+
 /* Why two rows that derive one id are not one disaster, stated in the terms
    the matching window is set in, so the split can be argued with rather than
    taken on trust. */
@@ -278,10 +376,12 @@ for (const c of canonical) {
   if (existing && !c.significant) belowBarUpdated++;
   for (const extra of candidates.slice(1)) {
     if (extra.supersededBy) continue;
+    const took = absorb(existing, extra);
     extra.supersededBy = existing.canonicalEventId;
     extra.supersededAt = now;
     extra.supersededReason = 'A later provider record links this to ' + existing.canonicalEventId +
-      ', so the two were one disaster. Kept for the record and excluded from the recall denominator.';
+      ', so the two were one disaster. Kept for the record and excluded from the recall denominator; ' +
+      'what it had learned was carried across first (' + took.summary + ').';
     superseded++;
   }
   if (!existing) {

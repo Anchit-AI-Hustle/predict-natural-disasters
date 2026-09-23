@@ -777,6 +777,26 @@
    * was warned or elevated, not that no disaster occurred. A ledger that would
    * never have recorded the disaster cannot show that none happened.
    */
+  /*
+   * Could this source have supported a forecast at all?
+   *
+   * A scan of a catalogue of things that have already happened puts nobody in
+   * a position to predict one. EONET, GDACS and ReliefWeb report events that
+   * exist, and the only outlook this project can derive from such a record is
+   * that the hazard continues - so counting a completed scan of them as the
+   * engine having had its chance blamed the forecaster for every flood,
+   * wildfire and drought it was never in a position to forecast. A source
+   * that says what is expected - a watch, a warning, a storm advisory - is a
+   * different thing, and only it can make an unforecast disaster a
+   * forecasting failure.
+   *
+   * A source that does not record which it is cannot support the claim
+   * either: absence of the statement is not a forecast product.
+   */
+  function providerIsProspective(meta) {
+    return !!(meta && meta.inputKind === 'forecast');
+  }
+
   function providerCanEstablishAbsence(meta, event) {
     return !!(meta && meta.completeness === 'exhaustive' &&
       meta.recordsObservations === true && providerCovers(meta, event));
@@ -791,7 +811,11 @@
     /* The hazard's own onset cannot be forecast, by this system or anyone
        else's. Calling that a forecasting failure asserts the engine could
        have predicted something the project states plainly that nobody can. */
-    NOT_FORECASTABLE: 'NOT_FORECASTABLE'
+    NOT_FORECASTABLE: 'NOT_FORECASTABLE',
+    /* Forecastable in principle, but nothing this system was reading could
+       have forecast it: every source covering that hazard and place reports
+       what has already happened. */
+    NO_PROSPECTIVE_INPUT: 'NO_PROSPECTIVE_INPUT'
   };
 
   /**
@@ -866,18 +890,28 @@
       return { falseNegative: true, status: COVERAGE.DATA_UNAVAILABLE, matched: [],
         reason: 'No scan is recorded in the day before this disaster, so whether it was being watched in time to forecast it cannot be established.' };
     }
-    var covering = near.some(function (s) {
-      return (s.providers || []).some(function (p) {
+    var coveringMetas = [];
+    near.forEach(function (s) {
+      (s.providers || []).forEach(function (p) {
         var meta = providersFor(scanLedger, s)[p.provider] || {};
-        return p.status === 'SCANNED' && providerCovers(meta, event);
+        if (p.status === 'SCANNED' && providerCovers(meta, event)) coveringMetas.push(meta);
       });
     });
-    if (!covering) {
+    if (!coveringMetas.length) {
       return { falseNegative: true, status: COVERAGE.COVERAGE_FAILURE, matched: [],
         reason: 'No provider covering this hazard completed a scan within a day of it, so nothing was in a position to forecast it.' };
     }
+    /* Scanned, and by something that could have seen it coming. */
+    var prospective = coveringMetas.filter(providerIsProspective);
+    if (!prospective.length) {
+      return { falseNegative: true, status: COVERAGE.NO_PROSPECTIVE_INPUT, matched: [],
+        reason: 'Every source covering this hazard and place reports what has already happened, so nothing this system reads could have forecast it. ' +
+          'It is counted as unforecast, not as a forecasting failure.' };
+    }
     return { falseNegative: true, status: COVERAGE.FORECAST_FAILURE, matched: [],
-      reason: 'A provider covering this hazard was scanned around the time of this disaster and no qualifying independent forecast was produced.' };
+      reason: 'A source that states what is expected for this hazard (' +
+        (prospective[0].label || 'a forecasting source') +
+        ') completed a scan of this place within a day of the disaster, and no qualifying independent forecast was produced.' };
   }
 
   /* --------------------------------------------------------------- scoring */
@@ -909,7 +943,8 @@
     var eligible = hit + partial + miss;
 
     var predicted = 0, partlyPredicted = 0, falseNegatives = 0;
-    var coverage = { COVERAGE_FAILURE: 0, FORECAST_FAILURE: 0, DATA_UNAVAILABLE: 0, NOT_FORECASTABLE: 0 };
+    var coverage = { COVERAGE_FAILURE: 0, FORECAST_FAILURE: 0, DATA_UNAVAILABLE: 0,
+      NOT_FORECASTABLE: 0, NO_PROSPECTIVE_INPUT: 0 };
     for (var j = 0; j < (observedAssessments || []).length; j++) {
       var a = observedAssessments[j];
       if (!a.falseNegative) {
@@ -957,6 +992,7 @@
     verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm,
     providerCovers: providerCovers, providerCoversHazard: providerCoversHazard,
     providerCanEstablishAbsence: providerCanEstablishAbsence,
+    providerIsProspective: providerIsProspective,
     observedCoverageFor: observedCoverageFor, MAX_SCAN_GAP_HOURS: MAX_SCAN_GAP_HOURS,
     providersFor: providersFor,
     continuedActivity: continuedActivity, reportsMoreImpact: reportsMoreImpact, CONTINUATION_CLASSES: CONTINUATION_CLASSES,

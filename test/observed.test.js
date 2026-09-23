@@ -330,18 +330,94 @@ test('merging two rows does not unlearn what either of them knew', () => {
   const strandedFrom = rows().find(r => r.evidence.some(e => e.id === 'rw-3')).canonicalEventId;
 
   recordObserved([F1, F2], led, 'c');
-  const survivor = active()[0];
   assert.equal(active().length, 1, 'control: the bridging run should have merged the two rows');
+  const survivor = active()[0];
   assert.equal(rows().find(r => r.canonicalEventId === strandedFrom).supersededBy,
     survivor.canonicalEventId);
-  assert.equal(survivor.evidence.some(e => e.id === 'rw-3'), false,
-    'control: the bridging run was not carrying rw-3, so the survivor should not have it yet');
+
+  /* A ledger written before the survivor absorbed anything, which is the
+     state this index exists for: rw-3 was learned under the row that has
+     since been superseded, and the survivor has no copy of it. Modelled by
+     taking it off the survivor, because a merge now carries it across - and
+     the rows already written before it did are exactly the ones that would
+     otherwise be lost. */
+  const state = JSON.parse(fs.readFileSync(led, 'utf8'));
+  const keeper = state.events.find(r => !r.supersededBy);
+  keeper.evidence = keeper.evidence.filter(e => e.id !== 'rw-3');
+  fs.writeFileSync(led, JSON.stringify(state));
+  assert.equal(JSON.parse(fs.readFileSync(led, 'utf8')).events
+    .find(r => !r.supersededBy).evidence.some(e => e.id === 'rw-3'), false,
+    'control: the survivor must not hold rw-3 for this to prove anything');
 
   recordObserved([F3], led, 'd');
   assert.equal(active().length, 1,
     'a provider record already recorded under the superseded row came back as a second disaster');
   assert.ok(active()[0].evidence.some(e => e.id === 'rw-3'),
     'the survivor should have learned the record that reconciled to it');
+  fs.rmSync(path.dirname(led), { recursive: true, force: true });
+});
+
+test('what a superseded row learned is carried to the survivor', () => {
+  /* Marking a row superseded takes it out of the denominator and out of
+     grading - the verification page reads only rows that survive - while
+     everything it had recorded stayed on it. A sighting run held only by that
+     row vanished from a window it covered, so a continuation outlook that had
+     been borne out could turn ungradeable weeks later, and impact figures it
+     alone carried were stranded the same way. */
+  const at = h => new Date(Date.parse('2026-09-10T00:00:00Z') + h * 36e5).toISOString();
+  const flood = (id, lat, lon, h, extra) => Object.assign({
+    id, type: 'Flood', title: 'Flooding in Assam', source: 'ReliefWeb',
+    sourceUrl: 'https://reliefweb.example/' + id, country: 'India', region: 'Assam',
+    lat, lon, deaths: 5, startedAt: at(0), updated: at(h), locationPrecision: 'incident',
+    evidenceState: 'observed', severity: 'SEVERE', alert: 'Orange', alertBasis: 'issued'
+  }, extra || {});
+  const led = freshLedger();
+  const rec = (events, scan, h, tag) => {
+    const f = path.join(path.dirname(led), tag + '.json');
+    fs.writeFileSync(f, JSON.stringify({ generatedAt: at(h), events,
+      meta: { scan: { scanId: scan, scanTimestamp: at(h) } } }));
+    require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', 'record-observed.js'), f, led], { encoding: 'utf8' });
+  };
+  const rows = () => JSON.parse(fs.readFileSync(led, 'utf8')).events;
+
+  rec([flood('rw-1', 25.0, 91.5, 1)], 's1', 1, 'a');
+  rec([flood('rw-2', 26.2, 92.9, 2, { displaced: 1200 }), flood('rw-3', 26.6, 93.4, 2)], 's2', 2, 'b');
+  rec([flood('rw-2', 26.2, 92.9, 8, { displaced: 1200 }), flood('rw-3', 26.6, 93.4, 8)], 's3', 8, 'c');
+
+  const before = rows();
+  assert.equal(before.length, 2, 'control: this needs two rows that are one disaster');
+  const other = before.find(r => r.evidence.some(e => e.id === 'rw-2'));
+  assert.equal(other.sightings[0].from, at(2), 'control: the second row holds the watch from 02:00');
+  assert.equal(other.sightings[0].to, at(8), 'control: ... through to 08:00');
+  assert.equal(other.displaced, 1200, 'control: and a figure the first row never had');
+
+  /* One run carries a record from each, so they were one disaster all along. */
+  rec([flood('rw-1', 25.0, 91.5, 12), flood('rw-2', 26.2, 92.9, 12, { displaced: 1200 })], 's4', 12, 'd');
+
+  const after = rows();
+  const kept = after.filter(r => !r.supersededBy);
+  assert.equal(kept.length, 1, 'the merge left more than one active row');
+  const survivor = kept[0];
+  const covers = t => (survivor.sightings || []).some(run =>
+    Date.parse(run.from) <= Date.parse(t) && Date.parse(t) <= Date.parse(run.to));
+  for (const h of [1, 2, 5, 8, 12]) {
+    assert.ok(covers(at(h)), 'the survivor lost the watch at ' + at(h) +
+      ', which is evidence a window covering it would be graded on');
+  }
+  assert.equal(survivor.displaced, 1200, 'a figure only the superseded row carried was stranded');
+  const carried = (survivor.revisions || []).find(r => r.field === 'displaced' && r.absorbedFrom);
+  assert.ok(carried, 'the figure arrived with no record of where it came from');
+  const note = (survivor.absorbed || [])[0];
+  assert.ok(note, 'the survivor does not say what it took');
+  assert.equal(note.from, after.find(r => r.supersededBy).canonicalEventId);
+  assert.ok(note.sightings >= 1 && note.fields.includes('displaced'));
+
+  /* Nothing is deleted: the superseded row keeps its own account. */
+  const dead = after.find(r => r.supersededBy);
+  assert.equal(dead.sightings[0].from, at(2));
+  assert.equal(dead.displaced, 1200);
+  assert.match(dead.supersededReason, /carried across first/);
   fs.rmSync(path.dirname(led), { recursive: true, force: true });
 });
 

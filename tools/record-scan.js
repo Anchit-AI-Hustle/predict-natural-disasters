@@ -76,6 +76,12 @@ for (const p of scan.providers) {
     completeness: p.completeness,
     completenessBasis: p.completenessBasis,
     recordsObservations: p.recordsObservations,
+    /* Whether the source can support a forecast, or only report what has
+       already happened - frozen with the rest, because reclassifying a
+       catalogue as a forecasting input would retroactively turn scans that
+       could not have predicted anything into scans that should have. */
+    inputKind: p.inputKind,
+    inputBasis: p.inputBasis,
     endpoint: p.endpoint
   };
 }

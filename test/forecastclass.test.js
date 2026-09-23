@@ -172,11 +172,21 @@ test('recording a forecast never edits one already recorded', async () => {
     [path.join(ROOT, 'tools', 'record-outlooks.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
   const after = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
 
-  const key = r => String(r.id) + '@' + String(r.targetStart);
+  /* A row is the claim it recorded, so that is what identifies it: an id and
+     a window start are shared by every re-issue and by any revision of the
+     other terms. */
+  const H = require(path.join(ROOT, 'hazard-model.js'));
+  const key = r => H.claimKey(r);
   const was = new Map(before.map(r => [key(r), JSON.stringify(r)]));
   const changed = after.filter(r => was.has(key(r)) && was.get(key(r)) !== JSON.stringify(r));
-  assert.deepEqual(changed.map(key), [], 'these recorded forecasts were edited after the fact');
+  assert.deepEqual(changed.map(r => r.id), [], 'these recorded forecasts were edited after the fact');
   assert.equal(after.filter(r => was.has(key(r))).length, before.length, 'a recorded forecast was dropped');
+  /* Every original row survives exactly as written, whatever else was added
+     beside it. */
+  for (const r of before) {
+    assert.ok(after.some(x => JSON.stringify(x) === JSON.stringify(r)),
+      'a recorded forecast no longer appears as it was written: ' + r.id);
+  }
 
   const added = after.filter(r => !was.has(key(r)));
   assert.ok(added.length > 0, 'nothing new was recorded, so this proves nothing');

@@ -874,6 +874,36 @@
       'Frozen at ' + f.freezeTimestamp + ', before the window opening at ' + f.targetStart + '.');
   }
 
+  /*
+   * What makes a frozen claim the claim it is.
+   *
+   * The ledger keyed a forecast on its id and the start of its window and
+   * treated that pair as the whole claim. Measured: a second run carrying the
+   * same id and start, a window eight days longer and a geography moved from
+   * Nepal to Bihar, recorded nothing at all - and the feed then served the
+   * revised claim carrying the original row's freeze timestamp, which is to
+   * say a claim nobody ever froze, presented as having existed for days. The
+   * key is every term the verifier grades on: change any of them and it is a
+   * new claim, which needs its own immutable row before it can be counted.
+   *
+   * A term a row never recorded reads as absent rather than as equal. Those
+   * rows cannot prove what they do not state, so a claim that now carries a
+   * scope is frozen afresh - later than the old row, which is the direction
+   * that can only cost a forecast credit, never grant it.
+   */
+  function coordToken(v) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(3) : '-';
+  }
+  function claimKey(f) {
+    f = f || {};
+    return [f.id, f.type, f.targetStart, f.targetEnd, f.country, f.region,
+      coordToken(f.lat), coordToken(f.lon), f.forecastScope]
+      .map(function (v) {
+        return (v === undefined || v === null || v === '') ? '-' : String(v).trim();
+      }).join('|');
+  }
+
   /**
    * The earliest moment an observation may be used to verify a forecast.
    *
@@ -919,6 +949,7 @@
     countryComparable: countryComparable,
     APPLICABILITY: APPLICABILITY,
     FORECAST_CLASSES: FORECAST_CLASSES, classifyForecast: classifyForecast,
+    claimKey: claimKey,
     effectiveForecastStart: effectiveForecastStart,
     observationCanVerify: observationCanVerify,
     creditedWindowHours: creditedWindowHours

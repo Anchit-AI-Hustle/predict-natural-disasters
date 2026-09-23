@@ -80,6 +80,15 @@ function providerCard(p){
     :p.completeness==='exhaustive'
       ?'Exhaustive within its stated bounds, so an absence here is meaningful. '+(p.completenessBasis||'')
       :'Not exhaustive, so an absence here is not evidence that nothing happened. '+(p.completenessBasis||'');
+  /* Whether it can support a forecast at all, or only report what has
+     happened: a source of the second kind being scanned puts nobody in a
+     position to predict anything, which is what decides whether a disaster
+     nothing forecast is a forecasting failure or simply unforecast. */
+  const input=p.inputKind==='forecast'
+    ?'States what is expected, so it can support a forecast. '+(p.inputBasis||'')
+    :p.inputKind==='observation'
+      ?'Reports what has already happened, so nothing forecast can be derived from it. '+(p.inputBasis||'')
+      :'Not recorded, so nothing here establishes that it could support a forecast.';
   const counted=[Number.isFinite(p.recordsEvaluated)?p.recordsEvaluated+' records evaluated':null,
     Number.isFinite(p.recordsServed)?p.recordsServed+' served':null].filter(Boolean).join(' · ');
   return `<article class="event-card"><span class="source status-${st[0]}">${PND.esc(st[1])}</span>
@@ -87,7 +96,8 @@ function providerCard(p){
     <p><b>Hazards</b> ${PND.esc((p.hazards||[]).join(', ')||'Not stated')}<br>
     <b>Reach</b> ${PND.esc(reach||'Not stated')}<br>
     <b>What it lists</b> ${PND.esc(p.coverageResolution||'Not stated')}<br>
-    <b>If it reports nothing</b> ${PND.esc(absence.trim())}</p>
+    <b>If it reports nothing</b> ${PND.esc(absence.trim())}<br>
+    <b>What it can forecast</b> ${PND.esc(input.trim())}</p>
     <small class="muted">${PND.esc(counted||'Nothing counted this scan')}${p.failureReason?' · '+PND.esc(p.failureReason):''}${p.dataFreshness?' · data '+PND.esc(p.dataFreshness):''}</small>
     ${p.endpoint?`<small class="muted" style="display:block;margin-top:4px"><a href="${PND.esc(p.endpoint)}" target="_blank" rel="noopener">${PND.esc(p.endpoint)}</a></small>`:''}</article>`;
 }

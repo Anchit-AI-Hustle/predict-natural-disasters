@@ -91,11 +91,75 @@ test('a provider is not credited with watching a place it does not cover', () =>
     'a flood in Nepal was blamed on the forecaster when only a US-only provider was up');
   assert.equal(a.status, 'COVERAGE_FAILURE');
 
-  // The same disaster, with a genuinely global flood provider up, is the
-  // forecaster's to answer for.
-  const global = ledgerWith({ gdacs: { hazards: ['Flood'], scope: { kind: 'global' } } });
+  // The same disaster, with a genuinely global flood provider up - and one
+  // that states what is expected rather than what has happened, since a
+  // catalogue of floods already under way puts nobody in a position to
+  // forecast one - is the forecaster's to answer for.
+  const global = ledgerWith({ gdacs: { hazards: ['Flood'], scope: { kind: 'global' },
+    inputKind: 'forecast' } });
   assert.equal(V.assessCoverage(flood(), [], global, { hazardFamilyOf: OBS.familyOf }).status,
     'FORECAST_FAILURE');
+});
+
+test('a catalogue of what has happened cannot have forecast anything', () => {
+  /* The not-forecastable exception only covers hazards nobody forecasts at
+     all. For a forecastable one - a flood, a wildfire, a drought - any
+     completed scan counted as the engine having had its chance, whatever was
+     scanned. But EONET, GDACS and ReliefWeb report events that already
+     exist, and the only outlook this project derives from such a record is
+     that the hazard continues, so scanning them before onset put nobody in a
+     position to forecast an onset. Every such disaster was being labelled a
+     forecasting failure. */
+  const catalogue = ledgerWith({ eonet: { label: 'NASA EONET', hazards: ['Flood'],
+    scope: { kind: 'global' }, inputKind: 'observation' } });
+  const a = V.assessCoverage(flood(), [], catalogue, { hazardFamilyOf: OBS.familyOf });
+  assert.equal(a.status, 'NO_PROSPECTIVE_INPUT',
+    'a flood nothing could have forecast was blamed on the forecaster');
+  assert.equal(a.falseNegative, true,
+    'it still happened and nothing predicted it: that is still a false negative');
+  assert.match(a.reason, /already happened/i);
+  assert.match(a.reason, /not as a forecasting failure/i);
+
+  /* A source that says what is expected is a different thing, and with one of
+     those up the same disaster is the forecaster's to answer for. */
+  const forecasting = ledgerWith({ gdacs: { label: 'GDACS', hazards: ['Flood'],
+    scope: { kind: 'global' }, inputKind: 'forecast' } });
+  const b = V.assessCoverage(flood(), [], forecasting, { hazardFamilyOf: OBS.familyOf });
+  assert.equal(b.status, 'FORECAST_FAILURE');
+  assert.match(b.reason, /GDACS/, 'the verdict does not name what was in a position to forecast it');
+
+  /* Both up: one forecasting source is enough. */
+  const both = ledgerWith({
+    eonet: { label: 'NASA EONET', hazards: ['Flood'], scope: { kind: 'global' }, inputKind: 'observation' },
+    gdacs: { label: 'GDACS', hazards: ['Flood'], scope: { kind: 'global' }, inputKind: 'forecast' } });
+  assert.equal(V.assessCoverage(flood(), [], both, { hazardFamilyOf: OBS.familyOf }).status,
+    'FORECAST_FAILURE');
+
+  /* A source that records nothing about which it is cannot support the claim
+     either: absence of the statement is not a forecast product. */
+  const silent = ledgerWith({ mystery: { label: 'Unstated', hazards: ['Flood'], scope: { kind: 'global' } } });
+  assert.equal(V.assessCoverage(flood(), [], silent, { hazardFamilyOf: OBS.familyOf }).status,
+    'NO_PROSPECTIVE_INPUT');
+  assert.equal(V.providerIsProspective({ inputKind: 'forecast' }), true);
+  assert.equal(V.providerIsProspective({ inputKind: 'observation' }), false);
+  assert.equal(V.providerIsProspective({}), false);
+});
+
+test('every source this site reads says which kind of input it is', async () => {
+  /* The rule above is only as good as the table behind it, and an unmarked
+     provider quietly stops being able to explain a missed disaster. */
+  const { meta } = await feed();
+  const ps = (meta.scan && meta.scan.providers) || [];
+  assert.ok(ps.length >= 6, 'the feed reports too few providers to check');
+  for (const p of ps) {
+    assert.ok(['forecast', 'observation'].includes(p.inputKind),
+      p.provider + ' does not say whether it can support a forecast');
+    assert.ok(String(p.inputBasis || '').length > 25,
+      p.provider + ' states its input kind with no reason anyone can check');
+  }
+  /* And at least one of each, or the distinction is not doing any work. */
+  assert.ok(ps.some(p => p.inputKind === 'forecast'), 'nothing here could forecast anything');
+  assert.ok(ps.some(p => p.inputKind === 'observation'), 'every source is claimed to be prospective');
 });
 
 test('a cyclone outside the published basins is not the hurricane centre\'s to have seen', () => {

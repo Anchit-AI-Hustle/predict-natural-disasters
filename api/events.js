@@ -1579,7 +1579,11 @@ async function handler(req, res) {
   const ledgerFreeze = new Map();
   if (Array.isArray(OUTLOOK_LEDGER)) {
     for (const row of OUTLOOK_LEDGER) {
-      const k = String(row.id) + '@' + String(row.targetStart);
+      /* Every term the verifier grades on, not the id and the window's start:
+         a row proves the claim it recorded, and cannot prove one whose window
+         or geography has since moved. Shared with the ledger writer so the
+         two cannot disagree about what a claim is. */
+      const k = HAZARD_MODEL.claimKey(row);
       const at = row.freezeTimestamp || row.recordedAt;
       /* Append-only, but a row can only ever have been written once; if two
          carry the same key the earlier one is the one that proves existence. */
@@ -1603,7 +1607,7 @@ async function handler(req, res) {
        later - and taking whichever came to hand would move a freeze later than
        the repository can already show. Later is the safer direction, but it is
        still not what the evidence says. */
-    const k = String(e.id) + '@' + String(e.targetStart);
+    const k = HAZARD_MODEL.claimKey(e);
     const proofs = [];
     if (ledgerFreeze.has(k)) {
       proofs.push({ at: ledgerFreeze.get(k), basis: 'Earliest row in the append-only outlook ledger in the repository.' });
@@ -1673,6 +1677,8 @@ async function handler(req, res) {
   const PROVIDERS = {
     gdacs: {
       label: 'GDACS (Global Disaster Alert and Coordination System)',
+      inputKind: 'observation',
+      inputBasis: 'GDACS raises alerts on events it has already detected, so its records say what is happening rather than what will.',
       hazards: ['Earthquake', 'Tropical Cyclone', 'Flood', 'Drought', 'Wildfire', 'Volcano'],
       geographicCoverage: 'Global',
       coverageResolution: 'Only events GDACS itself raises to an alert level. Flood, drought and wildfire records describe alert areas, not incident points.',
@@ -1684,6 +1690,8 @@ async function handler(req, res) {
     },
     usgs: {
       label: 'USGS Earthquake Hazards Program',
+      inputKind: 'observation',
+      inputBasis: 'A catalogue of earthquakes that have occurred.',
       hazards: ['Earthquake'],
       geographicCoverage: 'Global',
       coverageResolution: 'Every earthquake of magnitude 2.5 or above in the past seven days, at its epicentre. Anything smaller, or older, is outside this feed.',
@@ -1695,6 +1703,8 @@ async function handler(req, res) {
     },
     emsc: {
       label: 'EMSC (European-Mediterranean Seismological Centre)',
+      inputKind: 'observation',
+      inputBasis: 'A catalogue of earthquakes that have occurred.',
       hazards: ['Earthquake'],
       geographicCoverage: 'Global, with the densest network in Europe and the Mediterranean',
       coverageResolution: 'Earthquakes of magnitude 4.5 or above, at epicentre.',
@@ -1706,6 +1716,8 @@ async function handler(req, res) {
     },
     eonet: {
       label: 'NASA EONET',
+      inputKind: 'observation',
+      inputBasis: 'A curated catalogue of natural events already under way.',
       hazards: ['Wildfire', 'Volcano', 'Severe Storm', 'Ice', 'Landslide'],
       geographicCoverage: 'Global',
       coverageResolution: 'A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.',
@@ -1717,6 +1729,8 @@ async function handler(req, res) {
     },
     nhc: {
       label: 'NOAA National Hurricane Center',
+      inputKind: 'forecast',
+      inputBasis: 'The hurricane centre publishes advisories for active systems, including where a storm is expected to go, which is an input to a forecast of what it has not yet done.',
       hazards: ['Tropical Cyclone'],
       geographicCoverage: 'Atlantic, eastern Pacific and central Pacific basins only',
       coverageResolution: 'Active tropical cyclones, at storm centre. Storms in the western Pacific, Indian Ocean and southern hemisphere are outside this provider entirely.',
@@ -1735,6 +1749,8 @@ async function handler(req, res) {
     },
     nws: {
       label: 'NOAA / National Weather Service',
+      inputKind: 'forecast',
+      inputBasis: 'A watch or warning states that severe weather is expected, which is a statement about what has not happened yet.',
       hazards: ['Flood', 'Severe Weather', 'Extreme Heat', 'Winter Storm', 'Tornado'],
       geographicCoverage: 'United States and its territories only',
       coverageResolution: 'Alerts at severe or extreme severity, carrying the affected-area polygon where the agency published one and a forecast-zone centre where it did not.',
@@ -1746,6 +1762,8 @@ async function handler(req, res) {
     },
     reliefweb: {
       label: 'ReliefWeb (UN OCHA)',
+      inputKind: 'observation',
+      inputBasis: 'Situation reports and declarations published after a disaster has occurred.',
       hazards: ['Flood', 'Drought', 'Earthquake', 'Tropical Cyclone', 'Complex Emergency'],
       geographicCoverage: 'Global',
       coverageResolution: 'Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.',
@@ -1757,6 +1775,8 @@ async function handler(req, res) {
     },
     usgs_volcano: {
       label: 'USGS Volcano Hazards Program',
+      inputKind: 'forecast',
+      inputBasis: 'A volcano alert level states expected activity - a watch or warning is issued for unrest before an eruption, not after it.',
       hazards: ['Volcano'],
       geographicCoverage: 'Volcanoes monitored by the United States volcano observatories',
       coverageResolution: 'Volcanoes currently at an elevated alert level. Volcanoes outside the US observatory network are not covered by this provider.',
@@ -1850,6 +1870,11 @@ async function handler(req, res) {
         provider: key,
         label: PROVIDERS[key].label,
         hazards: PROVIDERS[key].hazards,
+        /* Whether this source can support a forecast at all, or only report
+           what has already happened. A scan of a catalogue of things that
+           have occurred puts nothing in a position to predict one. */
+        inputKind: PROVIDERS[key].inputKind,
+        inputBasis: PROVIDERS[key].inputBasis,
         geographicCoverage: PROVIDERS[key].geographicCoverage,
         coverageResolution: PROVIDERS[key].coverageResolution,
         scope: PROVIDERS[key].scope,

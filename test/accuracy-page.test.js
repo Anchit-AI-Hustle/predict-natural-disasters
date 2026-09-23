@@ -205,7 +205,7 @@ test('the page does grade, and does publish rates, once the record covers the fo
   const obs = [...r.document.querySelectorAll('#obsRows tr')].map(t => t.textContent);
   assert.equal(text(r, 'obTotal'), '1', 'the page ignored the disaster record it was given');
   assert.ok(obs[0].includes('OBS-test-1'), 'the observed disaster is not listed');
-  assert.match(obs[0], /FALSE.NEGATIVE|COVERAGE_FAILURE|FORECAST_FAILURE|DATA_UNAVAILABLE|Predicted/,
+  assert.match(obs[0], /FALSE.NEGATIVE|COVERAGE_FAILURE|FORECAST_FAILURE|DATA_UNAVAILABLE|NO_PROSPECTIVE_INPUT|NOT_FORECASTABLE|Predicted/,
     'the observed disaster carries no verdict about whether anything predicted it');
   // Something in the recorded ledger is now gradeable, so the conditional
   // section has to stop saying nothing could be.
