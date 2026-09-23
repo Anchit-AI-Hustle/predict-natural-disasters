@@ -507,13 +507,18 @@ test('an ordinary aftershock is what an aftershock outlook claims', () => {
      ungradeable against a rule that had promised to accept it. */
   const p = prediction({ id: 'OUT-after', type: 'Earthquake aftershock sequence',
     title: 'Aftershock-sequence outlook \u2014 Nepal', forecastClass: 'post-event-conditional',
-    forecastScope: 'event', freezeTimestamp: '2026-09-03T00:00:00Z',
+    forecastScope: 'event', freezeTimestamp: '2026-09-03T00:00:00Z', forecastOf: 'usgs-main',
     targetStart: '2026-09-03T00:00:00Z', targetEnd: '2026-09-10T00:00:00Z' });
   const mainshock = disaster({ canonicalEventId: 'OBS-main', hazard: 'earthquake',
     onset: '2026-09-02T00:00:00Z' });
+  /* keptFor is the association the recorder wrote down: which frozen claims
+     are graded on this observation, and which disaster each of them follows.
+     Hazard, window and distance are satisfied by every neighbouring sequence,
+     so this is the only thing that says whose aftershock it is. */
   const aftershock = { canonicalEventId: 'OBS-af-1', hazard: 'earthquake', significant: false,
     onset: '2026-09-05T00:00:00Z', magnitude: 4.4,
-    geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.8, lon: 85.4 } };
+    geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.8, lon: 85.4 },
+    keptFor: [{ claim: 'OUT-after@2026-09-03T00:00:00Z', subject: 'usgs-main' }] };
   const grade2 = (sup) => V.verify(p, [mainshock], { now: Date.parse('2026-09-12T00:00:00Z'),
     hazardFamilyOf: H, observedCoverage: FULL_COVER, supportingEvents: sup });
 
@@ -548,6 +553,64 @@ test('an ordinary aftershock is what an aftershock outlook claims', () => {
   assert.equal(grade2([Object.assign({}, aftershock,
     { geography: { country: 'Chile', lat: -33, lon: -70 } })]).classification,
     'PENDING', 'an aftershock on another continent was counted');
+});
+
+test('an aftershock of one quake does not grade the next quake\u2019s outlook', () => {
+  /* Two mainshocks 167 km and a day apart each get a 7-day aftershock
+     outlook. The published earthquake tolerance is 250 km, so each claim
+     accepts the other's aftershocks in full: hazard, window and distance are
+     all satisfied by both. Measured before this was tied to the mainshock, an
+     ordinary M4.3 aftershock 7 km from quake A graded quake B's outlook a HIT
+     with the line "observed activity of the sequence this outlook is about"
+     about an event 161 km away that belonged to a different earthquake. */
+  const T0 = Date.parse('2026-09-01T00:00:00Z');
+  const iso = ms => new Date(ms).toISOString();
+  const outlook = (id, of, lat, lon, at) => prediction({
+    id, forecastOf: of, type: 'Earthquake aftershock sequence',
+    title: 'Aftershock-sequence outlook \u2014 Hindu Kush',
+    forecastClass: 'post-event-conditional', forecastScope: 'event',
+    country: 'Afghanistan', region: 'Hindu Kush', lat, lon,
+    freezeTimestamp: iso(at), targetStart: iso(at), targetEnd: iso(at + 7 * 864e5)
+  });
+  const A = outlook('OUT-aftershock-A', 'quake-A', 35.0, 70.0, T0);
+  const B = outlook('OUT-aftershock-B', 'quake-B', 36.5, 70.0, T0 + 864e5);
+  const after = keptFor => ({ canonicalEventId: 'OBS-eq-A1', hazard: 'earthquake',
+    significant: false, onset: iso(T0 + 2 * 864e5), magnitude: 4.3,
+    geography: { country: 'Afghanistan', region: 'Hindu Kush', lat: 35.05, lon: 70.05 },
+    keptFor });
+  const grade2 = (p, sup) => V.verify(p, [], { now: Date.parse('2026-09-15T00:00:00Z'),
+    hazardFamilyOf: H, observedCoverage: FULL_COVER, supportingEvents: [sup] });
+
+  // Control: both claims really do accept it on hazard, window and geography.
+  for (const p of [A, B]) {
+    const claim = V.frozenClaim(Object.assign({ forecast: true }, p), H);
+    assert.ok(V.geographyMatch(claim, after([])), p.id + ' does not even reach it');
+  }
+
+  // Recorded as quake A's: A is borne out, B is not.
+  const onlyA = [{ claim: 'k-A', subject: 'quake-A' }];
+  assert.equal(grade2(A, after(onlyA)).classification, 'HIT',
+    'the sequence the observation belongs to was not credited');
+  assert.notEqual(grade2(B, after(onlyA)).classification, 'HIT',
+    'another quake\u2019s aftershock was counted as this sequence\u2019s activity');
+
+  // Claimed by both: neither is graded on it, and both say why.
+  const both = [{ claim: 'k-A', subject: 'quake-A' }, { claim: 'k-B', subject: 'quake-B' }];
+  for (const p of [A, B]) {
+    const v = grade2(p, after(both));
+    assert.equal(v.classification, 'PENDING', p.id + ' claimed an observation it cannot claim alone');
+    assert.equal(v.ungradeableReason, 'SEQUENCE_ATTRIBUTION_AMBIGUOUS');
+    assert.match(v.classificationReason, /which sequence it belongs to/);
+  }
+
+  // A revision of the same claim is not a second sequence.
+  const revised = [{ claim: 'k-A', subject: 'quake-A' }, { claim: 'k-A-extended', subject: 'quake-A' }];
+  assert.equal(grade2(A, after(revised)).classification, 'HIT',
+    'two rows about one mainshock were read as two sequences');
+
+  // An observation with no recorded association establishes nothing.
+  assert.notEqual(grade2(A, after([])).classification, 'HIT',
+    'an observation that says nothing about whose it is was credited anyway');
 });
 
 test('an aftershock outlook is not verified by the mainshock still being in the feed', () => {

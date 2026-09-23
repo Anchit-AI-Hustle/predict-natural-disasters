@@ -26,8 +26,15 @@
   /* 1.1.0: a compound claim is graded on the tolerance of the hazard actually
      observed rather than on its primary family's. The published table is
      unchanged; which of its rows applies is not, and a verdict reached under
-     the old reading is not the same verdict. */
-  var VERIFICATION_VERSION = 'verify-1.1.0';
+     the old reading is not the same verdict.
+
+     1.2.0: a post-event-conditional claim is borne out by an observation only
+     where the record says that observation belongs to the disaster this claim
+     follows, and to no other; and a figure carried between two ledger rows
+     that turned out to be one disaster is no longer read as impact that
+     occurred. Both make grading stricter and both change verdicts, so the
+     version moves rather than the record quietly meaning something else. */
+  var VERIFICATION_VERSION = 'verify-1.2.0';
 
   var CLASSIFICATION = {
     HIT: 'HIT',
@@ -161,8 +168,61 @@
       /* The scan whose snapshot this forecast was derived from. Its own
          source cannot show that the hazard continued after it. */
       sourceScanId: p.sourceScanId || null,
+      /* What this claim is ABOUT, as opposed to where it is.
+       *
+       * A post-event-conditional outlook follows one particular disaster -
+       * an aftershock outlook follows one mainshock - and the record it
+       * follows is named by forecastOf. Without it the claim is only a
+       * hazard, a window and a radius, which two neighbouring sequences can
+       * share; see the supporting-evidence rule in verify(). A claim that
+       * names no subject is its own subject. */
+      subject: p.forecastOf || p.id || null,
       forecastClass: p.forecastClass || null
     };
+  }
+
+  /**
+   * Is this observation activity of THIS sequence, rather than a neighbouring
+   * one?
+   *
+   * An aftershock outlook's geography is the mainshock's epicentre and its
+   * published tolerance for earthquake is 250 km, so two mainshocks a few
+   * hours and 150 km apart have claims that accept each other's aftershocks
+   * entirely. Measured on two such outlooks, an ordinary M4.3 aftershock 7 km
+   * from quake A was graded a HIT for quake B's sequence, with a reason line
+   * reading "observed activity of the sequence this outlook is about" about
+   * an event 161 km away that belonged to a different earthquake.
+   *
+   * Hazard, time and distance cannot tell those apart, because both claims
+   * genuinely satisfy all three. What can is the association recorded when
+   * the observation was kept: tools/record-observed.js keeps an observation
+   * only where some frozen conditional claim is graded on it, and writes down
+   * which claims those were and which disaster each of them follows.
+   *
+   * So: the observation must name this claim's subject, and it must name only
+   * one subject. Where two sequences both accept it, nothing establishes
+   * which one it belongs to, and neither is graded on it - the asymmetry that
+   * governs the observed ledger governs here too, since a wrongly credited
+   * hit is a fabricated result and a withheld one is only an unanswered
+   * question, which the verdict then states.
+   */
+  function sequenceTie(claim, sup) {
+    var kept = (sup && sup.keptFor) || [];
+    if (!kept.length) return null;
+    var subjects = [], mine = false;
+    for (var i = 0; i < kept.length; i++) {
+      var entry = kept[i];
+      var subject = entry && typeof entry === 'object' ? entry.subject : null;
+      /* An entry that records no subject cannot establish one. */
+      if (!subject) return null;
+      if (subjects.indexOf(subject) < 0) subjects.push(subject);
+      if (claim.subject && subject === claim.subject) mine = true;
+    }
+    if (!mine) return null;
+    if (subjects.length > 1) {
+      return { ambiguous: subjects.filter(function (x) { return x !== claim.subject; }) };
+    }
+    return { ok: true };
   }
 
   /**
@@ -340,6 +400,14 @@
     for (var r = 0; r < (event.revisions || []).length; r++) {
       var rev = event.revisions[r];
       if (sourceScanId && rev.scanId === sourceScanId) continue;
+      /* A figure moved between two ledger rows that turned out to be one
+         disaster is bookkeeping, and it is stamped with the merge time rather
+         than with any observation. Reading it as impact let an old death toll
+         crossing rows inside an aftershock window grade that outlook a hit,
+         with a reason line naming a figure that had been on record since
+         before the window opened. The superseded row's own revisions come
+         across with their original timestamps and still count. */
+      if (rev.administrative) continue;
       if (impactOnly) {
         if (IMPACT_FIELDS.indexOf(rev.field) < 0) continue;
         if (!reportsMoreImpact(rev)) continue;
@@ -530,6 +598,7 @@
      * never enter the recall denominator: they are evidence that something
      * happened, not claims that a disaster did.
      */
+    var unattributed = [];
     if (claim.forecastClass === 'post-event-conditional' && !matched.length) {
       var support = (o.supportingEvents || []);
       for (var sIdx = 0; sIdx < support.length; sIdx++) {
@@ -540,6 +609,11 @@
         if (end !== null && sOnset > end) continue;
         var sGeo = geographyMatch(claim, sup);
         if (!sGeo) continue;
+        /* Hazard, window and geography are satisfied by every neighbouring
+           sequence too. Only the recorded association says whose it is. */
+        var tie = sequenceTie(claim, sup);
+        if (!tie) continue;
+        if (tie.ambiguous) { unattributed.push({ event: sup, also: tie.ambiguous }); continue; }
         matched.push({ event: sup, level: sGeo.level, supporting: true,
           why: sGeo.why + ' Observed activity of the sequence this outlook is about, recorded ' +
             'at ' + sup.onset + '. It is not itself a disaster by the observed record\u2019s bar, ' +
@@ -572,6 +646,18 @@
         opener(matched[0], 'inside the window but only partly inside the geography this outlook named') +
         matched[0].why, matched);
     }
+    /* Something was observed; what is missing is whose it is. Asked before
+       the coverage gate, because the gate exists to decide what an ABSENCE
+       means and this is not one. */
+    if (unattributed.length) {
+      return say(CLASSIFICATION.PENDING,
+        'Activity of this hazard was observed inside the frozen geography and window, but it falls inside ' +
+        (unattributed[0].also.length === 1 ? 'another outlook' : unattributed[0].also.length + ' other outlooks') +
+        ' following a different disaster (' + unattributed[0].also.join(', ') + '), whose claim accepts it just as fully. ' +
+        'Nothing on record says which sequence it belongs to, so it is not counted for either.',
+        [], 'SEQUENCE_ATTRIBUTION_AMBIGUOUS');
+    }
+
     /* From here every answer rests on nothing having been observed, so what
        the record could have seen decides whether that means anything. */
     if (gate) return gate;

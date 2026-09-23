@@ -684,8 +684,13 @@ test('an observation a frozen claim is graded on is kept, and only that one', ()
   assert.equal((state.supporting || []).length, 1, 'the aftershock was not kept at all');
   const sup = state.supporting[0];
   assert.equal(sup.significant, false, 'a supporting observation is not a disaster');
-  assert.ok(sup.keptFor.some(k => k.startsWith('OUT-af-1@')),
+  assert.ok(sup.keptFor.some(k => k && String(k.claim || '').startsWith('OUT-af-1')),
     'the observation does not say which claim keeps it');
+  /* And which disaster that claim follows. Hazard, window and distance are
+     satisfied by every neighbouring sequence, so without the subject an
+     ordinary aftershock of one quake grades the next quake's outlook. */
+  assert.deepEqual(sup.keptFor.map(k => k.subject), ['usgs-main'],
+    'the observation does not say which sequence it belongs to');
   assert.match(sup.significanceReason, /No reported casualties/);
   assert.equal(state.lastRun.supportingObservationsKept, 1);
   assert.ok(state.method.supporting.length > 100, 'the ledger does not state this rule');
@@ -712,6 +717,92 @@ test('an observation a frozen claim is graded on is kept, and only that one', ()
     'control: the aftershock is still below the bar');
   fs.rmSync(dir, { recursive: true, force: true });
   fs.rmSync(path.dirname(bare), { recursive: true, force: true });
+});
+
+test('a figure moving between rows is not an impact that occurred', () => {
+  /* Two ledger rows turn out to be one disaster, and the survivor never held
+     the death toll the superseded row did. Carrying it across writes a
+     null -> 9 revision stamped with the merge time, and the verifier grades a
+     post-event-conditional claim on "additional impact inside the window" -
+     so an old figure crossing rows inside an aftershock window graded that
+     outlook a HIT, reasoning "its deaths rose to 9" about a figure that had
+     been on record since before the window opened. */
+  const BASE = Date.now();
+  const at = h => new Date(BASE + h * 36e5).toISOString();
+  const quake = (id, lat, lon, h, deaths) => Object.assign({
+    id, type: 'Earthquake', title: 'M 6.4 earthquake', source: 'USGS',
+    sourceUrl: 'https://earthquake.usgs.gov/' + id, country: 'Nepal', region: 'Bagmati',
+    lat, lon, magnitude: 6.4, startedAt: at(-73), updated: at(h),
+    locationPrecision: 'incident', evidenceState: 'observed', severity: 'SEVERE'
+  }, deaths === undefined ? {} : { deaths });
+
+  const led = freshLedger();
+  const dir = path.dirname(led);
+  const outlooks = path.join(dir, 'outlooks.json');
+  fs.writeFileSync(outlooks, '[]\n');
+  const feed = (events, scan, h) => ({ generatedAt: at(h), events,
+    meta: { scan: { scanId: scan, scanTimestamp: at(h) } } });
+  const run = (tool, body, tag, ledger, extra) => {
+    const f = path.join(dir, tag + '.json');
+    fs.writeFileSync(f, JSON.stringify(body));
+    return require('node:child_process').execFileSync(process.execPath,
+      [path.join(ROOT, 'tools', tool), f, ledger].concat(extra || []), { encoding: 'utf8' });
+  };
+
+  const outlook = { id: 'OUT-af-merge', type: 'Earthquake aftershock sequence',
+    title: 'Aftershock-sequence outlook \u2014 Bagmati', country: 'Nepal', region: 'Bagmati',
+    lat: 27.7, lon: 85.3, forecast: true, forecastKind: 'aftershock-sequence',
+    forecastOf: 'usgs-main', forecastScope: 'event', targetStart: at(-72), targetEnd: at(96),
+    source: 'Derived',
+    verificationRule: 'Grade against observed aftershock activity and any additional impacts in the window.' };
+  run('record-outlooks.js', feed([outlook], 's0', -72), 'o1', outlooks);
+
+  // Two rows: one without the toll, one 94 km away that carries it.
+  run('record-observed.js', feed([quake('usgs-main', 27.70, 85.30, -72)], 's1', -72), 'a', led, [outlooks]);
+  run('record-observed.js', feed([quake('emsc-main', 28.55, 85.30, -71, 9)], 's2', -71), 'b', led, [outlooks]);
+  assert.equal(JSON.parse(fs.readFileSync(led, 'utf8')).events.length, 2,
+    'control: the two reports were not two rows to begin with');
+
+  // A third record bridges them: one disaster all along, and the toll moves.
+  run('record-observed.js', feed([
+    quake('usgs-main', 27.70, 85.30, -2),
+    quake('emsc-main', 28.55, 85.30, -2, 9),
+    quake('gdacs-main', 28.10, 85.30, -2, 9)
+  ], 's3', -2), 'c', led, [outlooks]);
+
+  const state = JSON.parse(fs.readFileSync(led, 'utf8'));
+  const keeper = state.events.find(e => !e.supersededBy);
+  assert.equal(keeper.deaths, 9, 'control: the figure was not carried across at all');
+  const carried = (keeper.revisions || []).filter(r => r.field === 'deaths' && r.absorbedFrom);
+  assert.equal(carried.length, 1, 'control: the transfer left no revision');
+  assert.equal(carried[0].administrative, true,
+    'a figure moved between rows is not marked as the bookkeeping it is');
+  assert.match(String(state.method.frozen), /administrative/,
+    'the ledger does not state what an administrative revision is');
+
+  const V = require(path.join(ROOT, 'verification-model.js'));
+  const row = JSON.parse(fs.readFileSync(outlooks, 'utf8'))[0];
+  const grade = events => V.verify(row, events, { now: BASE + 200 * 36e5,
+    hazardFamilyOf: OBS.familyOf, observedCoverage: { from: at(-200), to: at(200) },
+    supportingEvents: [] });
+
+  const v = grade(state.events);
+  assert.notEqual(v.classification, 'HIT',
+    'a death toll crossing two ledger rows was counted as impact the sequence caused');
+  assert.doesNotMatch(v.classificationReason, /rose to 9/,
+    'the verdict describes bookkeeping as a figure that rose');
+
+  /* Control: a toll that genuinely rises inside the window still counts, so
+     this is not the engine being made blind to impact. */
+  const real = state.events.map(e => e.supersededBy ? e : Object.assign({}, e, {
+    revisions: (e.revisions || []).concat([
+      { at: at(24), observedAt: at(24), scanId: 's4', field: 'deaths', from: 9, to: 14 }])
+  }));
+  const rose = grade(real);
+  assert.equal(rose.classification, 'HIT',
+    'an impact that really did rise inside the window stopped counting');
+  assert.match(rose.classificationReason, /deaths rose to 14/);
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test('the ledger states how it decides what it holds', () => {
@@ -988,6 +1079,65 @@ test('a hazard family is a whole word, not a substring', async () => {
   /* A title may not widen a claim; only a compound type may. */
   assert.deepEqual(OBS.familiesOf('Flood', 'Nepal: Floods and Landslides - Sep 2026'), ['flood'],
     'a title mentioning a second hazard widened the claim');
+});
+
+test('the hazard a record is typed as wins over one its title mentions', () => {
+  /* The primary family decided the event's identity, its matching window and
+     which forecasts it could be credited to, and it was read from the type and
+     the title together - so the order of the family list, not the provider,
+     decided between them. */
+  assert.equal(OBS.familyOf('Landslide', 'Flood-triggered landslide'), 'landslide',
+    'a record the provider typed Landslide was frozen as a flood');
+  assert.equal(OBS.familyOf('Volcano', 'Earthquake swarm at volcano'), 'volcano',
+    'a record the provider typed Volcano was frozen as an earthquake');
+
+  /* Not two instances: every family, against every other family named in a
+     title, in both directions. */
+  const TYPES = {
+    'Earthquake': 'earthquake',
+    'Tropical Cyclone': 'tropical-cyclone',
+    'Flood': 'flood',
+    'Landslide': 'landslide',
+    'Wildfire': 'wildfire',
+    'Volcano': 'volcano',
+    'Drought': 'drought',
+    'Extreme Heat': 'extreme-heat',
+    'Severe Storm': 'severe-weather'
+  };
+  const MENTIONS = {
+    'earthquake': 'earthquake',
+    'tropical-cyclone': 'cyclone',
+    'flood': 'flooding',
+    'landslide': 'landslide',
+    'wildfire': 'wildfire',
+    'volcano': 'volcanic activity',
+    'drought': 'drought',
+    'extreme-heat': 'heat',
+    'severe-weather': 'storm'
+  };
+  const wrong = [];
+  for (const [type, family] of Object.entries(TYPES)) {
+    for (const [other, word] of Object.entries(MENTIONS)) {
+      if (other === family) continue;
+      const title = 'Assam: ' + word + ' emergency, Sep 2026';
+      const got = OBS.familyOf(type, title);
+      if (got !== family) wrong.push(type + ' + "' + title + '" -> ' + got);
+      const fams = OBS.familiesOf(type, title);
+      if (fams.length !== 1 || fams[0] !== family) {
+        wrong.push(type + ' + "' + title + '" widened to ' + JSON.stringify(fams));
+      }
+    }
+  }
+  assert.deepEqual(wrong, [], 'a title overrode the record\'s own type:\n' + wrong.join('\n'));
+
+  /* The title is still read where the type names no hazard at all, which is
+     the case it was there for. */
+  assert.equal(OBS.familyOf('Natural Hazard', 'M 5.9 earthquake'), 'earthquake');
+  assert.equal(OBS.familyOf('', 'Severe storm warning'), 'severe-weather');
+  assert.equal(OBS.familyOf('Complex Emergency', 'Flooding in Sindh'), 'flood');
+
+  // And a genuinely compound type still names both.
+  assert.deepEqual(OBS.familiesOf('Flood / Landslide', 'Nepal'), ['flood', 'landslide']);
 });
 
 test('a country-wide record does not bridge two regional disasters', async () => {

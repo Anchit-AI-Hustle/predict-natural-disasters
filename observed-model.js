@@ -55,17 +55,37 @@
    * graded against.
    */
   function familiesOf(type, title) {
-    var both = String(type || '') + ' ' + String(title || '');
-    var out = [];
-    /* The primary family is read from the type and the title together, as it
-       always has been. Any FURTHER family has to come from the type alone:
-       a claim is widened only where the thing it names is itself compound
-       ("Flood / Landslide"), never because its title mentions another hazard
-       in passing or happens to contain the letters of one. */
-    for (var i = 0; i < FAMILIES.length; i++) {
-      if (FAMILIES[i][1].test(both)) { out.push(FAMILIES[i][0]); break; }
-    }
     var t = String(type || '');
+    var out = [];
+    /* The primary family is the one the record's own type names.
+     *
+     * The type is normalised upstream into a single hazard vocabulary; the
+     * title is free prose, and it routinely names a second hazard in passing
+     * - a landslide that was "flood-triggered", an "earthquake swarm at
+     * volcano". Reading the primary family from type and title together left
+     * the order of this list to decide between them, so measured:
+     * familyOf('Landslide', 'Flood-triggered landslide') answered flood and
+     * familyOf('Volcano', 'Earthquake swarm at volcano') answered earthquake.
+     * That family is what the event is frozen under, what its matching window
+     * comes from and what a forecast is graded against, so an explicitly
+     * typed landslide was credited to a flood outlook.
+     *
+     * The title is read only where the type names no family at all - "Natural
+     * Hazard", "Complex Emergency", an empty type - which is the case it was
+     * there for. */
+    for (var i = 0; i < FAMILIES.length; i++) {
+      if (FAMILIES[i][1].test(t)) { out.push(FAMILIES[i][0]); break; }
+    }
+    if (!out.length) {
+      var both = t + ' ' + String(title || '');
+      for (var k = 0; k < FAMILIES.length; k++) {
+        if (FAMILIES[k][1].test(both)) { out.push(FAMILIES[k][0]); break; }
+      }
+    }
+    /* Any FURTHER family has to come from the type alone: a claim is widened
+       only where the thing it names is itself compound ("Flood / Landslide"),
+       never because its title mentions another hazard in passing or happens
+       to contain the letters of one. */
     for (var j = 0; j < FAMILIES.length; j++) {
       if (FAMILIES[j][1].test(t) && out.indexOf(FAMILIES[j][0]) < 0) out.push(FAMILIES[j][0]);
     }

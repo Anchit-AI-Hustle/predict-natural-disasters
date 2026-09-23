@@ -30,6 +30,14 @@ const OBS = require(path.join(__dirname, '..', 'observed-model.js'));
 let VER = null;
 try { VER = require(path.join(__dirname, '..', 'verification-model.js')); }
 catch (e) { VER = null; }
+/* A claim is all of its frozen terms, not its id and start: two rows that
+   share an id and a window start are a revision of one claim, which is
+   exactly what the fuller key exists to tell apart. */
+let HAZARDS = null;
+try { HAZARDS = require(path.join(__dirname, '..', 'hazard-model.js')); }
+catch (e) { HAZARDS = null; }
+const claimKeyOf = row => (HAZARDS && HAZARDS.claimKey)
+  ? HAZARDS.claimKey(row) : (row.id + '@' + row.targetStart);
 
 const [, , eventsPath, ledgerPath, outlookLedgerPath] = process.argv;
 if (!eventsPath || !ledgerPath) {
@@ -180,7 +188,15 @@ function claimsNeeding(c) {
     if (!Number.isFinite(onset) || !Number.isFinite(from) || !Number.isFinite(to)) continue;
     if (onset < from || onset > to) continue;
     if (!VER.geographyMatch(claim, c)) continue;
-    out.push(row.id + '@' + row.targetStart);
+    /* Which claim keeps it, and which disaster that claim follows.
+     *
+     * The subject is what the verifier needs and what hazard, window and
+     * distance cannot supply: two aftershock outlooks for mainshocks 150 km
+     * apart accept each other's aftershocks in full, so without it an
+     * ordinary aftershock of one quake was graded a hit for the other's
+     * sequence. Recorded here because this is the only place where the
+     * observation and every claim that accepts it are both in view. */
+    out.push({ claim: claimKeyOf(row), subject: row.forecastOf || row.id || null });
   }
   return out;
 }
@@ -350,9 +366,22 @@ function absorb(keeper, extra) {
     if (theirs === null || theirs === undefined) continue;
     keeper[f] = theirs;
     took.fields.push(f);
+    /* Bookkeeping, not an observation.
+     *
+     * This row is stamped with the merge time, and it reads null -> 9 because
+     * the survivor never held the figure, not because anything happened. The
+     * verifier grades a post-event-conditional claim on "additional impact
+     * inside the window" and read it as exactly that: measured, a mainshock
+     * whose death toll was transferred from a superseded row during an
+     * aftershock window graded the outlook a HIT, reasoning "its deaths rose
+     * to 9 at <the merge timestamp>" when the figure had been on record since
+     * before the window and nothing further had occurred. The superseded
+     * row's own revisions are carried across above with their original
+     * timestamps and are real; this one is not, and says so. */
     (keeper.revisions = keeper.revisions || []).push({ at: now, field: f, from: null, to: theirs,
-      absorbedFrom: extra.canonicalEventId,
-      note: 'Carried across from ' + extra.canonicalEventId + ', which turned out to be this disaster.' });
+      administrative: true, absorbedFrom: extra.canonicalEventId,
+      note: 'Carried across from ' + extra.canonicalEventId + ', which turned out to be this disaster. ' +
+        'The figure is not new: this records where it came from, not that anything changed.' });
   }
 
   for (const why of (extra.mergeReasons || [])) {
@@ -429,7 +458,9 @@ function noteSupporting(c, needed) {
     row.evidence = [...seen.values()];
     if (c.end && !row.end) row.end = c.end;
   }
-  for (const k of needed) if (!row.keptFor.includes(k)) row.keptFor.push(k);
+  for (const k of needed) {
+    if (!row.keptFor.some(x => x && x.claim === k.claim)) row.keptFor.push(k);
+  }
 }
 
 /*
@@ -578,8 +609,8 @@ ledger.method = {
   canonicalisation: 'Provider records are grouped into one disaster when they share a hazard family and fall inside that hazard’s matching window. Where either record is placed at an area centre, kilometres between them say nothing, so the match is by country and time instead.',
   significance: 'An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.',
   sightings: 'Each event records the runs during which it was actually being carried by a provider, not only the last time it was seen. A single latest timestamp is overwritten on the next run, which destroys the evidence that a disaster was in the feed throughout a forecast window that has since closed. Consecutive sightings more than ' + SIGHTING_GAP_HOURS + ' hours apart start a new run rather than being joined.',
-  frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions.',
-  supporting: 'Observations below the bar are not disasters and are not recorded as any, but a frozen conditional claim - an aftershock outlook - is graded on \u201cobserved aftershock activity\u201d, which is mostly made of events that hurt nobody. Where such a claim accepts the hazard, the observation falls inside its window, and it falls inside the geography that claim named, the observation is kept under supporting, apart from the disasters. Each says which claim keeps it. They enter no recall figure and are never counted as disasters; where no conditional claim needs one, nothing is kept.',
+  frozen: 'A recorded event’s identity - canonical id, hazard, onset and the geography it was first seen at - is never rewritten. Impact figures are, because they are still being learned, and every change is appended to that event’s revisions. A revision marked administrative is bookkeeping rather than an observation: a figure carried across when two rows turned out to be one disaster, stamped with the merge time and not with any reading. Nothing reads it as impact that occurred.',
+  supporting: 'Observations below the bar are not disasters and are not recorded as any, but a frozen conditional claim - an aftershock outlook - is graded on \u201cobserved aftershock activity\u201d, which is mostly made of events that hurt nobody. Where such a claim accepts the hazard, the observation falls inside its window, and it falls inside the geography that claim named, the observation is kept under supporting, apart from the disasters. Each says which claim keeps it and which disaster that claim follows, because hazard, window and distance alone cannot tell two neighbouring sequences apart - two aftershock outlooks for mainshocks 150 km apart accept each other\u2019s aftershocks in full. An observation that more than one sequence claims is graded for neither. They enter no recall figure and are never counted as disasters; where no conditional claim needs one, nothing is kept.',
   identity: 'A canonical id is a country, a rounded position and a minute, so two separate disasters can derive the same one. An id already held is believed only where the provider records overlap or the two rows can be the same occurrence under this hazard\u2019s matching window; otherwise the new disaster is recorded under a distinguished id, carrying the id it derived and the measured reason the two were not merged.',
   notCounted: 'Hazard records below the bar above are real and are not disasters anyone failed to predict; they are left out of the recall denominator rather than deleted from the feed. The bar decides what enters: a disaster already recorded goes on being reconciled on every run even when it eases below it, because what is still being learned about it - how long it was carried, when it ended, what it did - does not stop being true. Each row keeps the reason it qualified on entry, under significanceAtEntry, beside the current assessment.',
   observationsOnly: 'Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations.'
