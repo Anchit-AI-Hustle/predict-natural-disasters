@@ -17,6 +17,8 @@
  *     is not the scene now;
  *   - when NASA's host refuses every tile, the mosaic takes over and the
  *     caption says NASA's picture did not load - it never passes for today's;
+ *   - when both refuse, what is left is the painted map, and the caption says
+ *     that rather than naming a photograph nobody can see;
  *   - on the Political view there is no photograph and no caption about one.
  *
  * Usage, with Playwright and a Chromium available:
@@ -91,7 +93,7 @@ const server = http.createServer(async (req, res) => {
   res.end(fs.readFileSync(file));
 });
 
-async function open(browser, { view, nasaDown }) {
+async function open(browser, { view, nasaDown, esriDown }) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
   const seen = { nasa: [], esri: [], errors: [] };
@@ -110,6 +112,7 @@ async function open(browser, { view, nasaDown }) {
   });
   await page.route(/server\.arcgisonline\.com/, r => {
     seen.esri.push(r.request().url());
+    if (esriDown) return r.abort('connectionrefused');
     r.fulfill({ status: 200, contentType: 'image/png', body: MAGENTA });
   });
   await page.route(/services\.arcgisonline\.com/, r => r.fulfill({ status: 200, contentType: 'image/png', body: CLEAR }));
@@ -252,6 +255,16 @@ const dayOf = u => (u.match(/\/default\/(\d{4}-\d{2}-\d{2})\//) || [])[1];
     await ctx.close();
   }
 
+  console.log('flat map, ' + PAGE + ', NASA and the mosaic both refused');
+  {
+    const { ctx, page, seen } = await open(browser, { view: 'flat', nasaDown: true, esriDown: true });
+    await page.waitForTimeout(5000);
+    const cap = await caption(page);
+    check(cap && cap.source === 'drawn', 'the caption says the painted map is showing (' + (cap && cap.source) + ')');
+    check(seen.errors.length === 0, 'no page errors (' + seen.errors.join(' | ') + ')');
+    await ctx.close();
+  }
+
   /* --------------------------------------------------------------- globe */
   if (!CESIUM) {
     console.log('globe: skipped - set CESIUM_BUILD to a local Cesium Build/Cesium directory');
@@ -293,6 +306,20 @@ const dayOf = u => (u.match(/\/default\/(\d{4}-\d{2}-\d{2})\//) || [])[1];
       const cap = await caption(page);
       check(cap && cap.source === 'fallback', 'the caption says NASA’s picture did not load (' + (cap && cap.source) + ')');
       check(await shows(page, '.pnd-globe', 'magenta'), 'the mosaic stands in on the globe');
+      check(seen.errors.length === 0, 'no page errors (' + seen.errors.join(' | ') + ')');
+      await ctx.close();
+    }
+
+    /* Found in review: the globe watched NASA's tiles fail and then named the
+       mosaic without watching it at all, so with both hosts unreachable it
+       captioned a photograph over the painted map. */
+    console.log('globe, ' + PAGE + ', NASA and the mosaic both refused');
+    {
+      const { ctx, page, seen } = await open(browser, { view: 'globe', nasaDown: true, esriDown: true });
+      check(await ready(page), 'the globe came up');
+      await page.waitForTimeout(9000);
+      const cap = await caption(page);
+      check(cap && cap.source === 'drawn', 'the caption says the painted map is showing (' + (cap && cap.source) + ')');
       check(seen.errors.length === 0, 'no page errors (' + seen.errors.join(' | ') + ')');
       await ctx.close();
     }

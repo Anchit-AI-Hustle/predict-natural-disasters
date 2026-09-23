@@ -6,7 +6,7 @@ function keep(e){if(mode==='official-warnings'||mode==='alerts-notifications')re
    on every card spends a third of each one saying what is true of all of them.
    It is stated once for the page instead, and kept in full on the detail page. */
 const BOILERPLATE=/\s*This is not a deterministic prediction and must not replace official warnings\.?\s*$/;
-function gist(text){return String(text||'').replace(BOILERPLATE,'').trim()}
+function gist(text){return PND.summary(String(text||'').replace(BOILERPLATE,''))}
 function pageNote(){
  if(mode!=='forecast-list'&&mode!=='forecast-calendar')return;
  /* Refreshed rather than created once: the first draw can run before the feed

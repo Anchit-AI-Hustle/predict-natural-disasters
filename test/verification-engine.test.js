@@ -21,12 +21,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const V = require('../verification-model.js');
 const OBS = require('../observed-model.js');
-const { callApi, closeAllWindows } = require('./render.js');
+const { closeAllWindows } = require('./render.js');
 
 test.after(closeAllWindows);
 
 const ROOT = path.join(__dirname, '..');
-const feed = async () => (await callApi(require(path.join(ROOT, 'api', 'events.js')), '/api/events')).json();
 const H = OBS.familyOf;
 const FULL_COVER = { from: '2000-01-01T00:00:00Z', to: '2099-01-01T00:00:00Z' };
 
@@ -322,22 +321,85 @@ test('every score states the counts and the weighting it came from', () => {
 
 /* ------------------------------------ and against the real recorded data */
 
-test('the committed record cannot be graded yet, and says so', async () => {
-  const { events } = await feed();
-  const ledger = require(path.join(ROOT, 'data', 'outlook-ledger.json'));
-  const observedLedger = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'observed-disasters.json'), 'utf8'));
-  const observed = OBS.canonicalise(events.filter(e => !e.forecast)).filter(c => c.significant);
-  const cover = { from: observedLedger.events.length ? observedLedger.events[0].onset : null,
-    to: observedLedger.updatedAt || null };
+test('the committed record is graded only where the written record can answer', () => {
+  /* Graded the way the accuracy page grades it: against the observed ledger,
+     with coverage read per hazard and place from the scan ledger. This used to
+     take one window from the observed ledger's first onset to its last update,
+     which was harmless while that record was empty; the first real run put an
+     August flood in it, the window then spanned every recorded forecast, and
+     the test graded all of them against disasters the scan record never
+     covered. */
+  const VD = require('../verdicts.js');
+  const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', f), 'utf8'));
+  const ledger = read('outlook-ledger.json');
+  const observedLedger = read('observed-disasters.json');
+  const scan = read('scan-ledger.json');
+  const events = (observedLedger.events || []).filter(e => !e.supersededBy);
+  const preds = ledger.map(r => Object.assign({}, r, { forecastClass: VD.forecastClassOf(r) }));
+  const cover = c => V.observedCoverageFor(scan, c.hazards || c.hazard, c.geography);
+  const vers = preds.map(p => V.verify(p, events, { now: Date.now(), hazardFamilyOf: H,
+    observedCoverage: cover, supportingEvents: observedLedger.supporting || [] }));
 
-  const vers = ledger.map(p => V.verify(p, observed,
-    { now: Date.now(), hazardFamilyOf: H, observedCoverage: cover }));
-  const s = V.score(vers, []);
-  assert.equal(s.precision, null,
-    'a precision was published from a disaster record that does not cover the forecasts');
-  assert.ok(s.ungradeable > 0, 'nothing was marked ungradeable, so the guard is not running');
-  assert.equal(s.miss, 0,
-    'matured forecasts were called false positives against an empty disaster record');
+  const ungradeable = vers.filter(v => v.gradeable === false && v.ungradeableReason &&
+    v.ungradeableReason !== 'WINDOW_STILL_OPEN');
+  assert.ok(ungradeable.length > 0, 'nothing was marked ungradeable, so the guard is not running');
+  for (const v of ungradeable) assert.ok(v.classificationReason, v.predictionId + ' is ungradeable without saying why');
+
+  /* A false positive needs a source whose silence is evidence. */
+  for (const v of vers.filter(x => x.classification === 'MISS_FALSE_POSITIVE')) {
+    assert.notEqual(v.absenceEstablishable, false,
+      v.predictionId + ' was called a false positive where no absence could be established');
+  }
+  /* A hit is borne out by something recorded after the forecast existed. */
+  for (const [i, v] of vers.entries()) {
+    if (v.classification !== 'HIT' && v.classification !== 'PARTIAL_HIT') continue;
+    assert.ok(v.evidence.length, v.predictionId + ' was credited with no evidence');
+    const from = Date.parse(V.freezeOf(preds[i]));
+    for (const e of v.evidence) {
+      assert.ok(Date.parse(e.onset) >= from,
+        v.predictionId + ' was credited with an observation from before it was recorded');
+    }
+  }
+
+  /* No prediction rate from a record holding no independent prediction. */
+  const headlineIdx = preds.map((p, i) => i).filter(i => preds[i].forecastClass === 'independent-prospective');
+  const since = V.predictingSince(preds);
+  const assessed = events.filter(e => V.inRecallPeriod(e, since))
+    .map(e => V.assessCoverage(e, preds, scan, { hazardFamilyOf: H }));
+  const s = V.score(headlineIdx.map(i => vers[i]), assessed);
+  if (!headlineIdx.length) {
+    assert.equal(since, null);
+    assert.equal(s.precision, null, 'a precision was published with no independent prediction on record');
+    assert.equal(s.recall, null, 'a recall was published with no independent prediction on record');
+  }
+});
+
+test('a row written before freezes were recorded is credited only from when it was written', () => {
+  /* Legacy ledger rows carry recordedAt and no freezeTimestamp. The row is
+     the proof the forecast existed; before it, nothing shows that it did. */
+  const legacy = { id: 'OUT-legacy', type: 'Earthquake aftershock sequence', forecastClass: 'post-event-conditional',
+    country: 'Nepal', region: 'Bagmati', lat: 27.7, lon: 85.3,
+    targetStart: '2026-09-14T00:00:00Z', targetEnd: '2026-09-21T00:00:00Z',
+    recordedAt: '2026-09-15T12:00:00Z' };
+  assert.equal(new Date(V.effectiveStart(legacy)).toISOString(), '2026-09-15T12:00:00.000Z');
+  assert.equal(V.frozenClaim(legacy, H).freezeTimestamp, '2026-09-15T12:00:00Z');
+  /* An explicit freeze still wins over the write time. */
+  assert.equal(new Date(V.effectiveStart(Object.assign({}, legacy,
+    { freezeTimestamp: '2026-09-14T06:00:00Z' }))).toISOString(), '2026-09-14T06:00:00.000Z');
+});
+
+test('recall is measured only over disasters from when something was predicting', () => {
+  const pred = (cls, at) => ({ forecastClass: cls, freezeTimestamp: at });
+  assert.equal(V.predictingSince([pred('continuation-outlook', '2026-09-01T00:00:00Z')]), null,
+    'a conditional outlook is not an independent prediction');
+  const since = V.predictingSince([pred('independent-prospective', '2026-09-10T00:00:00Z'),
+    pred('independent-prospective', '2026-09-05T00:00:00Z')]);
+  assert.equal(new Date(since).toISOString(), '2026-09-05T00:00:00.000Z', 'the earliest freeze starts the period');
+  assert.equal(V.inRecallPeriod({ onset: '2026-09-04T23:00:00Z' }, since), false);
+  assert.equal(V.inRecallPeriod({ onset: '2026-09-05T00:00:00Z' }, since), true);
+  assert.equal(V.inRecallPeriod({ onset: null }, since), false, 'a disaster with no onset cannot be placed in the period');
+  assert.equal(V.inRecallPeriod({ onset: '2026-09-06T00:00:00Z' }, null), false,
+    'with nothing ever predicted, no disaster is in a recall');
 });
 
 /* ------------------- a continuation outlook is about a disaster that began
@@ -958,4 +1020,15 @@ test('a claim that follows no particular disaster is not gated on attribution', 
      every ordinary forecast ungradeable. */
   assert.equal(grade(prediction(), [disaster()]).classification, 'HIT',
     'an independent prospective forecast now needs an attribution it never had');
+});
+
+test('a change to what a verdict means changes the version it is stamped with', () => {
+  /* 1.3.0 credits legacy rows from recordedAt and measures recall only from
+     the first independent prediction. Verdicts under the old reading would
+     otherwise carry the same stamp as the new ones. */
+  assert.equal(V.VERIFICATION_VERSION, 'verify-1.3.0');
+  const legacy = { id: 'x', type: 'Flood', targetStart: '2026-09-14T00:00:00Z', targetEnd: '2026-09-20T00:00:00Z',
+    recordedAt: '2026-09-15T00:00:00Z', lat: 1, lon: 1 };
+  assert.equal(V.verify(legacy, [], { now: Date.parse('2026-09-16T00:00:00Z'), hazardFamilyOf: H,
+    observedCoverage: { from: null, to: null } }).verificationVersion, 'verify-1.3.0');
 });

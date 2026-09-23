@@ -461,7 +461,10 @@ test('the caption never lets an old picture pass for the scene now', async () =>
 test('the globe - the view readers open on - carries the same two pictures', () => {
   const src = read('globe.js');
   assert.match(src, /var DAILY_ABOVE_M = 250000;/, 'the globe has no height at which the pictures swap');
-  assert.match(src, /function todaysEarth\(Cesium, satLayer\)/, 'the globe does not drape the daily picture');
+  /* The mosaic's provider goes in too: it is watched for failure like NASA's,
+     so a globe with neither photograph says the painted map is showing. */
+  assert.match(src, /function todaysEarth\(Cesium, satLayer, satProvider\)/, 'the globe does not drape the daily picture');
+  assert.match(src, /todaysEarth\(Cesium, satLayer, sat\)/, 'the mosaic is named without being watched');
   assert.match(src, /dayLayer\.show = useDay;[\s\S]{0,80}satLayer\.show = !useDay;/,
     'the two pictures are drawn together rather than swapped, fetching both');
   assert.match(src, /'pnd-imagery'/, 'the globe does not report which picture it is showing');

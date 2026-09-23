@@ -107,7 +107,9 @@ test('the homepage asks for the contextual coachmarks when it has an answer', ()
   assert.match(src, /PND\.coach\('save'\)/, 'nothing asks for the Save coachmark');
   assert.match(src, /PND\.coach\('evidence'\)/, 'nothing asks for the evidence coachmark');
   /* Both are inside the function that renders an answer, not on load. */
-  const answer = src.slice(src.indexOf('function answer(place)'));
+  const at = src.indexOf('function answer(place');
+  assert.ok(at > 0, 'the answer function is gone');
+  const answer = src.slice(at);
   assert.ok(answer.indexOf("PND.coach('save')") > 0 &&
     answer.indexOf("PND.coach('save')") < answer.indexOf('\nPR.form'),
     'the contextual coachmarks are not fired from the answer');

@@ -33,8 +33,15 @@
      follows, and to no other; and a figure carried between two ledger rows
      that turned out to be one disaster is no longer read as impact that
      occurred. Both make grading stricter and both change verdicts, so the
-     version moves rather than the record quietly meaning something else. */
-  var VERIFICATION_VERSION = 'verify-1.2.0';
+     version moves rather than the record quietly meaning something else.
+
+     1.3.0: a ledger row with no freezeTimestamp - every row written before
+     that field existed - is credited from its own recordedAt rather than from
+     targetStart, since the row is the only proof the forecast existed; and
+     recall counts only disasters from the first independent prediction on
+     record. The first can turn a hit into a miss, the second changes a rate's
+     denominator, so verdicts and figures from 1.2.0 are not comparable. */
+  var VERIFICATION_VERSION = 'verify-1.3.0';
 
   var CLASSIFICATION = {
     HIT: 'HIT',
@@ -98,9 +105,22 @@
     return 2 * R * Math.asin(Math.sqrt(z));
   }
 
+  /**
+   * When a row proves its forecast existed.
+   *
+   * Rows written before freezeTimestamp existed - 507 of the first 536 - carry
+   * only recordedAt, and that IS their proof: the ledger row is the immutable
+   * record, and nothing earlier shows the forecast existed. Reading a missing
+   * freeze as "no constraint" credited those windows from targetStart instead,
+   * which for a continuation outlook is the moment the hazard was reported -
+   * a day or more before anything here was written down. */
+  function freezeOf(p) {
+    return p.freezeTimestamp || p.recordedAt || null;
+  }
+
   /** The earliest moment a forecast can be credited from. */
   function effectiveStart(p) {
-    var s = ms(p.targetStart), f = ms(p.freezeTimestamp);
+    var s = ms(p.targetStart), f = ms(freezeOf(p));
     if (s === null) return f;
     if (f === null) return s;
     return Math.max(s, f);
@@ -164,7 +184,7 @@
         }, {}),
         partialHitWeight: PARTIAL_WEIGHT
       },
-      freezeTimestamp: p.freezeTimestamp || null,
+      freezeTimestamp: freezeOf(p),
       /* The scan whose snapshot this forecast was derived from. Its own
          source cannot show that the hazard continued after it. */
       sourceScanId: p.sourceScanId || null,
@@ -1155,7 +1175,7 @@
       precision: precision, recall: recall, f1: f1,
       methodology: {
         precision: 'weightedPrecision = (HIT + ' + PARTIAL_WEIGHT + ' × PARTIAL_HIT) ÷ eligible matured predictions.',
-        recall: 'eventRecall = (fully predicted events + ' + PARTIAL_WEIGHT + ' × partly predicted events) ÷ significant observed events.',
+        recall: 'eventRecall = (fully predicted events + ' + PARTIAL_WEIGHT + ' × partly predicted events) ÷ significant observed events whose onset is at or after the first independent prediction on record.',
         f1: 'F1 = 2 × precision × recall ÷ (precision + recall). It is a verification score, not an accuracy.',
         partialHitWeight: 'PARTIAL HIT weight = ' + PARTIAL_WEIGHT + '. A partial hit was right about the hazard and the window and wrong about part of where, so it counts as half.',
         version: VERIFICATION_VERSION
@@ -1163,8 +1183,36 @@
     };
   }
 
+  /**
+   * From when a recall can be measured: the earliest freeze of an independent
+   * prospective prediction, or null if there has never been one.
+   *
+   * Recall asks what share of the disasters that happened this project had
+   * predicted. A disaster from before it recorded any independent prediction
+   * is still unforecast, and is still listed as a false negative, but putting
+   * it in a rate published "0% (4 disasters)" beside a note saying no
+   * prediction rate exists: a measure of an attempt that was never made.
+   */
+  function predictingSince(predictions) {
+    var since = null;
+    for (var i = 0; i < (predictions || []).length; i++) {
+      var p = predictions[i];
+      if (!p || p.forecastClass !== 'independent-prospective') continue;
+      var f = ms(freezeOf(p));
+      if (f !== null && (since === null || f < since)) since = f;
+    }
+    return since;
+  }
+
+  /** Does this observed disaster belong in the recall denominator? */
+  function inRecallPeriod(event, since) {
+    var onset = ms((event || {}).onset);
+    return since !== null && since !== undefined && onset !== null && onset >= since;
+  }
+
   var api = {
     VERIFICATION_VERSION: VERIFICATION_VERSION,
+    predictingSince: predictingSince, inRecallPeriod: inRecallPeriod, freezeOf: freezeOf,
     CLASSIFICATION: CLASSIFICATION, COVERAGE: COVERAGE,
     PARTIAL_WEIGHT: PARTIAL_WEIGHT, GEOGRAPHY_TOLERANCE_KM: GEOGRAPHY_TOLERANCE_KM,
     effectiveStart: effectiveStart, frozenClaim: frozenClaim, geographyMatch: geographyMatch,

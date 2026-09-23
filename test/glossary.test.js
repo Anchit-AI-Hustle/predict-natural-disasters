@@ -187,3 +187,21 @@ test('an acronym in prose is still written out', async () => {
     'no page prose or footnote writes GDACS out any more');
   r.close();
 });
+
+test('cards and headings keep acronyms short, and the page still says what they stand for', async () => {
+  const { JSDOM } = require('jsdom');
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'glossary.js'), 'utf8');
+  const dom = new JSDOM('<main><h2>NOAA storm track</h2><div class="card"><b>Derived from an active NOAA NHC advisory, 40 km NNE of Hilo</b></div>' +
+    '<p>The USGS record was read this morning.</p></main>', { runScripts: 'outside-only' });
+  dom.window.eval(src);
+  await new Promise(r => setTimeout(r, 50));
+  const d = dom.window.document;
+  assert.equal(d.querySelector('h2').textContent, 'NOAA storm track', 'a heading was expanded into a sentence');
+  assert.match(d.querySelector('.card').textContent, /active NOAA NHC advisory/, 'a card was expanded');
+  assert.match(d.querySelector('.card').textContent, /north-north-east of Hilo/, 'a bearing in a card was left raw');
+  assert.match(d.querySelector('p').textContent, /United States Geological Survey \(USGS\)/, 'prose stopped being written out');
+  const note = d.getElementById('pnd-acronym-note');
+  assert.ok(note && /NOAA stands for National Oceanic and Atmospheric Administration/.test(note.textContent) &&
+    /NHC stands for National Hurricane Center/.test(note.textContent), 'the short acronyms are defined nowhere');
+  dom.window.close();
+});
