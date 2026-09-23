@@ -186,8 +186,15 @@ test('the homepage forecast tile does not call every forecast high risk', () => 
   assert.ok(!/High-Risk Forecasts/.test(s),
     'the tile counted all forecasts, most of which are Moderate or Watch');
   assert.match(s, /id="kForecastsNote"/, 'the risk split should be published beside the count');
-  assert.match(s, /fc\.filter\(e=>e\.alert===l\)\.length/,
+  assert.match(s, /fc\.filter\(e=>PND\.matchesRiskLevel\(e,\s*l\.key\)\)\.length/,
     'the split should be counted from the feed');
+  /* And counted the same way the badges beside it are resolved. Counting raw
+     alert words missed every outlook whose provider said "Orange" while the
+     card below called it Moderate - the tile and the list disagreeing about
+     the same records. */
+  assert.match(s, /PNDRisk\.LEVELS/, 'the split is not built from the one risk scale');
+  assert.ok(!/\['High','Moderate','Watch'\]/.test(s),
+    'the tile still keeps its own list of level names');
 });
 
 test('the About page states no coverage figure it cannot show', () => {

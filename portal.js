@@ -25,6 +25,123 @@ const PND={
      are a display scale and what the provider published is the fact. */
   riskBadge(v,opts){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.badge(v,opts):this.esc(String(v||''));},
+  /*
+   * One resolved risk level for a record, in words a reader already knows.
+   *
+   * Every list showed two badges: the provider's own alert word and this
+   * site's severity word, in the same visual style, unlabelled. Measured on
+   * the live feed that produced, on one card, "Green" beside "Informational",
+   * and on the next "Orange" beside "Moderate" - and on a third, "Moderate"
+   * beside "Moderate", the same fact printed twice. "Green" and "Orange" are
+   * GDACS's internal vocabulary; they tell a reader nothing, and side by side
+   * with a second badge they read as two different claims about one record.
+   *
+   * There is one badge now and it names the level on this site's six-level
+   * scale. The provider's own word is not discarded - it is what the badge is
+   * derived from, so it goes in the badge's title and on the detail page,
+   * where it is attributable.
+   *
+   * Where the two inputs disagree the higher one decides, because a record
+   * carrying an agency's Orange alert and this site's Severe assessment is
+   * not a Moderate record; and the title says both, so the reader can see the
+   * disagreement rather than having it averaged away silently.
+   */
+  riskTag(e,opts){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return '';
+    const o=opts||{};
+    const rawAlert=e&&e.alert,rawSev=e&&e.severity;
+    const a=R.levelOf(rawAlert),sv=R.levelOf(rawSev);
+    /* Not the higher of the two: severityOf already takes the worse of what
+       was observed and what the authority assessed, so the severity subsumes
+       the alert. Taking the maximum across both counted the alert twice, on
+       two scales that name the same rank differently - a forecast carrying
+       alert "High" was published as "Severe" because the severity table calls
+       rank 4 Severe. The severity is the record's answer where it has one. */
+    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
+    if(!known.length){
+      /* Never a made-up level. These lists used to print "Live" or "Watch"
+         where a record carried no level at all, which invents one. */
+      return R.badgeForLevel('UNKNOWN',{text:'Not rated',className:o.className,
+        title:'No alert level was published for this record and no severity has been assessed for it.'});
+    }
+    const top=known.reduce((x,y)=>R.BY_KEY[x].rank>=R.BY_KEY[y].rank?x:y);
+    const from=[];
+    if(a!=='UNKNOWN')from.push('the alert level \u201c'+rawAlert+'\u201d'+
+      (e.source?' published by '+this.shortSource(e.source):''));
+    if(sv!=='UNKNOWN')from.push('an assessed severity of \u201c'+rawSev+'\u201d');
+    const title=R.BY_KEY[top].label+' on this site\u2019s six-level risk scale, from '+
+      from.join(' and ')+(a!=='UNKNOWN'&&sv!=='UNKNOWN'&&a!==sv?'. Where these differ the higher decides.':'.');
+    return R.badgeForLevel(top,{className:o.className,title});
+  },
+  /*
+   * A source name short enough to sit in a row of pills.
+   *
+   * The feed's own names run to "Predict Natural Disasters \u00b7 derived from
+   * NOAA / National Weather Service", which wrapped across two lines on a
+   * phone and broke mid-phrase. The full name is kept as the pill's title, so
+   * nothing about provenance is lost by shortening what is drawn.
+   */
+  /* The agencies' own abbreviations, not invented ones. Which office inside
+     NOAA issued a record is provenance worth keeping, and "NOAA" alone loses
+     it while the full name does not fit in a pill. */
+  SOURCE_ABBR:{
+    'NOAA / National Weather Service':'NOAA/NWS',
+    'NOAA National Weather Service':'NOAA/NWS',
+    'NOAA National Hurricane Center':'NOAA/NHC',
+    'National Weather Service':'NWS',
+    'National Hurricane Center':'NHC',
+    'USGS Volcano Hazards Program':'USGS Volcano',
+    'USGS verified recent snapshot':'USGS (verified)',
+    'GDACS verified snapshot':'GDACS (verified)',
+    'ReliefWeb (UN OCHA)':'ReliefWeb',
+    'Predict Natural Disasters':'This site'
+  },
+  shortSource(name){
+    const s=String(name||'').trim();
+    if(!s)return 'Source not stated';
+    if(this.SOURCE_ABBR[s])return this.SOURCE_ABBR[s];
+    const derived=/^(.*?)\s*[\u00b7|]\s*derived from\s+(.*)$/i.exec(s);
+    if(derived)return this.clipSource('Derived \u00b7 '+this.shortSource(derived[2]));
+    const paren=/\(([A-Z][A-Za-z0-9/&. -]{1,24})\)\s*$/.exec(s);
+    if(paren)return paren[1];
+    const slash=s.split(/\s*\/\s*/);
+    if(slash.length>1&&slash[0].length<=12)return slash[0];
+    return this.clipSource(s);
+  },
+  /* A pill that wraps is not a pill. 28 characters is what fits beside a risk
+     badge at 320px, measured. */
+  clipSource(s){return s.length<=28?s:s.slice(0,27).replace(/[\s,;:.\u00b7-]+$/,'')+'\u2026';},
+  /*
+   * The filter speaks the same vocabulary as the badges.
+   *
+   * Every list offered "Red / Orange / Green" while the badges beside them
+   * said Severe, Moderate and Low - so a reader who saw a Severe card could
+   * not filter for Severe, and the two controls in the same toolbar used two
+   * different languages for one thing. The options are the six levels of the
+   * scale, and matching resolves the record the same way the badge does, so
+   * "Moderate" finds a GDACS Orange as well as a record already called
+   * Moderate.
+   */
+  riskLevelOptions(selected){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return '';
+    return R.LEVELS.slice().reverse().map(l=>
+      `<option value="${l.key}"${selected===l.key?' selected':''}>${l.label}</option>`).join('')+
+      `<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`;
+  },
+  /** Does this record sit at the level the filter asks for? */
+  matchesRiskLevel(e,key){
+    if(!key)return true;
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return true;
+    /* The same resolution the badge uses, or the filter and the badge
+       disagree about the same record. */
+    const a=R.levelOf(e&&e.alert),sv=R.levelOf(e&&e.severity);
+    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
+    if(!known.length)return key==='UNKNOWN';
+    return known[0]===key;
+  },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},
   slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
@@ -478,7 +595,8 @@ const PND={
     this.startTour(true,['search','save','evidence']);
   },
   nav(active=''){return `<header class="top"><a class="logo" href="/"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Data. Patterns. Forecasts. A Safer Tomorrow.</small></span></a><nav>${[['Home','/'],['Calamities','/calamities'],['Live Map','/live-map'],['Forecasts','/forecasts'],['Alerts','/alerts'],['Regions','/regions'],['Personal Risk','/personal-risk'],['Verification','/accuracy'],['Methodology','/methodology'],['Insights','/insights'],['About','/about']].map(([n,u])=>`<a class="${active===n?'active':''}" href="${u}">${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
-  sourceBadge(e){return `<span class="source" data-source="${this.esc(e&&e.source||'Source')}">${this.esc(e&&e.source||'Source')}</span>`;},
+  sourceBadge(e){const full=(e&&e.source)||'Source not stated';
+    return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(full)}">${this.esc(this.shortSource(full))}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
      a date range: a joined pair of dates reads as one continuous event, and a second
      occurrence of the same hazard is a separate record with its own start. */
@@ -560,6 +678,29 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
     s.src='/event-enrichment.js?v=8';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
     document.body.appendChild(s);
   }
-  function init(){wire();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1)wire(n)});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
+  /* Fill every risk filter from the one scale.
+   *
+   * The pages carry an HTML comment where their options used to be, so the
+   * list cannot drift page by page the way "Red / Orange / Green" did - one
+   * page had a stray "High" option that matched nothing the feed ever set. */
+  function fillRiskFilters(root){
+    const scope=root&&root.querySelectorAll?root:document;
+    scope.querySelectorAll('select').forEach(sel=>{
+      for(const node of Array.from(sel.childNodes)){
+        if(node.nodeType!==8||String(node.data).trim()!=='risk-levels')continue;
+        /* Whatever was chosen stays chosen. Adding options moved the
+           selection to the last one, so every list opened filtered to "Not
+           rated" and showed nothing at all. */
+        const was=sel.value;
+        const box=document.createElement('select');
+        box.innerHTML=PND.riskLevelOptions();
+        while(box.firstChild)sel.insertBefore(box.firstChild,node);
+        node.remove();
+        sel.value=was;
+        if(sel.selectedIndex<0)sel.selectedIndex=0;
+      }
+    });
+  }
+  function init(){wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

@@ -267,13 +267,31 @@
             : 2;                // tropical storm or depression
     }
 
+    /*
+     * Two vocabularies, and they are not the same scale.
+     *
+     * Red / Orange / Green is what an authority publishes about something it
+     * has assessed. High / Moderate / Watch is what this site's derived
+     * outlooks carry, and api/events.js sets it deliberately one step below
+     * the signal it came from: a Red signal produces a High outlook, an
+     * Orange one a Moderate outlook. Ranking High and Red the same erased
+     * that step, so every outlook came out at the severity of the warning it
+     * was derived from - measured on the live feed, five outlooks derived
+     * from Red and Orange signals all published as Severe, the same word the
+     * warnings themselves carried, and the risk badge said so on every card.
+     *
+     * The forecast vocabulary therefore ranks one step below the official
+     * one, which is the step api/events.js took in the first place. Only
+     * forecasts use it: nothing observed in the feed carries High, Moderate
+     * or Watch.
+     */
     var issued = 0;
     switch (String(e.alert || '')) {
       case 'Red': issued = 4; break;
       case 'Orange': issued = 3; break;
-      case 'High': issued = 4; break;
-      case 'Moderate': issued = 3; break;
-      case 'Watch': issued = 2; break;
+      case 'High': issued = 3; break;
+      case 'Moderate': issued = 2; break;
+      case 'Watch': issued = 1; break;
       default: break;
     }
 
