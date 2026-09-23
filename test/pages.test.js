@@ -139,16 +139,36 @@ test('the life-safety instruction is shown on a life-safety record and not on ev
   assert.equal(line.textContent.trim(),
     'Follow instructions from the issuing authority and local emergency services.');
   assert.equal(line.getAttribute('role'), 'note');
+
+  /* Once, not once plus two standing copies. The panel closed with the same
+     instruction on every record and the Safety Context aside repeated it, so
+     hiding the conditional one changed nothing a reader could see: a quiet
+     record still carried the sentence twice, and a serious one carried it
+     three times. */
+  /* Counted on what a reader can see: jsdom has no layout, but a hidden
+     attribute is in the markup, and textContent includes hidden nodes. */
+  const seen = doc => {
+    const copy = doc.body.cloneNode(true);
+    copy.querySelectorAll('[hidden]').forEach(n => n.remove());
+    return (copy.textContent.match(/(?:follow|Follow) (?:instructions from|the instructions of|the issuing authority)[^.]*issuing authority[^.]*emergency services|Follow instructions from the issuing authority and local emergency services/g) || []).length;
+  };
+  assert.equal(seen(hot.document), 1,
+    'the life-safety instruction appears ' + seen(hot.document) + ' times on one record');
+
   hot.close();
 
   const quiet = evs.find(e => !e.forecast && e.alert === 'Green' &&
     e.evidenceState !== 'official-warning');
-  if (quiet) {
-    const cool = await renderPage('event-detail.html', { search: q(quiet.id), waitFor: settled('title') });
-    assert.equal(cool.document.getElementById('lifeSafety').hidden, true,
-      'an informational green record carries a life-safety instruction');
-    cool.close();
-  }
+  assert.ok(quiet, 'fixture: the feed should carry a quiet informational record');
+  const cool = await renderPage('event-detail.html', { search: q(quiet.id), waitFor: settled('title') });
+  assert.equal(cool.document.getElementById('lifeSafety').hidden, true,
+    'an informational green record carries a life-safety instruction');
+  assert.equal(seen(cool.document), 0,
+    'a quiet record still carries the life-safety instruction somewhere else on the page');
+  /* What it does still say is what this page is, which is a different claim. */
+  assert.match(cool.document.body.textContent, /not an instruction issued by any authority/,
+    'the page no longer says that it is situational awareness rather than an instruction');
+  cool.close();
 });
 
 test('incident detail page renders the full humanitarian context block', async () => {

@@ -895,3 +895,38 @@ test('no connected source publishes an injury or evacuation count, which is why 
       'a provider now publishes ' + k + ': the grid should carry it as a number');
   }
 });
+
+test('a movement field the source did not publish is absent, not north at zero knots', () => {
+  /* Number(null) is 0, and the API writes null where the hurricane centre
+     published nothing - so every missing bearing became NORTH and every
+     missing forward speed became 0 kt, on the one field a reader in a
+     storm's path acts on. The first test for this only ever passed
+     `undefined`, which Number turns into NaN, so it never saw what the feed
+     actually sends. */
+  const move = e => H.keyFacts(Object.assign({ type: 'Tropical Cyclone' }, e))
+    .find(f => f.key === 'movement');
+  for (const absent of [null, undefined, '']) {
+    assert.equal(move({ movementDirDeg: absent, movementKt: 12 }).reported, false,
+      'a storm with a ' + JSON.stringify(absent) + ' bearing was given a direction');
+    assert.equal(move({ movementDirDeg: absent, movementKt: 12 }).value, null);
+    assert.equal(move({ movementDirDeg: 315, movementKt: absent }).value, 'north-west',
+      'a ' + JSON.stringify(absent) + ' forward speed was published as a number');
+  }
+  /* A genuine zero is still a number somebody published. */
+  assert.equal(move({ movementDirDeg: 0, movementKt: 0 }).value, 'north at 0 kt');
+  assert.equal(move({ movementDirDeg: 315, movementKt: 12 }).value, 'north-west at 12 kt');
+});
+
+test('a hazard this table does not model is measured by the same impact', () => {
+  /* The fallback for an unmapped type was two of the six, so an EONET "Ice"
+     record, an unrecognised provider category or a record with no type at all
+     quietly went back to omitting injuries, missing, displaced and evacuated
+     - the same silence the impact block exists to break. What a hazard
+     outside the table lacks is its OWN measures, not these. */
+  const IMPACT = ['deaths', 'injuries', 'missing', 'displaced', 'evacuated', 'affected'];
+  for (const type of ['Ice', 'Gas Pipeline', 'Local Area Emergency', '', undefined, null,
+    'Some Category Nobody Has Mapped']) {
+    assert.deepEqual(H.keyFacts({ type }).map(f => f.key), IMPACT,
+      JSON.stringify(type) + ' is measured by a different impact from every other hazard');
+  }
+});

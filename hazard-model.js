@@ -403,9 +403,23 @@
     'east', 'east-south-east', 'south-east', 'south-south-east',
     'south', 'south-south-west', 'south-west', 'west-south-west',
     'west', 'west-north-west', 'north-west', 'north-north-west'];
+  /*
+   * Absent is absent, and Number(null) is 0.
+   *
+   * The API writes null where the hurricane centre published nothing, and
+   * every one of those nulls became a zero here: a storm with no bearing was
+   * reported as moving NORTH, and a bearing with no forward speed as moving
+   * at 0 kt. Both are numbers nobody published, on the one field a reader in
+   * a storm's path acts on. The test for this only ever passed `undefined`,
+   * which Number turns into NaN, so it never saw what the feed actually
+   * sends.
+   */
+  function published(v) {
+    return v !== undefined && v !== null && v !== '' && isFinite(Number(v));
+  }
   function compassOf(deg) {
+    if (!published(deg)) return null;
     var d = Number(deg);
-    if (!isFinite(d)) return null;
     return COMPASS[Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
   }
 
@@ -479,8 +493,8 @@
            is going and how fast. A bearing with no speed still says where,
            and a speed with no bearing says nothing on its own. */
         var where = compassOf(e.movementDirDeg);
-        var howFast = Number(e.movementKt);
-        var fast = isFinite(howFast) && howFast >= 0 ? Math.round(howFast) + ' kt' : null;
+        var fast = published(e.movementKt) && Number(e.movementKt) >= 0
+          ? Math.round(Number(e.movementKt)) + ' kt' : null;
         var moving = where ? (where + (fast ? ' at ' + fast : '')) : null;
         return { key: key, label: label, reported: !!moving, value: moving,
           note: moving ? null : 'This source publishes no track for this system' };
@@ -523,7 +537,13 @@
    */
   function keyFacts(e) {
     var h = hazardOf(e && e.type);
-    var keys = METRICS[hazardName(h)] || ['deaths', 'affected'];
+    /* A hazard this table does not model is still a disaster, and is still
+       measured by what it did. The fallback was two of the six, so an EONET
+       "Ice" record, an unmapped provider category or a record with no type at
+       all quietly went back to omitting injuries, missing, displaced and
+       evacuated - the same silence the impact block exists to break. What a
+       hazard outside the table lacks is its OWN measures, not these. */
+    var keys = METRICS[hazardName(h)] || IMPACT;
     return keys.map(function (k) { return factOf(e || {}, k); }).filter(Boolean);
   }
 
