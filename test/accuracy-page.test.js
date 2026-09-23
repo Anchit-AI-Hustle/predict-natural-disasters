@@ -148,16 +148,16 @@ function gradingFixture() {
     'the fixture target holds more than one window, so a row cannot be identified by its id');
   const first = Math.min(...matured.map(o => Date.parse(o.targetStart)));
   const last = Math.max(...matured.map(o => Date.parse(o.targetEnd)));
-  const scan = {
-    schemaVersion: 1,
-    providers: { usgs: USGS },
-    scans: [
-      { scanTimestamp: new Date(first - 3600e3).toISOString(),
-        providers: [{ provider: 'usgs', status: 'SCANNED' }] },
-      { scanTimestamp: new Date(last + 3600e3).toISOString(),
-        providers: [{ provider: 'usgs', status: 'SCANNED' }] }
-    ]
-  };
+  /* Scans at the job's real cadence across the whole span, not one at each
+     end: coverage is an unbroken run of scans now, and two instants a week
+     apart cover the two instants and nothing in between. */
+  const STEP = 3 * 3600e3;
+  const scans = [];
+  for (let t = first - 3600e3; t <= last + 3600e3; t += STEP) {
+    scans.push({ scanTimestamp: new Date(t).toISOString(),
+      providers: [{ provider: 'usgs', status: 'SCANNED' }] });
+  }
+  const scan = { schemaVersion: 1, providers: { usgs: USGS }, scans: scans };
   const observed = {
     schemaVersion: 1,
     updatedAt: new Date().toISOString(),

@@ -185,12 +185,24 @@ test('scanned and nothing forecast is a forecasting failure, not a coverage one'
   const led = {
     retention: { detailFrom: '2026-09-01T00:00:00Z' },
     providers: { gdacs: { hazards: ['Flood', 'Earthquake'], scope: { kind: 'global' } } },
-    scans: [{ scanTimestamp: '2026-09-03T01:00:00Z',
+    /* An hour before onset: a scan that ran afterwards could not have put
+       anyone in a position to forecast the thing it missed. */
+    scans: [{ scanTimestamp: '2026-09-02T23:00:00Z',
       providers: [{ provider: 'gdacs', status: 'SCANNED' }] }]
   };
   const opts = { hazardFamilyOf: OBS.familyOf };
   const a = V.assessCoverage(disaster(), [], led, opts);
   assert.equal(a.status, 'FORECAST_FAILURE');
+
+  /* And that is the whole of it: the same scan an hour after the disaster
+     shows only that the provider came back, not that it was watching in time,
+     so the disaster cannot be blamed on the forecaster. */
+  const late = JSON.parse(JSON.stringify(led));
+  late.scans[0].scanTimestamp = '2026-09-03T01:00:00Z';
+  const l = V.assessCoverage(disaster(), [], late, opts);
+  assert.equal(l.status, 'DATA_UNAVAILABLE',
+    'a scan that ran after the disaster was read as having been in a position to forecast it');
+  assert.match(l.reason, /before this disaster/i);
 
   // The same disaster, with the only covering provider unavailable, is the
   // other thing entirely.
@@ -337,4 +349,73 @@ test('a disaster that was over before the window opened did not continue into it
   const w = grade(cont, [revised]);
   assert.equal(w.classification, 'HIT');
   assert.match(w.classificationReason, /deaths was revised/);
+});
+
+test('a report dated after the window closed is not evidence from inside it', () => {
+  /* The mirror image of the defect the continuation branch was written to
+     fix, and the one that flatters: only the window's start was applied, so a
+     mark at any later date counted. lastSeenAt advances every run while a
+     record is in the feed, so an outlook that expired a fortnight ago would
+     be graded a hit this morning on the strength of this morning's timestamp,
+     reported as "inside the window". */
+  const cont = prediction({
+    forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
+  });
+  const late = disaster({ onset: '2026-09-03T00:00:00Z', lastSeenAt: '2026-09-19T00:00:00Z' });
+  const v = grade(cont, [late]);
+  assert.equal(v.classification, 'PENDING',
+    'a sighting a fortnight after the window closed was counted as activity inside it');
+  assert.equal(v.ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+
+  // Control: the same sighting, inside the window.
+  const inside = disaster({ onset: '2026-09-03T00:00:00Z', lastSeenAt: '2026-09-05T00:00:00Z' });
+  assert.equal(grade(cont, [inside]).classification, 'HIT');
+
+  // And the helper itself, at the boundary.
+  const from = Date.parse('2026-09-04T00:00:00Z'), to = Date.parse('2026-09-07T00:00:00Z');
+  const at = t => V.continuedActivity({ onset: '2026-09-03T00:00:00Z', lastSeenAt: t }, from, to);
+  assert.ok(at('2026-09-07T00:00:00Z'), 'the closing instant is inside the window');
+  assert.equal(at('2026-09-07T00:00:01Z'), null, 'a second after the window is not inside it');
+});
+
+test('an aftershock outlook is not verified by the mainshock still being in the feed', () => {
+  /* Its published rule is "grade against observed aftershock activity and any
+     additional impacts in the window". The mainshock sits in the USGS feed
+     for days afterwards, so counting the record being seen again would make
+     every aftershock outlook a hit whether or not one aftershock occurred. */
+  const outlook = prediction({
+    type: 'Earthquake aftershock sequence', title: 'Aftershock-sequence outlook — Nepal',
+    forecastClass: 'post-event-conditional', freezeTimestamp: '2026-09-04T00:00:00Z',
+    targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-08T00:00:00Z'
+  });
+  const mainshock = over => Object.assign({
+    canonicalEventId: 'OBS-eq-main', hazard: 'earthquake', significant: true,
+    onset: '2026-09-03T12:00:00Z',
+    geography: { country: 'Nepal', region: 'Bagmati Province', lat: 27.7, lon: 85.3 }
+  }, over || {});
+
+  const seenAgain = grade(outlook, [mainshock({ lastSeenAt: '2026-09-06T00:00:00Z' })]);
+  assert.notEqual(seenAgain.classification, 'HIT',
+    'the mainshock still being carried by its provider verified an aftershock outlook');
+  assert.equal(seenAgain.classification, 'PENDING',
+    'and it is not a failure either: most aftershocks never reach the significance bar, so the record cannot answer it');
+
+  /* The second limb of the rule: a new impact recorded inside the window. */
+  const newImpact = grade(outlook, [mainshock({
+    revisions: [{ at: '2026-09-06T00:00:00Z', field: 'deaths', from: 2, to: 9 }] })]);
+  assert.equal(newImpact.classification, 'HIT',
+    'additional impacts inside the window do not verify an aftershock outlook');
+
+  /* The first limb: a separate significant aftershock, matched on its onset
+     like any other observed event. */
+  const aftershock = grade(outlook, [mainshock({
+    canonicalEventId: 'OBS-eq-after', onset: '2026-09-06T04:00:00Z' })]);
+  assert.equal(aftershock.classification, 'HIT');
+  assert.deepEqual(aftershock.observedEventIds, ['OBS-eq-after']);
+
+  /* And a continuation outlook, which claims the hazard itself continues, is
+     still graded on the record being carried — the two classes are not one. */
+  const cont = Object.assign({}, outlook, { forecastClass: 'continuation-outlook' });
+  assert.equal(grade(cont, [mainshock({ lastSeenAt: '2026-09-06T00:00:00Z' })]).classification, 'HIT');
 });

@@ -163,25 +163,65 @@
    * record carries no such report the outlook stays ungradeable, because
    * nothing establishes either that it held or that it failed.
    */
-  var CONTINUATION_CLASSES = ['continuation-outlook', 'warning-derived', 'post-event-conditional'];
+/*
+ * What counts as the disaster carrying on, per class, because the three do
+ * not claim the same thing.
+ *
+ * A continuation outlook and a warning-derived one say the hazard itself
+ * continues, so the record still being carried by the provider inside the
+ * window is evidence of exactly that.
+ *
+ * An aftershock outlook does not. Its published rule is "grade against
+ * observed aftershock activity and any additional impacts in the window", and
+ * the mainshock still sitting in the USGS feed is neither: lastSeenAt
+ * advances every run for days, so reading it as continuation would make every
+ * aftershock outlook a hit whether or not a single aftershock occurred. An
+ * aftershock that does occur is a separate observed event whose onset falls
+ * inside the window and is matched through the ordinary path; what this class
+ * may additionally be credited with is a new impact recorded inside the
+ * window, which is the second limb of its own rule.
+ */
+  var IMPACT_FIELDS = ['deaths', 'injuries', 'missing', 'affected', 'displaced',
+    'evacuated', 'infrastructureImpact'];
+  var CONTINUATION_EVIDENCE = {
+    'continuation-outlook': 'still-reported',
+    'warning-derived': 'still-reported',
+    'post-event-conditional': 'new-impact'
+  };
+  var CONTINUATION_CLASSES = Object.keys(CONTINUATION_EVIDENCE);
 
-  function continuedActivity(event, from, to) {
+  /*
+   * Evidence that the disaster was still going ON inside the window.
+   *
+   * Both bounds matter and only one of them was applied. A mark merely at or
+   * after the window's start also counts a report dated long after the window
+   * closed - and lastSeenAt advances on every run while a record is in the
+   * feed, so an outlook that expired a fortnight ago would be graded a hit
+   * this morning, on the strength of a timestamp from this morning, described
+   * as "inside the window". The mirror image of the defect this function was
+   * written to fix, and the one that flatters.
+   */
+  function continuedActivity(event, from, to, kind) {
     if (from === null) return null;
+    var impactOnly = kind === 'new-impact';
     var onset = ms(event.onset);
     if (onset !== null && to !== null && onset > to) return null;
     var end = ms(event.end);
     if (end !== null && end < from) return null;          // over before the window opened
-    var marks = [
-      { at: ms(event.impactLastUpdated), what: 'its impact figures were last updated' },
-      { at: ms(event.end), what: 'it was recorded as ending' },
-      { at: ms(event.lastSeenAt), what: 'it was last seen in the feed' }
-    ];
+    var marks = [{ at: ms(event.impactLastUpdated), what: 'its impact figures were last updated' }];
+    if (!impactOnly) {
+      marks.push({ at: ms(event.end), what: 'it was recorded as ending' });
+      marks.push({ at: ms(event.lastSeenAt), what: 'it was last seen in the feed' });
+    }
     for (var r = 0; r < (event.revisions || []).length; r++) {
-      marks.push({ at: ms(event.revisions[r].at), what: 'its ' + event.revisions[r].field + ' was revised' });
+      var rev = event.revisions[r];
+      if (impactOnly && IMPACT_FIELDS.indexOf(rev.field) < 0) continue;
+      marks.push({ at: ms(rev.at), what: 'its ' + rev.field + ' was revised' });
     }
     var best = null;
     for (var i = 0; i < marks.length; i++) {
       if (marks[i].at === null || marks[i].at < from) continue;
+      if (to !== null && marks[i].at > to) continue;
       if (best === null || marks[i].at < best.at) best = marks[i];
     }
     if (!best) return null;
@@ -275,10 +315,29 @@
           'This window closes after the record of observed disasters was last updated (' + cov.to + ').', [],
           'OBSERVED_RECORD_NOT_YET_UPDATED');
       }
+      /* Inside the outer bounds is not the same as watched throughout. A
+         provider that succeeded either side of a two-day outage covers the
+         days it answered on and not the ones in between, and a window in the
+         gap cannot be failed for an absence nobody was there to see. */
+      if (cov.intervals && cov.intervals.length) {
+        var opens = start === null ? end : start;
+        var whole = null;
+        for (var c = 0; c < cov.intervals.length; c++) {
+          var iv = cov.intervals[c], a = ms(iv.from), b = ms(iv.to);
+          if (a !== null && b !== null && a <= opens && b >= end) { whole = iv; break; }
+        }
+        if (!whole) {
+          return say(CLASSIFICATION.PENDING,
+            'No unbroken run of scans covers this window: the record of what was examined has a gap of more than ' +
+            (cov.maxGapHours || MAX_SCAN_GAP_HOURS) + ' hours inside it, so an absence of matching disasters would say nothing about what happened.',
+            [], 'OBSERVED_RECORD_HAS_A_GAP');
+        }
+      }
     }
 
     var matched = [], early = [], awaitingActivity = [];
-    var continuation = CONTINUATION_CLASSES.indexOf(claim.forecastClass) >= 0;
+    var continuationKind = CONTINUATION_EVIDENCE[claim.forecastClass] || null;
+    var continuation = !!continuationKind;
     for (var i = 0; i < (observedEvents || []).length; i++) {
       var ev = observedEvents[i];
       if (!ev.significant) continue;
@@ -292,7 +351,7 @@
         /* The disaster this outlook is about. It predates the freeze because
            that is what a continuation outlook is; what has to fall inside the
            window is the evidence that it carried on. */
-        var act = continuedActivity(ev, start, end);
+        var act = continuedActivity(ev, start, end, continuationKind);
         if (act) { matched.push({ event: ev, level: geo.level, why: geo.why + ' ' + act.why }); }
         else { awaitingActivity.push({ event: ev, level: geo.level, why: geo.why }); }
         continue;
@@ -368,27 +427,61 @@
    * place, actually completed one. No such scan means no coverage, and a
    * forecast over that period stays ungradeable.
    */
+  /*
+   * The longest gap between two successful scans that is still one period of
+   * watching rather than two.
+   *
+   * Coverage used to be the earliest successful scan through the latest, which
+   * is not a period at all: a provider that succeeded on Monday and again on
+   * Friday, and was unavailable in between, produced a week of "coverage" from
+   * two instants, and a Tuesday outlook could be failed for an absence nobody
+   * observed. Scans are instants, so joining consecutive ones needs a stated
+   * rule for how far apart they may be.
+   *
+   * Measured from the ledger's own write times over 15-20 September, the
+   * hourly job actually ran every 2.0 to 5.6 hours, median 3.7. Six hours is
+   * therefore beyond the slowest cycle observed, and a gap longer than that is
+   * treated as a period nothing was watching. Published on every coverage
+   * answer and versioned with the engine, like every other tolerance here.
+   */
+  var MAX_SCAN_GAP_HOURS = 6;
+
   function observedCoverageFor(scanLedger, hazard, place) {
     var scans = (scanLedger && scanLedger.scans) || [];
-    if (!scans.length) return { from: null, to: null, scans: 0 };
+    var empty = { from: null, to: null, scans: 0, intervals: [], maxGapHours: MAX_SCAN_GAP_HOURS };
+    if (!scans.length) return empty;
     var meta = (scanLedger && scanLedger.providers) || {};
     var probe = { hazard: hazard, geography: place || {} };
-    var from = null, to = null, n = 0;
+    var times = [];
     for (var i = 0; i < scans.length; i++) {
       var s = scans[i], t = ms(s.scanTimestamp);
       if (t === null) continue;
       var covered = (s.providers || []).some(function (p) {
         return p.status === 'SCANNED' && providerCanEstablishAbsence(meta[p.provider] || {}, probe);
       });
-      if (!covered) continue;
-      n++;
-      if (from === null || t < from) from = t;
-      if (to === null || t > to) to = t;
+      if (covered) times.push(t);
+    }
+    if (!times.length) return empty;
+    times.sort(function (a, b) { return a - b; });
+
+    /* One interval per unbroken run of scans. A lone successful scan is an
+       instant, not a span, and stays one: it can only cover a window that
+       opens and closes at that moment, which is to say none. */
+    var gap = MAX_SCAN_GAP_HOURS * 3600e3;
+    var intervals = [{ from: times[0], to: times[0] }];
+    for (var j = 1; j < times.length; j++) {
+      var last = intervals[intervals.length - 1];
+      if (times[j] - last.to <= gap) last.to = times[j];
+      else intervals.push({ from: times[j], to: times[j] });
     }
     return {
-      from: from === null ? null : new Date(from).toISOString(),
-      to: to === null ? null : new Date(to).toISOString(),
-      scans: n
+      from: new Date(times[0]).toISOString(),
+      to: new Date(times[times.length - 1]).toISOString(),
+      scans: times.length,
+      intervals: intervals.map(function (iv) {
+        return { from: new Date(iv.from).toISOString(), to: new Date(iv.to).toISOString() };
+      }),
+      maxGapHours: MAX_SCAN_GAP_HOURS
     };
   }
 
@@ -517,14 +610,21 @@
     }
 
     /* Was anything that covers this hazard actually evaluated around then? */
+    /* Before the disaster, not around it.
+     *
+     * An absolute difference accepted a scan up to a day AFTER onset, so a
+     * provider that was down beforehand and came back afterwards was read as
+     * having been in a position to forecast the thing it missed - and the
+     * disaster was blamed on the forecaster rather than on the gap. Only a
+     * scan at or before onset can show anyone was watching in time. */
     var window = 24 * 3600e3;
     var near = scans.filter(function (s) {
       var t = ms(s.scanTimestamp);
-      return t !== null && Math.abs(t - onset) <= window;
+      return t !== null && t <= onset && onset - t <= window;
     });
     if (!near.length) {
       return { falseNegative: true, status: COVERAGE.DATA_UNAVAILABLE, matched: [],
-        reason: 'No scan is recorded within a day of this disaster, so whether it was being watched cannot be established.' };
+        reason: 'No scan is recorded in the day before this disaster, so whether it was being watched in time to forecast it cannot be established.' };
     }
     var covering = near.some(function (s) {
       return (s.providers || []).some(function (p) {
@@ -606,8 +706,9 @@
     verify: verify, covers: covers, assessCoverage: assessCoverage, score: score, distanceKm: distanceKm,
     providerCovers: providerCovers, providerCoversHazard: providerCoversHazard,
     providerCanEstablishAbsence: providerCanEstablishAbsence,
-    observedCoverageFor: observedCoverageFor,
+    observedCoverageFor: observedCoverageFor, MAX_SCAN_GAP_HOURS: MAX_SCAN_GAP_HOURS,
     continuedActivity: continuedActivity, CONTINUATION_CLASSES: CONTINUATION_CLASSES,
+    CONTINUATION_EVIDENCE: CONTINUATION_EVIDENCE, IMPACT_FIELDS: IMPACT_FIELDS,
     providerCoversPlace: providerCoversPlace
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

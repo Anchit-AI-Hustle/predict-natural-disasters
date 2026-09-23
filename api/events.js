@@ -1491,6 +1491,17 @@ async function handler(req, res) {
     if (e.forecast) return 'forecast';
     if (/Weather Service/i.test(String(e.source || ''))) return 'official-warning';
     if (e.expiresAt && e.sourceType === 'official') return 'official-warning';
+    /* A published hazard status is not an observation of a disaster.
+     *
+     * A volcano observatory's WATCH or WARNING says a hazardous eruption is
+     * imminent, under way or suspected - it does not establish which, and the
+     * record carries no impact of its own. Classified as observed, its red or
+     * orange colour cleared the significance bar on its own and Kilauea and
+     * Great Sitkin were recorded in the ledger of disasters that happened,
+     * inflating the recall denominator with two events that may not have
+     * occurred. An eruption that does cause harm is reported as an event by a
+     * provider that reports events, and that record is the observation. */
+    if (e.alertLevel && e.sourceType === 'official') return 'official-warning';
     if (e.sourceType === 'official' || e.sourceType === 'observed') return 'observed';
     return 'unknown';
   }

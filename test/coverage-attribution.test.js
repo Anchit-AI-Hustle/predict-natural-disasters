@@ -48,10 +48,13 @@ const quakePrediction = over => Object.assign({
   targetStart: '2026-09-02T00:00:00Z', targetEnd: '2026-09-05T00:00:00Z'
 }, over || {});
 
+/* The scan runs an hour BEFORE the disaster: only a scan at or before onset
+   shows anyone was in a position to forecast it, so a fixture that scans
+   afterwards tests the opposite of what these cases are about. */
 const ledgerWith = providers => ({
   providers: providers,
   retention: { detailFrom: '2026-09-01T00:00:00Z' },
-  scans: [{ scanTimestamp: '2026-09-03T01:00:00Z',
+  scans: [{ scanTimestamp: '2026-09-02T23:00:00Z',
     providers: Object.keys(providers).map(k => ({ provider: k, status: 'SCANNED' })) }]
 });
 
@@ -127,20 +130,21 @@ test('a run where a hazard\'s providers were down extends no coverage for it', (
       nhc: { hazards: ['Tropical Cyclone'], completeness: 'exhaustive',
         scope: { kind: 'boxes', boxes: [{ name: 'Atlantic', minLat: -5, maxLat: 60, minLon: -100, maxLon: 0 }] } }
     },
-    /* Two cycles, so the earthquake side covers a span rather than an
-       instant; the cyclone provider is down for both. */
-    scans: [
-      { scanTimestamp: '2026-09-01T00:00:00Z', providers: [
+    /* The real cadence, because coverage is now a run of scans rather than
+       the span between the first and the last: hourly-ish from before the
+       window to after it, with the cyclone provider down throughout. */
+    scans: Array.from({ length: 12 }, (_, i) => ({
+      scanTimestamp: new Date(Date.parse('2026-09-01T09:00:00Z') + i * 3 * 3600e3).toISOString(),
+      providers: [
         { provider: 'usgs', status: 'SCANNED' },
-        { provider: 'nhc', status: 'DATA_UNAVAILABLE' }] },
-      { scanTimestamp: '2026-09-03T00:00:00Z', providers: [
-        { provider: 'usgs', status: 'SCANNED' },
-        { provider: 'nhc', status: 'DATA_UNAVAILABLE' }] }]
+        { provider: 'nhc', status: 'DATA_UNAVAILABLE' }]
+    }))
   };
   const where = { country: 'Bahamas', lat: 24, lon: -75 };
   const quake = V.observedCoverageFor(led, 'earthquake', where);
   const cyclone = V.observedCoverageFor(led, 'tropical-cyclone', where);
-  assert.equal(quake.scans, 2, 'the earthquake scans were not counted');
+  assert.equal(quake.scans, 12, 'the earthquake scans were not counted');
+  assert.equal(quake.intervals.length, 1, 'an unbroken run of scans was split');
   assert.equal(cyclone.scans, 0, 'a cycle with no cyclone source was counted as cyclone coverage');
   assert.equal(cyclone.from, null);
 
@@ -346,4 +350,60 @@ test('the served feed states each provider\'s reach in a form that can be tested
   assert.deepEqual(by.nws.scope, { kind: 'countries', countries: ['United States'] });
   assert.equal(by.gdacs.scope.kind, 'global');
   assert.equal(by.nhc.scope.kind, 'boxes');
+});
+
+/* ------------------------------ a span is not the same as being watched */
+
+test('a gap between successful scans is not coverage', () => {
+  /* Coverage was the earliest successful scan through the latest, which is
+     not a period at all: a provider that answered on Monday and again on
+     Friday, and was unavailable in between, produced a week of "coverage"
+     from two instants — and a Tuesday outlook could be failed for an absence
+     nobody was there to observe. */
+  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' };
+  const at = (t, ok) => ({ scanTimestamp: t, providers: [{ provider: 'usgs', status: ok ? 'SCANNED' : 'DATA_UNAVAILABLE' }] });
+  const led = { providers: { usgs: usgs }, scans: [
+    at('2026-09-07T00:00:00Z', true),
+    at('2026-09-08T00:00:00Z', false),
+    at('2026-09-11T00:00:00Z', true),
+    at('2026-09-11T04:00:00Z', true)
+  ] };
+  const cov = V.observedCoverageFor(led, 'earthquake', { country: 'Nepal' });
+  assert.equal(cov.scans, 3);
+  assert.equal(cov.intervals.length, 2,
+    'four days of outage were joined into one period of coverage');
+  assert.equal(cov.intervals[1].from, '2026-09-11T00:00:00.000Z');
+  assert.equal(cov.intervals[1].to, '2026-09-11T04:00:00.000Z');
+  assert.ok(cov.maxGapHours > 0, 'the rule for joining scans is not published on the answer');
+
+  const window = (a, b) => ({ id: 'o', type: 'Earthquake', country: 'Nepal', lat: 27.7, lon: 85.3,
+    forecastClass: 'independent-prospective', freezeTimestamp: '2026-09-06T00:00:00Z',
+    targetStart: a, targetEnd: b });
+  const graded = w => V.verify(w, [], { now: Date.parse('2026-09-20T00:00:00Z'),
+    hazardFamilyOf: OBS.familyOf, observedCoverage: () => cov });
+
+  const inGap = graded(window('2026-09-09T00:00:00Z', '2026-09-10T00:00:00Z'));
+  assert.equal(inGap.classification, 'PENDING',
+    'a window inside the outage was graded against an absence nobody observed');
+  assert.equal(inGap.ungradeableReason, 'OBSERVED_RECORD_HAS_A_GAP');
+  assert.match(inGap.classificationReason, /gap of more than \d+ hours/);
+
+  // Control: a window inside an unbroken run still grades.
+  const watched = graded(window('2026-09-11T01:00:00Z', '2026-09-11T03:00:00Z'));
+  assert.equal(watched.classification, 'MISS_FALSE_POSITIVE',
+    'a window that genuinely was watched throughout should still be gradeable');
+
+  // And a window straddling the outage's edge is not covered either.
+  assert.equal(graded(window('2026-09-10T00:00:00Z', '2026-09-11T02:00:00Z')).ungradeableReason,
+    'OBSERVED_RECORD_HAS_A_GAP');
+});
+
+test('an isolated scan covers the moment it ran, not the days around it', () => {
+  const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive' };
+  const led = { providers: { usgs: usgs },
+    scans: [{ scanTimestamp: '2026-09-07T00:00:00Z', providers: [{ provider: 'usgs', status: 'SCANNED' }] }] };
+  const cov = V.observedCoverageFor(led, 'earthquake', { country: 'Nepal' });
+  assert.equal(cov.intervals.length, 1);
+  assert.equal(cov.intervals[0].from, cov.intervals[0].to,
+    'one scan was treated as a span rather than an instant');
 });

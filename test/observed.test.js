@@ -260,6 +260,46 @@ test('an official warning is not a disaster that happened', async () => {
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test('a volcano alert level is a status, not a disaster that happened', async () => {
+  /* The finding after warnings were excluded: a USGS volcano record carries
+     sourceType 'official' and no expiry, so it was classified as an
+     observation — and its WATCH or WARNING colour cleared the significance
+     bar on its own. Kilauea and Great Sitkin were recorded as disasters that
+     occurred, on the strength of an alert level that says an eruption is
+     "imminent, under way or suspected" and does not establish which. */
+  const { events } = await feed();
+  const levels = events.filter(e => !e.forecast && e.alertLevel);
+  assert.ok(levels.length > 0, 'control: the fixture should contain published alert levels');
+  for (const v of levels) {
+    assert.equal(v.evidenceState, 'official-warning',
+      v.id + ' (' + v.title + ') is classified as an observation of a disaster');
+    /* And it would have counted: the colour alone clears the bar. */
+    const [c] = OBS.canonicalise([v]);
+    assert.equal(OBS.significanceOf(c).significant, true,
+      'this record no longer clears the significance bar, so excluding it proves nothing');
+  }
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-volc-'));
+  const eventsPath = path.join(dir, 'events.json');
+  const ledgerPath = path.join(dir, 'observed.json');
+  fs.writeFileSync(eventsPath, JSON.stringify({ events }));
+  fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, events: [] }));
+  require('node:child_process').execFileSync(process.execPath,
+    [path.join(ROOT, 'tools', 'record-observed.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
+  const led = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  const recorded = new Set(led.events.flatMap(e => (e.evidence || []).map(x => x.id)));
+  for (const v of levels) {
+    assert.equal(recorded.has(v.id), false,
+      'an alert level was recorded as a disaster that happened: ' + v.id + ' — ' + v.title);
+  }
+  /* An eruption that does cause harm is reported as an event by a provider
+     that reports events, and that record is still eligible. */
+  const volcanoes = events.filter(e => !e.forecast && /volcano/i.test(String(e.type)) && !e.alertLevel);
+  assert.ok(volcanoes.every(e => e.evidenceState === 'observed'),
+    'an ordinary volcano event record was swept up with the alert levels');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('the hourly run records and commits observed disasters', () => {
   const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh-disaster-data.yml'), 'utf8');
   assert.match(wf, /node tools\/record-observed\.js .*data\/observed-disasters\.json/,
