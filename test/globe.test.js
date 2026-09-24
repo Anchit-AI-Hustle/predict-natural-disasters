@@ -419,7 +419,7 @@ test('the basemap it draws is the flat map\'s, and is credited', async () => {
     'the satellite layer is not the Esri imagery the flat map uses');
   assert.equal(added[1] && added[1].maximumLevel, 18,
     'the satellite layer stops short of the zoom the flat map offers');
-  assert.ok(added[2] && /gibs-\{s\}\.earthdata\.nasa\.gov\/wmts\/epsg3857\/best\/MODIS_Terra_CorrectedReflectance_TrueColor\/default\/\d{4}-\d{2}-\d{2}\//.test(String(added[2].url)),
+  assert.ok(added[2] && /gibs-\{s\}\.earthdata\.nasa\.gov\/wmts\/epsg3857\/best\/VIIRS_SNPP_CorrectedReflectance_TrueColor\/default\/\d{4}-\d{2}-\d{2}\//.test(String(added[2].url)),
     'the third layer is not NASA\u2019s daily picture: ' + (added[2] && added[2].url));
   assert.equal(added[2] && added[2].maximumLevel, 9,
     'the daily picture is asked for past the zoom it exists at');
