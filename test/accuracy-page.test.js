@@ -78,16 +78,39 @@ test('an empty record of disasters is not presented as nothing having happened',
   r.close();
 });
 
-test('matured forecasts are not called false positives against an empty record', async () => {
+test('a matured forecast is called a false positive only where the scans could have seen the disaster', async () => {
+  /* Against an empty record of disasters, a false positive is right exactly
+     where an unbroken run of scans, by a source complete for that hazard and
+     place, covers the whole window: something would have been recorded, and
+     nothing was. This test used to require none at all, which held only while
+     the scan record was too short to cover any matured window; the seventh
+     scan covered an Alaska aftershock outlook end to end, and calling that
+     window a false positive against an empty record is the engine being right. */
   const r = await openEmpty();
-  assert.equal(text(r, 'ipMiss'), '0');
-  assert.equal(text(r, 'cdMiss'), '0',
-    'forecasts were graded as failures against a disaster record that cannot cover them');
-  /* Every window is given its own reason. The note used to say all of them
-     fell outside the scans, when most had been scanned and simply had no
-     source complete for their hazard and place. */
-  const why = text(r, 'cdNote').match(/Of (\d+) matured window\(s\): ([^.]*)\./);
-  assert.ok(why, 'the page does not say why none of them could be graded');
+  const VM = require(path.join(ROOT, 'verification-model.js'));
+  const OM = require(path.join(ROOT, 'observed-model.js'));
+  const scan = COMMITTED_SCAN();
+  const ver = r.window.__verification;
+  const ms = t => Date.parse(t);
+  const failed = ver.verdicts.map((v, i) => ({ v, p: ver.preds[i] }))
+    .filter(x => x.v.classification === 'MISS_FALSE_POSITIVE');
+  for (const { v, p } of failed) {
+    assert.equal(v.absenceEstablishable, true, v.predictionId + ' was failed where no absence could be established');
+    const claim = VM.frozenClaim(p, OM.familyOf);
+    const cov = VM.observedCoverageFor(scan, claim.hazards || claim.hazard, claim.geography);
+    const from = ms(v.originalWindow.effectiveForecastStart), to = ms(v.originalWindow.targetEnd);
+    assert.ok(cov.intervals.some(iv => ms(iv.from) <= from && ms(iv.to) >= to),
+      v.predictionId + ' was failed against a record that did not watch its whole window');
+  }
+  const conditional = failed.filter(x => x.v.forecastClass !== 'independent-prospective').length;
+  assert.equal(text(r, 'cdMiss'), String(conditional), 'the page counts false positives the engine did not find');
+  assert.equal(text(r, 'ipMiss'), String(failed.length - conditional));
+  /* Every window that cannot be graded is given its own reason, whether or
+     not any other window could be. The note used to say all of them fell
+     outside the scans, when most had been scanned and simply had no source
+     complete for their hazard and place. */
+  const why = text(r, 'cdNote').match(/Of (\d+) (?:other )?matured window\(s\): ([^.]*)\./);
+  assert.ok(why, 'the page does not say why the rest could not be graded');
   const counted = why[2].split('; ').map(part => Number((part.match(/^(\d+) /) || [])[1]));
   assert.ok(counted.every(n => n > 0), 'a reason was given without a count: ' + why[2]);
   assert.equal(counted.reduce((a, b) => a + b, 0), Number(why[1]),

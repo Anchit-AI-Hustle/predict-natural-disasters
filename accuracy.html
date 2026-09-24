@@ -303,6 +303,9 @@ const WHY_NOT={ABSENCE_NOT_ESTABLISHABLE:' have no source this site reads that i
 const whyNot=s=>{const b=s.ungradeableBy||{};return Object.keys(b).sort((x,y)=>b[y]-b[x]).map(k=>b[k]+(WHY_NOT[k]||' cannot be graded ('+k+')')).join('; ')};
 /* A hit that could not have been a miss is still a hit, and is still not a
    data point for a rate. Said wherever a rate is published. */
+/* Once one window can be graded the rest still cannot, and still say why: a rate
+   from 1 window beside 327 unexplained ones reads as the whole record. */
+const otherNote=s=>s.ungradeable?' Of '+s.ungradeable+' other matured window(s): '+whyNot(s)+'.':'';
 const outsideNote=s=>s.hitsOutsideCoverage?' '+s.hitsOutsideCoverage+' window(s) were borne out by a disaster on record but are not counted in this rate: for their hazard and place nothing could have established the opposite, so a rate including them would be made only of the outcomes that could be found.':'';
 /* Said wherever recall leaves disasters out, so a smaller denominator is
    never mistaken for fewer disasters. */
@@ -313,7 +316,7 @@ ipNote.textContent=(headlineIdx.length===0
  ? 'No independent prospective prediction has ever been recorded here, so this project has no prediction hit rate and none is shown. Every forecast it has published describes a hazard already reported, follows an observed event, or is a benchmark written after its own window opened.'
  : (sH.eligibleMaturedPredictions===0
    ? 'No independent prediction can be graded yet. Of '+sH.ungradeable+' matured window(s): '+whyNot(sH)+'.'+outsideNote(sH)
-   : 'Computed from '+sH.eligibleMaturedPredictions+' matured prediction(s). Small samples move a long way on one record.'+outsideNote(sH)))+recallNote;
+   : 'Computed from '+sH.eligibleMaturedPredictions+' matured prediction(s). Small samples move a long way on one record.'+otherNote(sH)+outsideNote(sH)))+recallNote;
 
 cdTotal.textContent=condIdx.length;cdMatured.textContent=sC.eligibleMaturedPredictions;
 cdHit.textContent=sC.hit;cdPartial.textContent=sC.partial;cdMiss.textContent=sC.miss;
@@ -322,7 +325,7 @@ const anyScan=((scanLedger&&scanLedger.scans)||[]).length;
 cdNote.textContent=sC.eligibleMaturedPredictions===0
  ? 'None of these can be graded yet. Of '+sC.ungradeable+' matured window(s): '+whyNot(sC)+'. '
    +(anyScan?'Coverage is counted per hazard, so a cycle in which that hazard\u2019s providers were down extends nothing.':'No scan has been recorded yet, so there is nothing to grade any of them against.')+outsideNote(sC)
- : 'Computed from '+sC.eligibleMaturedPredictions+' matured outlook(s). This is not a prediction rate.'+outsideNote(sC);
+ : 'Computed from '+sC.eligibleMaturedPredictions+' matured outlook(s). This is not a prediction rate.'+otherNote(sC)+outsideNote(sC);
 
 obTotal.textContent=obsEvents.length;
 obFalseNeg.textContent=sH.falseNegatives;
