@@ -189,7 +189,11 @@ const server = http.createServer(async (req, res) => {
       const viewer = host && host.__pndViewer;
       const lmap = host && host.__pndMap;
       const canvas = host && host.querySelector('canvas');
-      const leaflet = document.querySelectorAll('.leaflet-container path.leaflet-interactive').length;
+      /* Events are drawn as shaped icons since the one risk scale, and only
+         areas as SVG paths; counting paths alone found no markers on any
+         page. Country names are icons too, and are not events. */
+      const leaflet = document.querySelectorAll('.leaflet-container .leaflet-marker-icon:not(.pnd-country),' +
+        ' .leaflet-container path.leaflet-interactive').length;
       const controls = [...document.querySelectorAll('.leaflet-control-container')];
       const out = {
         cesium: !!window.Cesium,
@@ -366,7 +370,8 @@ const server = http.createServer(async (req, res) => {
   const flat = await page.evaluate(() => {
     const h = document.querySelector('.pnd-globe');
     return { globeHidden: getComputedStyle(h).display === 'none',
-      markers: document.querySelectorAll('.leaflet-container path.leaflet-interactive').length };
+      markers: document.querySelectorAll('.leaflet-container .leaflet-marker-icon:not(.pnd-country),' +
+        ' .leaflet-container path.leaflet-interactive').length };
   });
   await page.click('.pnd-view-toggle button:nth-child(1)');
   await page.waitForTimeout(700);

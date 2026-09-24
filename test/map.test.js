@@ -88,22 +88,103 @@ test('a plain wheel scrolls the page and the modifier zooms the map', async () =
   }
 });
 
-test('the satellite view is the default, with the drawn world under it', () => {
-  /* What a reader means by a map of a disaster is the real ground, so that is
-     what opens. The political world is kept - one click away in the layers
-     control, and underneath the imagery as the fallback for tiles that a
-     network refuses, with its own country names coming back when they do. */
+test('the clear map opens; satellite and political stay one click away', () => {
+  /* Satellite opened for a while, and a reader could not make out the map at
+     all: the day's picture is mostly cloud, the gaps between the satellite's
+     passes are black stripes, and green and orange markers sat on green and
+     orange ground. The map now opens on the view that shows the events, and
+     keeps the reader's own choice after that. */
   const src = read('map-setup.js');
-  assert.match(src, /var start = views\['Satellite'\] \|\| plain;\s*\n\s*start\.addTo\(map\)/,
-    'the map no longer opens on the satellite view');
-  assert.match(src, /L\.control\.layers\(\{ 'Satellite': views\['Satellite'\], 'Political': plain \}/,
-    'the plain political world is no longer offered');
+  assert.match(src, /var start = views\[preferredView\(\)\] \|\| clear;\s*\n\s*start\.addTo\(map\)/,
+    'the map does not open on the clear map');
+  assert.match(src, /localStorage\.getItem\(VIEW_PREF\) \|\| 'Map'/, 'with no choice made, the clear map is not the default');
+  assert.match(src, /map\.on\('baselayerchange', function \(e\) \{ if \(e && e\.name\) rememberView\(e\.name\); \}\)/,
+    'the reader’s choice of view is not kept');
+  assert.match(src, /var choices = \{ 'Map': clear \};/, 'the clear map is not offered in the control');
+  assert.match(src, /choices\['Satellite'\] = views\['Satellite'\];/, 'the satellite view is no longer offered');
+  assert.match(src, /choices\['Political'\] = plain;/, 'the political world is no longer offered');
+  /* Open where there is room, so the other views can be found at all. */
+  assert.match(src, /L\.control\.layers\(choices, null, \{ position: 'topright', collapsed: !roomy \}\)/);
+  /* The satellite view keeps its drawn floor for tiles a network refuses. */
   assert.match(src, /political\(map, false\)/,
     'the imagery has no drawn world underneath it to fall back to');
   assert.match(src, /imagery\.on\('tileerror'[^)]*\)/,
     'nothing notices when the imagery does not arrive');
   assert.match(src, /under\.showNames\(\)/,
     'the fallback world stays unlabelled when the imagery fails');
+});
+
+test('the clear map leaves colour to the markers, and every marker stands off it', () => {
+  const src = read('map-setup.js');
+  const clear = src.match(/var CLEAR = \{ ocean: '(#[0-9a-f]{6})', land: function \(\) \{ return '(#[0-9a-f]{6})'; \},\s*border: '(#[0-9a-f]{6})'/);
+  assert.ok(clear, 'the clear map’s colours are not where this test reads them');
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lum = h => { const [r, g, b] = rgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  const [ocean, land, border] = clear.slice(1);
+  /* Near-neutral: no hue the risk scale could be mistaken for. */
+  for (const c of [ocean, land, border]) {
+    const v = rgb(c);
+    assert.ok(Math.max(...v) - Math.min(...v) <= 40, c + ' is coloured enough to compete with the markers');
+  }
+  assert.ok(ratio(land, ocean) >= 1.15, 'land and sea are not told apart');
+  assert.ok(ratio(border, land) >= 2, 'borders vanish into the land');
+  /* WCAG 1.4.11: a mark needs 3:1 against what is next to it. Severe and
+     Extreme are dark, so it is the halo round every mark that must clear it. */
+  const css = read('risk.css');
+  assert.match(css, /\.risk-mk,\.pnd-key-mark\{filter:drop-shadow\(0 0 1px rgba\(255,255,255,\.95\)\)/,
+    'markers have no light halo, so the darkest levels sink into the dark map');
+  for (const ground of [land, ocean]) {
+    assert.ok(ratio('#ffffff', ground) >= 3, 'the halo does not stand off ' + ground);
+  }
+  /* And the names are readable on it. */
+  assert.match(src, /\.pnd-country\.pnd-country-clear\{color:(#[0-9a-f]{6})/);
+  const name = src.match(/\.pnd-country\.pnd-country-clear\{color:(#[0-9a-f]{6})/)[1];
+  assert.ok(ratio(name, land) >= 4.5 && ratio(name, ocean) >= 4.5, 'country names are too faint on the clear map');
+});
+
+test('the map carries a key to its marks, counted from what is drawn', async () => {
+  const r = await renderPage('live-map.html', {
+    waitFor: d => d.querySelectorAll('.pnd-key li').length > 0
+  });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const key = r.document.querySelector('#map .pnd-key');
+  assert.ok(key, 'the live map has no key');
+  assert.equal(key.hidden, false, 'the key is hidden on a map full of events');
+  const rows = [...key.querySelectorAll('li')].map(li => ({
+    name: li.querySelector('.pnd-key-name').textContent,
+    n: Number(li.querySelector('.pnd-key-n').textContent),
+    shape: li.querySelector('.pnd-key-mark').className }));
+  /* Counted from the markers on the map, level by level. */
+  const drawn = {};
+  r.window.__pndMaps[0].eachLayer(l => { if (l.options && l.options.pndLevel) drawn[l.options.pndLevel] = (drawn[l.options.pndLevel] || 0) + 1; });
+  const R = r.window.PNDRisk;
+  const byLabel = Object.fromEntries(R.LEVELS.concat([R.UNKNOWN]).map(l => [l.label, l.key]));
+  for (const row of rows) {
+    assert.equal(row.n, drawn[byLabel[row.name]], row.name + ' is counted differently from what is drawn');
+    assert.match(row.shape, new RegExp('risk-' + byLabel[row.name].toLowerCase()), row.name + ' is shown in another level’s shape');
+  }
+  assert.equal(rows.length, Object.keys(drawn).length, 'the key lists levels that are not on the map, or misses some that are');
+  /* Most serious first. */
+  const ranks = rows.map(row => (R.BY_KEY[byLabel[row.name]] || { rank: 0 }).rank);
+  assert.deepEqual(ranks, [...ranks].sort((a, b) => b - a), 'the key is not ordered from the most serious level');
+  /* It says what a mark is, not only what the colours are. */
+  assert.match(key.textContent, /Each mark is one reported event/);
+  /* A toggle a keyboard can reach, that says whether it is open. */
+  const btn = key.querySelector('button.pnd-key-toggle');
+  assert.ok(btn && /^(true|false)$/.test(btn.getAttribute('aria-expanded')), 'the key cannot be opened and closed');
+  /* Its swatches are not markers: nothing that counts markers may count them. */
+  assert.equal(key.querySelectorAll('.risk-mk').length, 0, 'the key’s swatches carry the marker class');
+  r.close();
+});
+
+test('the more serious event is drawn on top', () => {
+  /* Leaflet stacks markers by latitude, so a cluster of low-level records to
+     the south buried the one that mattered. */
+  const src = read('map-setup.js');
+  assert.match(src, /zIndexOffset: \(R\.level\(value\)\.rank \|\| 0\) \* 1000,/, 'markers are stacked by latitude, not by risk');
+  assert.match(src, /pndLevel: icon\.level,/, 'the marker does not carry the level the key counts');
 });
 
 test('the view toggle does not sit on the zoom control', () => {
@@ -436,8 +517,12 @@ test('the caption never lets an old picture pass for the scene now', async () =>
   const M = r.window.PNDMap;
   const latest = M.dailyImagery(Date.parse('2026-09-23T10:30:00Z'));
   assert.match(M.imageryText('daily', latest), /NASA, 22 Sep 2026/);
-  assert.match(M.imageryText('daily', latest), /Cloud is part of the picture/,
+  assert.match(M.imageryText('daily', latest), /cloud is part of the picture/i,
     'the daily caption does not warn that a satellite photographs cloud tops');
+  /* The stripes in the daily picture read as a broken map unless something
+     says what they are. */
+  assert.match(M.imageryText('daily', latest), /Black stripes are gaps between the satellite’s passes/,
+    'the daily caption does not say what the black stripes are');
   for (const s of ['detail', 'fallback']) {
     assert.match(M.imageryText(s, latest), /not the scene now/,
       'the ' + s + ' caption lets the old mosaic read as current');

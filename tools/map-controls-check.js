@@ -16,8 +16,9 @@
  *
  *   - every map control is reachable at its own centre point, rather than
  *     covered by something painted over it;
- *   - the default base layer is the satellite view, and it is actually
- *     requesting imagery tiles rather than only offering them;
+ *   - the default base layer is the clear map, which fetches no imagery,
+ *     and Satellite and Political are both offered beside it;
+ *   - the key to the marks, where a map has any, is reachable too;
  *   - the plain wheel does not take the page scroll, and Ctrl/Command plus
  *     wheel does zoom the map;
  *   - the controls sit inside the map panel.
@@ -116,7 +117,7 @@ const server = http.createServer(async (req, res) => {
           return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; };
         const out = { maps: document.querySelectorAll('.leaflet-container').length, controls: [], layers: [] };
         const SEL = ['.leaflet-control-zoom-in', '.leaflet-control-zoom-out',
-          '.leaflet-control-layers', '.pnd-view-toggle button'];
+          '.leaflet-control-layers', '.pnd-view-toggle button', '.pnd-key:not([hidden]) .pnd-key-toggle'];
         document.querySelectorAll(SEL.join(',')).forEach(el => {
           const r = el.getBoundingClientRect();
           if (r.width <= 0 || r.height <= 0) {
@@ -153,13 +154,15 @@ const server = http.createServer(async (req, res) => {
       }
       if (found.layers.length) {
         const on = found.layers.filter(l => l.on).map(l => l.label);
-        if (!on.includes('Satellite')) {
-          problems.push('the default base layer is ' + (on.join(', ') || 'none') + ', not Satellite');
+        /* The clear map opens: a reader could not make out the events on the
+           day's satellite picture. The photograph stays one click away. */
+        if (on.join() !== 'Map') {
+          problems.push('the default base layer is ' + (on.join(', ') || 'none') + ', not Map');
         }
-        if (!found.layers.some(l => l.label === 'Political')) {
-          problems.push('the plain political world is no longer offered');
+        for (const want of ['Satellite', 'Political']) {
+          if (!found.layers.some(l => l.label === want)) problems.push('the ' + want + ' view is no longer offered');
         }
-        if (!imageryAsked.length) problems.push('the satellite layer asked for no imagery tiles');
+        if (imageryAsked.length) problems.push('the clear map fetched ' + imageryAsked.length + ' imagery tiles it does not show');
       }
 
       /* The wheel, which is the other half of "standard navigation". */

@@ -93,18 +93,25 @@ const server = http.createServer(async (req, res) => {
   res.end(fs.readFileSync(file));
 });
 
-async function open(browser, { view, nasaDown, esriDown }) {
+/* `base` is the flat map's view as the reader last chose it. The clear map
+   opens when nothing was chosen, so every check about the photograph asks for
+   Satellite first; `base: null` is a first visit. */
+async function open(browser, { view, nasaDown, esriDown, base = 'Satellite' }) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
   const seen = { nasa: [], esri: [], errors: [] };
   page.on('pageerror', e => seen.errors.push(String(e)));
-  await page.addInitScript(v => {
+  await page.addInitScript(([v, b]) => {
+    /* Once per context, so a reload keeps whatever the page itself stored. */
+    if (sessionStorage.getItem('seeded')) return;
+    sessionStorage.setItem('seeded', '1');
     localStorage.setItem('pnd_tour_done', '1');
     /* The globe's own preference key. The first version of this set
        'pnd_globe_view', which nothing reads - so with WebGL available the
        "flat" run was the globe, and every flat-map check measured it. */
     localStorage.setItem('pnd_map_view', v);
-  }, view);
+    if (b) localStorage.setItem('pnd_basemap', b); else localStorage.removeItem('pnd_basemap');
+  }, [view, base]);
   await page.route(/gibs-?[abc]?\.earthdata\.nasa\.gov/, r => {
     seen.nasa.push(r.request().url());
     if (nasaDown) return r.abort('connectionrefused');
@@ -191,6 +198,41 @@ const dayOf = u => (u.match(/\/default\/(\d{4}-\d{2}-\d{2})\//) || [])[1];
   const check = (ok, what) => { console.log((ok ? '  ok   ' : '  FAIL ') + what); if (!ok) fails.push(what); };
 
   /* ------------------------------------------------------------ flat map */
+  /* A first visit opens on the clear map: no photograph, no caption about
+     one, and a key to the marks. Satellite is one click away and, once
+     chosen, is what opens next time. */
+  console.log('flat map, ' + PAGE + ', first visit');
+  {
+    const { ctx, page, seen } = await open(browser, { view: 'flat', nasaDown: false, base: null });
+    await page.waitForTimeout(3000);
+    let cap = await caption(page);
+    const picked = () => page.evaluate(() => [...document.querySelectorAll('.leaflet-control-layers-base label')]
+      .filter(l => l.querySelector('input').checked).map(l => l.textContent.trim()).join());
+    check(await picked() === 'Map', 'the clear map is the view that opens (' + await picked() + ')');
+    check(seen.nasa.length === 0 && seen.esri.length === 0, 'no imagery was fetched for a view that shows none (' +
+      seen.nasa.length + ' NASA, ' + seen.esri.length + ' mosaic)');
+    check(cap && cap.hidden, 'there is no caption about a photograph (' + JSON.stringify(cap) + ')');
+    check(!(await shows(page, '.leaflet-container', 'green')) && !(await shows(page, '.leaflet-container', 'magenta')),
+      'no photograph is on screen');
+    const key = await page.evaluate(() => { const k = document.querySelector('.pnd-key');
+      return k ? { hidden: k.hidden, rows: k.querySelectorAll('li').length } : null; });
+    check(key && !key.hidden && key.rows > 0, 'the map carries a key to its marks (' + JSON.stringify(key) + ')');
+    await page.evaluate(() => {
+      const r = [...document.querySelectorAll('.leaflet-control-layers-selector')]
+        .find(i => /Satellite/.test(i.parentElement.textContent));
+      if (r) r.click();
+    });
+    await page.waitForTimeout(2500);
+    cap = await caption(page);
+    check(seen.nasa.length > 0 && cap && !cap.hidden && cap.source === 'daily', 'choosing Satellite shows NASA’s picture and says so');
+    check(cap && /Black stripes are gaps between the satellite’s passes/.test(cap.text), 'the caption says what the black stripes are');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2500);
+    check(await picked() === 'Satellite', 'the choice is kept on the next visit (' + await picked() + ')');
+    check(seen.errors.length === 0, 'no page errors (' + seen.errors.join(' | ') + ')');
+    await ctx.close();
+  }
+
   console.log('flat map, ' + PAGE + ', NASA answering');
   {
     const { ctx, page, seen } = await open(browser, { view: 'flat', nasaDown: false });
