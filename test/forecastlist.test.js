@@ -156,10 +156,12 @@ test('one renderer draws the outlook list, wherever it is shown', async () => {
 });
 
 test('a page with a narrower column asks for fewer columns, not a sideways scroll', async () => {
-  /* The forecasts page shows the list beside a map, in about half the width.
-     Ten columns there scrolled sideways inside the panel - the same defect
-     one box further in - so it declares the columns that fit. What it leaves
-     out is on the page each row opens, and the full list is one click away. */
+  /* The forecasts page shows a shorter list under its map: the forecast, its
+     place, hazard, window and class. What it leaves out is on the page each
+     row opens, and the full list is one click away. (It used to sit beside
+     the map in a container still laid out as a two-column grid of cards, so
+     the table took half of half the page and broke its words letter by
+     letter - see the layout tests below.) */
   const r = await renderPage('forecasts.html',
     { waitFor: d => d.querySelectorAll('#forecastGrid tbody tr').length > 1 });
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
@@ -180,5 +182,90 @@ test('a page with a narrower column asks for fewer columns, not a sideways scrol
   /* And the way back to all ten columns. */
   assert.match(read('forecasts.html'), /href="\/forecast-list"/,
     'nothing links the panel to the full list');
+  r.close();
+});
+
+/* ------------------------------------------------------------ the layout */
+
+test('the forecasts page lists forecasts apart from the alerts they came from', async () => {
+  /* One table held both, so half its rows were observations with no window
+     and no class: a column of dashes and "Not classified" under a heading
+     that promised forecasts. */
+  const r = await renderPage('forecasts.html',
+    { waitFor: d => d.querySelectorAll('#forecastGrid tbody tr').length > 1 });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const d = r.document;
+  for (const tr of d.querySelectorAll('#forecastGrid tbody tr')) {
+    assert.match(String(tr.dataset.href || ''), /^\/forecasts\//, 'an observed event is back in the forecast table');
+  }
+  const { events } = await feed();
+  const forecasts = events.filter(e => e.forecast).length;
+  assert.equal(d.querySelectorAll('#forecastGrid tbody tr').length, forecasts, 'a forecast is missing from the page');
+  const observed = events.filter(e => !e.forecast && ['Red', 'Orange', 'High'].includes(e.alert)).length;
+  assert.ok(observed > 0, 'fixture should carry high-priority observed alerts');
+  assert.equal(d.querySelectorAll('#observedList a.obsrow').length, observed, 'the observed alerts were not listed');
+  /* And the table is not inside a grid meant for cards: that is what halved it. */
+  assert.doesNotMatch(read('forecasts.html'), /\.forecastGrid\{display:grid/, 'the list sits in a card grid again');
+  r.close();
+});
+
+test('the hazard filter offers the hazards that are there, and filters by them exactly', async () => {
+  /* It was a fixed list of six: "Drought", which had no outlook, and no way
+     to pick a storm warning, a severe storm or an aftershock sequence. */
+  const { events } = await feed();
+  const forecasts = events.filter(e => e.forecast);
+  const types = [...new Set(forecasts.map(e => e.type))];
+  const r = await open();
+  const d = r.document;
+  const opts = [...d.querySelectorAll('#type option')].map(o => o.value).filter(Boolean);
+  assert.deepEqual(opts.slice().sort(), types.slice().sort(), 'the filter does not offer what the list holds');
+  const pick = types.find(t => forecasts.filter(e => e.type === t).length < forecasts.length);
+  const sel = d.getElementById('type');
+  sel.value = pick;
+  sel.dispatchEvent(new r.window.Event('change'));
+  const rows = [...d.querySelectorAll('#cards tbody tr')];
+  assert.equal(rows.length, forecasts.filter(e => e.type === pick).length, 'the filter did not narrow the list to ' + pick);
+  for (const tr of rows) {
+    assert.equal(tr.querySelector('td[data-label=Hazard]').textContent.trim(), pick);
+  }
+  r.close();
+});
+
+test('a hazard tile filters the forecasts by its hazard, and a second press shows all again', async () => {
+  const r = await renderPage('forecasts.html',
+    { waitFor: d => d.querySelectorAll('#hazGrid [data-haz]').length > 1 });
+  const d = r.document;
+  const all = d.querySelectorAll('#forecastGrid tbody tr').length;
+  const tile = d.querySelector('#hazGrid [data-haz]');
+  const h = tile.getAttribute('data-haz');
+  tile.click();
+  const rows = [...d.querySelectorAll('#forecastGrid tbody tr')];
+  assert.ok(rows.length > 0 && rows.length < all, 'the tile did not narrow the list');
+  for (const tr of rows) assert.equal(tr.querySelector('td[data-label=Hazard]').textContent.trim(), h);
+  assert.equal(d.querySelector('#hazGrid [data-haz="' + h + '"]').getAttribute('aria-pressed'), 'true');
+  d.querySelector('#hazGrid [data-haz="' + h + '"]').click();
+  assert.equal(d.querySelectorAll('#forecastGrid tbody tr').length, all, 'a second press did not clear the filter');
+  r.close();
+});
+
+test('a risk badge stays on one line, and a column is sized for what it holds', () => {
+  /* In a narrow cell the level's name broke a letter to a line - "W-a-t-c-h"
+     down a phone card - and ten evenly shared columns gave the outlook's
+     name a tenth of the row. */
+  const risk = (read('risk.css').match(/\n\.risk\{[^}]*\}/) || [''])[0];
+  assert.match(risk, /white-space:nowrap/, 'a risk badge can wrap again');
+  const css = read('portal.css');
+  const wide = (css.match(/@media\(min-width:761px\)\{[\s\S]*?\n\}/) || [''])[0];
+  assert.match(wide, /\.ftable \.c-risk\{width:/, 'the badge column has no width of its own');
+  assert.doesNotMatch(wide, /\.c-forecast\{/, 'the name column is fixed again rather than taking what is left');
+});
+
+test('a derived outlook names its agency, and keeps the full attribution', async () => {
+  const r = await open();
+  const cell = [...r.document.querySelectorAll('#cards td[data-label=Source]')]
+    .find(td => /derived from/i.test((td.querySelector('[title]') || {}).title || ''));
+  assert.ok(cell, 'no derived outlook in the fixture');
+  assert.match(cell.textContent.trim(), /^From /);
+  assert.match(cell.querySelector('[title]').title, /^Predict Natural Disasters · derived from /);
   r.close();
 });

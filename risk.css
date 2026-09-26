@@ -15,7 +15,8 @@
    announced by screen readers, so "black diamond suit High" would be the
    level's name. Drawn from currentColor, it inherits each level's ink. */
 :root{--risk-low:#22C55E;--risk-watch:#FACC15;--risk-moderate:#F97316;--risk-high:#EF4444;--risk-severe:#B91C1C;--risk-extreme:#7C3AED;--risk-ink-dark:#000;--risk-ink-light:#fff;--risk-unknown-line:#2b624e}
-.risk{display:inline-flex;align-items:center;border-radius:7px;padding:3px 7px;font-weight:800;font-size:9px;letter-spacing:.03em;line-height:1.35}
+/* One line, always: in a narrow cell the level's name broke a letter to a line - "W-a-t-c-h" down a phone card. */
+.risk{display:inline-flex;align-items:center;border-radius:7px;padding:3px 7px;font-weight:800;font-size:9px;letter-spacing:.03em;line-height:1.35;white-space:nowrap;flex:0 0 auto}
 .risk::before{content:"";display:inline-block;width:.72em;height:.72em;margin-right:.45em;flex:0 0 auto;background:currentColor}
 .risk-low{background:var(--risk-low);color:var(--risk-ink-dark)}
 .risk-watch{background:var(--risk-watch);color:var(--risk-ink-dark)}

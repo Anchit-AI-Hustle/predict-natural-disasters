@@ -139,6 +139,29 @@ const PND={
       `<option value="${l.key}"${selected===l.key?' selected':''}>${l.label}</option>`).join('')+
       `<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`;
   },
+  /* The hazard filter, built from the records it filters.
+   *
+   * It was a fixed list of six, so the outlook list offered "Drought", which
+   * had no outlook, and no way to pick the storm warnings, severe storms,
+   * aftershock sequences and flood-landslides that made up a third of the
+   * list. Each hazard present is offered with how many records it has, most
+   * first; one selected earlier and now absent stays selectable with a 0,
+   * rather than the filter quietly switching itself back to everything. */
+  hazardOptions(records,selected){
+    const counts={};
+    (records||[]).forEach(e=>{const t=e&&e.type;if(t)counts[t]=(counts[t]||0)+1});
+    if(selected&&!(selected in counts))counts[selected]=0;
+    const esc=v=>this.esc(v);
+    return `<option value="">All hazards (${(records||[]).length})</option>`+
+      Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
+        .map(([t,n])=>`<option value="${esc(t)}"${selected===t?' selected':''}>${esc(t)} (${n})</option>`).join('');
+  },
+  fillHazardSelect(sel,records){
+    if(!sel)return;
+    const was=sel.value;
+    sel.innerHTML=this.hazardOptions(records,was);
+    sel.value=was;
+  },
   /** Does this record sit at the level the filter asks for? */
   matchesRiskLevel(e,key){
     if(!key)return true;
