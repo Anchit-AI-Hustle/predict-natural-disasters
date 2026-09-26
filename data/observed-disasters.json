@@ -363,7 +363,7 @@
         "lon": 146.0922,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -385,9 +385,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -409,8 +409,8 @@
       "geography": {
         "country": "Mexico",
         "region": "Tropical Cyclone POLO-26",
-        "lat": 17.6,
-        "lon": -111,
+        "lat": 17.9,
+        "lon": -111.7,
         "locationPrecision": "incident"
       },
       "geometry": null,
@@ -429,7 +429,7 @@
       "displaced": null,
       "evacuated": null,
       "infrastructureImpact": null,
-      "impactLastUpdated": "2026-09-26T09:00:00.000Z",
+      "impactLastUpdated": "2026-09-26T15:00:00.000Z",
       "evidenceConfidence": "REPORTED",
       "significant": true,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
@@ -440,7 +440,7 @@
           "id": "gdacs-TC-1001325",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001325&eventtype=TC",
-          "updated": "2026-09-26T09:00:00",
+          "updated": "2026-09-26T15:00:00",
           "locationPrecision": "incident"
         }
       ],
@@ -455,7 +455,7 @@
         "lon": -104.4,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -477,9 +477,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "derivedIdHistory": [
@@ -516,6 +516,11 @@
         {
           "at": "2026-09-26T12:50:26.946Z",
           "derivedId": "OBS-tropical-cyclone-MEX-20260921T0300-n18w111",
+          "note": "Better evidence changed the id this would be generated under; the recorded id is unchanged."
+        },
+        {
+          "at": "2026-09-26T16:58:07.357Z",
+          "derivedId": "OBS-tropical-cyclone-MEX-20260921T0300-n18w112",
           "note": "Better evidence changed the id this would be generated under; the recorded id is unchanged."
         }
       ],
@@ -623,6 +628,14 @@
           "field": "significanceReason",
           "from": "Raised to an orange alert by the issuing authority.",
           "to": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record."
+        },
+        {
+          "at": "2026-09-26T16:58:07.357Z",
+          "observedAt": "2026-09-26T16:58:04.455Z",
+          "scanId": "scan-2026-09-26T16-58-04-455Z",
+          "field": "impactLastUpdated",
+          "from": "2026-09-26T09:00:00.000Z",
+          "to": "2026-09-26T15:00:00.000Z"
         }
       ]
     },
@@ -734,7 +747,7 @@
       "displaced": null,
       "evacuated": null,
       "infrastructureImpact": null,
-      "impactLastUpdated": "2026-09-26T03:57:04.448Z",
+      "impactLastUpdated": "2026-09-26T13:41:23.040Z",
       "evidenceConfidence": "REPORTED",
       "significant": true,
       "significanceReason": "Earthquake of magnitude 6.6.",
@@ -745,7 +758,7 @@
           "id": "usgs-us6000txpi",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txpi",
-          "updated": "2026-09-26T03:57:04.448Z",
+          "updated": "2026-09-26T13:41:23.040Z",
           "locationPrecision": "incident"
         },
         {
@@ -801,7 +814,7 @@
         "lon": 168.61,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -811,9 +824,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -838,6 +851,14 @@
           "field": "impactLastUpdated",
           "from": "2026-09-25T23:30:55.968Z",
           "to": "2026-09-26T03:57:04.448Z"
+        },
+        {
+          "at": "2026-09-26T16:58:07.357Z",
+          "observedAt": "2026-09-26T16:58:04.455Z",
+          "scanId": "scan-2026-09-26T16-58-04-455Z",
+          "field": "impactLastUpdated",
+          "from": "2026-09-26T03:57:04.448Z",
+          "to": "2026-09-26T13:41:23.040Z"
         }
       ]
     }
@@ -4617,7 +4638,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4639,9 +4660,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -4683,7 +4704,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4705,9 +4726,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -4749,7 +4770,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4771,9 +4792,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -4815,7 +4836,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4837,9 +4858,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -4881,7 +4902,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4903,9 +4924,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -4947,7 +4968,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4969,9 +4990,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5013,7 +5034,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5035,9 +5056,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5079,7 +5100,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5101,9 +5122,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5152,7 +5173,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5180,9 +5201,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5224,7 +5245,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5246,9 +5267,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5290,7 +5311,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5312,9 +5333,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5364,7 +5385,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5386,9 +5407,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5430,7 +5451,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5452,9 +5473,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5504,7 +5525,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5526,9 +5547,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5618,7 +5639,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5640,9 +5661,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5684,7 +5705,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5706,9 +5727,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5757,7 +5778,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5785,9 +5806,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5837,7 +5858,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5859,9 +5880,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5899,7 +5920,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5921,9 +5942,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -5965,7 +5986,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5987,9 +6008,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6031,7 +6052,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6053,9 +6074,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6090,14 +6111,14 @@
           "id": "usgs-aka2026srgcdi",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026srgcdi",
-          "updated": "2026-09-20T21:39:31.105Z",
+          "updated": "2026-09-26T16:06:48.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6119,9 +6140,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6156,14 +6177,14 @@
           "id": "usgs-us7000tisi",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tisi",
-          "updated": "2026-09-20T18:35:31.040Z",
+          "updated": "2026-09-26T16:21:02.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6185,9 +6206,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6222,14 +6243,14 @@
           "id": "usgs-aka2026srikrm",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026srikrm",
-          "updated": "2026-09-20T21:39:07.722Z",
+          "updated": "2026-09-26T16:22:50.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6251,9 +6272,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6302,7 +6323,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6324,9 +6345,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6361,14 +6382,14 @@
           "id": "usgs-us7000tisq",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tisq",
-          "updated": "2026-09-20T19:29:02.040Z",
+          "updated": "2026-09-26T16:24:56.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6390,9 +6411,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6434,7 +6455,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6456,9 +6477,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6493,7 +6514,7 @@
           "id": "usgs-us7000tit5",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tit5",
-          "updated": "2026-09-24T16:16:39.040Z",
+          "updated": "2026-09-26T16:41:48.810Z",
           "locationPrecision": "incident"
         },
         {
@@ -6508,7 +6529,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6530,9 +6551,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6542,6 +6563,10 @@
         },
         {
           "claim": "OUT-aftershock-usgs-us7000tit5|Earthquake aftershock sequence|2026-09-20T20:54:37.248Z|2026-09-27T20:54:37.248Z|-|south of Africa|-48.428|31.235|event|-",
+          "subject": "usgs-us7000tit5"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000tit5|Earthquake aftershock sequence|2026-09-20T20:54:37.205Z|2026-09-27T20:54:37.205Z|-|south of Africa|-48.452|31.252|event|-",
           "subject": "usgs-us7000tit5"
         }
       ]
@@ -6582,7 +6607,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6604,9 +6629,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6669,7 +6694,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6691,9 +6716,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6735,7 +6760,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6757,9 +6782,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6809,7 +6834,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6831,9 +6856,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6883,7 +6908,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6905,9 +6930,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -6949,7 +6974,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6971,9 +6996,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7015,7 +7040,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7037,9 +7062,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7081,7 +7106,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7103,9 +7128,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7147,7 +7172,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7169,9 +7194,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7221,7 +7246,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7243,9 +7268,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7298,7 +7323,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7320,9 +7345,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7426,7 +7451,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7448,9 +7473,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7492,7 +7517,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7514,9 +7539,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7558,7 +7583,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7580,9 +7605,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7624,7 +7649,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7646,9 +7671,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7690,7 +7715,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7712,9 +7737,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7764,7 +7789,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7786,9 +7811,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7826,7 +7851,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7848,9 +7873,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7885,14 +7910,14 @@
           "id": "usgs-aka2026steqzi",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026steqzi",
-          "updated": "2026-09-24T21:24:46.372Z",
+          "updated": "2026-09-26T16:48:56.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7914,9 +7939,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -7951,14 +7976,14 @@
           "id": "usgs-nc75439497",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75439497",
-          "updated": "2026-09-21T21:27:20.629Z",
+          "updated": "2026-09-26T16:56:30.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7980,9 +8005,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8017,14 +8042,14 @@
           "id": "usgs-hv75041332",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/hv75041332",
-          "updated": "2026-09-23T02:42:47.000Z",
+          "updated": "2026-09-26T16:57:44.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8046,9 +8071,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8090,7 +8115,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8112,9 +8137,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8156,7 +8181,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8178,9 +8203,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8222,7 +8247,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8244,9 +8269,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8288,7 +8313,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8310,9 +8335,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8354,7 +8379,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8376,9 +8401,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8420,7 +8445,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8442,9 +8467,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8502,7 +8527,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8524,9 +8549,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8564,7 +8589,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8586,9 +8611,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8630,7 +8655,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8652,9 +8677,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8696,7 +8721,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8718,9 +8743,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8762,7 +8787,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8784,9 +8809,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8828,7 +8853,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8850,9 +8875,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8910,7 +8935,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8932,9 +8957,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -8972,7 +8997,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8994,9 +9019,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9038,7 +9063,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9060,9 +9085,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9104,7 +9129,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9126,9 +9151,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9177,7 +9202,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9199,9 +9224,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9243,7 +9268,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9265,9 +9290,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9309,7 +9334,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9331,9 +9356,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9382,7 +9407,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9404,9 +9429,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9448,7 +9473,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9470,9 +9495,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9514,7 +9539,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9536,9 +9561,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9596,7 +9621,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9618,9 +9643,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9674,7 +9699,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9696,9 +9721,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9736,7 +9761,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9758,9 +9783,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9802,7 +9827,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9824,9 +9849,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9868,7 +9893,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9890,9 +9915,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -9934,7 +9959,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9956,9 +9981,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10000,7 +10025,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -10022,9 +10047,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10066,7 +10091,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -10088,9 +10113,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10132,7 +10157,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -10154,9 +10179,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10205,7 +10230,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -10227,9 +10252,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10332,7 +10357,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -10354,9 +10379,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10446,7 +10471,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10468,9 +10493,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10532,7 +10557,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10554,9 +10579,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10598,7 +10623,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10620,9 +10645,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10668,7 +10693,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10690,9 +10715,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10754,7 +10779,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10776,9 +10801,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10816,7 +10841,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10838,9 +10863,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10886,7 +10911,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10908,9 +10933,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -10956,7 +10981,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10978,9 +11003,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11026,7 +11051,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T20:02:57.714Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T20:02:54.928Z",
@@ -11048,9 +11073,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11179,7 +11204,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T20:02:57.714Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T20:02:54.928Z",
@@ -11201,9 +11226,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11241,7 +11266,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T20:02:57.714Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T20:02:54.928Z",
@@ -11263,9 +11288,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11362,7 +11387,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T23:29:46.327Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T23:29:37.124Z",
@@ -11390,9 +11415,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11434,14 +11459,14 @@
           "id": "usgs-ci41337999",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41337999",
-          "updated": "2026-09-23T21:01:13.310Z",
+          "updated": "2026-09-26T16:53:03.040Z",
           "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T23:29:46.327Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-23T23:29:37.124Z",
@@ -11463,9 +11488,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11823,7 +11848,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -11845,9 +11870,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11893,7 +11918,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -11915,9 +11940,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -11979,7 +12004,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12001,9 +12026,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12045,7 +12070,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12067,9 +12092,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12115,7 +12140,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12137,9 +12162,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12201,7 +12226,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12223,9 +12248,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12267,7 +12292,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12289,9 +12314,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12337,7 +12362,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T09:46:45.713Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T09:46:43.314Z",
@@ -12359,9 +12384,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12399,7 +12424,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T09:46:45.713Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T09:46:43.314Z",
@@ -12421,9 +12446,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12490,7 +12515,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T09:46:45.713Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T09:46:43.314Z",
@@ -12512,9 +12537,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12576,7 +12601,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T14:45:47.924Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T14:45:45.864Z",
@@ -12598,9 +12623,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12702,7 +12727,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T18:54:48.884Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -12724,9 +12749,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12788,7 +12813,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T18:54:48.884Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -12810,9 +12835,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -12870,7 +12895,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T18:54:48.884Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -12892,9 +12917,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13297,7 +13322,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13319,9 +13344,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13363,7 +13388,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13385,9 +13410,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13433,7 +13458,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13455,9 +13480,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13503,7 +13528,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13525,9 +13550,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13589,7 +13614,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13611,9 +13636,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13662,7 +13687,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T01:17:05.209Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T01:17:02.559Z",
@@ -13684,9 +13709,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13744,7 +13769,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T01:17:05.209Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T01:17:02.559Z",
@@ -13766,9 +13791,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13826,7 +13851,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T01:17:05.209Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T01:17:02.559Z",
@@ -13848,9 +13873,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13892,7 +13917,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T07:24:37.908Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T07:24:32.347Z",
@@ -13908,9 +13933,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -13959,7 +13984,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T07:24:37.908Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T07:24:32.347Z",
@@ -13975,9 +14000,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14194,7 +14219,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14204,9 +14229,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14303,7 +14328,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14313,9 +14338,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14357,7 +14382,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14367,9 +14392,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14411,7 +14436,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14421,9 +14446,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14473,7 +14498,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14483,9 +14508,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14539,7 +14564,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14549,9 +14574,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14593,7 +14618,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -14603,9 +14628,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14647,7 +14672,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -14657,9 +14682,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14701,7 +14726,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -14711,9 +14736,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14750,12 +14775,19 @@
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026srcfja",
           "updated": "2026-09-25T19:47:36.167Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000txns",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txns",
+          "updated": "2026-09-26T15:04:55.040Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -14765,9 +14797,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14870,7 +14902,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -14880,9 +14912,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14944,7 +14976,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -14954,9 +14986,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -14998,7 +15030,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T01:19:18.474Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-26T01:19:16.103Z",
@@ -15008,9 +15040,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -15137,7 +15169,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T01:19:18.474Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-26T01:19:16.103Z",
@@ -15147,9 +15179,9 @@
         },
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -15253,13 +15285,13 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T07:20:03.130Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-26T07:19:59.697Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -15424,13 +15456,13 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T12:50:26.946Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
       "sightings": [
         {
           "from": "2026-09-26T12:50:22.124Z",
-          "to": "2026-09-26T12:50:22.124Z",
+          "to": "2026-09-26T16:58:04.455Z",
           "fromScan": "scan-2026-09-26T12-50-22-124Z",
-          "toScan": "scan-2026-09-26T12-50-22-124Z"
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
         }
       ],
       "keptFor": [
@@ -15514,9 +15546,418 @@
           "subject": "usgs-us6000txqi"
         }
       ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-US-20260919T1718-n19w067",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-19T17:18:37.940Z",
+      "end": null,
+      "geography": {
+        "country": "United States",
+        "region": "11 km N of Quebradillas, Puerto Rico",
+        "lat": 18.5763333333333,
+        "lon": -66.934,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/pr71533073",
+      "evidence": [
+        {
+          "id": "usgs-pr71533073",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/pr71533073",
+          "updated": "2026-09-19T17:46:30.610Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-09-26T16:58:07.357Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
+      "sightings": [
+        {
+          "from": "2026-09-26T16:58:04.455Z",
+          "to": "2026-09-26T16:58:04.455Z",
+          "fromScan": "scan-2026-09-26T16-58-04-455Z",
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000ti1p|Earthquake aftershock sequence|2026-09-17T14:19:52.210Z|2026-09-24T14:19:52.210Z|United States|169 km W of Nikolski, Alaska|52.859|-171.376|-|-",
+          "subject": "usgs-us7000ti1p"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000ti1p|Earthquake aftershock sequence|2026-09-17T14:19:53.164Z|2026-09-24T14:19:53.164Z|United States|165 km W of Nikolski, Alaska|52.765|-171.295|-|-",
+          "subject": "usgs-us7000ti1p"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-US-20260920T1646-n53w175",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-20T16:46:18.603Z",
+      "end": null,
+      "geography": {
+        "country": "United States",
+        "region": "44 km NNW of Atka, Alaska",
+        "lat": 52.5409,
+        "lon": -174.5378,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txnu",
+      "evidence": [
+        {
+          "id": "usgs-us6000txnu",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txnu",
+          "updated": "2026-09-26T16:51:51.040Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-09-26T16:58:07.357Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
+      "sightings": [
+        {
+          "from": "2026-09-26T16:58:04.455Z",
+          "to": "2026-09-26T16:58:04.455Z",
+          "fromScan": "scan-2026-09-26T16-58-04-455Z",
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000ti1p|Earthquake aftershock sequence|2026-09-17T14:19:52.210Z|2026-09-24T14:19:52.210Z|United States|169 km W of Nikolski, Alaska|52.859|-171.376|-|-",
+          "subject": "usgs-us7000ti1p"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000ti1p|Earthquake aftershock sequence|2026-09-17T14:19:53.164Z|2026-09-24T14:19:53.164Z|United States|165 km W of Nikolski, Alaska|52.765|-171.295|-|-",
+          "subject": "usgs-us7000ti1p"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260926T1211-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-26T12:11:01.897Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "86 km NE of Tadine, New Caledonia",
+        "lat": -21.0626,
+        "lon": 168.5329,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt9",
+      "evidence": [
+        {
+          "id": "usgs-us6000txsy",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txsy",
+          "updated": "2026-09-26T12:57:59.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568172",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568172&eventtype=EQ",
+          "updated": "2026-09-26T12:11:01",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txsy"
+        },
+        {
+          "id": "emsc-20260926_0000130",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000130",
+          "updated": "2026-09-26T12:58:09.574058Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txsy"
+        },
+        {
+          "id": "usgs-us6000txsz",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txsz",
+          "updated": "2026-09-26T12:46:36.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000txt0",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt0",
+          "updated": "2026-09-26T12:42:17.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568171",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568171&eventtype=EQ",
+          "updated": "2026-09-26T12:14:20",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt0"
+        },
+        {
+          "id": "emsc-20260926_0000126",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000126",
+          "updated": "2026-09-26T12:42:26.868646Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt0"
+        },
+        {
+          "id": "usgs-us6000txt9",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt9",
+          "updated": "2026-09-26T14:19:09.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568188",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568188&eventtype=EQ",
+          "updated": "2026-09-26T13:48:50",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt9"
+        },
+        {
+          "id": "emsc-20260926_0000151",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000151",
+          "updated": "2026-09-26T14:19:20.521043Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt9"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-09-26T16:58:07.357Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
+      "sightings": [
+        {
+          "from": "2026-09-26T16:58:04.455Z",
+          "to": "2026-09-26T16:58:04.455Z",
+          "fromScan": "scan-2026-09-26T16-58-04-455Z",
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-IND-20260926T1338-s08e123",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-26T13:38:15.958Z",
+      "end": null,
+      "geography": {
+        "country": "Indonesia",
+        "region": "145 km NE of Maumere, Indonesia",
+        "lat": -7.8646,
+        "lon": 123.2938,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt8",
+      "evidence": [
+        {
+          "id": "usgs-us6000txt8",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt8",
+          "updated": "2026-09-26T15:08:14.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568174",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568174&eventtype=EQ",
+          "updated": "2026-09-26T13:38:15",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt8"
+        },
+        {
+          "id": "emsc-20260926_0000135",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000135",
+          "updated": "2026-09-26T13:42:32.571473Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt8"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-09-26T16:58:07.357Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
+      "sightings": [
+        {
+          "from": "2026-09-26T16:58:04.455Z",
+          "to": "2026-09-26T16:58:04.455Z",
+          "fromScan": "scan-2026-09-26T16-58-04-455Z",
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiur|Earthquake aftershock sequence|2026-09-21T01:41:36.315Z|2026-09-28T01:41:36.315Z|Indonesia|35 km NNE of Ruteng, Indonesia|-8.307|120.579|-|-",
+          "subject": "usgs-us7000tiur"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiur|Earthquake aftershock sequence|2026-09-21T01:41:36.315Z|2026-09-28T01:41:36.315Z|Indonesia|35 km NNE of Ruteng, Indonesia|-8.307|120.579|event|-",
+          "subject": "usgs-us7000tiur"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-PNG-20260926T1408-s05e153",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-26T14:08:17.704Z",
+      "end": null,
+      "geography": {
+        "country": "Papua New Guinea",
+        "region": "74 km ESE of Kokopo, Papua New Guinea",
+        "lat": -4.6952,
+        "lon": 152.8383,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txtc",
+      "evidence": [
+        {
+          "id": "usgs-us6000txtc",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txtc",
+          "updated": "2026-09-26T16:13:49.733Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568187",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568187&eventtype=EQ",
+          "updated": "2026-09-26T14:08:17",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txtc"
+        },
+        {
+          "id": "emsc-20260926_0000148",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000148",
+          "updated": "2026-09-26T14:25:57.772903Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txtc"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-09-26T16:58:07.357Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
+      "sightings": [
+        {
+          "from": "2026-09-26T16:58:04.455Z",
+          "to": "2026-09-26T16:58:04.455Z",
+          "fromScan": "scan-2026-09-26T16-58-04-455Z",
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiqc|Earthquake aftershock sequence|2026-09-20T09:17:35.624Z|2026-09-27T09:17:35.624Z|Papua New Guinea|49 km NNE of Kainantu, Papua New Guinea|-5.902|146.092|-|-",
+          "subject": "usgs-us7000tiqc"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiqc|Earthquake aftershock sequence|2026-09-20T09:17:35.624Z|2026-09-27T09:17:35.624Z|Papua New Guinea|49 km NNE of Kainantu, Papua New Guinea|-5.902|146.092|event|-",
+          "subject": "usgs-us7000tiqc"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txtc|Earthquake aftershock sequence|2026-09-26T14:08:17.704Z|2026-10-03T14:08:17.704Z|Papua New Guinea|74 km ESE of Kokopo, Papua New Guinea|-4.695|152.838|event|-",
+          "subject": "usgs-us6000txtc"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260926T1501-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-26T15:01:36.433Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "74 km ENE of Tadine, New Caledonia",
+        "lat": -21.3884,
+        "lon": 168.5751,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txtn",
+      "evidence": [
+        {
+          "id": "usgs-us6000txtn",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txtn",
+          "updated": "2026-09-26T15:20:48.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568194",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568194&eventtype=EQ",
+          "updated": "2026-09-26T15:01:36",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txtn"
+        },
+        {
+          "id": "emsc-20260926_0000163",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000163",
+          "updated": "2026-09-26T15:20:57.650258Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txtn"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-09-26T16:58:07.357Z",
+      "lastSeenAt": "2026-09-26T16:58:04.455Z",
+      "sightings": [
+        {
+          "from": "2026-09-26T16:58:04.455Z",
+          "to": "2026-09-26T16:58:04.455Z",
+          "fromScan": "scan-2026-09-26T16-58-04-455Z",
+          "toScan": "scan-2026-09-26T16-58-04-455Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-09-26T12:50:26.946Z",
+  "updatedAt": "2026-09-26T16:58:07.357Z",
   "method": {
     "canonicalisation": "Provider records are grouped into one disaster when they share a hazard family and fall inside that hazard’s matching window. Where either record is placed at an area centre, kilometres between them say nothing, so the match is by country and time instead.",
     "significance": "An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.",
@@ -15529,22 +15970,22 @@
     "observationsOnly": "Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations."
   },
   "lastRun": {
-    "at": "2026-09-26T12:50:26.946Z",
-    "providerRecordsEvaluated": 708,
+    "at": "2026-09-26T16:58:07.357Z",
+    "providerRecordsEvaluated": 713,
     "providerRecordsNotObservations": {
       "official-warning": 12
     },
-    "canonicalEventsFound": 547,
+    "canonicalEventsFound": 541,
     "significant": 3,
-    "belowBarNotRecorded": 543,
+    "belowBarNotRecorded": 537,
     "belowBarStillReconciled": 1,
-    "supportingObservationsKept": 2,
+    "supportingObservationsKept": 6,
     "sightingsWithheldFromRetainedSnapshots": 1,
-    "supportingObservationsHeld": 225,
-    "conditionalClaimsRead": 19,
+    "supportingObservationsHeld": 231,
+    "conditionalClaimsRead": 21,
     "supersededThisRun": 0,
     "reidentifiedThisRun": 1,
     "distinguishedFromCollidingIdThisRun": 0,
-    "belowSignificanceBar": 544
+    "belowSignificanceBar": 538
   }
 }

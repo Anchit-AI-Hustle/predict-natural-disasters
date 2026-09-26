@@ -7038,6 +7038,324 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-09-26T16:58:07.215Z",
+      "sinceHours": 4.13,
+      "active": 31,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-8fe193a3a27c821ed6bba9595ad846d36da29d38-001-1",
+          "type": "Flood",
+          "title": "3-day Flood risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T16:18:00.000Z",
+          "targetEnd": "2026-09-29T16:18:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000txtc",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock-sequence outlook — 74 km ESE of Kokopo, Papua New Guinea",
+          "country": "Papua New Guinea",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T14:08:17.704Z",
+          "targetEnd": "2026-10-03T14:08:17.704Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032384",
+          "type": "Wildfire",
+          "title": "3-day Wildfire risk outlook — Australia",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T00:00:00.000Z",
+          "targetEnd": "2026-09-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032395",
+          "type": "Wildfire",
+          "title": "3-day Wildfire risk outlook — Angola",
+          "country": "Angola",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T00:00:00.000Z",
+          "targetEnd": "2026-09-29T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [
+        {
+          "id": "OUT-nhc-ep162026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
+          "country": "Odalys (eastern Pacific system 1)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "nhc",
+          "from": "High",
+          "to": "Moderate"
+        }
+      ],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep172026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Polo (eastern Pacific system 2)",
+          "country": "Polo (eastern Pacific system 2)",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T12:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep162026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
+          "country": "Odalys (eastern Pacific system 1)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T12:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us7000tit5",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock-sequence outlook — south of Africa",
+          "country": "south of Africa",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-20T20:54:37.205Z",
+          "targetEnd": "2026-09-27T20:54:37.205Z",
+          "provider": "usgs",
+          "fromEnd": "2026-09-27T20:54:37.248Z",
+          "toEnd": "2026-09-27T20:54:37.205Z"
+        },
+        {
+          "id": "OUT-nhc-al062026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Fay (Atlantic system 1)",
+          "country": "Fay (Atlantic system 1)",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-al072026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Gonzalo (Atlantic system 2)",
+          "country": "Gonzalo (Atlantic system 2)",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001328",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Cape Verde",
+          "country": "Cape Verde",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001325",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Mexico",
+          "country": "Mexico",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001323",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Tropical Cyclone FAY-26",
+          "country": "Tropical Cyclone FAY-26",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001324",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Tropical Cyclone ODALYS-26",
+          "country": "Tropical Cyclone ODALYS-26",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001321",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — United States",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T15:00:00.000Z",
+          "targetEnd": "2026-10-01T15:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-01T09:00:00.000Z",
+          "toEnd": "2026-10-01T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-eonet-EONET_24786",
+          "type": "Severe Storm",
+          "title": "2-day Severe Storm risk outlook — Hurricane Nolo",
+          "country": "Hurricane Nolo",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T12:00:00.000Z",
+          "targetEnd": "2026-09-28T12:00:00.000Z",
+          "provider": "eonet",
+          "fromEnd": "2026-09-28T06:00:00.000Z",
+          "toEnd": "2026-09-28T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-eonet-EONET_24787",
+          "type": "Severe Storm",
+          "title": "2-day Severe Storm risk outlook — Typhoon Surigae",
+          "country": "Typhoon Surigae",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T12:00:00.000Z",
+          "targetEnd": "2026-09-28T12:00:00.000Z",
+          "provider": "eonet",
+          "fromEnd": "2026-09-28T06:00:00.000Z",
+          "toEnd": "2026-09-28T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-eonet-EONET_24721",
+          "type": "Severe Storm",
+          "title": "2-day Severe Storm risk outlook — Hurricane Polo",
+          "country": "Hurricane Polo",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T12:00:00.000Z",
+          "targetEnd": "2026-09-28T12:00:00.000Z",
+          "provider": "eonet",
+          "fromEnd": "2026-09-28T06:00:00.000Z",
+          "toEnd": "2026-09-28T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-eonet-EONET_24720",
+          "type": "Severe Storm",
+          "title": "2-day Severe Storm risk outlook — Hurricane Odalys",
+          "country": "Hurricane Odalys",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T12:00:00.000Z",
+          "targetEnd": "2026-09-28T12:00:00.000Z",
+          "provider": "eonet",
+          "fromEnd": "2026-09-28T06:00:00.000Z",
+          "toEnd": "2026-09-28T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001327",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Japan",
+          "country": "Japan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T12:00:00.000Z",
+          "targetEnd": "2026-10-01T12:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-01T06:00:00.000Z",
+          "toEnd": "2026-10-01T12:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-584fa418c25e95720c08be8164a94cc0aa4492fa-001-1",
+          "type": "Flood",
+          "title": "3-day Flood risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T06:00:00.000Z",
+          "targetEnd": "2026-09-29T06:00:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032409",
+          "type": "Wildfire",
+          "title": "3-day Wildfire risk outlook — Australia",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T00:00:00.000Z",
+          "targetEnd": "2026-09-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032411",
+          "type": "Wildfire",
+          "title": "3-day Wildfire risk outlook — Papua New Guinea",
+          "country": "Papua New Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-26T00:00:00.000Z",
+          "targetEnd": "2026-09-29T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -7048,19 +7366,8 @@
       "country": "Polo (eastern Pacific system 2)",
       "alert": "High",
       "rank": 3,
-      "targetStart": "2026-09-26T12:00:00.000Z",
-      "targetEnd": "2026-10-01T12:00:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-nhc-ep162026": {
-      "id": "OUT-nhc-ep162026",
-      "type": "Tropical Cyclone",
-      "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
-      "country": "Odalys (eastern Pacific system 1)",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "nhc"
     },
     "OUT-aftershock-usgs-us6000txpi": {
@@ -7074,6 +7381,28 @@
       "targetEnd": "2026-10-02T21:23:03.309Z",
       "provider": "usgs"
     },
+    "OUT-0-8fe193a3a27c821ed6bba9595ad846d36da29d38-001-1": {
+      "id": "OUT-0-8fe193a3a27c821ed6bba9595ad846d36da29d38-001-1",
+      "type": "Flood",
+      "title": "3-day Flood risk outlook — United States",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T16:18:00.000Z",
+      "targetEnd": "2026-09-29T16:18:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-nhc-ep162026": {
+      "id": "OUT-nhc-ep162026",
+      "type": "Tropical Cyclone",
+      "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
+      "country": "Odalys (eastern Pacific system 1)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
+      "provider": "nhc"
+    },
     "OUT-nhc-ep152026": {
       "id": "OUT-nhc-ep152026",
       "type": "Tropical Cyclone",
@@ -7081,9 +7410,20 @@
       "country": "Nolo (central Pacific system 2)",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-09-26T12:00:00.000Z",
-      "targetEnd": "2026-10-01T12:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "nhc"
+    },
+    "OUT-aftershock-usgs-us6000txtc": {
+      "id": "OUT-aftershock-usgs-us6000txtc",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock-sequence outlook — 74 km ESE of Kokopo, Papua New Guinea",
+      "country": "Papua New Guinea",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T14:08:17.704Z",
+      "targetEnd": "2026-10-03T14:08:17.704Z",
+      "provider": "usgs"
     },
     "OUT-0-9c07debd80e61e5b5a862c184fd0b467cc21a188-006-1": {
       "id": "OUT-0-9c07debd80e61e5b5a862c184fd0b467cc21a188-006-1",
@@ -7105,17 +7445,6 @@
       "rank": 2,
       "targetStart": "2026-09-26T06:03:00.000Z",
       "targetEnd": "2026-09-28T06:03:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-584fa418c25e95720c08be8164a94cc0aa4492fa-001-1": {
-      "id": "OUT-0-584fa418c25e95720c08be8164a94cc0aa4492fa-001-1",
-      "type": "Flood",
-      "title": "3-day Flood risk outlook — United States",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-09-26T06:00:00.000Z",
-      "targetEnd": "2026-09-29T06:00:00.000Z",
       "provider": "nws"
     },
     "OUT-aftershock-usgs-us6000txqi": {
@@ -7169,8 +7498,8 @@
       "country": "south of Africa",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-09-20T20:54:37.248Z",
-      "targetEnd": "2026-09-27T20:54:37.248Z",
+      "targetStart": "2026-09-20T20:54:37.205Z",
+      "targetEnd": "2026-09-27T20:54:37.205Z",
       "provider": "usgs"
     },
     "OUT-aftershock-usgs-us7000tiqc": {
@@ -7191,8 +7520,8 @@
       "country": "Fay (Atlantic system 1)",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "nhc"
     },
     "OUT-nhc-al072026": {
@@ -7202,8 +7531,8 @@
       "country": "Gonzalo (Atlantic system 2)",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "nhc"
     },
     "OUT-gdacs-TC-1001328": {
@@ -7213,8 +7542,8 @@
       "country": "Cape Verde",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-TC-1001325": {
@@ -7224,8 +7553,8 @@
       "country": "Mexico",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-TC-1001323": {
@@ -7235,8 +7564,8 @@
       "country": "Tropical Cyclone FAY-26",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-TC-1001324": {
@@ -7246,8 +7575,8 @@
       "country": "Tropical Cyclone ODALYS-26",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-TC-1001321": {
@@ -7257,8 +7586,8 @@
       "country": "United States",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T09:00:00.000Z",
-      "targetEnd": "2026-10-01T09:00:00.000Z",
+      "targetStart": "2026-09-26T15:00:00.000Z",
+      "targetEnd": "2026-10-01T15:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-eonet-EONET_24786": {
@@ -7268,8 +7597,8 @@
       "country": "Hurricane Nolo",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T06:00:00.000Z",
-      "targetEnd": "2026-09-28T06:00:00.000Z",
+      "targetStart": "2026-09-26T12:00:00.000Z",
+      "targetEnd": "2026-09-28T12:00:00.000Z",
       "provider": "eonet"
     },
     "OUT-eonet-EONET_24787": {
@@ -7279,8 +7608,8 @@
       "country": "Typhoon Surigae",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T06:00:00.000Z",
-      "targetEnd": "2026-09-28T06:00:00.000Z",
+      "targetStart": "2026-09-26T12:00:00.000Z",
+      "targetEnd": "2026-09-28T12:00:00.000Z",
       "provider": "eonet"
     },
     "OUT-eonet-EONET_24721": {
@@ -7290,8 +7619,8 @@
       "country": "Hurricane Polo",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T06:00:00.000Z",
-      "targetEnd": "2026-09-28T06:00:00.000Z",
+      "targetStart": "2026-09-26T12:00:00.000Z",
+      "targetEnd": "2026-09-28T12:00:00.000Z",
       "provider": "eonet"
     },
     "OUT-eonet-EONET_24720": {
@@ -7301,8 +7630,8 @@
       "country": "Hurricane Odalys",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T06:00:00.000Z",
-      "targetEnd": "2026-09-28T06:00:00.000Z",
+      "targetStart": "2026-09-26T12:00:00.000Z",
+      "targetEnd": "2026-09-28T12:00:00.000Z",
       "provider": "eonet"
     },
     "OUT-gdacs-TC-1001327": {
@@ -7312,8 +7641,8 @@
       "country": "Japan",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-09-26T06:00:00.000Z",
-      "targetEnd": "2026-10-01T06:00:00.000Z",
+      "targetStart": "2026-09-26T12:00:00.000Z",
+      "targetEnd": "2026-10-01T12:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104190": {
@@ -7338,11 +7667,22 @@
       "targetEnd": "2026-09-29T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032409": {
-      "id": "OUT-gdacs-WF-1032409",
+    "OUT-gdacs-WF-1032384": {
+      "id": "OUT-gdacs-WF-1032384",
       "type": "Wildfire",
       "title": "3-day Wildfire risk outlook — Australia",
       "country": "Australia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-09-26T00:00:00.000Z",
+      "targetEnd": "2026-09-29T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032395": {
+      "id": "OUT-gdacs-WF-1032395",
+      "type": "Wildfire",
+      "title": "3-day Wildfire risk outlook — Angola",
+      "country": "Angola",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-09-26T00:00:00.000Z",
@@ -7359,23 +7699,12 @@
       "targetStart": "2026-09-26T00:00:00.000Z",
       "targetEnd": "2026-09-29T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032411": {
-      "id": "OUT-gdacs-WF-1032411",
-      "type": "Wildfire",
-      "title": "3-day Wildfire risk outlook — Papua New Guinea",
-      "country": "Papua New Guinea",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-09-26T00:00:00.000Z",
-      "targetEnd": "2026-09-29T00:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-09-26T12:50:26.339Z",
+  "updatedAt": "2026-09-26T16:58:07.215Z",
   "observedCadenceHours": {
-    "runs": 25,
-    "median": 4.8,
+    "runs": 26,
+    "median": 4.55,
     "min": 1.54,
     "max": 34.82
   }
