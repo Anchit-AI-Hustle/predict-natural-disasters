@@ -7356,6 +7356,139 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-09-26T19:42:19.102Z",
+      "sinceHours": 2.74,
+      "active": 31,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-bf395783e958c285bfd2b37f18191bb5ead2acfb-001-1",
+          "type": "Flood",
+          "title": "3-day Flood risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T19:10:00.000Z",
+          "targetEnd": "2026-09-29T19:10:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-usgs-volcano-332010",
+          "type": "Volcano",
+          "title": "7-day Volcano risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T18:41:56.000Z",
+          "targetEnd": "2026-10-03T18:41:56.000Z",
+          "provider": "usgs_volcano"
+        },
+        {
+          "id": "OUT-0-b6fa79156ac6166c77a74bd1add9d817c2de4fcd-001-2",
+          "type": "Storm Warning",
+          "title": "2-day Storm Warning risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T18:21:00.000Z",
+          "targetEnd": "2026-09-28T18:21:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f7a3ddf92c192906a15c84cc522f4cbffe1e47d2-001-2",
+          "type": "Severe Storm",
+          "title": "2-day Severe Storm risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T17:47:00.000Z",
+          "targetEnd": "2026-09-28T17:47:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep172026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Polo (eastern Pacific system 2)",
+          "country": "Polo (eastern Pacific system 2)",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-09-26T18:00:00.000Z",
+          "targetEnd": "2026-10-01T18:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T15:00:00.000Z",
+          "toEnd": "2026-10-01T18:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T18:00:00.000Z",
+          "targetEnd": "2026-10-01T18:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-01T15:00:00.000Z",
+          "toEnd": "2026-10-01T18:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-8fe193a3a27c821ed6bba9595ad846d36da29d38-001-1",
+          "type": "Flood",
+          "title": "3-day Flood risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T16:18:00.000Z",
+          "targetEnd": "2026-09-29T16:18:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-9c07debd80e61e5b5a862c184fd0b467cc21a188-006-1",
+          "type": "Storm Warning",
+          "title": "2-day Storm Warning risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T08:30:00.000Z",
+          "targetEnd": "2026-09-28T08:30:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-0f6a1b978ebf42ebc48fdcb2bb745c9174e4db2b-001-1",
+          "type": "Severe Storm",
+          "title": "2-day Severe Storm risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-26T06:03:00.000Z",
+          "targetEnd": "2026-09-28T06:03:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-usgs-volcano-311120",
+          "type": "Volcano",
+          "title": "7-day Volcano risk outlook — United States",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-25T20:04:31.000Z",
+          "targetEnd": "2026-10-02T20:04:31.000Z",
+          "provider": "usgs_volcano"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -7366,8 +7499,8 @@
       "country": "Polo (eastern Pacific system 2)",
       "alert": "High",
       "rank": 3,
-      "targetStart": "2026-09-26T15:00:00.000Z",
-      "targetEnd": "2026-10-01T15:00:00.000Z",
+      "targetStart": "2026-09-26T18:00:00.000Z",
+      "targetEnd": "2026-10-01T18:00:00.000Z",
       "provider": "nhc"
     },
     "OUT-aftershock-usgs-us6000txpi": {
@@ -7381,15 +7514,59 @@
       "targetEnd": "2026-10-02T21:23:03.309Z",
       "provider": "usgs"
     },
-    "OUT-0-8fe193a3a27c821ed6bba9595ad846d36da29d38-001-1": {
-      "id": "OUT-0-8fe193a3a27c821ed6bba9595ad846d36da29d38-001-1",
+    "OUT-0-bf395783e958c285bfd2b37f18191bb5ead2acfb-001-1": {
+      "id": "OUT-0-bf395783e958c285bfd2b37f18191bb5ead2acfb-001-1",
       "type": "Flood",
       "title": "3-day Flood risk outlook — United States",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-09-26T16:18:00.000Z",
-      "targetEnd": "2026-09-29T16:18:00.000Z",
+      "targetStart": "2026-09-26T19:10:00.000Z",
+      "targetEnd": "2026-09-29T19:10:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-usgs-volcano-332010": {
+      "id": "OUT-usgs-volcano-332010",
+      "type": "Volcano",
+      "title": "7-day Volcano risk outlook — United States",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T18:41:56.000Z",
+      "targetEnd": "2026-10-03T18:41:56.000Z",
+      "provider": "usgs_volcano"
+    },
+    "OUT-0-b6fa79156ac6166c77a74bd1add9d817c2de4fcd-001-2": {
+      "id": "OUT-0-b6fa79156ac6166c77a74bd1add9d817c2de4fcd-001-2",
+      "type": "Storm Warning",
+      "title": "2-day Storm Warning risk outlook — United States",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T18:21:00.000Z",
+      "targetEnd": "2026-09-28T18:21:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-nhc-ep152026": {
+      "id": "OUT-nhc-ep152026",
+      "type": "Tropical Cyclone",
+      "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
+      "country": "Nolo (central Pacific system 2)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T18:00:00.000Z",
+      "targetEnd": "2026-10-01T18:00:00.000Z",
+      "provider": "nhc"
+    },
+    "OUT-0-f7a3ddf92c192906a15c84cc522f4cbffe1e47d2-001-2": {
+      "id": "OUT-0-f7a3ddf92c192906a15c84cc522f4cbffe1e47d2-001-2",
+      "type": "Severe Storm",
+      "title": "2-day Severe Storm risk outlook — United States",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-09-26T17:47:00.000Z",
+      "targetEnd": "2026-09-28T17:47:00.000Z",
       "provider": "nws"
     },
     "OUT-nhc-ep162026": {
@@ -7397,17 +7574,6 @@
       "type": "Tropical Cyclone",
       "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
       "country": "Odalys (eastern Pacific system 1)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-09-26T15:00:00.000Z",
-      "targetEnd": "2026-10-01T15:00:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-nhc-ep152026": {
-      "id": "OUT-nhc-ep152026",
-      "type": "Tropical Cyclone",
-      "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
-      "country": "Nolo (central Pacific system 2)",
       "alert": "Moderate",
       "rank": 2,
       "targetStart": "2026-09-26T15:00:00.000Z",
@@ -7425,28 +7591,6 @@
       "targetEnd": "2026-10-03T14:08:17.704Z",
       "provider": "usgs"
     },
-    "OUT-0-9c07debd80e61e5b5a862c184fd0b467cc21a188-006-1": {
-      "id": "OUT-0-9c07debd80e61e5b5a862c184fd0b467cc21a188-006-1",
-      "type": "Storm Warning",
-      "title": "2-day Storm Warning risk outlook — United States",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-09-26T08:30:00.000Z",
-      "targetEnd": "2026-09-28T08:30:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-0f6a1b978ebf42ebc48fdcb2bb745c9174e4db2b-001-1": {
-      "id": "OUT-0-0f6a1b978ebf42ebc48fdcb2bb745c9174e4db2b-001-1",
-      "type": "Severe Storm",
-      "title": "2-day Severe Storm risk outlook — United States",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-09-26T06:03:00.000Z",
-      "targetEnd": "2026-09-28T06:03:00.000Z",
-      "provider": "nws"
-    },
     "OUT-aftershock-usgs-us6000txqi": {
       "id": "OUT-aftershock-usgs-us6000txqi",
       "type": "Earthquake aftershock sequence",
@@ -7457,17 +7601,6 @@
       "targetStart": "2026-09-25T23:39:41.392Z",
       "targetEnd": "2026-10-02T23:39:41.392Z",
       "provider": "usgs"
-    },
-    "OUT-usgs-volcano-311120": {
-      "id": "OUT-usgs-volcano-311120",
-      "type": "Volcano",
-      "title": "7-day Volcano risk outlook — United States",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-09-25T20:04:31.000Z",
-      "targetEnd": "2026-10-02T20:04:31.000Z",
-      "provider": "usgs_volcano"
     },
     "OUT-aftershock-usgs-us6000tx3m": {
       "id": "OUT-aftershock-usgs-us6000tx3m",
@@ -7701,9 +7834,9 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-09-26T16:58:07.215Z",
+  "updatedAt": "2026-09-26T19:42:19.102Z",
   "observedCadenceHours": {
-    "runs": 26,
+    "runs": 27,
     "median": 4.55,
     "min": 1.54,
     "max": 34.82
