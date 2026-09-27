@@ -98,7 +98,7 @@ const contrast = (a, b) => {
   const PALETTE = {};
   for (const lv of RISK.LEVELS) PALETTE[lv.colour.toUpperCase()] = lv.key;
 
-  let failures = 0, badges = 0, markers = 0;
+  let failures = 0, badges = 0, markers = 0, keyMarks = 0;
   for (const page of PAGES) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const pg = await ctx.newPage();
@@ -113,7 +113,10 @@ const contrast = (a, b) => {
          or `.severity-extreme` is painted from the same scale and has to hold
          to the same rules. */
       document.querySelectorAll('.risk,[class*="risk-"],[class*="sev-"],[class*="severity-"],.badge').forEach(el => {
-        if (el.classList.contains('risk-shape') || el.closest('.risk-mk')) return;
+        /* A map marker and the key's copy of one carry a level class for the
+           shape inside them, not for a filled badge: both are measured as
+           shapes below. */
+        if (el.classList.contains('risk-shape') || el.closest('.risk-mk,.pnd-key-mark')) return;
         const cs = getComputedStyle(el);
         const before = getComputedStyle(el, '::before');
         out.badges.push({
@@ -132,6 +135,22 @@ const contrast = (a, b) => {
           cls: el.className,
           label: shape ? shape.getAttribute('aria-label') : null,
           role: shape ? shape.getAttribute('role') : null,
+          bg: cs ? cs.backgroundColor : null,
+          clip: cs ? cs.clipPath : null, radius: cs ? cs.borderRadius : null,
+          w: shape ? shape.getBoundingClientRect().width : 0
+        });
+      });
+      /* The map key's swatches: each is the marker it explains, drawn the same
+         way, and hidden from a screen reader because its row names the level
+         in words. */
+      out.keyMarks = [];
+      document.querySelectorAll('.pnd-key-mark').forEach(el => {
+        const shape = el.querySelector('.risk-shape');
+        const cs = shape ? getComputedStyle(shape) : null;
+        const row = el.closest('li');
+        out.keyMarks.push({
+          cls: el.className, hidden: el.getAttribute('aria-hidden'),
+          rowText: row ? row.textContent.trim() : '',
           bg: cs ? cs.backgroundColor : null,
           clip: cs ? cs.clipPath : null, radius: cs ? cs.borderRadius : null,
           w: shape ? shape.getBoundingClientRect().width : 0
@@ -171,6 +190,18 @@ const contrast = (a, b) => {
       }
     }
 
+    for (const k of found.keyMarks) {
+      keyMarks++;
+      const lvl = (/risk-([a-z]+)/.exec(k.cls) || [])[1] || '';
+      if (!k.rowText.toLowerCase().includes(lvl === 'unknown' ? 'not rated' : lvl)) {
+        problems.push('key swatch ' + k.cls + ' sits in a row that does not name its level: "' + k.rowText + '"');
+      }
+      if (k.hidden !== 'true') problems.push('key swatch ' + k.cls + ' is announced as well as its row');
+      if (lvl !== 'unknown' && !PALETTE[hexOf(k.bg)]) problems.push('key swatch ' + k.cls + ' is ' + hexOf(k.bg) + ', not on the scale');
+      if (k.w <= 0) problems.push('key swatch ' + k.cls + ' has no size');
+      if (k.clip === 'none' && (!k.radius || k.radius === '0px')) problems.push('key swatch ' + k.cls + ' is an unshaped square');
+    }
+
     /* Six levels must end up as six different fills on a real page, after the
        whole cascade has had its say - not merely six hexes in a file. */
     const seen = {};
@@ -196,7 +227,7 @@ const contrast = (a, b) => {
 
   await browser.close();
   server.close();
-  console.log('\n' + badges + ' badge(s) and ' + markers + ' marker(s) measured across ' +
+  console.log('\n' + badges + ' badge(s), ' + markers + ' marker(s) and ' + keyMarks + ' key swatch(es) measured across ' +
     PAGES.length + ' page(s); ' + failures + ' page(s) failed.');
   if (!badges) { console.log('FAIL: no risk badge rendered anywhere, so nothing was measured.'); process.exit(1); }
   if (!markers) { console.log('FAIL: no map marker rendered anywhere, so nothing was measured.'); process.exit(1); }

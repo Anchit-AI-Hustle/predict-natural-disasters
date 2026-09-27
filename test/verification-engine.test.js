@@ -350,14 +350,25 @@ test('the committed record is graded only where the written record can answer', 
     assert.notEqual(v.absenceEstablishable, false,
       v.predictionId + ' was called a false positive where no absence could be established');
   }
-  /* A hit is borne out by something recorded after the forecast existed. */
+  /* A hit is borne out by something observed after the forecast existed.
+     For most claims that observation is the disaster's onset. A continuation
+     outlook is about a disaster already under way, so what bears it out is
+     that disaster still being reported inside the window: the first
+     refresh to meet one read the August India flood's onset against an
+     outlook written on 21 September, and called a sound verdict backdated. */
   for (const [i, v] of vers.entries()) {
     if (v.classification !== 'HIT' && v.classification !== 'PARTIAL_HIT') continue;
     assert.ok(v.evidence.length, v.predictionId + ' was credited with no evidence');
     const from = Date.parse(V.freezeOf(preds[i]));
+    const continuation = V.CONTINUATION_CLASSES.includes(preds[i].forecastClass);
     for (const e of v.evidence) {
-      assert.ok(Date.parse(e.onset) >= from,
+      assert.ok(e.observedAt, v.predictionId + '’s evidence does not say when it was observed');
+      assert.ok(Date.parse(e.observedAt) >= from,
         v.predictionId + ' was credited with an observation from before it was recorded');
+      if (!continuation) {
+        assert.equal(e.observedAt, new Date(Date.parse(e.onset)).toISOString(),
+          v.predictionId + ' is credited from something other than the onset it claims');
+      }
     }
   }
 
@@ -431,6 +442,15 @@ test('a continuation outlook is graded on whether the disaster carried on', () =
     'a disaster still being reported inside the window did not bear out the outlook that said it would continue');
   assert.match(carried.classificationReason, /still being reported inside the window/i);
   assert.deepEqual(carried.observedEventIds, [began.canonicalEventId]);
+  /* The evidence names the observation that bore it out - the report inside
+     the window, after the freeze - not the onset, which predates the freeze
+     by design and would read as a backdated verdict. */
+  assert.equal(carried.evidence[0].onset, '2026-09-03T00:00:00Z');
+  assert.equal(carried.evidence[0].observedAt, '2026-09-05T12:00:00.000Z',
+    'the evidence does not say which observation bore the outlook out');
+  /* An ordinary match is borne out by the onset itself. */
+  const fresh = grade(prediction(), [disaster()]);
+  assert.equal(fresh.evidence[0].observedAt, new Date(Date.parse(disaster().onset)).toISOString());
 });
 
 test('each class that follows a disaster is graded by its own rule', () => {

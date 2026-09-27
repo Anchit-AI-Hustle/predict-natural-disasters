@@ -25,8 +25,21 @@ let FORECAST_CHANGES;
 try { FORECAST_CHANGES = require('../data/forecast-changes.json'); }
 catch (e) { FORECAST_CHANGES = null; }
 
-const MAX_OUTLOOKS = 24;
+/* A bound against a runaway upstream, not a quota. At 24 it was the latter:
+   measured on the live feed of 26 September 2026, 40 active official signals
+   had an outlook window still open, one per place and hazard, and the 16
+   ranked lowest - green-level floods and wildfires, and two tropical storms -
+   were never published, with nothing anywhere saying so. Anything this bound
+   still withholds is counted in meta.outlooksWithheld. */
+const MAX_OUTLOOKS = 120;
 const OUTLOOK_HORIZON_HOURS = 72;
+/* GDACS's hazard codes, asked one at a time: tropical cyclone, earthquake,
+   flood, volcano, drought, wildfire. */
+const GDACS_EVENT_TYPES = ['TC', 'EQ', 'FL', 'VO', 'DR', 'WF'];
+/* The most events GDACS's search answers with at once - measured: the
+   single all-hazard search came back with exactly 100. */
+const GDACS_PAGE_SIZE = 100;
+const GDACS_MAX_PAGES = 3;
 const AFTERSHOCK_HORIZON_HOURS = 168;
 
 /* ------------------------------------------------------------------ utils */
@@ -236,6 +249,7 @@ function centroid(geometry) {
 }
 
 const GDACS_TYPES = { FL: 'Flood', EQ: 'Earthquake', TC: 'Tropical Cyclone', VO: 'Volcano', DR: 'Drought', WF: 'Wildfire', TS: 'Tsunami' };
+const gdacsHazardName = code => (GDACS_TYPES[code] || code).toLowerCase();
 
 /** Normalise the many labels upstreams use into one hazard vocabulary. */
 function normalizeType(raw, hint) {
@@ -259,6 +273,46 @@ function normalizeType(raw, hint) {
   if (/dust|haboob|sand/.test(t)) return 'Dust Storm';
   if (/epidemic|cholera|disease/.test(t)) return 'Epidemic';
   return String(raw).replace(/\b\w/g, c => c.toUpperCase()).slice(0, 48);
+}
+
+/*
+ * Is this EONET "Severe Storms" event a tropical cyclone, and in which basin?
+ *
+ * EONET files every storm under one category, so its cyclones - the ones the
+ * US Joint Typhoon Warning Center tracks in the Indian Ocean, the western
+ * Pacific and the southern hemisphere - were published here as "Severe
+ * Storm". That took them out of every cyclone filter and search, and gave them
+ * a severe storm's two-day outlook window rather than a cyclone's five: on
+ * 26 September 2026 cyclone 01B in the Bay of Bengal, last fixed two days
+ * earlier, was left with no outlook at all while its window was still open.
+ *
+ * Only the storm category is considered, so a wildfire named after a place
+ * called Cyclone stays a wildfire, and a storm that has become extratropical
+ * or post-tropical is no longer a tropical cyclone.
+ *
+ * The basin comes from what the warning centre published, not from the
+ * position: JTWC names its product file for the basin (io0126 is the North
+ * Indian Ocean's 1st storm of 2026) and its designation ends in the sea it
+ * formed in - 01B is the Bay of Bengal, 02A the Arabian Sea.
+ */
+const JTWC_BASINS = {
+  io: 'North Indian Ocean', wp: 'western North Pacific', sh: 'southern hemisphere',
+  ep: 'eastern North Pacific', cp: 'central North Pacific', al: 'North Atlantic'
+};
+const JTWC_SUFFIX_SEAS = {
+  B: 'Bay of Bengal, North Indian Ocean', A: 'Arabian Sea, North Indian Ocean',
+  S: 'South Indian Ocean', P: 'South Pacific'
+};
+function eonetTropicalCyclone(category, title, sources) {
+  if (!/severe storm/i.test(String(category || ''))) return null;
+  const t = String(title || '');
+  if (/extra-?tropical|post-?tropical/i.test(t)) return null;
+  if (!/\b(tropical (cyclone|storm|depression)|super typhoon|typhoon|hurricane|cyclone)\b/i.test(t)) return null;
+  const url = ((Array.isArray(sources) ? sources : []).map(s => s && s.url).find(Boolean)) || '';
+  const file = (/\/jtwc\/products\/([a-z]{2})\d{4}/i.exec(url) || [])[1];
+  const suffix = (/\b\d{2}([A-Z])\b/.exec(t) || [])[1];
+  const basin = (suffix && JTWC_SUFFIX_SEAS[suffix]) || (file && JTWC_BASINS[file.toLowerCase()]) || '';
+  return { basin };
 }
 
 /* ---------------------------------------------------------------- handler */
@@ -605,12 +659,30 @@ async function handler(req, res) {
 
   /* ------------------------------------------------------------ upstreams */
 
+  /* GDACS is asked more than once per refresh (see the job below), and the
+     same event can come back from two of those questions - so a record is
+     published once per GDACS event id, however many answers carried it. */
+  const gdacsSeen = new Set();
+  const pushGdacs = rec => {
+    if (gdacsSeen.has(rec.id)) return false;
+    gdacsSeen.add(rec.id);
+    push(rec);
+    return true;
+  };
+
+  /* Resolves to how many events the answer listed and how many of them were
+     new, because a page that listed only events already held is how an
+     endpoint that ignores its page number shows it. */
   const parseGdacsJson = j => {
     const arr = Array.isArray(j) ? j : (j.features || j.data || j.results || []);
-    let n = 0;
+    let n = 0, listed = 0;
+    const ids = [];
     for (const x of arr) {
       const p = x.properties || x;
-      let coords = (x.geometry && x.geometry.coordinates) || [p.longitude || p.lon, p.latitude || p.lat];
+      /* ?? rather than ||: a longitude or latitude of 0 is a place - the
+         prime meridian, the equator - and || read it as missing and dropped
+         the event. */
+      let coords = (x.geometry && x.geometry.coordinates) || [p.longitude ?? p.lon, p.latitude ?? p.lat];
       if (!Array.isArray(coords) || Array.isArray(coords[0])) continue;
       const et = p.eventtype || p.eventType || p.type || 'Disaster';
       const eid = p.eventid || p.eventId || p.id;
@@ -621,7 +693,9 @@ async function handler(req, res) {
         ['displaced', p.displaced],
         ['affected', p.affected, p.population]
       ]);
-      push({
+      listed++;
+      ids.push('gdacs-' + et + '-' + eid);
+      if (pushGdacs({
         id: 'gdacs-' + et + '-' + eid,
         source: 'GDACS', sourceType: 'official',
         type: GDACS_TYPES[et] || normalizeType(et),
@@ -639,14 +713,13 @@ async function handler(req, res) {
         ...measured,
         sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=' + encodeURIComponent(eid) + '&eventtype=' + encodeURIComponent(et),
         rawId: eid, rawType: et
-      });
-      n++;
+      })) n++;
     }
-    return n;
+    return { listed, added: n, ids };
   };
 
   const parseGdacsRss = xml => {
-    let n = 0;
+    let n = 0, listed = 0;
     for (const m of String(xml).matchAll(/<item[\s>]([\s\S]*?)<\/item>/gi)) {
       const b = m[1];
       const lat = num(tag('geo:lat', b) || tag('lat', b));
@@ -654,7 +727,8 @@ async function handler(req, res) {
       const et = tag('gdacs:eventtype', b) || 'Disaster';
       const eid = tag('gdacs:eventid', b) || tag('guid', b);
       if (lat === null || lon === null || !eid) continue;
-      push({
+      listed++;
+      if (pushGdacs({
         id: 'gdacs-' + et + '-' + eid,
         source: 'GDACS', sourceType: 'official',
         type: GDACS_TYPES[et] || normalizeType(et),
@@ -669,31 +743,80 @@ async function handler(req, res) {
         details: tag('description', b) || '',
         sourceUrl: tag('link', b) || 'https://www.gdacs.org/',
         rawId: eid, rawType: et
-      });
-      n++;
+      })) n++;
     }
-    return n;
+    return { listed, added: n };
   };
 
   const jobs = [];
 
-  // 1. GDACS — multi-hazard global alerts (JSON, app endpoint, then RSS).
+  // 1. GDACS — multi-hazard global alerts: one hazard at a time, plus what is
+  //    active now; the app endpoint and then RSS if the searches fail.
+  //
+  // It used to be one question - every hazard, every alert level, the last
+  // 120 days - and GDACS answers a search with one page of at most 100
+  // events. Measured on the live feed on 26 September 2026: exactly 100 GDACS
+  // records, 63 of them wildfires, and neither Typhoon Dujuan in the western
+  // North Pacific nor cyclone 01B in the Bay of Bengal among them, though
+  // both were open storms that day. A busy wildfire season fills the page,
+  // so a cyclone could be dropped for a grass fire on another continent.
+  //
+  // Now each hazard gets its own page, so none can crowd out another. A page
+  // that comes back full is followed to the next, as far as GDACS_MAX_PAGES,
+  // and a next page that lists nothing new ends it - which is also how an
+  // endpoint that ignores the page number shows itself. GDACS's list of the
+  // events active now is read as well, so a running event is carried even
+  // where its hazard's history was cut short. And where it was, the scan says
+  // so rather than reporting a clean sweep: see scanStatusOf.
   jobs.push((async () => {
-    const search = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF&fromDate=' +
-      iso(from) + '&toDate=' + iso(now) + '&alertlevel=Green;Orange;Red';
-    try {
-      const n = parseGdacsJson(await timedFetch(search));
-      out.meta.gdacs = true; mark('gdacs', true, { records: n, endpoint: 'search' });
+    const searchUrl = (t, page) => 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=' + t +
+      '&fromDate=' + iso(from) + '&toDate=' + iso(now) + '&alertlevel=Green;Orange;Red' +
+      (page > 1 ? '&pagenumber=' + page : '');
+    const byHazard = {}, incomplete = [], failed = {};
+    const history = GDACS_EVENT_TYPES.map(async t => {
+      const mine = new Set();
+      for (let page = 1; page <= GDACS_MAX_PAGES; page++) {
+        let r;
+        try { r = parseGdacsJson(await timedFetch(searchUrl(t, page))); } catch (e) {
+          if (page === 1) failed[t] = String(e.message || e);
+          else incomplete.push(t);
+          break;
+        }
+        const fresh = r.ids.filter(id => !mine.has(id));
+        fresh.forEach(id => mine.add(id));
+        if (r.listed < GDACS_PAGE_SIZE) break;
+        if (page > 1 && !fresh.length) { incomplete.push(t); break; }
+        if (page === GDACS_MAX_PAGES) incomplete.push(t);
+      }
+      if (!(t in failed)) byHazard[t] = mine.size;
+    });
+    const current = (async () => {
+      try {
+        return parseGdacsJson(await timedFetch('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP'));
+      } catch (e) { return null; }
+    })();
+    await Promise.all(history);
+    const now4app = await current;
+    const searched = Object.keys(byHazard).length;
+    if (searched || now4app) {
+      /* A hazard whose search failed outright was not read at all, which is
+         as incomplete as a history cut short - unless the active list
+         answered, in which case its running events are still carried. */
+      Object.keys(failed).forEach(t => incomplete.push(t));
+      out.meta.gdacs = true;
+      mark('gdacs', true, {
+        records: gdacsSeen.size,
+        endpoint: searched ? 'search' : 'events4app',
+        byHazard,
+        activeListed: now4app ? now4app.listed : null,
+        incomplete: incomplete.sort(),
+        ...(Object.keys(failed).length ? { failed } : {})
+      });
       return;
-    } catch (e) { /* fall through */ }
+    }
     try {
-      const n = parseGdacsJson(await timedFetch('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP'));
-      out.meta.gdacs = true; mark('gdacs', true, { records: n, endpoint: 'events4app' });
-      return;
-    } catch (e) { /* fall through */ }
-    try {
-      const n = parseGdacsRss(await timedFetch('https://www.gdacs.org/xml/rss.xml', { text: true, headers: { accept: 'application/rss+xml, application/xml' } }));
-      out.meta.gdacs = true; mark('gdacs', true, { records: n, endpoint: 'rss' });
+      const r = parseGdacsRss(await timedFetch('https://www.gdacs.org/xml/rss.xml', { text: true, headers: { accept: 'application/rss+xml, application/xml' } }));
+      out.meta.gdacs = true; mark('gdacs', true, { records: r.added, endpoint: 'rss' });
     } catch (e) {
       mark('gdacs', false, { error: String(e.message || e) });
     }
@@ -748,9 +871,10 @@ async function handler(req, res) {
         const eonetTitle = String(v.title || '').replace(/\bPrescribed Fire RX\b/gi, 'Prescribed Fire')
           .replace(/\bRX\b/g, 'Prescribed Fire').trim();
         const eonetPlace = placeFromTitle(eonetTitle);
+        const tc = eonetTropicalCyclone(cat, eonetTitle, v.sources);
         push({
           id: 'eonet-' + v.id,
-          source: 'NASA EONET', sourceType: 'official', type: normalizeType(cat),
+          source: 'NASA EONET', sourceType: 'official', type: tc ? 'Tropical Cyclone' : normalizeType(cat),
           // "RX" is fire-management shorthand for a prescribed fire, so EONET titles
           // read "Prescribed Fire RX Tom Green" — the same words twice, one of them
           // an abbreviation.
@@ -758,7 +882,10 @@ async function handler(req, res) {
           country: eonetPlace ? eonetPlace.country : '',
           admin1: eonetPlace ? eonetPlace.admin1 : '',
           admin2: eonetPlace ? eonetPlace.admin2 : '',
-          region: eonetPlace ? eonetPlace.region : '',
+          /* A storm title names the storm, not a place, so a cyclone carried
+             no place at all and "Bay of Bengal" found nothing. Its warning
+             centre's basin is the place a reader knows it by. */
+          region: eonetPlace ? eonetPlace.region : ((tc && tc.basin) || ''),
           alert: 'Green',
           lat: g.coordinates[1], lon: g.coordinates[0],
           startedAt: (geoms[0] && geoms[0].date) || null,
@@ -1360,8 +1487,10 @@ async function handler(req, res) {
   const seenArea = new Set();
   const outlooks = [];
 
+  /* Counted after the window and place checks, so it is the number of
+     outlooks that would have been published, not the number of signals. */
+  let outlooksWithheld = 0;
   for (const e of continuation) {
-    if (outlooks.length >= MAX_OUTLOOKS) break;
     // The signal's own last-updated time, not the clock: see below.
     const anchorMs = Date.parse(e.updated) || now.getTime();
     const windowEndMs = anchorMs + horizonFor(e.type) * 3600e3;
@@ -1370,6 +1499,7 @@ async function handler(req, res) {
     const area = ((e.country || e.region || e.title) + '|' + e.type).toLowerCase().replace(/\s+/g, ' ').slice(0, 120);
     if (seenArea.has(area)) continue;
     seenArea.add(area);
+    if (outlooks.length >= MAX_OUTLOOKS) { outlooksWithheld++; continue; }
     outlooks.push({
       id: outlookId(e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,
@@ -1479,6 +1609,7 @@ async function handler(req, res) {
 
   outlooks.forEach(push);
   out.meta.outlooks = outlooks.length;
+  out.meta.outlooksWithheld = outlooksWithheld;
   out.meta.forecastNote = outlooks.length
     ? outlooks.length + ' active experimental outlooks derived from ' + okSources.length + ' online official sources, plus the frozen ND-001 benchmark.'
     : 'No active official hazard signal is currently available to derive an outlook from. Only the frozen ND-001 benchmark is shown.';
@@ -1813,7 +1944,7 @@ async function handler(req, res) {
       label: 'NASA EONET',
       inputKind: 'observation',
       inputBasis: 'A curated catalogue of natural events already under way.',
-      hazards: ['Wildfire', 'Volcano', 'Severe Storm', 'Ice', 'Landslide'],
+      hazards: ['Wildfire', 'Volcano', 'Severe Storm', 'Tropical Cyclone', 'Ice', 'Landslide'],
       geographicCoverage: 'Global',
       coverageResolution: 'A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.',
       endpoint: 'https://eonet.gsfc.nasa.gov/api/v3/events',
@@ -1920,6 +2051,14 @@ async function handler(req, res) {
     if (key === 'gdacs' && s.endpoint === 'rss') {
       return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
         reason: 'The JSON endpoints did not answer and the RSS fallback carries fewer fields per event.' };
+    }
+    /* A hazard whose search failed, or whose history filled every page this
+       run asked for, was not read in full: the events GDACS lists as active
+       are still carried, but older ones may not be. */
+    if (key === 'gdacs' && Array.isArray(s.incomplete) && s.incomplete.length) {
+      return { status: COVERAGE_STATUS.INCOMPLETE_SCAN,
+        reason: 'GDACS was not read in full for ' + s.incomplete.map(gdacsHazardName).join(', ') +
+          ': the search failed or every page asked for came back full.' };
     }
     if (key === 'nws') {
       if (s.query && s.query !== 'status=actual&message_type=alert&severity=Extreme,Severe') {
@@ -2133,3 +2272,4 @@ module.exports.inRing = inRing;
 module.exports.polygonsOf = polygonsOf;
 module.exports.inPolygon = inPolygon;
 module.exports.mergeSeismicReports = mergeSeismicReports;
+module.exports.eonetTropicalCyclone = eonetTropicalCyclone;

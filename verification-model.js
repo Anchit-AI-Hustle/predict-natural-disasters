@@ -487,8 +487,15 @@
         originalWindow: claim.window,
         originalThresholds: claim.thresholds,
         observedEventIds: (matched || []).map(function (m) { return m.event.canonicalEventId; }),
+        /* observedAt is the observation that bears the claim out, which is
+           not always the onset: a continuation outlook is about a disaster
+           that began before it, and is borne out by that disaster still being
+           reported inside the window. It is never before the forecast
+           existed, and saying which moment it was is what lets that be
+           checked. */
         evidence: (matched || []).map(function (m) {
           return { canonicalEventId: m.event.canonicalEventId, onset: m.event.onset,
+            observedAt: m.at !== undefined && m.at !== null ? new Date(m.at).toISOString() : (m.event.onset || null),
             country: (m.event.geography || {}).country || null, match: m.level, why: m.why };
         }),
         classification: classification,
@@ -644,12 +651,12 @@
            that is what a continuation outlook is; what has to fall inside the
            window is the evidence that it carried on. */
         var act = continuedActivity(ev, start, end, continuationKind, claim.sourceScanId);
-        if (act) { matched.push({ event: ev, level: geo.level, why: geo.why + ' ' + act.why }); }
+        if (act) { matched.push({ event: ev, level: geo.level, at: act.at, why: geo.why + ' ' + act.why }); }
         else { awaitingActivity.push({ event: ev, level: geo.level, why: geo.why }); }
         continue;
       }
       if (onset > end) continue;
-      matched.push({ event: ev, level: geo.level, why: geo.why });
+      matched.push({ event: ev, level: geo.level, at: onset, why: geo.why });
     }
 
     /* Asked before any verdict is returned, so every verdict carries it, but
@@ -691,7 +698,7 @@
         var tie = sequenceTie(claim, sup);
         if (tie.other || tie.unknown) continue;
         if (tie.ambiguous) { unattributed.push({ event: sup, also: tie.ambiguous }); continue; }
-        matched.push({ event: sup, level: sGeo.level, supporting: true,
+        matched.push({ event: sup, level: sGeo.level, supporting: true, at: sOnset,
           why: sGeo.why + ' Observed activity of the sequence this outlook is about, recorded ' +
             'at ' + sup.onset + '. It is not itself a disaster by the observed record\u2019s bar, ' +
             'and counts towards no recall figure.' });

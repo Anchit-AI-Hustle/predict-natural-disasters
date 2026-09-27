@@ -311,6 +311,15 @@ function makeFetch(opts) {
     const route = (key, body) => (isDown(key) ? failure(503)
       : jsonResponse(Object.prototype.hasOwnProperty.call(feeds, key) ? feeds[key] : body));
 
+    /* GDACS is asked one hazard at a time, and a page at a time; a test that
+       has to answer those questions differently - a full page of wildfires,
+       a page number the endpoint ignores - supplies o.gdacs(url). It returns
+       a body, or null for a failed request, or undefined to fall through. */
+    if (typeof o.gdacs === 'function' && u.includes('gdacs.org')) {
+      const body = o.gdacs(u);
+      if (body === null) return failure(503);
+      if (body !== undefined) return jsonResponse(body);
+    }
     if (u.includes('gdacs.org/gdacsapi') || u.includes('gdacs.org/xml/rss')) return route('gdacs', FIXTURES.gdacs);
     if (u.includes('earthquake.usgs.gov')) return route('usgs', FIXTURES.usgs);
     if (u.includes('eonet.gsfc.nasa.gov')) return route('eonet', FIXTURES.eonet);

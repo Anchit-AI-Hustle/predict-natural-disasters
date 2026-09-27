@@ -1,6 +1,10 @@
 (()=>{const mode=document.body.dataset.view||'events';const cfg={events:['Live Global Events','Current and recent multi-hazard events from authoritative feeds.'],'recent-events':['Recent Major Events','Latest observed disasters and significant hazard activity.'],'official-warnings':['Official Warnings & Alerts','Higher-priority official alerts and agency-observed events.'],'hazard-types':['Hazards by Type','Browse current events by flood, earthquake, wildfire, volcano, storm and drought.'],'forecast-list':['Experimental Risk Outlooks','All active short-horizon outlooks and frozen benchmark forecasts.'],'forecast-calendar':['Forecast Calendar','Upcoming monitored forecast windows with current hazard context.'],'historical-events':['Historical & Recent Event Explorer','Recent GDACS event history plus current feeds.'],'alerts-notifications':['Alerts & Notifications','Current higher-priority alerts with source links and freshness.'],'compare-locations':['Compare Locations','Compare current hazard signals across locations.'],resources:['Sources & coverage','Every source this site reads, what it answered this time, and what its silence does and does not establish.']}[mode]||['Disaster Intelligence','Live global hazard intelligence'];
 const SORT_KEYS=mode==='resources'?['curated','name','nameDesc']:mode==='forecast-list'||mode==='forecast-calendar'?['newest','severity','windowEnd','oldest','country','type','title']:mode==='historical-events'?['newest','oldest','severity','country','type','title']:PND.EVENT_SORTS;
 nav.innerHTML=PND.nav(mode==='forecast-list'||mode==='forecast-calendar'?'Forecasts':mode==='official-warnings'||mode==='alerts-notifications'?'Alerts':'');pageTitle.textContent=cfg[0];pageSub.textContent=cfg[1];heading.textContent=cfg[0];let all=[];let lastMeta=null;
+/* The outlook views build their hazard filter from the outlooks themselves
+   and match it exactly; the fixed lists on the other views still match by
+   stem, which is what their option wording was written for. */
+const forecastMode=mode==='forecast-list'||mode==='forecast-calendar';
 function keep(e){if(mode==='official-warnings'||mode==='alerts-notifications')return e.sourceType==='official'&&(['Red','Orange'].includes(e.alert)||e.source==='USGS');if(mode==='forecast-list'||mode==='forecast-calendar')return e.forecast===true;if(mode==='recent-events')return e.sourceType==='official';return true}
 /* The same disclaimer sentence rides on 24 of the 30 outlooks, so repeating it
    on every card spends a third of each one saying what is true of all of them.
@@ -130,7 +134,7 @@ function draw(){if(mode==='resources'){
   cards.innerHTML=`<div class="panel" style="grid-column:1/-1;padding:12px"><b>${answered} of ${ps.length} sources answered this scan in full${partial?', '+partial+' in part':''}.</b>
     ${blind.length?PND.esc('For '+blind.join(', ').replace(/-/g,' ')+' no source here is both exhaustive and an observer, so nothing on this site can establish that no such disaster occurred \u2014 only that none was reported.'):'Every hazard listed here has a source whose silence is evidence.'}</div>`
     +rs.map(providerCard).join('');
-  return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',all.filter(keep).filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase().includes(t.replace('s','')))&&PND.matchesRiskLevel(e,l)),SORT_KEYS);pageNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
+  return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',all.filter(keep).filter(e=>(!s||PND.matches(e,s))&&(!t||(forecastMode?String(e.type).toLowerCase()===t:String(e.type).toLowerCase().includes(t.replace('s',''))))&&PND.matchesRiskLevel(e,l)),SORT_KEYS);pageNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
 if(mode==='forecast-list'){cards.className='';
  cards.innerHTML=es.length?PNDForecastTable.render(es)
   :PND.emptyHtml(q.value,all.filter(keep),all,cfg[0].toLowerCase());
@@ -143,6 +147,7 @@ cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="even
 async function load(){statusLine.textContent='Refreshing authoritative feeds…';try{const d=await PND.getEvents();all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;
 /* The sources view is about the sources, so its status line counts those
    rather than the records they produced. */
+if(forecastMode)PND.fillHazardSelect(document.getElementById('type'),all.filter(keep));
 statusLine.textContent=mode==='resources'
   ?`${PND.statusText(d.meta)} · scan ${PND.fmtDate((d.meta&&d.meta.scan&&d.meta.scan.scanTimestamp)||d.generatedAt)} · fetched ${PND.age(d.generatedAt)}`
   :`${PND.statusText(d.meta)} · ${shown} matching records · fetched ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Upstream feed unavailable · retrying automatically'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name — A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name — Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);

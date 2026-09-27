@@ -45,8 +45,22 @@ function classTitle(e){
  const k=e.forecastClass&&M&&M[e.forecastClass];
  return k?k.definition:'This outlook carries no recorded class.';
 }
+/* Each column carries its own class, so the stylesheet can size it: with
+   ten columns shared out evenly the outlook's name got a tenth of the row
+   and broke after every few letters, while a two-word hazard had the same
+   room as a paragraph of geography. */
+function colClass(label){return 'c-'+String(label).toLowerCase()}
 function cell(label,html,cls){
- return '<td data-label="'+PND.esc(label)+'"'+(cls?' class="'+cls+'"':'')+'>'+html+'</td>';
+ return '<td data-label="'+PND.esc(label)+'" class="'+colClass(label)+(cls?' '+cls:'')+'">'+html+'</td>';
+}
+/* Every derived outlook's source reads "Predict Natural Disasters \u00b7
+   derived from" an agency, and the Provenance column already says it is a
+   model outlook - so the row names the agency, and the full attribution
+   stays in the tooltip and on the outlook's own page. */
+function sourceText(e){
+ const full=String(e.source||'');
+ const m=/^Predict Natural Disasters\s*\u00b7\s*derived from\s+(.+)$/i.exec(full);
+ return m?'From '+m[1]:full;
 }
 /* A page that shows the list in a narrower column asks for fewer columns
    rather than scrolling sideways inside its own panel: the row opens the
@@ -68,13 +82,15 @@ function forecastRow(e,opts){
      Enter, but it cannot be opened in a new tab, copied, or read out as a
      link by a screen reader. The name of the thing is the link. */
   Forecast:'<a href="'+PND.eventUrl(e)+'"><b>'+PND.esc(e.title)+'</b></a>',
-  Geography:PND.esc(geo),
+  /* Clamped to three lines, whole in the tooltip: a US warning's area is a
+     list of every county it names, and ran a single row to a screen. */
+  Geography:'<span class="clamp" title="'+PND.esc(geo)+'">'+PND.esc(geo)+'</span>',
   Hazard:PND.esc(e.type||'\u2014'),
   Starts:e.targetStart?PND.esc(PND.fmtDate(e.targetStart)):'\u2014',
   Ends:e.targetEnd?PND.esc(PND.fmtDate(e.targetEnd)):'\u2014',
   Class:'<span title="'+PND.esc(classTitle(e))+'">'+PND.esc(classLabel(e))+'</span>',
   Provenance:'<span class="prov">'+PND.esc(provenanceOf(e))+'</span>',
-  Source:PND.esc(e.source||'\u2014'),
+  Source:e.source?'<span title="'+PND.esc(e.source)+'">'+PND.esc(sourceText(e))+'</span>':'\u2014',
   Updated:'<span title="'+PND.esc(PND.fmtDate(e.updated))+'">'+PND.esc(PND.age(e.updated))+'</span>'
  };
  return '<tr data-href="'+PND.eventUrl(e)+'">'+
@@ -85,8 +101,8 @@ function forecastRow(e,opts){
 }
 function forecastTable(list,opts){
  const cols=columnsFor(opts);
- const head=cols.map(c=>'<th scope="col">'+c+'</th>').join('')+
-  NARROW_COLUMNS.map(c=>'<th scope="col" class="only-narrow">'+c+'</th>').join('');
+ const head=cols.map(c=>'<th scope="col" class="'+colClass(c)+'">'+c+'</th>').join('')+
+  NARROW_COLUMNS.map(c=>'<th scope="col" class="'+colClass(c)+' only-narrow">'+c+'</th>').join('');
  return '<div class="tablewrap"><table class="table ftable"><caption class="sr-only">'+
   'Recorded outlooks, one row each. Every row opens that outlook\u2019s own page.'+
   '</caption><thead><tr>'+head+'</tr></thead><tbody>'+
@@ -98,6 +114,7 @@ function forecastTable(list,opts){
     NARROW_COLUMNS: NARROW_COLUMNS,
     render: forecastTable,
     row: forecastRow,
-    provenanceOf: provenanceOf
+    provenanceOf: provenanceOf,
+    sourceText: sourceText
   };
 })(typeof window !== 'undefined' ? window : this);

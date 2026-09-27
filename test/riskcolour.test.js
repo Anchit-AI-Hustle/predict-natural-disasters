@@ -213,7 +213,9 @@ test('every level carries a shape as well as a colour', () => {
   for (const lv of RISK.LEVELS.concat([RISK.UNKNOWN])) {
     const c = 'risk-' + lv.key.toLowerCase();
     if (!new RegExp('\\.' + c + '::before\\{').test(CSS)) missing.push(c + ' badge');
-    if (!new RegExp('\\.risk-mk\\.' + c + ' \\.risk-shape\\{').test(CSS)) missing.push(c + ' marker');
+    if (!new RegExp('\\.risk-mk\\.' + c + ' \\.risk-shape[,{]').test(CSS)) missing.push(c + ' marker');
+    /* And in the map's key, which has to show the same shape it explains. */
+    if (!new RegExp('\\.pnd-key-mark\\.' + c + ' \\.risk-shape\\{').test(CSS)) missing.push(c + ' key');
   }
   assert.deepEqual(missing, [], 'shapes not drawn for: ' + missing.join(', '));
 });

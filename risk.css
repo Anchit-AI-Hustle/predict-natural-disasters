@@ -15,7 +15,8 @@
    announced by screen readers, so "black diamond suit High" would be the
    level's name. Drawn from currentColor, it inherits each level's ink. */
 :root{--risk-low:#22C55E;--risk-watch:#FACC15;--risk-moderate:#F97316;--risk-high:#EF4444;--risk-severe:#B91C1C;--risk-extreme:#7C3AED;--risk-ink-dark:#000;--risk-ink-light:#fff;--risk-unknown-line:#2b624e}
-.risk{display:inline-flex;align-items:center;border-radius:7px;padding:3px 7px;font-weight:800;font-size:9px;letter-spacing:.03em;line-height:1.35}
+/* One line, always: in a narrow cell the level's name broke a letter to a line - "W-a-t-c-h" down a phone card. */
+.risk{display:inline-flex;align-items:center;border-radius:7px;padding:3px 7px;font-weight:800;font-size:9px;letter-spacing:.03em;line-height:1.35;white-space:nowrap;flex:0 0 auto}
 .risk::before{content:"";display:inline-block;width:.72em;height:.72em;margin-right:.45em;flex:0 0 auto;background:currentColor}
 .risk-low{background:var(--risk-low);color:var(--risk-ink-dark)}
 .risk-watch{background:var(--risk-watch);color:var(--risk-ink-dark)}
@@ -33,15 +34,21 @@
 .risk-extreme::before{clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
 .risk-unknown::before{border-radius:50%;background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 /* On a map the swatch is the marker, so the shape is the whole element. */
-.risk-mk{background:none!important;border:0!important}
-.risk-mk .risk-shape{display:block;width:100%;height:100%;box-shadow:0 0 0 1.5px #0b1f19,0 1px 3px rgba(0,0,0,.55)}
-.risk-mk.risk-low .risk-shape{background:var(--risk-low);border-radius:50%}
-.risk-mk.risk-watch .risk-shape{background:var(--risk-watch);border-radius:50%;box-shadow:0 0 0 1.5px #0b1f19,inset 0 0 0 2px #0b1f19}
-.risk-mk.risk-moderate .risk-shape{background:var(--risk-moderate);clip-path:polygon(50% 0,100% 100%,0 100%)}
-.risk-mk.risk-high .risk-shape{background:var(--risk-high);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
-.risk-mk.risk-severe .risk-shape{background:var(--risk-severe);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
-.risk-mk.risk-extreme .risk-shape{background:var(--risk-extreme);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
-.risk-mk.risk-unknown .risk-shape{background:#8fa8a0;border-radius:50%}
+.risk-mk,.pnd-key-mark{background:none!important;border:0!important}
+/* A light halo round every mark, drawn on the element that holds the shape so
+   the clip-path that cuts the triangle, diamond, hexagon and star cannot cut it
+   away too. Severe's dark red and Extreme's purple are about 2:1 against the
+   dark map; the halo is what separates them from the ground, and the most
+   serious events are the last ones that may be hard to see. */
+.risk-mk,.pnd-key-mark{filter:drop-shadow(0 0 1px rgba(255,255,255,.95)) drop-shadow(0 0 .5px rgba(255,255,255,.95))}
+.risk-mk .risk-shape,.pnd-key-mark .risk-shape{display:block;width:100%;height:100%;box-shadow:0 0 0 1.5px #0b1f19,0 1px 3px rgba(0,0,0,.55)}
+.risk-mk.risk-low .risk-shape,.pnd-key-mark.risk-low .risk-shape{background:var(--risk-low);border-radius:50%}
+.risk-mk.risk-watch .risk-shape,.pnd-key-mark.risk-watch .risk-shape{background:var(--risk-watch);border-radius:50%;box-shadow:0 0 0 1.5px #0b1f19,inset 0 0 0 2px #0b1f19}
+.risk-mk.risk-moderate .risk-shape,.pnd-key-mark.risk-moderate .risk-shape{background:var(--risk-moderate);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.risk-mk.risk-high .risk-shape,.pnd-key-mark.risk-high .risk-shape{background:var(--risk-high);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.risk-mk.risk-severe .risk-shape,.pnd-key-mark.risk-severe .risk-shape{background:var(--risk-severe);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.risk-mk.risk-extreme .risk-shape,.pnd-key-mark.risk-extreme .risk-shape{background:var(--risk-extreme);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+.risk-mk.risk-unknown .risk-shape,.pnd-key-mark.risk-unknown .risk-shape{background:#8fa8a0;border-radius:50%}
 /* The selected marker, shown as a ring rather than a colour change: the
    colour already means the level. */
 .risk-mk.mk-selected .risk-shape{box-shadow:0 0 0 2px #fff,0 0 0 4px #0b1f19}

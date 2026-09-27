@@ -250,7 +250,7 @@
      the globe can never describe the same picture two different ways. */
   function imageryText(source, latest) {
     if (source === 'daily') {
-      return 'Satellite: NASA, ' + latest.label + ' \u2014 the latest complete day. Cloud is part of the picture.';
+      return 'Satellite: NASA, ' + latest.label + ' \u2014 the latest complete day. Black stripes are gaps between the satellite\u2019s passes; cloud is part of the picture.';
     }
     if (source === 'fallback') {
       return 'NASA\u2019s picture of ' + latest.label + ' did not load here. Showing a mosaic of past captures \u2014 not the scene now.';
@@ -273,6 +273,21 @@
   // assignment itself is computed when world-countries.json is built.
   var PALETTE = ['#f2b880', '#9ad4a0', '#f4d06f', '#a8c8ec', '#e8a0a8', '#c9b3e6', '#8fd5c8'];
   var OCEAN = '#a9d5e8', BORDER = '#6d7f8c';
+
+  /*
+   * How each drawn world looks.
+   *
+   * POLITICAL is the coloured-country map. CLEAR is the default: one quiet
+   * land colour, a darker sea, fine borders and light names, and nothing
+   * else. Every colour the risk scale uses - green, yellow, orange, red,
+   * purple - is a colour the political palette or a satellite photograph
+   * also puts on the ground, so an event marker had to compete with the map
+   * under it. On CLEAR the markers are the only colour there is.
+   */
+  var POLITICAL = { ocean: OCEAN, land: function (f) { return PALETTE[f.properties.c % PALETTE.length]; },
+    border: BORDER, weight: 0.7, opacity: 0.85, label: 'pnd-country' };
+  var CLEAR = { ocean: '#0e2631', land: function () { return '#22342d'; },
+    border: '#5f7d70', weight: 0.6, opacity: 0.9, label: 'pnd-country pnd-country-clear' };
 
   /*
    * Place names and borders sit above the basemap but below the event markers,
@@ -339,8 +354,9 @@
      imagery the drawn world is a fallback for tiles that never arrive, and
      its labels would otherwise sit on top of the imagery's own alongside a
      second copy of every name. */
-  function political(map, named) {
+  function political(map, named, look) {
     var withNames = named !== false;
+    look = look || POLITICAL;
     /* Only the floor under the imagery moves; the Political view itself stays
        where vector layers normally draw. */
     var floor = withNames ? undefined : underPane(map);
@@ -352,7 +368,7 @@
       if (group.__showNames) group.__showNames();
     };
     if (typeof L.rectangle === 'function') {
-      L.rectangle(WORLD, Object.assign({ fillColor: OCEAN, fillOpacity: 1, stroke: false, interactive: false },
+      L.rectangle(WORLD, Object.assign({ fillColor: look.ocean, fillOpacity: 1, stroke: false, interactive: false },
         floor ? { pane: floor } : {})).addTo(group);
     }
     if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
@@ -362,8 +378,8 @@
       L.geoJSON(data, Object.assign({
         interactive: false,
         style: function (f) {
-          return { fillColor: PALETTE[f.properties.c % PALETTE.length], fillOpacity: 1,
-            color: BORDER, weight: 0.7, opacity: 0.85 };
+          return { fillColor: look.land(f), fillOpacity: 1,
+            color: look.border, weight: look.weight, opacity: look.opacity };
         }
       }, floor ? { pane: floor } : {})).addTo(group);
 
@@ -376,6 +392,9 @@
          the rest appear as the reader zooms in, instead of a pile of
          overlapping text at every zoom. */
       function relabel() {
+        /* Two named worlds can be built for one map, and only the one on
+           screen needs its names placed; the other is placed when shown. */
+        if (typeof map.hasLayer === 'function' && !map.hasLayer(group)) return;
         labels.clearLayers();
         var bounds = map.getBounds();
         var perDegree = map.getSize().x / (bounds.getEast() - bounds.getWest());
@@ -400,7 +419,7 @@
 
           L.marker([p.at.lat, p.at.lon], {
             interactive: false, pane: labelPane(map),
-            icon: L.divIcon({ className: 'pnd-country', html: PNDMapEscape(p.name), iconSize: [0, 0] })
+            icon: L.divIcon({ className: look.label, html: PNDMapEscape(p.name), iconSize: [0, 0] })
           }).addTo(labels);
         });
       }
@@ -410,6 +429,7 @@
         if (group.hasLayer(labels)) return;
         labels.addTo(group);
         map.on('zoomend moveend', relabel);
+        if (typeof group.on === 'function') group.on('add', relabel);
         relabel();
       };
       if (withNames) group.__showNames();
@@ -442,7 +462,27 @@
     // colour in the palette without a box around them.
     '.leaflet-container .pnd-country{color:#24323d;font:600 11px/1.1 system-ui,sans-serif;white-space:nowrap;',
     'transform:translate(-50%,-50%);width:max-content;',
-    'text-shadow:0 0 3px rgba(255,255,255,.95),0 1px 2px rgba(255,255,255,.95),0 -1px 2px rgba(255,255,255,.95)}'
+    'text-shadow:0 0 3px rgba(255,255,255,.95),0 1px 2px rgba(255,255,255,.95),0 -1px 2px rgba(255,255,255,.95)}',
+    // On the clear map the ground is dark, so the names are light.
+    '.leaflet-container .pnd-country.pnd-country-clear{color:#c7d6cf;font-weight:500;letter-spacing:.02em;',
+    'text-shadow:0 0 3px rgba(4,14,11,.95),0 1px 2px rgba(4,14,11,.95),0 -1px 2px rgba(4,14,11,.95)}',
+    // The key: bottom-left, above the credit line and the globe alike.
+    '.pnd-key{position:absolute;left:8px;bottom:26px;z-index:1300;max-width:min(210px,calc(100% - 16px));',
+    'display:flex;flex-direction:column-reverse;align-items:flex-start;gap:6px;font:500 12px/1.35 system-ui,sans-serif;color:#e6f4ee}',
+    '.pnd-key[hidden],.pnd-key-body[hidden]{display:none}',
+    '.pnd-key-toggle{appearance:none;cursor:pointer;border:1px solid #2c5c4c;border-radius:8px;padding:6px 12px;min-height:28px;',
+    'background:#07231b;color:#e6f4ee;font:700 11px/1 system-ui,sans-serif;letter-spacing:.04em}',
+    '.pnd-key-toggle[aria-expanded="true"]{background:#25e29c;color:#04120e;border-color:#25e29c}',
+    '.pnd-key-toggle:focus-visible{outline:2px solid #25e29c;outline-offset:2px}',
+    '.pnd-key-body{background:rgba(4,18,14,.92);border:1px solid #1f4a3c;border-radius:10px;padding:8px 10px;',
+    'box-shadow:0 4px 16px rgba(0,0,0,.35)}',
+    '.pnd-key-body ul{list-style:none;margin:6px 0;padding:0;display:grid;gap:4px}',
+    '.pnd-key-body li{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px}',
+    '.pnd-key-body .pnd-key-mark{display:inline-block;width:14px;height:14px;justify-self:center}',
+    '.pnd-key-n{font-variant-numeric:tabular-nums;color:#9db9ad}',
+    '.pnd-key-lead,.pnd-key-hint{margin:0;color:#9db9ad;font-size:11px}',
+    '.pnd-key-body{overflow-y:auto}',
+    '.pnd-key-body.pnd-key-compact .pnd-key-lead{display:none}'
   ].join('');
 
   /* The globe/flat control. Deliberately a plain button rather than a Leaflet
@@ -574,6 +614,15 @@
     return map.__pndImageryNote;
   }
 
+  /* Which view the reader last chose, kept in this browser only. */
+  var VIEW_PREF = 'pnd_basemap';
+  function preferredView() {
+    try { return localStorage.getItem(VIEW_PREF) || 'Map'; } catch (e) { return 'Map'; }
+  }
+  function rememberView(name) {
+    try { localStorage.setItem(VIEW_PREF, name); } catch (e) { /* private window */ }
+  }
+
   function basemap(map) {
     if (!map) return map;
     try {
@@ -581,7 +630,9 @@
       var pane = labelPane(map);
       var views = {};
       var under = null, latest = null, daily = null;
+      var clear = political(map, true, CLEAR);
       var plain = political(map);
+      views['Map'] = clear;
       views['Political'] = plain;
 
       if (typeof L.tileLayer === 'function') {
@@ -616,17 +667,29 @@
         ]);
       }
 
-      /* Satellite is what a reader means by looking at a map of a disaster:
-         the ground, photographed, rather than a coloured abstraction of it -
-         and zoomed out, photographed on the latest complete day rather than
-         whenever the mosaic was assembled. It is the default wherever it can
-         be built, and Political remains one click away. */
-      var start = views['Satellite'] || plain;
+      /* The clear map opens, and the reader's own choice after that.
+         Satellite opened for a while, and a reader shown it could not make
+         out the map at all: the day's picture is mostly cloud, the gaps
+         between the satellite's passes are black stripes, and green and
+         orange markers sat on green and orange ground. A disaster map is
+         read for where the events are, so it opens on the map that shows
+         them; the photograph is one click away, and a reader who picks it
+         keeps it. */
+      var start = views[preferredView()] || clear;
       start.addTo(map);
       if (map.attributionControl && map.attributionControl.addAttribution) map.attributionControl.addAttribution(NE_CREDIT);
-      if (L.control && typeof L.control.layers === 'function' && views['Satellite']) {
-        L.control.layers({ 'Satellite': views['Satellite'], 'Political': plain }, null,
-          { position: 'topright' }).addTo(map);
+      if (L.control && typeof L.control.layers === 'function') {
+        var choices = { 'Map': clear };
+        if (views['Satellite']) choices['Satellite'] = views['Satellite'];
+        choices['Political'] = plain;
+        /* Shown open where there is room, so the other views can be found
+           without knowing that the stacked-squares icon hides them. */
+        var size = typeof map.getSize === 'function' ? map.getSize() : null;
+        var roomy = !!(size && size.x >= 640);
+        L.control.layers(choices, null, { position: 'topright', collapsed: !roomy }).addTo(map);
+        if (typeof map.on === 'function') {
+          map.on('baselayerchange', function (e) { if (e && e.name) rememberView(e.name); });
+        }
       }
       /* Last, and on its own: the caption describes the map, so nothing in it
          may stop the map being built. */
@@ -634,8 +697,108 @@
         try { imageryNote(map, views['Satellite'], daily, latest, under); } catch (e) { /* no caption */ }
       }
     } catch (e) { /* stub layers in the test harness */ }
+    try { attachKey(map); } catch (e) { /* the map works without its key */ }
     attachGlobe(map);
     return map;
+  }
+
+  /*
+   * What the marks on the map mean, on the map.
+   *
+   * Every event is drawn as a shape in a colour, and nothing on the map said
+   * which shape or colour meant what: a reader faced a field of green dots
+   * and orange triangles with no way to read it short of opening them one by
+   * one. The key lists the levels actually on the map, largest risk first,
+   * with how many of each, so it is also the quickest summary of the map.
+   * It counts what is drawn, so a search that narrows the map narrows it.
+   */
+  function attachKey(map) {
+    var R = window.PNDRisk;
+    var box = map && typeof map.getContainer === 'function' ? map.getContainer() : null;
+    if (!R || !box || typeof document === 'undefined' || typeof map.on !== 'function' ||
+        typeof map.eachLayer !== 'function' || box.__pndKey) return null;
+    box.__pndKey = true;
+    var el = document.createElement('div');
+    el.className = 'pnd-key';
+    el.hidden = true;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pnd-key-toggle';
+    btn.textContent = 'Key';
+    var body = document.createElement('div');
+    body.className = 'pnd-key-body';
+    body.id = 'pnd-key-' + Math.random().toString(36).slice(2, 8);
+    btn.setAttribute('aria-controls', body.id);
+    el.appendChild(btn);
+    el.appendChild(body);
+    box.appendChild(el);
+    /* Clicks and scrolls on the key are the key's, not the map's. */
+    if (L.DomEvent && typeof L.DomEvent.disableClickPropagation === 'function') {
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.disableScrollPropagation(el);
+    }
+
+    var open = null;      // null until the reader chooses; then theirs
+    function setOpen(v) {
+      btn.setAttribute('aria-expanded', String(v));
+      body.hidden = !v;
+    }
+    btn.addEventListener('click', function () { open = body.hidden; setOpen(open); place(); });
+
+    var order = R.LEVELS.slice().reverse().concat([R.UNKNOWN]);
+    function count() {
+      var n = {}, total = 0;
+      map.eachLayer(function (l) {
+        var k = l && l.options && l.options.pndLevel;
+        if (k) { n[k] = (n[k] || 0) + 1; total++; }
+      });
+      return { by: n, total: total };
+    }
+    function render() {
+      var c = count();
+      el.hidden = c.total === 0;
+      if (!c.total) return;
+      var rows = order.filter(function (lv) { return c.by[lv.key]; }).map(function (lv) {
+        return '<li><span class="pnd-key-mark risk-' + lv.key.toLowerCase() + '" aria-hidden="true">' +
+          '<span class="risk-shape"></span></span><span class="pnd-key-name">' + PNDMapEscape(lv.label) +
+          '</span><span class="pnd-key-n">' + c.by[lv.key] + '</span></li>';
+      }).join('');
+      body.innerHTML = '<p class="pnd-key-lead"><b>Each mark is one reported event</b>, shaped and coloured by its risk level.</p>' +
+        '<ul>' + rows + '</ul><p class="pnd-key-hint">Select a mark for details.</p>';
+      /* Open by default only where it fits and has something to explain;
+         after that, whatever the reader last chose. */
+      var size = typeof map.getSize === 'function' ? map.getSize() : null;
+      setOpen(open !== null ? open : !!(size && size.x >= 640 && c.total >= 5));
+      place();
+    }
+    /* Bottom-left, over open southern ocean at world view, where the
+       fewest events are. Above the credit line and, when the satellite is
+       showing, above the caption that says which picture it is. */
+    function place() {
+      var credit = box.querySelector('.leaflet-control-attribution');
+      var h = credit && credit.offsetHeight ? credit.offsetHeight : 16;
+      var note = box.querySelector('.pnd-imagery-note');
+      var over = note && !note.hidden && note.offsetHeight ? note.offsetHeight + 6 : 0;
+      var bottom = h + 8 + over;
+      el.style.bottom = bottom + 'px';
+      /* Never up into the zoom buttons and the Globe/Flat toggle, which end
+         about 120px down. A phone's map is 300px tall, and the open key ran
+         over the toggle there; the sentence above the list goes first, and
+         the list scrolls only if that is still not enough. */
+      if (!box.clientHeight || body.hidden) return;
+      var room = box.clientHeight - 120 - bottom - (btn.offsetHeight || 28) - 6;
+      body.classList.remove('pnd-key-compact');
+      body.style.maxHeight = '';
+      if (body.scrollHeight > room) body.classList.add('pnd-key-compact');
+      if (body.scrollHeight > room) body.style.maxHeight = Math.max(room, 60) + 'px';
+    }
+    var timer = null;
+    function later() { clearTimeout(timer); timer = setTimeout(render, 80); }
+    map.on('layeradd layerremove', later);
+    map.on('resize baselayerchange zoomend', place);
+    render();
+    map.__pndKey = { element: el, render: render };
+    return map.__pndKey;
   }
 
   /*
@@ -884,6 +1047,12 @@
     var o = opts || {};
     var settings = { icon: L.divIcon({ className: icon.className, html: icon.html,
       iconSize: icon.iconSize, iconAnchor: icon.iconAnchor }),
+      /* Read by the map's key, which counts what is drawn. */
+      pndLevel: icon.level,
+      /* The more serious event on top. Leaflet stacks markers by latitude,
+         so a cluster of low-level records to the south buried the one that
+         mattered under them. */
+      zIndexOffset: (R.level(value).rank || 0) * 1000,
       /* Leaflet's default alt is "Marker", which is what a screen reader
          announced for every event on the map. Keyboard focus is left alone:
          Leaflet already gives markers it, and map.test.js holds this file to

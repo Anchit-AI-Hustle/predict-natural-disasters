@@ -272,7 +272,10 @@ test('a freeze is only claimed from a row that records the same claim', async ()
   const { events } = await feed();
   let checked = 0;
   for (const e of events.filter(x => x.forecast)) {
-    if (!/ledger/i.test(String(e.freezeBasis || ''))) continue;
+    /* The flag, not the wording: a forecast the ledger holds only under
+       earlier terms names the ledger in its basis too, and claims nothing
+       from it. */
+    if (!e.freezeEvidenced || !/ledger/i.test(String(e.freezeBasis || ''))) continue;
     checked++;
     assert.ok(keys.has(H.claimKey(e)),
       e.id + ' claims a freeze from the ledger, which holds no row for these terms');
