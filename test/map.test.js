@@ -408,8 +408,9 @@ test('zoomed out, the satellite view is NASA’s picture of the latest complete 
   const M = r.window.PNDMap;
   assert.equal(typeof M.dailyImagery, 'function', 'the daily picture is not defined');
 
-  /* The latest UTC day that ended at least four hours ago. Today's picture is
-     still being assembled and its unimaged half comes back opaque black. */
+  /* The latest UTC day that ended at least DAILY_SETTLE_HOURS ago. Today's
+     picture is still being assembled and its unimaged half comes back opaque
+     black. */
   assert.equal(M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).day, '2026-09-22');
   assert.equal(M.dailyImagery(Date.parse('2026-09-23T02:00:00Z')).day, '2026-09-21',
     'before NASA has processed the last passes, the day before is not yet complete');
@@ -418,7 +419,12 @@ test('zoomed out, the satellite view is NASA’s picture of the latest complete 
   /* Exactly the URL shape of NASA's own Leaflet example for this service. */
   const u = M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).url;
   assert.equal(u, 'https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/' +
-    'MODIS_Terra_CorrectedReflectance_TrueColor/default/2026-09-22/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg');
+    'VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-09-22/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg');
+  /* VIIRS rather than MODIS, and the globe is the reason. MODIS sweeps 2330 km
+     while the Earth turns ~2750 km between orbits, so its swaths miss each
+     other at the equator and a MODIS day arrives striped with the opaque black
+     that unimaged ground returns. VIIRS sweeps 3060 km and closes in one day. */
+  assert.match(u, /VIIRS/, 'the daily picture is back on an instrument whose swaths do not close a day');
   assert.equal(M.DAILY_MAX_ZOOM, 9, 'the daily picture is asked for past the zoom it exists at');
   r.close();
 

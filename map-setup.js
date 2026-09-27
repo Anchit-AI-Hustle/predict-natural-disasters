@@ -201,23 +201,34 @@
    * flood's marker, and a reader had every reason to take it for the scene
    * now - the opposite of what a disaster map is for.
    *
-   * NASA publishes a true-colour picture of the whole planet every day from
-   * the Terra satellite's MODIS instrument, through its Global Imagery
-   * Browse Services. It is public, needs no key, and is what NASA's own
-   * Worldview opens on. Its pixels are about 250 m, so it is the right
-   * picture from a continent down to a region - a cyclone's eye, a smoke
-   * plume, a river out of its banks - and too coarse past zoom 9, where the
-   * detailed mosaic takes over and says what it is.
+   * NASA publishes a true-colour picture of the whole planet every day
+   * through its Global Imagery Browse Services. It is public, needs no key,
+   * and is what NASA's own Worldview opens on. Its pixels are about 250 m,
+   * so it is the right picture from a continent down to a region - a
+   * cyclone's eye, a smoke plume, a river out of its banks - and too coarse
+   * past zoom 9, where the detailed mosaic takes over and says what it is.
    *
-   * The day is the latest one that ended at least four hours ago. Today's
-   * picture is still being assembled swath by swath, its tiles are JPEG, and
-   * the part of the world the satellite has not yet passed over comes back
-   * opaque black - so "today" would black out the Americas every morning UTC.
-   * The four hours cover NASA's near-real-time processing of the last passes.
+   * The instrument is VIIRS on Suomi NPP, not Terra's MODIS, and the reason
+   * is coverage rather than sharpness. MODIS sweeps a 2330 km swath while
+   * the Earth turns about 2750 km under each successive orbit, so its
+   * swaths do not meet at the equator: every MODIS day is missing tall
+   * wedges of longitude, which arrive as opaque black JPEG and drew a
+   * striped globe. NASA states the consequence plainly - MODIS gives
+   * "global coverage every one to two days", not every day. VIIRS sweeps
+   * 3060 km, wider than that 2750 km, so its swaths overlap and a single
+   * day closes. No amount of waiting fixes the MODIS version: Terra never
+   * passes over those strips on that date, so they are absent from the
+   * complete day and not merely from the unfinished one.
+   *
+   * The day is the latest one that ended at least DAILY_SETTLE_HOURS ago.
+   * Today's picture is still being assembled swath by swath, and the part
+   * of the world the satellite has not yet passed over comes back opaque
+   * black too - so "today" would black out the Americas every morning UTC.
+   * Those hours cover NASA's near-real-time processing of the last passes.
    * Clouds are part of the picture: a satellite photographs the top of a
    * storm, not the flooding under it, and the caption says that too.
    */
-  var DAILY_LAYER = 'MODIS_Terra_CorrectedReflectance_TrueColor';
+  var DAILY_LAYER = 'VIIRS_SNPP_CorrectedReflectance_TrueColor';
   var DAILY_MAX_ZOOM = 9;
   var DAILY_SETTLE_HOURS = 28;
   var DAILY_CREDIT = 'Daily imagery: NASA GIBS';
