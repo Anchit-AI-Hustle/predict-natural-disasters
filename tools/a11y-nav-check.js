@@ -212,7 +212,6 @@ function detailPages(feed) {
   for (const page of PAGES) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const pg = await ctx.newPage();
-    await pg.addInitScript(() => localStorage.setItem('pnd_tour_done', '1'));
     const pageErrors = [];
     pg.on('pageerror', e => pageErrors.push(String(e)));
     try { await pg.goto(base + page, { waitUntil: 'domcontentloaded', timeout: 20000 }); }

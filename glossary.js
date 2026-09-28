@@ -261,6 +261,36 @@
    * is not shown is named, and nothing has to be maintained per page.
    */
   var NOTE_ID = 'pnd-acronym-note';
+  /* The words a reader can see, not the page's source. body.textContent
+     carries every inline <script> as well, so code on the page was read as
+     if it were prose. */
+  var UNREAD = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+  /* A label in capitals counts only when it is made of acronyms, like a
+     "GDACS" badge. "WHO SAYS THIS" is a question in capitals, and reading it
+     as the agency printed "WHO stands for World Health Organization" under
+     a page that never mentions it (see isShouted above). */
+  var ACRONYM_WORDS = {};
+  ONCE.forEach(function (p) { p[0].split(' ').forEach(function (w) { ACRONYM_WORDS[w] = 1; }); });
+  function shoutedPhrase(text) {
+    if (!isShouted(text)) return false;
+    var words = text.match(/[A-Z]{2,}/g) || [];
+    for (var i = 0; i < words.length; i++) if (!ACRONYM_WORDS[words[i]]) return true;
+    return false;
+  }
+  function readableText(skip) {
+    var parts = [];
+    var walker = document.createTreeWalker(document.body, 4 /* SHOW_TEXT */, {
+      acceptNode: function (node) {
+        for (var p = node.parentNode; p && p.nodeType === 1; p = p.parentNode) {
+          if (UNREAD[p.tagName] || p === skip) return 2 /* REJECT */;
+        }
+        return shoutedPhrase(node.data) ? 2 /* REJECT */ : 1 /* ACCEPT */;
+      }
+    });
+    var node;
+    while ((node = walker.nextNode())) parts.push(node.data);
+    return parts.join(' ');
+  }
   function noteLabelAcronyms() {
     if (typeof document === 'undefined' || !document.body) return;
     var note = document.getElementById(NOTE_ID);
@@ -268,13 +298,14 @@
        Without this it does: the note appears, the next pass sees every full
        form present, removes it, the pass after that adds it back, and the
        observer runs between the two for ever. */
-    var text = document.body.textContent || '';
-    if (note && note.textContent) text = text.split(note.textContent).join(' ');
+    var text = readableText(note);
     var wanted = [];
     for (var i = 0; i < ONCE.length; i++) {
       var term = ONCE[i][0], full = ONCE[i][1];
-      /* On the page at all, and its full form nowhere on it. */
-      if (text.indexOf(term) < 0) continue;
+      /* On the page as a word of its own, and its full form nowhere on it.
+         A bare substring test defined "UN" on every page headed "PAGE NOT
+         FOUND" and "AI" wherever a label read "DETAILS". */
+      if (!new RegExp('\\b' + term + '\\b').test(text)) continue;
       if (text.indexOf(full) >= 0) continue;
       /* Longest first, so a term already covered by one being written out -
          "OCHA" inside "UN OCHA" - is not repeated. */

@@ -184,11 +184,11 @@ test('the page words an ended window differently from a stopped signal', async (
     activeOutlooks: 5, baseline: false, total: 2,
     records: { gone: [{ id: 'a', title: 'Withdrawn outlook' }],
       expired: [{ id: 'b', title: 'Completed outlook' }] } } });
-  assert.match(html, /No longer issued/);
-  assert.match(html, /Window closed as scheduled/);
+  assert.match(html, /Stopped/);
+  assert.match(html, /Ended on schedule/);
   /* The completed one must not carry the withdrawal wording. */
-  const completed = html.slice(html.indexOf('Window closed as scheduled'));
-  assert.doesNotMatch(completed, /the signal behind it stopped/);
+  const completed = html.slice(html.indexOf('Ended on schedule'));
+  assert.doesNotMatch(completed, /no longer reported/);
   window.close();
 });
 
@@ -472,7 +472,7 @@ test('every kind of change is put into words', async () => {
       gone: [{ id: 'e', title: 'Old outlook' }]
     } } };
   const html = say(meta);
-  for (const label of ['Newly issued', 'Raised', 'Lowered', 'Window moved', 'No longer issued']) {
+  for (const label of ['New', 'Raised', 'Lowered', 'Dates changed', 'Stopped']) {
     assert.ok(html.includes(label), `the panel never says "${label}"`);
   }
   assert.match(html, /Watch → Red/);
@@ -495,7 +495,7 @@ test('a quiet run still reports a source it could not check', async () => {
   assert.match(html, /Could not be checked/,
     'a source outage was hidden because nothing else changed');
   assert.match(html, /could not be checked/);
-  assert.doesNotMatch(html, /None of the 29 open outlooks changed/,
+  assert.doesNotMatch(html, /None of the 29 open forecasts changed/,
     'the panel claimed nothing changed while a source was unreachable');
   window.close();
 });
@@ -508,7 +508,7 @@ test('a genuinely quiet run still reads as quiet', async () => {
   const html = say({ forecastChanges: {
     at: '2026-09-20T12:00:00Z', sinceHours: 1, activeOutlooks: 29, baseline: false,
     total: 0, unavailable: 0, records: {} } });
-  assert.match(html, /None of the 29 open outlooks changed/);
+  assert.match(html, /None of the 29 open forecasts changed/);
   assert.doesNotMatch(html, /Could not be checked/);
   window.close();
 });
@@ -518,7 +518,7 @@ test('no change is reported as no change, not as silence', async () => {
   const say = window.PND.changesHtml.bind(window.PND);
   const html = say({ forecastChanges: { at: '2026-09-20T12:00:00Z', sinceHours: 1,
     activeOutlooks: 29, baseline: false, total: 0, records: {} } });
-  assert.match(html, /None of the 29 open outlooks changed/);
+  assert.match(html, /None of the 29 open forecasts changed/);
   window.close();
 });
 

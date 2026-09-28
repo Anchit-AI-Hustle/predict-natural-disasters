@@ -124,7 +124,7 @@ test('the GDACS wildfire measurement becomes a burned area', async () => {
 
 test('the GDACS cyclone measurement is converted into the unit the rest of the feed uses', async () => {
   const { events } = await feed();
-  const tc = events.find(e => /RAI-26/.test(String(e.title)) && e.source === 'GDACS');
+  const tc = events.find(e => /RAI-26/.test(String(e.sourceTitle || e.title)) && e.source === 'GDACS');
   assert.ok(tc, 'fixture should include the GDACS cyclone');
   // GDACS publishes 120 km/h; severity thresholds and every other provider
   // here are in knots, so a raw 120 would read as a category 4.
@@ -191,7 +191,7 @@ test('the homepage hazard panel counts what it actually counts', () => {
     assert.ok(!/Forecasts by Hazard Type/.test(s),
       page + ' heads a count of every tracked record as a count of forecasts');
   }
-  assert.match(read('index.html'), /Tracked Events by Hazard Type/);
+  assert.match(read('index.html'), /Live events by type/);
 });
 
 test('a hazard nobody forecasts the onset of is labelled observed only', async () => {
@@ -244,7 +244,7 @@ test('a source that publishes no casualty count is not given a zero', async () =
   // as the live endpoint does: all 100 GDACS records were arriving with
   // `deaths: 0` manufactured by `+(p.death || 0) || 0`, and the card then read
   // "Lives lost 0".
-  const tc = events.find(e => /RAI-26/.test(String(e.title)) && e.source === 'GDACS');
+  const tc = events.find(e => /RAI-26/.test(String(e.sourceTitle || e.title)) && e.source === 'GDACS');
   assert.ok(tc, 'fixture should include the GDACS cyclone');
   assert.equal(tc.deaths, undefined, 'an absent death count should stay absent');
   assert.equal(tc.displaced, undefined);
@@ -553,7 +553,7 @@ test('an aftershock outlook states the mainshock magnitude its own text quotes',
   const a = events.find(e => e.forecastKind === 'aftershock-sequence');
   assert.ok(a, 'fixture should produce an aftershock outlook');
 
-  const quoted = /\bM\s?(\d+(?:\.\d+)?)/.exec(String(a.details));
+  const quoted = /\b(?:M\s?|magnitude )(\d+(?:\.\d+)?)/.exec(String(a.details));
   assert.ok(quoted, 'the outlook narrative should quote the mainshock magnitude');
 
   const f = byKey(H.keyFacts(a), 'mainshockMagnitude');
@@ -682,7 +682,7 @@ test('every spelling of a wind unit converts to knots, and an unknown one is ref
 
 test('a cyclone published in kilometres per hour is not rated a category higher', async () => {
   const { events } = await feed();
-  const tc = events.find(e => /RAI-26/.test(String(e.title)) && e.source === 'GDACS');
+  const tc = events.find(e => /RAI-26/.test(String(e.sourceTitle || e.title)) && e.source === 'GDACS');
   assert.ok(tc, 'fixture should include the GDACS cyclone');
   // 120 Kph is 65 kt: a category 1. Read as 120 kt it is a category 4, and the
   // severity scale would call it Extreme.

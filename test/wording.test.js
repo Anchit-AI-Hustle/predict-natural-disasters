@@ -133,7 +133,7 @@ test('the homepage location column shows no bare postal code', async () => {
 
 test('a NASA record carries the place its title names', async () => {
   const { events } = await feed();
-  const fire = events.find(e => /MEERS/.test(String(e.title)));
+  const fire = events.find(e => /MEERS/.test(String(e.sourceTitle || e.title)));
   assert.ok(fire, 'fixture should include a NASA wildfire with a place in its title');
   // EONET puts the place nowhere but the title, so 295 of 791 production records
   // arrived with no country and no region at all.

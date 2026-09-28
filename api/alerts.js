@@ -44,9 +44,9 @@ const RATE_LIMIT = 30;            // requests per device network per ten minutes
 function availability(env) {
   const store = STORE.config(env), schedule = QSTASH.config(env);
   let reason = null;
-  if (!store && !schedule) reason = 'Background alerts are not switched on for this site: it has no store to keep a subscription in and no schedule to check for hazards while the site is closed.';
-  else if (!store) reason = 'Background alerts are not switched on for this site: it has no store to keep a subscription in.';
-  else if (!schedule) reason = 'Background alerts are not switched on for this site: nothing is scheduled to check for hazards while the site is closed, so a subscription would never be used.';
+  if (!store && !schedule) reason = 'Background alerts are not switched on for this site yet. It has nowhere to keep your alert settings and nothing that checks for dangers while the site is closed.';
+  else if (!store) reason = 'Background alerts are not switched on for this site yet. It has nowhere to keep your alert settings.';
+  else if (!schedule) reason = 'Background alerts are not switched on for this site yet. Nothing checks for dangers while the site is closed, so an alert would never be sent.';
   return { store: !!store, schedule: !!schedule, available: !!(store && schedule), reason };
 }
 

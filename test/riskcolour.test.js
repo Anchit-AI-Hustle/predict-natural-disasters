@@ -341,7 +341,7 @@ test('provenance and verdicts are kept off the risk scale', () => {
   /* And no page paints one with a level class. */
   const bad = [];
   for (const f of PAGES) {
-    for (const m of read(f).matchAll(/class="[^"]*\b(?:badge|risk)[^"]*"[^>]*>\s*(OFFICIAL WARNING|OBSERVED EVENT|MODEL OUTLOOK|EXPERIMENTAL FORECAST|PENDING VERIFICATION|PARTIALLY VERIFIED)/gi)) {
+    for (const m of read(f).matchAll(/class="[^"]*\b(?:badge|risk)[^"]*"[^>]*>\s*(OFFICIAL WARNING|OBSERVED EVENT|REPORTED EVENT|MODEL OUTLOOK|OUR FORECAST|TEST FORECAST|EXPERIMENTAL FORECAST|PENDING VERIFICATION|PARTIALLY VERIFIED|PARTLY CORRECT)/gi)) {
       bad.push(f + ': ' + m[0].slice(0, 80));
     }
   }

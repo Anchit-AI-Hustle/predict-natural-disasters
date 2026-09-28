@@ -78,7 +78,7 @@ test('with no open window the page says so rather than inventing a date', async 
   const say = window.PND.horizonText.bind(window.PND);
   for (const meta of [{}, { forecastHorizon: null }, null, undefined]) {
     const text = say(meta);
-    assert.match(text, /No outlook windows are open/,
+    assert.match(text, /There are no open forecasts/,
       `horizonText(${JSON.stringify(meta)}) reads "${text}"`);
     assert.doesNotMatch(text, /\d{4}/, 'a date appeared where there is no horizon');
   }
@@ -92,14 +92,14 @@ test('the forecast pages tell the reader the horizon', async () => {
     const { window } = await renderPage(page, Object.assign({
       timeoutMs: 15000,
       waitFor: d => ((d.getElementById('horizonNote') || d.getElementById('forecastNote') || {}).textContent || '')
-        .includes('run to')
+        .includes('reach as far as')
     }, opts));
     const d = window.document;
     const note = d.getElementById('horizonNote') || d.getElementById('forecastNote');
     assert.ok(note, `${page} never states the forecast horizon`);
-    assert.match(note.textContent, /Forecasts currently run to/, page);
+    assert.match(note.textContent, /Our forecasts reach as far as/, page);
     /* And it must not read as a promise that nothing will happen after. */
-    assert.match(note.textContent, /limit of the method rather than a forecast of calm/, page);
+    assert.match(note.textContent, /It does not mean nothing will happen after that date/, page);
     window.close();
   }
 });
@@ -110,12 +110,12 @@ test('every page says it the same way', async () => {
     const { window } = await renderPage(page, Object.assign({
       timeoutMs: 15000,
       waitFor: d => ((d.getElementById('horizonNote') || d.getElementById('forecastNote') || {}).textContent || '')
-        .includes('run to')
+        .includes('reach as far as')
     }, opts));
     const d = window.document;
     const note = (d.getElementById('horizonNote') || d.getElementById('forecastNote')).textContent;
-    pages.push(note.slice(note.indexOf('Forecasts currently run to'),
-      note.indexOf('forecast of calm') + 16));
+    const tail = 'will happen after that date.';
+    pages.push(note.slice(note.indexOf('Our forecasts reach as far as'), note.indexOf(tail) + tail.length));
     window.close();
   }
   assert.equal(pages[0], pages[1],

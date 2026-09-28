@@ -112,6 +112,7 @@
           lat: ll.lat, lon: ll.lng,
           colour: o.color || o.fillColor || '#25e29c',
           radius: Number(o.radius) || 7,
+          level: o.pndLevel || null,
           html: html, title: titleOf(html)
         });
       });
@@ -337,6 +338,165 @@
    */
   var DAILY_ABOVE_M = 250000;
 
+  /* ------------------------------------------------------ the god's-eye HUD
+   *
+   * The look is gods-eye-view's: the planet in black space, a thin frame of
+   * corner brackets, a monospace read-out of where the camera is and what
+   * time it is in UTC, tags on what matters, and a bar of sensor looks. Only
+   * facts go on it - the camera's own position, the clock, how many of the
+   * page's events are on the visible side of the Earth. Nothing that reads as
+   * a classification or a feed this site does not have.
+   */
+
+  /* The MGRS grid reference of a point, to 10 m, as the reference viewer
+     prints it ("18R UM 3806 6476"). Standard UTM on WGS84, with the Norway
+     and Svalbard zone exceptions; outside UTM's latitudes it is not defined. */
+  function mgrs(lat, lon) {
+    if (!isFinite(lat) || !isFinite(lon) || lat < -80 || lat >= 84) return '';
+    lon = ((lon + 180) % 360 + 360) % 360 - 180;
+    var zone = Math.floor((lon + 180) / 6) + 1;
+    if (lat >= 56 && lat < 64 && lon >= 3 && lon < 12) zone = 32;
+    if (lat >= 72) {
+      if (lon >= 0 && lon < 9) zone = 31; else if (lon >= 9 && lon < 21) zone = 33;
+      else if (lon >= 21 && lon < 33) zone = 35; else if (lon >= 33 && lon < 42) zone = 37;
+    }
+    var a = 6378137, f = 1 / 298.257223563, e2 = f * (2 - f), ep2 = e2 / (1 - e2), k0 = 0.9996;
+    var phi = lat * Math.PI / 180, lam = (lon - ((zone - 1) * 6 - 180 + 3)) * Math.PI / 180;
+    var sin = Math.sin(phi), cos = Math.cos(phi), tan = Math.tan(phi);
+    var N = a / Math.sqrt(1 - e2 * sin * sin), T = tan * tan, C = ep2 * cos * cos, A = cos * lam;
+    var e4 = e2 * e2, e6 = e4 * e2;
+    var M = a * ((1 - e2 / 4 - 3 * e4 / 64 - 5 * e6 / 256) * phi -
+      (3 * e2 / 8 + 3 * e4 / 32 + 45 * e6 / 1024) * Math.sin(2 * phi) +
+      (15 * e4 / 256 + 45 * e6 / 1024) * Math.sin(4 * phi) - (35 * e6 / 3072) * Math.sin(6 * phi));
+    var x = k0 * N * (A + (1 - T + C) * Math.pow(A, 3) / 6 +
+      (5 - 18 * T + T * T + 72 * C - 58 * ep2) * Math.pow(A, 5) / 120) + 500000;
+    var y = k0 * (M + N * tan * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * Math.pow(A, 4) / 24 +
+      (61 - 58 * T + T * T + 600 * C - 330 * ep2) * Math.pow(A, 6) / 720));
+    if (lat < 0) y += 10000000;
+    var band = 'CDEFGHJKLMNPQRSTUVWX'.charAt(Math.min(19, Math.floor((lat + 80) / 8)));
+    var cols = ['ABCDEFGH', 'JKLMNPQR', 'STUVWXYZ'][(zone - 1) % 3];
+    var col = cols.charAt(Math.floor(x / 100000) - 1);
+    var rows = 'ABCDEFGHJKLMNPQRSTUV';
+    var row = rows.charAt((Math.floor(y / 100000) + (zone % 2 === 0 ? 5 : 0)) % 20);
+    var pad = function (v) { v = String(Math.floor((v % 100000) / 10)); while (v.length < 4) v = '0' + v; return v; };
+    return (zone < 10 ? '0' : '') + zone + band + ' ' + col + row + ' ' + pad(x) + ' ' + pad(y);
+  }
+
+  function dms(v, pos, neg) {
+    var s = v < 0 ? neg : pos, a = Math.abs(v);
+    var d = Math.floor(a), mf = (a - d) * 60, m = Math.floor(mf), sec = (mf - m) * 60;
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d + '\u00b0' + two(m) + '\u2032' + (sec < 10 ? '0' : '') + sec.toFixed(2) + '\u2033' + s;
+  }
+
+  function utcStamp(t) {
+    var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + ' ' +
+      p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds()) + 'Z';
+  }
+
+  /* Sensor looks, adapted from gods-eye-view's style shaders (MIT, Copyright
+     (c) 2026 Bilawal Sidhu): its night-vision, thermal, CRT and noir passes,
+     cut down to the core of each and run at full strength. */
+  var SHADER_HEAD = 'uniform sampler2D colorTexture;\nuniform vec2 colorTextureDimensions;\nuniform float time;\n' +
+    'in vec2 v_textureCoordinates;\n' +
+    'float hash(vec2 p){vec3 p3=fract(vec3(p.xyx)*0.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}\n';
+  var PRESETS = [
+    { key: 'normal', label: 'Normal', shader: null },
+    { key: 'nvg', label: 'NVG', animated: true, shader:
+      'void main(){vec2 uv=v_textureCoordinates;vec2 dims=colorTextureDimensions;' +
+      'vec2 c=uv*2.0-1.0;c.x*=dims.x/dims.y;float r=length(c);' +
+      'float tube=pow(1.0-smoothstep(0.78,1.18,r),0.7)*(1.0-r*r*0.18);' +
+      'float l=dot(texture(colorTexture,uv).rgb,vec3(0.299,0.587,0.114));' +
+      'l=pow(clamp(l*1.7,0.0,1.0),0.8);' +
+      'l=clamp(l+(hash(uv*dims+fract(time*0.37)*311.0)-0.5)*0.12,0.0,1.0);' +
+      'float scan=0.93+0.07*sin(uv.y*dims.y*3.14159);' +
+      'out_FragColor=vec4(vec3(0.24,1.0,0.38)*l*scan*tube,1.0);}' },
+    { key: 'flir', label: 'FLIR', animated: true, shader:
+      'void main(){vec2 uv=v_textureCoordinates;vec2 dims=colorTextureDimensions;vec2 t=1.0/dims;' +
+      'vec3 b=vec3(0.0);float w=0.0;' +
+      'for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){float k=(x==0&&y==0)?4.0:1.0;' +
+      'b+=texture(colorTexture,uv+vec2(float(x),float(y))*t*1.5).rgb*k;w+=k;}}' +
+      'b/=w;float l=dot(b,vec3(0.299,0.587,0.114));float temp=clamp((l-0.1)/0.75,0.0,1.0);' +
+      'temp=clamp(temp+(hash(uv*dims*0.5+floor(time*24.0))-0.5)*0.05,0.0,1.0);' +
+      'vec2 c=uv-0.5;float vig=1.0-dot(c,c)*0.9;' +
+      'out_FragColor=vec4(vec3(temp)*vig,1.0);}' },
+    { key: 'crt', label: 'CRT', animated: true, shader:
+      'vec2 barrel(vec2 uv,float k){vec2 c=uv*2.0-1.0;float r2=dot(c,c);c*=1.0+r2*k;return c*0.5+0.5;}' +
+      'void main(){vec2 dims=colorTextureDimensions;vec2 uv=barrel(v_textureCoordinates,0.08);' +
+      'if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0){out_FragColor=vec4(0.0,0.0,0.0,1.0);return;}' +
+      'vec2 c=uv-0.5;float ca=length(c)*0.006;' +
+      'vec3 col=vec3(texture(colorTexture,uv+c*ca).r,texture(colorTexture,uv).g,texture(colorTexture,uv-c*ca).b);' +
+      'col=floor(col*24.0+0.5)/24.0;' +
+      'float scan=0.82+0.18*sin(uv.y*dims.y*3.14159);float mask=0.92+0.08*sin(uv.x*dims.x*2.094);' +
+      'out_FragColor=vec4(col*scan*mask*(0.97+0.03*sin(time*60.0))*1.12,1.0);}' },
+    { key: 'noir', label: 'Noir', shader:
+      'void main(){vec2 uv=v_textureCoordinates;vec4 color=texture(colorTexture,uv);' +
+      'float luma=dot(color.rgb,vec3(0.299,0.587,0.114));vec3 c=clamp((vec3(luma)-0.5)*2.2+0.5,0.0,1.0);' +
+      'c+=(fract(sin(dot(uv*colorTextureDimensions,vec2(12.9898,78.233)))*43758.5453)-0.5)*0.04;' +
+      'vec2 v=uv*(1.0-uv);float vig=pow(v.x*v.y*16.0,0.5);' +
+      'vec3 sep=vec3(dot(c,vec3(0.393,0.769,0.189)),dot(c,vec3(0.349,0.686,0.168)),dot(c,vec3(0.272,0.534,0.131)));' +
+      'out_FragColor=vec4(mix(c,sep,0.15)*vig,color.a);}' }
+  ];
+  var PRESET_PREF = 'pnd_globe_look';
+
+  var HUD_CSS = [
+    '.pnd-hud{position:absolute;inset:0;z-index:2;pointer-events:none;color:#d6ecff;',
+    'font:500 11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;',
+    'letter-spacing:.06em;text-transform:uppercase;text-shadow:0 1px 2px #000}',
+    '.pnd-hud .c{position:absolute;width:16px;height:16px;border:1px solid rgba(214,236,255,.55)}',
+    '.pnd-hud .c.tl{top:6px;left:6px;border-right:0;border-bottom:0}',
+    '.pnd-hud .c.tr{top:6px;right:6px;border-left:0;border-bottom:0}',
+    '.pnd-hud .c.bl{bottom:6px;left:6px;border-right:0;border-top:0}',
+    '.pnd-hud .c.br{bottom:6px;right:6px;border-left:0;border-top:0}',
+    '.pnd-hud-title{position:absolute;top:12px;left:16px;font-weight:700;letter-spacing:.14em}',
+    '.pnd-hud-title small{display:block;font-weight:500;opacity:.7;letter-spacing:.08em}',
+    '.pnd-hud-rec{position:absolute;top:12px;right:16px;text-align:right}',
+    '.pnd-hud-rec b::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;',
+    'background:#ff4040;margin-right:6px;vertical-align:1px;animation:pndRec 1.2s steps(2) infinite}',
+    '.pnd-hud-pos{margin-top:4px;opacity:.85}',
+    '@keyframes pndRec{50%{opacity:.15}}',
+    '.pnd-hud-bar{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);pointer-events:auto;',
+    'display:flex;gap:3px;padding:4px;border:1px solid rgba(214,236,255,.25);border-radius:9px;',
+    'background:rgba(0,0,0,.62);max-width:calc(100% - 24px);overflow-x:auto}',
+    '.pnd-hud-bar button{appearance:none;font:inherit;letter-spacing:.08em;color:#d6ecff;background:transparent;',
+    'border:1px solid transparent;border-radius:6px;padding:6px 9px;cursor:pointer;white-space:nowrap}',
+    '.pnd-hud-bar button[aria-pressed="true"]{border-color:#7fd3ff;background:rgba(127,211,255,.16);color:#fff}',
+    '.pnd-hud-bar button:focus-visible{outline:2px solid #7fd3ff;outline-offset:1px}',
+    '.pnd-hud-bar .sep{width:1px;background:rgba(214,236,255,.25);margin:2px 3px}',
+    '@media (max-width:720px){.pnd-hud-bar{top:44px;bottom:auto}.pnd-hud-title small,.pnd-hud-mgrs{display:none}}',
+    /* A phone's map is about 370 x 300: one line of read-out, the looks
+       under it, and nothing over the Globe/Flat switch at 84px. */
+    '@media (max-width:560px){.pnd-hud{font-size:10px}.pnd-hud-title,.pnd-hud-pos,.pnd-hud-alt{display:none}',
+    '.pnd-hud-rec{left:12px;right:12px;top:8px;text-align:left;display:flex;justify-content:space-between}',
+    '.pnd-hud-bar{top:28px;left:8px;right:8px;transform:none;max-width:none;padding:3px;gap:2px}',
+    '.pnd-hud-bar button{padding:4px 6px}}',
+    '@media (prefers-reduced-motion:reduce){.pnd-hud-rec b::before{animation:none}}'
+  ].join('');
+
+  function hudStyle() {
+    if (document.getElementById('pnd-hud-style')) return;
+    var tag = document.createElement('style');
+    tag.id = 'pnd-hud-style';
+    tag.textContent = HUD_CSS;
+    (document.head || document.documentElement).appendChild(tag);
+  }
+
+  /* The corner brackets a tag hangs from, as an image Cesium can draw. */
+  var RETICLE = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" stroke="#e8f4ff" stroke-width="1.6">' +
+    '<path d="M1 9V1h8M21 1h8v8M29 21v8h-8M9 29H1v-8"/></svg>');
+
+  /* A magnitude read off the event's name ("M 6.1 - 80 km ENE of ..."). */
+  function magnitudeOf(title) {
+    var m = /\bM\s?(\d+(?:\.\d+)?)\b/.exec(String(title || ''));
+    var v = m ? Number(m[1]) : NaN;
+    return isFinite(v) && v > 0 && v < 10 ? v : null;
+  }
+
+  var LEVEL_RANK = { EXTREME: 6, SEVERE: 5, HIGH: 4, MODERATE: 3, WATCH: 2, LOW: 1 };
+  var TAGS = 8;
+
   function mount(map, container) {
     if (!map || !container) return null;
     var host = document.createElement('div');
@@ -358,7 +518,10 @@
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(host);
 
-    var viewer = null, entities = null, disposed = false, reannounce = null;
+    var viewer = null, entities = null, disposed = false, reannounce = null, imageryPick = null;
+    var dailyPref = shared('dailyWanted', null);
+    var state = { pts: [], tags: [], stages: {}, look: 'normal', animated: false, frame: null, clock: null, where: null,
+      animate: null, daily: typeof dailyPref === 'function' ? !!dailyPref() : false };
 
     /*
      * The globe is the view a reader opens on, so it carries the same two
@@ -390,14 +553,21 @@
         try { container.dispatchEvent(new CustomEvent('pnd-imagery', { detail: { source: source } })); }
         catch (e) { /* an old browser without CustomEvent keeps an uncaptioned globe */ }
       }
+      /* Esri's mosaic is the globe's picture, as it is the reference viewer's.
+         NASA's photo of the day goes over it only when the reader asks for it
+         ("NASA today") or when Esri never answers, and only while the camera
+         is high enough for its 250 m pixels; the two are swapped rather than
+         both drawn, so the mosaic is not fetched under a photo that hides it. */
       function pick() {
         if (disposed || !viewer || viewer.isDestroyed()) return;
         var c = viewer.camera && viewer.camera.positionCartographic;
         var high = !c || c.height > DAILY_ABOVE_M;
-        var useDay = !!dayLayer && high && !failed;
+        var wanted = state.daily || satFailed;
+        var useDay = !!dayLayer && high && !failed && wanted;
         if (dayLayer) dayLayer.show = useDay;
         if (satLayer) satLayer.show = !useDay;
-        say(useDay ? 'daily' : satFailed ? 'drawn' : (high && dayLayer ? 'fallback' : 'detail'));
+        say(useDay ? (satFailed ? 'fallback' : 'daily') : (satFailed ? 'drawn' : 'mosaic'));
+        requestRender();
       }
       if (provider && provider.errorEvent && provider.errorEvent.addEventListener) {
         provider.errorEvent.addEventListener(function () {
@@ -408,7 +578,7 @@
       }
       if (satProvider && satProvider.errorEvent && satProvider.errorEvent.addEventListener) {
         satProvider.errorEvent.addEventListener(function () {
-          if (satLoaded || satFailed || ++satFailures < 3) return;
+          if (satLoaded || satFailed || ++satFailures < 2) return;
           satFailed = true;
           pick();
         });
@@ -427,9 +597,188 @@
         viewer.camera.changed.addEventListener(pick);
       } catch (e) { /* no camera events: the first pick stands */ }
       pick();
+      imageryPick = pick;
       /* Re-announced on every reveal, since the caption is shared with the
          flat map and was describing that until the globe came to the front. */
       return function () { last = null; pick(); };
+    }
+
+    /* In request-render mode Cesium draws only when something changes, which
+       is what keeps an idle globe from holding the page's main thread; the
+       few changes it cannot see for itself ask for a frame here. */
+    function requestRender() {
+      try { if (viewer && !viewer.isDestroyed() && viewer.scene.requestRender) viewer.scene.requestRender(); }
+      catch (e) { /* stub scene */ }
+    }
+
+    /* The HUD: corner brackets, the title, the UTC clock, where the camera is,
+       how many of the page's events are on the visible side, and the bar of
+       looks with the NASA switch. */
+    function buildHud(Cesium) {
+      hudStyle();
+      var hud = document.createElement('div');
+      hud.className = 'pnd-hud';
+      /* An instrument read-out: its labels stay short, as written. */
+      hud.setAttribute('data-keep-acronyms', '');
+      hud.innerHTML =
+        '<i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>' +
+        '<div class="pnd-hud-title">Live hazard view<small>Predict Natural Disasters</small></div>' +
+        '<div class="pnd-hud-rec"><b class="pnd-hud-clock">LIVE</b>' +
+        '<div class="pnd-hud-pos"></div><div class="pnd-hud-mgrs"></div><div class="pnd-hud-alt"></div>' +
+        '<div class="pnd-hud-count"></div></div>' +
+        '<div class="pnd-hud-bar" role="toolbar" aria-label="Globe look"></div>';
+      host.appendChild(hud);
+      host.setAttribute('aria-hidden', 'false');
+      var clock = hud.querySelector('.pnd-hud-clock'), pos = hud.querySelector('.pnd-hud-pos'),
+        grid = hud.querySelector('.pnd-hud-mgrs'), alt = hud.querySelector('.pnd-hud-alt'),
+        count = hud.querySelector('.pnd-hud-count'), bar = hud.querySelector('.pnd-hud-bar');
+
+      function tick() { clock.textContent = 'LIVE ' + utcStamp(Date.now()); }
+      tick();
+      state.clock = setInterval(tick, 1000);
+
+      /* Where the camera is looking straight down, and how many events are
+         on the side of the Earth that faces it. */
+      function where() {
+        var c = viewer && !viewer.isDestroyed() && viewer.camera && viewer.camera.positionCartographic;
+        if (!c || !isFinite(c.latitude)) return;
+        var lat = c.latitude * 180 / Math.PI, lon = c.longitude * 180 / Math.PI;
+        pos.textContent = dms(lat, 'N', 'S') + ' ' + dms(lon, 'E', 'W');
+        var g = mgrs(lat, lon);
+        grid.textContent = g ? 'MGRS ' + g : '';
+        alt.textContent = 'ALT ' + Math.round(c.height / 1000).toLocaleString('en-GB') + ' KM';
+        var R = 6371, horizon = Math.acos(R / (R + Math.max(0, c.height) / 1000));
+        var r = Math.PI / 180, n = 0;
+        for (var i = 0; i < state.pts.length; i++) {
+          var p = state.pts[i];
+          var cosd = Math.sin(lat * r) * Math.sin(p.lat * r) + Math.cos(lat * r) * Math.cos(p.lat * r) * Math.cos((p.lon - lon) * r);
+          if (Math.acos(Math.max(-1, Math.min(1, cosd))) <= horizon) n++;
+        }
+        count.textContent = n + (n === 1 ? ' EVENT' : ' EVENTS') + ' IN VIEW';
+        declutter(lat, lon, horizon);
+      }
+      /* A tag is shown only for an event on the side of the Earth facing the
+         camera - labels are not hidden by the planet the way points are, so
+         one on the far side hung in space - and only where it does not land
+         on a more serious event's tag. */
+      /* The HUD and the map's own controls, as boxes a tag must not land on. */
+      function obstacles() {
+        var out = [];
+        try {
+          var cv = viewer.scene.canvas, base = cv && cv.getBoundingClientRect ? cv.getBoundingClientRect() : null;
+          if (!base) return out;
+          var sel = '.pnd-hud-bar,.pnd-hud-rec,.pnd-hud-title,.pnd-view-toggle,.pnd-key,.pnd-imagery-note';
+          var els = container.querySelectorAll(sel);
+          for (var i = 0; i < els.length; i++) {
+            var b = els[i].getBoundingClientRect();
+            if (!b.width || !b.height) continue;
+            out.push({ x0: b.left - base.left - 4, x1: b.right - base.left + 4, y0: b.top - base.top - 4, y1: b.bottom - base.top + 4 });
+          }
+        } catch (e) { /* no layout */ }
+        return out;
+      }
+      function declutter(lat, lon, horizon) {
+        var C = window.Cesium, r = Math.PI / 180, placed = obstacles();
+        var toScreen = C && C.SceneTransforms && C.SceneTransforms.worldToWindowCoordinates;
+        var shown = 0;
+        for (var i = 0; i < state.tags.length; i++) {
+          var t = state.tags[i], ok;
+          var cosd = Math.sin(lat * r) * Math.sin(t.lat * r) + Math.cos(lat * r) * Math.cos(t.lat * r) * Math.cos((t.lon - lon) * r);
+          ok = shown < (state.maxTags || TAGS) && Math.acos(Math.max(-1, Math.min(1, cosd))) < horizon * 0.97;
+          if (ok && toScreen) {
+            var w = null;
+            try { w = C.SceneTransforms.worldToWindowCoordinates(viewer.scene, C.Cartesian3.fromDegrees(t.lon, t.lat)); }
+            catch (e) { w = null; }
+            if (w) {
+              var box = { x0: w.x + 12, x1: w.x + 17 + t.width, y0: w.y - 34, y1: w.y - 8 };
+              var cw = viewer.scene.canvas && viewer.scene.canvas.clientWidth;
+              if (cw && box.x1 > cw - 8) ok = false;
+              for (var j = 0; j < placed.length && ok; j++) {
+                var q = placed[j];
+                if (box.x0 < q.x1 && box.x1 > q.x0 && box.y0 < q.y1 && box.y1 > q.y0) ok = false;
+              }
+              if (ok) placed.push(box);
+            }
+          }
+          if (ok) shown++;
+          try {
+            if (t.ent.label) t.ent.label.show = ok;
+            if (t.bb) t.bb.show = ok;
+          } catch (e) { /* entity gone */ }
+        }
+      }
+      state.where = where;
+      try { viewer.camera.changed.addEventListener(where); viewer.camera.moveEnd.addEventListener(where); }
+      catch (e) { /* no camera events in a stub */ }
+      if (viewer.camera && viewer.camera.percentageChanged !== undefined) viewer.camera.percentageChanged = 0.01;
+      where();
+
+      /* The looks. A stage is made the first time it is chosen and kept. */
+      var saved = '';
+      try { saved = localStorage.getItem(PRESET_PREF) || ''; } catch (e) { /* private window */ }
+      PRESETS.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.textContent = p.label; b.setAttribute('data-look', p.key);
+        b.setAttribute('aria-pressed', 'false');
+        b.addEventListener('click', function () { look(p.key); });
+        bar.appendChild(b);
+      });
+      var sep = document.createElement('span'); sep.className = 'sep'; bar.appendChild(sep);
+      var nasa = document.createElement('button');
+      nasa.type = 'button'; nasa.textContent = 'NASA today'; nasa.setAttribute('data-look', 'nasa');
+      nasa.title = 'Show NASA\u2019s photo of the latest complete day instead of the mosaic';
+      nasa.setAttribute('aria-pressed', String(state.daily));
+      nasa.addEventListener('click', function () {
+        state.daily = !state.daily;
+        nasa.setAttribute('aria-pressed', String(state.daily));
+        var set = shared('setDailyWanted', null);
+        if (typeof set === 'function') set(state.daily);
+        if (imageryPick) imageryPick();
+      });
+      bar.appendChild(nasa);
+
+      function look(key) {
+        state.look = key;
+        try { localStorage.setItem(PRESET_PREF, key); } catch (e) { /* private window */ }
+        var btns = bar.querySelectorAll('[data-look]');
+        for (var i = 0; i < btns.length; i++) {
+          var k = btns[i].getAttribute('data-look');
+          if (k !== 'nasa') btns[i].setAttribute('aria-pressed', String(k === key));
+        }
+        var chosen = null;
+        PRESETS.forEach(function (p) {
+          if (!p.shader) return;
+          var stage = state.stages[p.key];
+          if (p.key === key && !stage && Cesium.PostProcessStage) {
+            try {
+              var t0 = Date.now();
+              stage = new Cesium.PostProcessStage({
+                fragmentShader: SHADER_HEAD + p.shader,
+                uniforms: { time: function () { return (Date.now() - t0) / 1000; } }
+              });
+              viewer.scene.postProcessStages.add(stage);
+              state.stages[p.key] = stage;
+            } catch (e) { stage = null; }
+          }
+          if (stage) stage.enabled = p.key === key;
+          if (p.key === key) chosen = p;
+        });
+        animate(!!(chosen && chosen.animated));
+        requestRender();
+      }
+      /* Grain and flicker move; in request-render mode they need frames asked
+         for, and only while such a look is on and the globe is showing. */
+      function animate(on) {
+        state.animated = on;
+        if (!on || state.frame) return;
+        (function loop() {
+          if (!state.animated || disposed || host.style.display === 'none') { state.frame = null; return; }
+          requestRender();
+          state.frame = requestAnimationFrame(loop);
+        })();
+      }
+      state.animate = animate;
+      look(PRESETS.some(function (p) { return p.key === saved; }) ? saved : 'normal');
     }
 
     function setControls(display) {
@@ -441,6 +790,8 @@
 
     function destroy() {
       disposed = true;
+      if (state.clock) clearInterval(state.clock);
+      state.animated = false;
       try { if (viewer && !viewer.isDestroyed()) viewer.destroy(); } catch (e) { /* gone */ }
       try { host.remove(); } catch (e) { /* gone */ }
     }
@@ -448,27 +799,102 @@
     function sync() {
       if (!viewer || disposed) return;
       var pts = readMarkers(map);
+      state.pts = pts;
+      var C = window.Cesium;
+      /* The events worth a tag: the most serious first, then the largest mark. */
+      /* Candidates only: which of them get a tag is decided as the camera
+         moves, from those on the visible side - the most serious events are
+         often on the far side of the Earth, and tagging them there left the
+         side the reader is looking at with none. */
+      var tagged = {};
+      pts.map(function (p, i) { return { i: i, r: LEVEL_RANK[p.level] || 0, s: p.radius }; })
+        .filter(function (x) { return x.r >= 2 || pts.length <= TAGS; })
+        .sort(function (a, b) { return (b.r - a.r) || (b.s - a.s); })
+        .slice(0, 60).forEach(function (x) { tagged[x.i] = true; });
+      var narrow = (host.clientWidth || (container && container.clientWidth) || 800) < 560;
+      state.maxTags = narrow ? 3 : TAGS;
+      var room = narrow ? 22 : 38;
+      var canTag = !!(C.Cartesian2 && C.VerticalOrigin && C.HorizontalOrigin && C.LabelStyle);
+      /* The brackets are billboards of their own, not a billboard on the
+         event's entity: Cesium draws a ground-clamped point through its own
+         billboard, and a second one on the same entity took the point's
+         place as a 30 px disc. */
+      var brackets = null;
+      try {
+        if (!state.brackets && C.BillboardCollection && viewer.scene.primitives) {
+          state.brackets = viewer.scene.primitives.add(new C.BillboardCollection({ scene: viewer.scene }));
+        }
+        brackets = state.brackets;
+        if (brackets) brackets.removeAll();
+      } catch (e) { brackets = null; }
       try {
         entities.removeAll();
+        state.tags = [];
         for (var i = 0; i < pts.length; i++) {
           var p = pts[i];
-          entities.add({
+          var e = {
             name: p.title || undefined,
-            position: window.Cesium.Cartesian3.fromDegrees(p.lon, p.lat),
+            position: C.Cartesian3.fromDegrees(p.lon, p.lat),
             point: {
               pixelSize: Math.max(6, Math.min(18, p.radius * 1.6)),
-              color: window.Cesium.Color.fromCssColorString(p.colour),
-              outlineColor: window.Cesium.Color.fromCssColorString('#04120e'),
+              color: C.Color.fromCssColorString(p.colour),
+              outlineColor: C.Color.fromCssColorString('#04120e'),
               outlineWidth: 2,
               /* Without this a marker on the far side of the planet shows
                  through it, which reads as a second event in the ocean. */
-              heightReference: window.Cesium.HeightReference.CLAMP_TO_GROUND,
+              heightReference: C.HeightReference.CLAMP_TO_GROUND,
               disableDepthTestDistance: 0
             },
             description: p.html
-          });
+          };
+          /* A tag in the reference viewer's style: corner brackets around the
+             mark and its name beside them, for the few that matter most. */
+          if (canTag && tagged[i] && p.title) {
+            e.label = {
+              text: p.title.length > room ? p.title.slice(0, room - 1) + '\u2026' : p.title,
+              font: '600 12px ui-monospace, Menlo, Consolas, monospace',
+              fillColor: C.Color.fromCssColorString('#eaf6ff'),
+              showBackground: true,
+              backgroundColor: C.Color.fromCssColorString('rgba(3,10,14,0.82)'),
+              backgroundPadding: new C.Cartesian2(6, 4),
+              style: C.LabelStyle.FILL,
+              horizontalOrigin: C.HorizontalOrigin.LEFT,
+              verticalOrigin: C.VerticalOrigin.BOTTOM,
+              pixelOffset: new C.Cartesian2(17, -12),
+              heightReference: C.HeightReference.CLAMP_TO_GROUND,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY
+            };
+          }
+          /* An earthquake as the reference viewer draws one: a disc on the
+             ground whose radius doubles with each step of magnitude. */
+          var mag = magnitudeOf(p.title);
+          if (mag !== null && mag >= 4 && C.Color.fromCssColorString) {
+            var fill = C.Color.fromCssColorString(p.colour);
+            e.ellipse = {
+              semiMajorAxis: Math.pow(2, mag) * 1000, semiMinorAxis: Math.pow(2, mag) * 1000,
+              material: fill && fill.withAlpha ? fill.withAlpha(0.28) : fill
+            };
+          }
+          var added = entities.add(e);
+          if (e.label) {
+            var bb = null;
+            /* Never hidden by the ground they sit on - they would sink into
+               it - because declutter() already hides a tag on the far side. */
+            if (brackets) {
+              try {
+                bb = brackets.add({ position: C.Cartesian3.fromDegrees(p.lon, p.lat), image: RETICLE,
+                  width: 30, height: 30, show: false, heightReference: C.HeightReference.CLAMP_TO_GROUND,
+                  disableDepthTestDistance: Number.POSITIVE_INFINITY });
+              } catch (err) { bb = null; }
+            }
+            state.tags.push({ ent: added || e, bb: bb, lat: p.lat, lon: p.lon, rank: LEVEL_RANK[p.level] || 0,
+              width: 30 + Math.min(room, p.title.length) * 7.4 });
+          }
         }
+        state.tags.sort(function (a, b) { return b.rank - a.rank; });
       } catch (e) { /* mid-teardown */ }
+      if (state.where) state.where();
+      requestRender();
     }
 
     var promise = loadCesium().then(function (Cesium) {
@@ -485,14 +911,27 @@
            way to read it: clicking a hazard on the globe did nothing at all,
            so a reader had to find the Flat button to learn what an event was. */
         infoBox: true, selectionIndicator: true, baseLayer: false, msaaSamples: 4,
+        /* Draw only when something changes. A globe that re-renders sixty
+           times a second while nobody touches it held the page's main thread
+           and made every click on the page feel late. */
+        requestRenderMode: true, maximumRenderTimeChange: Infinity,
         contextOptions: { webgl: { preserveDrawingBuffer: true } }
       });
       dropIonLogo(viewer);
+      /* The planet in black space, as the reference viewer shows it: no star
+         field, no sun or moon, only the atmosphere's rim. */
+      try {
+        if (viewer.scene.skyBox) viewer.scene.skyBox.show = false;
+        if (viewer.scene.sun) viewer.scene.sun.show = false;
+        if (viewer.scene.moon) viewer.scene.moon.show = false;
+        if (Cesium.Color && Cesium.Color.BLACK) viewer.scene.backgroundColor = Cesium.Color.BLACK;
+      } catch (e) { /* older Scene */ }
       viewer.scene.skyAtmosphere.show = true;
       viewer.scene.skyAtmosphere.atmosphereLightIntensity = 18;
       viewer.scene.skyAtmosphere.saturationShift = -0.12;
       viewer.scene.skyAtmosphere.brightnessShift = -0.08;
       entities = viewer.entities;
+      try { buildHud(Cesium); } catch (e) { /* the globe works without its HUD */ }
       /* Hung off the host so the globe can be inspected from outside the
          closure. Nothing in the app reads it; it exists because the one
          defect that emptied this globe entirely was invisible to every
@@ -578,11 +1017,16 @@
           if (c && c.clientWidth > 0 && c.clientHeight > 0) {
             frame(window.Cesium, viewer, map);
             if (reannounce) reannounce();
+            if (state.where) state.where();
+            if (state.animate) state.animate(state.animated);
+            requestRender();
             return;
           }
           if (++tries < 30) requestAnimationFrame(settle);
         })();
       },
+      /* An animated look stops asking for frames by itself once hidden, and
+         picks up again on the next reveal. */
       hide: function () { host.style.display = 'none'; setControls(''); },
       viewer: function () { return viewer; }
     };
@@ -590,6 +1034,7 @@
 
   window.PNDGlobe = {
     mount: mount, readMarkers: readMarkers, webglOk: webglOk,
+    mgrs: mgrs, dms: dms, magnitudeOf: magnitudeOf, PRESETS: PRESETS,
     prefers: prefers, remember: remember, BASE: BASE, PREF: PREF
   };
 })();

@@ -516,7 +516,7 @@ async function handler(req, res) {
     when: {
       reportedAt: updated || null,
       label: updated ? 'Latest timestamp supplied by the reporting source' : 'No timestamp supplied by the upstream source',
-      note: 'Feed timestamps mark when the source last updated the record, which can be later than when the event began.'
+      note: 'The time shown is when the source last updated its report. That can be later than when the event began.'
     },
 
     where: {
@@ -552,8 +552,8 @@ async function handler(req, res) {
     reliefGroups: isForecast ? [] : (support.globalRelief || GLOBAL_RELIEF),
     directories: support.directories || GLOBAL_DIRECTORIES,
     donationPolicy: isForecast
-      ? 'This record is an experimental outlook, not a confirmed impact event. Donation prompts are withheld until meaningful impact is independently verified.'
-      : 'Donation links point at the organisation’s own official domain. Confirm the organisation is running an appeal for this specific emergency before giving.',
+      ? 'This is our own forecast, not a confirmed disaster. We do not show donation links until real harm is confirmed by others.'
+      : 'Donation links go to each organisation’s own official website. Before you give, check that the organisation has an appeal for this emergency.',
 
     searches: {
       googleNews: 'https://news.google.com/search?q=' + encodeURIComponent(base),
@@ -578,14 +578,14 @@ async function handler(req, res) {
          by the same scheduled job as the ledger, which GitHub runs every few
          hours, not every few minutes; what is genuinely per-request is the
          event feed. Saying which is which beats claiming a rate for both. */
-      refreshTarget: 'Event feed recomputed per request; enrichment warmed hourly by the scheduled job',
+      refreshTarget: 'Events are fetched again each time you open a page. News and help information is refreshed by a scheduled job',
       scope: 'Every event in the live feed, worldwide',
       newsProviders: ['Google News', 'Bing News', 'ReliefWeb (UN OCHA)'],
       videoProviders: ['YouTube'],
       humanitarian: ['IFRC', 'UNICEF', 'WFP', 'UNHCR', 'UN Crisis Relief', 'MSF', 'Direct Relief', 'Save the Children', 'CARE', 'ReliefWeb', 'OCHA']
     },
 
-    disclaimer: 'Distress groups, needs and safety actions are hazard-response guidance categories, not claims that every listed group is confirmed affected in this specific event. Only nationally published emergency numbers are shown; where none is stored the national authority link is shown instead and no number is guessed. News and video items are third-party reporting shown with their outlet and a direct link — verify against the official source before acting.'
+    disclaimer: 'The groups, needs and safety steps listed are general guidance for this kind of disaster. They do not mean every group listed is confirmed to be affected by this event. We show only emergency numbers that a government has published; where we have none, we link to the national authority instead and never guess a number. News and videos come from other outlets, shown with their name and a link. Check with the official source before you act.'
   });
 }
 

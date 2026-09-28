@@ -32,26 +32,26 @@ const OCCURRED = {
   VERIFIED:         'Yes',
   PARTIAL:          'Partly',
   FALSE_ALARM:      'No',
-  MISSED:           'Yes \u2014 but nothing predicted it',
-  COVERAGE_FAILURE: 'Yes \u2014 outside what was scanned',
+  MISSED:           'Yes, but we did not forecast it',
+  COVERAGE_FAILURE: 'Yes, but we were not checking that place',
   OPEN:             'Too early to say',
-  AWAITING:         'Not yet checked',
-  UNGRADEABLE:      'Nothing on record can answer this',
-  NOT_A_PREDICTION: 'Not gradeable as a prediction',
-  UNKNOWN:          'Unrecognised verdict'
+  AWAITING:         'Not checked yet',
+  UNGRADEABLE:      'We cannot tell',
+  NOT_A_PREDICTION: 'Not counted',
+  UNKNOWN:          'Unrecognised result'
 };
 
 const LABELS = {
-  VERIFIED:         'Verified prediction',
-  PARTIAL:          'Partially verified',
-  FALSE_ALARM:      'False alarm',
+  VERIFIED:         'Correct',
+  PARTIAL:          'Partly correct',
+  FALSE_ALARM:      'Wrong (false alarm)',
   MISSED:           'Missed event',
-  COVERAGE_FAILURE: 'Coverage failure',
-  OPEN:             'Window still open',
-  AWAITING:         'Awaiting verification',
-  UNGRADEABLE:      'Not gradeable',
-  NOT_A_PREDICTION: 'Not a prediction',
-  UNKNOWN:          'Unrecognised verdict'
+  COVERAGE_FAILURE: 'Missed: not checking there',
+  OPEN:             'Still running',
+  AWAITING:         'Not checked yet',
+  UNGRADEABLE:      'Cannot be checked',
+  NOT_A_PREDICTION: 'No proof it was made in time',
+  UNKNOWN:          'Unrecognised result'
 };
 
 const CSS = {
@@ -206,7 +206,7 @@ function tally(records, now) {
 }
 
 function rate(hit, total) {
-  if (!total) return { text: 'Not enough graded records', hit, total, pct: null };
+  if (!total) return { text: 'Not enough checked forecasts', hit, total, pct: null };
   return { text: Math.round(hit / total * 100) + '% (' + hit + ' of ' + total + ')',
     hit, total, pct: Math.round(hit / total * 100) };
 }

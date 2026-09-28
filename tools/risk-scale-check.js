@@ -102,7 +102,6 @@ const contrast = (a, b) => {
   for (const page of PAGES) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const pg = await ctx.newPage();
-    await pg.addInitScript(() => localStorage.setItem('pnd_tour_done', '1'));
     try { await pg.goto('http://localhost:' + PORT + page, { waitUntil: 'domcontentloaded', timeout: 20000 }); }
     catch (e) { /* measure whatever rendered */ }
     await pg.waitForTimeout(1200);

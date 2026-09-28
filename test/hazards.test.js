@@ -143,7 +143,7 @@ test('routine detections do not dominate the severe end of the scale', async () 
 test('lead time is zero for an outlook whose window is already open', () => {
   const t = '2026-09-15T00:00:00Z';
   assert.equal(H.leadTimeHours({ forecast: true, issuedAt: t, targetStart: t }), 0);
-  assert.match(H.leadTimeText({ forecast: true, issuedAt: t, targetStart: t }), /No lead time/);
+  assert.match(H.leadTimeText({ forecast: true, issuedAt: t, targetStart: t }), /No advance warning/);
 });
 
 test('lead time is positive when a forecast is issued ahead of its window', () => {

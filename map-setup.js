@@ -247,22 +247,35 @@
     };
   }
   /* What the caption says for each source. One table, so the flat map and
-     the globe can never describe the same picture two different ways. */
+     the globe can never describe the same picture two different ways.
+
+     The satellite view is Esri's World Imagery at every zoom now: one
+     seamless mosaic, the picture the god's-eye-view project this globe is
+     adapted from opens on. NASA's daily photo used to fill the zooms up to 9
+     and the mosaic took over after, and a slow or refused NASA tile let the
+     drawn map show through - the view read as a patchwork of squares. The
+     day's photo is still one choice away ("NASA today"), and stands in on
+     its own if Esri's tiles never arrive. */
   function imageryText(source, latest) {
+    if (source === 'mosaic') {
+      return 'Satellite: Esri\u2019s mosaic of recent photos. It is not a live picture of today. Turn on \u201cNASA today\u201d for the latest daily photo.';
+    }
     if (source === 'daily') {
-      return 'Satellite: NASA, ' + latest.label + ' \u2014 the latest complete day. Black stripes are gaps between the satellite\u2019s passes; cloud is part of the picture.';
+      return 'Satellite: NASA\u2019s photo of ' + latest.label + ', the latest complete day. Clouds are part of the picture.';
     }
     if (source === 'fallback') {
-      return 'NASA\u2019s picture of ' + latest.label + ' did not load here. Showing a mosaic of past captures \u2014 not the scene now.';
-    }
-    if (source === 'detail') {
-      return 'Satellite: a detailed mosaic of past captures \u2014 not the scene now. Zoom out for NASA\u2019s picture of ' + latest.label + '.';
+      return 'Esri\u2019s photos did not load, so this is NASA\u2019s photo of ' + latest.label + ' instead. Clouds are part of the picture.';
     }
     if (source === 'drawn') {
-      return 'Satellite imagery did not load here. This is the drawn map.';
+      return 'Satellite photos did not load here. This is the drawn map.';
     }
     return '';
   }
+  /* Whether the reader has asked for NASA's photo of the day, shared by the
+     flat map and the globe and kept in this browser only. */
+  var DAILY_PREF = 'pnd_nasa_today';
+  function dailyWanted() { try { return localStorage.getItem(DAILY_PREF) === '1'; } catch (e) { return false; } }
+  function setDailyWanted(v) { try { localStorage.setItem(DAILY_PREF, v ? '1' : '0'); } catch (e) { /* private window */ } }
   var PLACES = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
   var COUNTRIES = '/world-countries.json';
   var ESRI_CREDIT = 'Esri, HERE, Garmin, © OpenStreetMap contributors';
@@ -541,27 +554,31 @@
    * fallen back to the old mosaic rather than letting it pass for today.
    * The globe reports its own source through the same caption.
    */
-  function imageryNote(map, satellite, daily, latest, under) {
+  function imageryNote(map, satellite, daily, latest, under, imagery) {
     var box = map && typeof map.getContainer === 'function' ? map.getContainer() : null;
     if (!box || typeof document === 'undefined' || typeof map.on !== 'function') return null;
     var el = document.createElement('div');
     el.className = 'pnd-imagery-note';
     el.setAttribute('role', 'note');
     box.appendChild(el);
-    var state = { view: 'flat', globe: null, loaded: false, errors: 0, failed: false, rescue: null,
-      rescueLoaded: false, rescueErrors: 0, rescueFailed: false };
+    var state = { view: 'flat', globe: null, loaded: false, errors: 0, failed: false,
+      rescued: false, dayLoaded: false, dayErrors: 0, dayFailed: false };
+    var has = function (l) { return !!l && typeof map.hasLayer === 'function' && map.hasLayer(l); };
     function source() {
       if (state.view === 'globe') return state.globe;
-      if (typeof map.hasLayer === 'function' && !map.hasLayer(satellite)) return null;
-      /* By the zoom tiles are drawn at, which Leaflet rounds: these maps sit
-         at fractional zooms, and at 9.3 the daily picture is still the one on
-         screen while an unrounded test already called it the mosaic. */
+      if (typeof map.hasLayer === 'function' && !map.hasLayer(satellite)) {
+        /* NASA's photo can be switched on over the drawn map too. */
+        return has(daily) && !state.dayFailed && zoomOk() ? 'daily' : null;
+      }
+      var dayShown = (has(daily) || state.rescued) && !state.dayFailed && zoomOk();
+      if (state.failed) return dayShown ? 'fallback' : 'drawn';
+      return dayShown ? 'daily' : 'mosaic';
+    }
+    /* By the zoom tiles are drawn at, which Leaflet rounds: at 9.3 the daily
+       photo is still on screen. Past its own last zoom it is not drawn. */
+    function zoomOk() {
       var z = typeof map.getZoom === 'function' ? Math.round(map.getZoom()) : 0;
-      if (z > DAILY_MAX_ZOOM) return 'detail';
-      if (!state.failed) return 'daily';
-      /* Both hosts refused: what is on screen is the drawn world, and calling
-         it a mosaic would describe a picture that is not there. */
-      return state.rescueFailed ? 'drawn' : 'fallback';
+      return z <= DAILY_MAX_ZOOM;
     }
     /* Above the credit line, however many lines it wraps to at this width. */
     function place() {
@@ -575,33 +592,35 @@
       el.textContent = s ? imageryText(s, latest) : '';
       el.setAttribute('data-source', s || '');
       if (s) place();
+      /* The key sits above this caption; tell it the caption has changed. */
+      try { box.dispatchEvent(new CustomEvent('pnd-caption')); } catch (e) { /* old browser */ }
     }
-    if (typeof daily.on === 'function') {
-      daily.on('tileload', function () { state.loaded = true; });
-      /* Three refusals and not one picture: the host is not answering. The
-         mosaic is put in underneath for the zooms it had left to the daily
-         picture, so the view is still a photograph - and captioned as the old
-         one it is. A tile that did load means the service is up, and a stray
-         failure is not a reason to swap the reader's picture. */
-      daily.on('tileerror', function () {
+    if (imagery && typeof imagery.on === 'function') {
+      imagery.on('tileload', function () { state.loaded = true; });
+      /* Two refusals and not one photo: Esri is not answering here. NASA's
+         photo of the day is put in its place, so the view is still a
+         photograph - and captioned as the day's photo it is. A tile that did
+         load means the service is up, and a stray failure is no reason to
+         swap the reader's picture. */
+      imagery.on('tileerror', function () {
+        try { under.showNames(); } catch (e) {}
         state.errors++;
-        if (state.loaded || state.failed || state.errors < 3) return;
+        if (state.loaded || state.failed || state.errors < 2) return;
         state.failed = true;
-        try {
-          state.rescue = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: DAILY_MAX_ZOOM, noWrap: true });
-          state.rescue.on('tileload', function () { state.rescueLoaded = true; });
-          state.rescue.on('tileerror', function () {
-            try { under.showNames(); } catch (e) {}
-            if (state.rescueLoaded || state.rescueFailed || ++state.rescueErrors < 3) return;
-            state.rescueFailed = true;
-            render();
-          });
-          satellite.addLayer(state.rescue);
-        } catch (e) { /* the drawn world is still underneath */ }
+        try { if (!state.rescued && daily) { satellite.addLayer(daily); state.rescued = true; } }
+        catch (e) { /* the drawn world is still underneath */ }
         render();
       });
     }
-    map.on('zoomend baselayerchange resize', render);
+    if (daily && typeof daily.on === 'function') {
+      daily.on('tileload', function () { state.dayLoaded = true; });
+      daily.on('tileerror', function () {
+        if (state.dayLoaded || state.dayFailed || ++state.dayErrors < 3) return;
+        state.dayFailed = true;
+        render();
+      });
+    }
+    map.on('zoomend baselayerchange overlayadd overlayremove resize', render);
     render();
     /* The credit line is filled in as layers add their attributions, after
        this first render; place the caption again once it has settled. */
@@ -629,7 +648,7 @@
       injectStyle();
       var pane = labelPane(map);
       var views = {};
-      var under = null, latest = null, daily = null;
+      var under = null, latest = null, daily = null, imagery = null;
       var clear = political(map, true, CLEAR);
       var plain = political(map);
       views['Map'] = clear;
@@ -644,25 +663,19 @@
            globe already works this way. */
         under = political(map, false);
         latest = dailyImagery();
-        /* NASA's picture of the latest complete day, from the world view down
-           to zoom 9; the bounds keep Leaflet from asking for the tiles past
-           the Mercator edge that the service does not have. */
+        /* One seamless photograph at every zoom: Esri's World Imagery. */
+        imagery = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, maxZoom: 18, noWrap: true });
+        /* NASA's photo of the latest complete day, from the world view down to
+           zoom 9, offered as a layer of its own ("NASA today"); the bounds keep
+           Leaflet from asking for tiles past the Mercator edge the service does
+           not have. */
         daily = L.tileLayer(latest.url, {
           attribution: latest.credit, subdomains: 'abc', maxZoom: DAILY_MAX_ZOOM,
           maxNativeZoom: DAILY_MAX_ZOOM, noWrap: true,
           bounds: [[-85.0511287776, -179.999999975], [85.0511287776, 179.999999975]]
         });
-        /* The detailed mosaic, from where the daily picture runs out. */
-        var imagery = L.tileLayer(IMAGERY, { attribution: ESRI_CREDIT, minZoom: DAILY_MAX_ZOOM + 1, maxZoom: 18, noWrap: true });
-        /* Esri's tiles come from a third-party host that a network can refuse.
-           When they do not arrive the drawn world underneath is all there is,
-           and an unlabelled one is a puzzle - so its own country names come
-           back the moment the imagery is shown not to be answering. */
-        if (typeof imagery.on === 'function') {
-          imagery.on('tileerror', function () { try { under.showNames(); } catch (e) {} });
-        }
         views['Satellite'] = L.layerGroup([
-          under, daily, imagery,
+          under, imagery,
           L.tileLayer(PLACES, { maxZoom: 18, pane: pane, opacity: 0.95, noWrap: true })
         ]);
       }
@@ -682,19 +695,27 @@
         var choices = { 'Map': clear };
         if (views['Satellite']) choices['Satellite'] = views['Satellite'];
         choices['Political'] = plain;
+        var extras = {};
+        if (daily) {
+          extras['NASA today (' + latest.label + ')'] = daily;
+          if (dailyWanted()) daily.addTo(map);
+        }
         /* Shown open where there is room, so the other views can be found
            without knowing that the stacked-squares icon hides them. */
         var size = typeof map.getSize === 'function' ? map.getSize() : null;
         var roomy = !!(size && size.x >= 640);
-        L.control.layers(choices, null, { position: 'topright', collapsed: !roomy }).addTo(map);
+        L.control.layers(choices, daily ? extras : null, { position: 'topright', collapsed: !roomy }).addTo(map);
         if (typeof map.on === 'function') {
           map.on('baselayerchange', function (e) { if (e && e.name) rememberView(e.name); });
+          map.on('overlayadd overlayremove', function (e) {
+            if (e && e.layer === daily) setDailyWanted(e.type === 'overlayadd');
+          });
         }
       }
       /* Last, and on its own: the caption describes the map, so nothing in it
          may stop the map being built. */
       if (views['Satellite']) {
-        try { imageryNote(map, views['Satellite'], daily, latest, under); } catch (e) { /* no caption */ }
+        try { imageryNote(map, views['Satellite'], daily, latest, under, imagery); } catch (e) { /* no caption */ }
       }
     } catch (e) { /* stub layers in the test harness */ }
     try { attachKey(map); } catch (e) { /* the map works without its key */ }
@@ -796,6 +817,7 @@
     function later() { clearTimeout(timer); timer = setTimeout(render, 80); }
     map.on('layeradd layerremove', later);
     map.on('resize baselayerchange zoomend', place);
+    try { box.addEventListener('pnd-caption', place); } catch (e) { /* no events */ }
     render();
     map.__pndKey = { element: el, render: render };
     return map.__pndKey;
@@ -1077,5 +1099,6 @@
     NE_CREDIT: NE_CREDIT,
     /* The daily picture and the words for it, shared with the globe for the
        same reason the rest of this block is. */
-    dailyImagery: dailyImagery, imageryText: imageryText, DAILY_MAX_ZOOM: DAILY_MAX_ZOOM };
+    dailyImagery: dailyImagery, imageryText: imageryText, DAILY_MAX_ZOOM: DAILY_MAX_ZOOM,
+    dailyWanted: dailyWanted, setDailyWanted: setDailyWanted };
 })();

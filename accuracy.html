@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Prediction Verification & Track Record | Predict Natural Disasters</title><meta name="description" content="Auditable historical verification of every frozen disaster prediction, false alarm, missed significant event and coverage failure."><link rel="canonical" href="https://predict-natural-disasters.anchit-tandon.com/accuracy"><link rel="stylesheet" href="/portal.css"><link rel="stylesheet" href="/app-pages.css"><link rel="stylesheet" href="/risk.css"><style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Forecast track record | Predict Natural Disasters</title><meta name="description" content="How our past forecasts turned out: which were correct, partly correct or wrong, which we could not check, and which disasters we missed."><link rel="canonical" href="https://predict-natural-disasters.anchit-tandon.com/accuracy"><link rel="stylesheet" href="/portal.css"><link rel="stylesheet" href="/app-pages.css"><link rel="stylesheet" href="/risk.css"><style>
 main{max-width:1440px;margin:auto;padding:24px}.hero2{padding:26px 0 14px}.hero2 h1{margin:0 0 8px;font-size:clamp(28px,4vw,48px)}.hero2 p{max-width:900px;color:#9db9ad}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.metric{padding:16px;border:1px solid #183f33;border-radius:12px;background:#071c16}.metric b{display:block;font-size:26px;margin-top:5px}.metric span{font-size:11px;color:#8eaa9f;text-transform:uppercase;letter-spacing:.08em}.section{margin:14px 0;padding:18px;border:1px solid #183f33;border-radius:12px;background:#061914}.section h2{margin:0 0 5px}.legend{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #31564a;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800}.verified{border-color:#25e29c}.partial{border-color:#e9b949}.alarm{border-color:#ef5261}.missed{border-color:#c168ff}.coverage{border-color:#9aa7a2}/* Severity takes its colours from risk.css, the one scale. This page used to keep a fourth palette of its own, in which SEVERE was orange while the same level was dark red in the table on the next page. */.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.controls input,.controls select{background:#06130f;color:#eaf7f1;border:1px solid #31564a;border-radius:8px;padding:10px}.tablewrap{overflow:auto}.ledger{width:100%;border-collapse:collapse;min-width:960px}.ledger th,.ledger td{text-align:left;padding:11px 9px;border-bottom:1px solid #17372e;vertical-align:top}.ledger th{font-size:10px;color:#8eaa9f;text-transform:uppercase;letter-spacing:.06em}.serious{border-left:4px solid #ef2639}.empty{padding:24px;color:#8eaa9f}.note{font-size:12px;color:#8eaa9f;line-height:1.55}.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}.status-title{font-weight:900}.cmp{padding:14px 0;border-bottom:1px solid #17372e}.cmp h3{margin:0 0 6px}.cmp h4{margin:0 0 6px;font-size:12px;color:#8eaa9f;text-transform:uppercase;letter-spacing:.06em}.cmptbl{width:100%;border-collapse:collapse}.cmptbl td{padding:6px 8px;border-bottom:1px solid #122d25;vertical-align:top;font-size:13px}.cmptbl td:first-child{color:#8eaa9f;width:38%}/* This pill used to carry the risk scale's old Watch blue. A verdict must not borrow a hue that a risk level once meant, so it takes the site's own link blue instead. */.open{border-color:var(--blue)}.awaiting{border-color:#8fa8a0}.ungradeable{border-color:#6f8b82;border-style:dashed}.notprediction{border-color:#c168ff;border-style:dashed}.unknown{border-color:#ef5261}.sub{font-size:11px;color:#8eaa9f;margin-top:3px}@media(max-width:850px){.metrics{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr}main{padding:14px}}@media(max-width:480px){.metrics{grid-template-columns:1fr}}
 .answer{margin:6px 0 16px;padding:18px 20px;border:1px solid #1d654c;border-radius:12px;background:#07251c}.answer .lead{font-size:clamp(19px,2.4vw,24px);font-weight:800;margin:0 0 10px;color:#f5fbf8}.answer ul{margin:0;padding-left:20px}.answer li{font-size:15px;line-height:1.55;color:#d6e8e0;margin:4px 0}.metrics.compact{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 12px}.metrics.compact .metric{padding:10px 12px}.metrics.compact .metric b{font-size:20px}.metrics.compact .metric span{font-size:10px}details.more>summary{cursor:pointer;font-weight:800;font-size:15px;color:#eaf7f1;list-style-position:outside}details.more[open]>summary{margin-bottom:10px}.pager{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}@media(max-width:850px){.metrics.compact{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style></head><body><div id="nav"></div><main><header class="hero2"><h1>Track record</h1><p>Every forecast this site has recorded, graded against what actually happened — including what it got wrong and what it missed.</p></header>
-<section class="answer" id="answer"><p class="lead" id="answerLead" role="status">Reading the record…</p><ul id="answerPoints"></ul></section><section class="metrics compact" aria-label="Key figures"><div class="metric"><span>Forecast windows recorded</span><b id="mTotal">—</b></div><div class="metric"><span>Window still open</span><b id="mOpen">—</b></div><div class="metric"><span>Closed, never checked</span><b id="mAwaiting">—</b></div><div class="metric"><span>Matured, nothing to grade against</span><b id="mUngradeable">—</b></div><div class="metric"><span>Graded so far</span><b id="mGraded">—</b></div><div class="metric"><span>Verified</span><b id="mVerified">—</b></div><div class="metric"><span>Partially verified</span><b id="mPartial">—</b></div><div class="metric"><span>False alarms</span><b id="mFalse">—</b></div><div class="metric"><span>Events missed entirely</span><b id="mMissed">—</b></div><div class="metric"><span>Not gradeable as predictions</span><b id="mNotPrediction">—</b></div></section><details class="section more"><summary>What these figures include</summary><p class="note" id="honesty"></p></details>
-<div class="split"><section class="section"><h2>✓ Predictions verified</h2><div id="verifiedList" class="empty">Loading…</div></section><section class="section"><h2>⚠ Significant events missed</h2><div id="missedList" class="empty">Loading…</div></section></div>
-<section class="section"><h2>Observed disasters</h2><p class="note">Every significant observed disaster on record, including the ones nothing forecast. Where no scan covering that hazard and moment is recorded, the reason cannot be established either way, and it says so rather than being attributed to coverage or to forecasting.</p><div class="tablewrap"><table class="ledger"><thead><tr><th>Disaster</th><th>Hazard</th><th>Where</th><th>Onset</th><th>Deaths</th><th>Displaced</th><th>Evidence</th><th>Predicted?</th><th>Why not</th></tr></thead><tbody id="obsRows"></tbody></table></div></section>
-<section class="section"><h2>Every recorded forecast</h2><p class="note">Newest first. Search, filter or sort; 25 are shown at a time.</p><div class="controls"><input id="q" aria-label="Search ID, country, region or hazard" placeholder="Search ID, country, region or hazard"><select id="outcome" aria-label="Filter by verdict"><option value="">All verdicts</option><option value="VERIFIED">Verified prediction</option><option value="PARTIAL">Partially verified</option><option value="FALSE_ALARM">False alarm</option><option value="MISSED">Missed event</option><option value="COVERAGE_FAILURE">Coverage failure</option><option value="AWAITING">Awaiting verification</option><option value="UNGRADEABLE">Not gradeable</option><option value="NOT_A_PREDICTION">Not a prediction</option><option value="OPEN">Window still open</option></select><select id="sortBy" aria-label="Sort the ledger"></select><select id="severity" aria-label="Filter by observed severity"><option value="">All severities</option><option>CATASTROPHIC</option><option>EXTREME</option><option>SEVERE</option><option>SIGNIFICANT</option><option>MODERATE</option><option>MINOR</option></select></div><div class="tablewrap"><table class="ledger"><thead><tr><th>Record</th><th>Occurred?</th><th>Verdict</th><th>Forecast class</th><th>Observed severity</th><th>Hazard / geography</th><th>Freeze time</th><th>Frozen target window</th><th>Threshold</th><th>Observed event</th><th>Evidence</th></tr></thead><tbody id="rows"></tbody></table></div><div class="pager"><span id="pagerNote" class="note"></span> <button type="button" class="btn" id="pageMore" hidden>Show 25 more</button> <button type="button" class="btn" id="pageAll" hidden>Show all</button></div></section>
-<details class="section more"><summary>Predicted against observed, field by field</summary><p class="note">Every graded prediction, with what was claimed beside what was found.</p><div id="cmpList" class="empty">Loading…</div></details><details class="section more"><summary>Full breakdown: predictions, conditional outlooks and missed disasters</summary><p class="note">A forecast counts as a prediction only if it was frozen before the hazard it names was observed. An outlook about a flood already under way, an aftershock outlook following an earthquake, and a benchmark written after its own window opened are all real forecasts, and none is a prediction of something nobody knew about. The two are reported separately below and are never added together.</p><div class="metrics"><div class="metric"><span>Sample size — recorded forecast windows</span><b id="mSample">—</b></div><div class="metric"><span>Recorded windows span</span><b id="mPeriod">—</b></div><div class="metric"><span>Earliest prospective forecast</span><b id="mEarliest">—</b></div><div class="metric"><span>Last updated</span><b id="mUpdated">—</b></div></div><h3 style="margin:18px 0 6px">Independent prediction performance</h3><div class="metrics"><div class="metric"><span>Independent predictions</span><b id="ipTotal">—</b></div><div class="metric"><span>Matured and gradeable</span><b id="ipMatured">—</b></div><div class="metric"><span>Hits</span><b id="ipHit">—</b></div><div class="metric"><span>Partial hits</span><b id="ipPartial">—</b></div><div class="metric"><span>False positives</span><b id="ipMiss">—</b></div><div class="metric"><span>Pending</span><b id="ipPending">—</b></div><div class="metric"><span>Invalid / post-event</span><b id="ipInvalid">—</b></div><div class="metric"><span>Precision</span><b id="ipPrecision">—</b></div><div class="metric"><span>Recall</span><b id="ipRecall">—</b></div><div class="metric"><span>F1 verification score</span><b id="ipF1">—</b></div></div><p class="note" id="ipNote"></p><h3 style="margin:18px 0 6px">Conditional / continuation outlook performance</h3><p class="note">These describe hazards already reported, or sequences that follow an observed event. They are graded, and they are never counted as predictions.</p><div class="metrics"><div class="metric"><span>Conditional outlooks</span><b id="cdTotal">—</b></div><div class="metric"><span>Matured and gradeable</span><b id="cdMatured">—</b></div><div class="metric"><span>Hits</span><b id="cdHit">—</b></div><div class="metric"><span>Partial hits</span><b id="cdPartial">—</b></div><div class="metric"><span>False positives</span><b id="cdMiss">—</b></div><div class="metric"><span>Pending</span><b id="cdPending">—</b></div><div class="metric"><span>Precision</span><b id="cdPrecision">—</b></div></div><p class="note" id="cdNote"></p><h3 style="margin:18px 0 6px">Observed disasters and what was missed</h3><div class="metrics"><div class="metric"><span>Significant observed disasters</span><b id="obTotal">—</b></div><div class="metric"><span>False negatives</span><b id="obFalseNeg">—</b></div><div class="metric"><span>Coverage failures</span><b id="obCoverage">—</b></div><div class="metric"><span>Forecast failures</span><b id="obForecast">—</b></div><div class="metric"><span>Cannot be established</span><b id="obUnknown">—</b></div><div class="metric"><span>Hazard not forecastable</span><b id="obNotForecastable">—</b></div><div class="metric"><span>No forecasting input</span><b id="obNoInput">—</b></div></div><p class="note" id="obNote"></p><h3 style="margin:18px 0 6px">How these numbers are computed</h3><p class="note" id="methodNote"></p><p class="note" id="classBreak"></p><h3 style="margin:18px 0 6px">Classification standard</h3><p class="note">Four independent dimensions are retained for each record: observed severity, forecast outcome, coverage status and evidence confidence.</p><div class="legend"><span class="pill risk risk-extreme">EXTREME EVENT</span><span class="pill risk risk-severe">SEVERE EVENT</span><span class="pill risk risk-high">SIGNIFICANT EVENT</span><span class="pill verified">VERIFIED PREDICTION</span><span class="pill partial">PARTIALLY VERIFIED</span><span class="pill alarm">FALSE ALARM</span><span class="pill missed">MISSED EVENT</span><span class="pill coverage">COVERAGE FAILURE</span><span class="pill ungradeable">NOT GRADEABLE</span><span class="pill notprediction">NOT A PREDICTION</span></div><p class="note">Precision answers “when the system predicted an event, how often was it right?” Recall answers “of significant disasters that actually occurred, how many had a qualifying frozen prediction beforehand?” Pending forecasts are excluded until their target window matures. Signal-derived outlooks are not credited merely because the source warning already existed.</p></details></main><script src="/search.js"></script><script src="/observed-model.js"></script><script src="/verification-model.js"></script><script src="/verdicts.js"></script><script src="/hazard-model.js"></script><script src="/risk.js"></script><script src="/portal.js"></script><script>
+</style></head><body><div id="nav"></div><main><header class="hero2"><h1>Track record</h1><p>How the forecasts we have recorded turned out. This includes the ones we got wrong, the ones we could not check and the disasters we missed.</p></header>
+<section class="answer" id="answer"><p class="lead" id="answerLead" role="status">Loading the track record…</p><ul id="answerPoints"></ul></section><section class="metrics compact" aria-label="Key figures"><div class="metric"><span>Forecasts recorded</span><b id="mTotal">—</b></div><div class="metric"><span>Still running</span><b id="mOpen">—</b></div><div class="metric"><span>Ended, not checked yet</span><b id="mAwaiting">—</b></div><div class="metric"><span>Ended, cannot be checked</span><b id="mUngradeable">—</b></div><div class="metric"><span>Checked so far</span><b id="mGraded">—</b></div><div class="metric"><span>Correct</span><b id="mVerified">—</b></div><div class="metric"><span>Partly correct</span><b id="mPartial">—</b></div><div class="metric"><span>Wrong (false alarm)</span><b id="mFalse">—</b></div><div class="metric"><span>Missed events</span><b id="mMissed">—</b></div><div class="metric"><span>No proof made in time</span><b id="mNotPrediction">—</b></div></section><details class="section more"><summary>What these figures mean</summary><p class="note" id="honesty"></p></details>
+<div class="split"><section class="section"><h2>✓ Forecasts that came true</h2><div id="verifiedList" class="empty">Loading…</div></section><section class="section"><h2>⚠ Significant events we missed</h2><div id="missedList" class="empty">Loading…</div></section></div>
+<section class="section"><h2>Significant disasters on record</h2><p class="note">Every significant disaster in our record, including the ones we did not forecast. If we have no record of checking that place at the time, we cannot say why a disaster was missed. The table says so, rather than blaming our checks or our forecasts.</p><div class="tablewrap"><table class="ledger"><thead><tr><th>Disaster</th><th>Type</th><th>Where</th><th>Started</th><th>Deaths</th><th>Displaced</th><th>Evidence</th><th>Forecast in advance?</th><th>Why not</th></tr></thead><tbody id="obsRows"></tbody></table></div></section>
+<section class="section"><h2>All recorded forecasts</h2><p class="note">Newest first. You can search, filter or sort. We show 25 at a time.</p><div class="controls"><input id="q" aria-label="Search by ID, country, region or hazard" placeholder="Search by ID, country, region or hazard"><select id="outcome" aria-label="Filter by result"><option value="">All results</option><option value="VERIFIED">Correct</option><option value="PARTIAL">Partly correct</option><option value="FALSE_ALARM">Wrong (false alarm)</option><option value="MISSED">Missed event</option><option value="COVERAGE_FAILURE">Missed: not checking there</option><option value="AWAITING">Not checked yet</option><option value="UNGRADEABLE">Cannot be checked</option><option value="NOT_A_PREDICTION">No proof it was made in time</option><option value="OPEN">Still running</option></select><select id="sortBy" aria-label="Sort the forecasts"></select><select id="severity" aria-label="Filter by actual severity"><option value="">All severities</option><option value="CATASTROPHIC">Catastrophic</option><option value="EXTREME">Extreme</option><option value="SEVERE">Severe</option><option value="SIGNIFICANT">Significant</option><option value="MODERATE">Moderate</option><option value="MINOR">Minor</option></select></div><div class="tablewrap"><table class="ledger"><thead><tr><th>Forecast</th><th>Did it happen?</th><th>Result</th><th>Type of forecast</th><th>Actual severity</th><th>Hazard and place</th><th>Locked on</th><th>Forecast period</th><th>What counted as a match</th><th>Matching event</th><th>Evidence</th></tr></thead><tbody id="rows"></tbody></table></div><div class="pager"><span id="pagerNote" class="note"></span> <button type="button" class="btn" id="pageMore" hidden>Show 25 more</button> <button type="button" class="btn" id="pageAll" hidden>Show all</button></div></section>
+<details class="section more"><summary>What we forecast compared with what happened</summary><p class="note">Each checked forecast, with what we forecast next to what we found.</p><div id="cmpList" class="empty">Loading…</div></details><details class="section more"><summary>Full details: advance forecasts, other forecasts and missed disasters</summary><p class="note">A forecast counts as made in advance only if we recorded it before the danger it names was known. Other forecasts are made later: about a flood that is already happening, about aftershocks after an earthquake, or as a test case written after its period began. These are real forecasts, but they do not foresee something nobody knew about. We report the two kinds separately and never add them together.</p><div class="metrics"><div class="metric"><span>Forecasts recorded</span><b id="mSample">—</b></div><div class="metric"><span>Forecast periods covered</span><b id="mPeriod">—</b></div><div class="metric"><span>First advance forecast</span><b id="mEarliest">—</b></div><div class="metric"><span>Last updated</span><b id="mUpdated">—</b></div></div><h3 style="margin:18px 0 6px">How our advance forecasts did</h3><div class="metrics"><div class="metric"><span>Advance forecasts</span><b id="ipTotal">—</b></div><div class="metric"><span>Checked</span><b id="ipMatured">—</b></div><div class="metric"><span>Correct</span><b id="ipHit">—</b></div><div class="metric"><span>Partly correct</span><b id="ipPartial">—</b></div><div class="metric"><span>Wrong (false alarm)</span><b id="ipMiss">—</b></div><div class="metric"><span>Still running or cannot be checked</span><b id="ipPending">—</b></div><div class="metric"><span>No proof made in time</span><b id="ipInvalid">—</b></div><div class="metric"><span>Precision: how often right</span><b id="ipPrecision">—</b></div><div class="metric"><span>Recall: share of disasters forecast</span><b id="ipRecall">—</b></div><div class="metric"><span>F1 score: the two combined</span><b id="ipF1">—</b></div></div><p class="note" id="ipNote"></p><h3 style="margin:18px 0 6px">How our other forecasts did</h3><p class="note">These forecasts are about a danger already reported, or about what follows an event that already happened, such as aftershocks. We check them too, but never count them as advance forecasts.</p><div class="metrics"><div class="metric"><span>Other forecasts</span><b id="cdTotal">—</b></div><div class="metric"><span>Checked</span><b id="cdMatured">—</b></div><div class="metric"><span>Correct</span><b id="cdHit">—</b></div><div class="metric"><span>Partly correct</span><b id="cdPartial">—</b></div><div class="metric"><span>Wrong (false alarm)</span><b id="cdMiss">—</b></div><div class="metric"><span>Still running or cannot be checked</span><b id="cdPending">—</b></div><div class="metric"><span>Precision: how often right</span><b id="cdPrecision">—</b></div></div><p class="note" id="cdNote"></p><h3 style="margin:18px 0 6px">Disasters and what we missed</h3><div class="metrics"><div class="metric"><span>Significant disasters</span><b id="obTotal">—</b></div><div class="metric"><span>Not forecast in advance</span><b id="obFalseNeg">—</b></div><div class="metric"><span>Missed: not checking there</span><b id="obCoverage">—</b></div><div class="metric"><span>Missed by our forecasts</span><b id="obForecast">—</b></div><div class="metric"><span>Reason unknown</span><b id="obUnknown">—</b></div><div class="metric"><span>Cannot be forecast</span><b id="obNotForecastable">—</b></div><div class="metric"><span>No advance source</span><b id="obNoInput">—</b></div></div><p class="note" id="obNote"></p><h3 style="margin:18px 0 6px">How we work out these numbers</h3><p class="note" id="methodNote"></p><p class="note" id="classBreak"></p><h3 style="margin:18px 0 6px">How we label results</h3><p class="note">For each forecast or event, we keep 4 separate labels: how severe the event was, how the forecast turned out, whether we were checking that place, and how strong the evidence is.</p><div class="legend"><span class="pill risk risk-extreme">Extreme event</span><span class="pill risk risk-severe">Severe event</span><span class="pill risk risk-high">Significant event</span><span class="pill verified">Correct</span><span class="pill partial">Partly correct</span><span class="pill alarm">Wrong (false alarm)</span><span class="pill missed">Missed event</span><span class="pill coverage">Missed: not checking there</span><span class="pill ungradeable">Cannot be checked</span><span class="pill notprediction">No proof it was made in time</span></div><p class="note">Precision answers this question: when we forecast an event, how often did it happen? Recall answers this one: of the significant disasters that really happened, how many had a forecast that counts, made in advance? Forecasts that are still running are left out until their period ends. A forecast based on an official warning gets no credit just because the warning already existed.</p></details></main><script src="/search.js"></script><script src="/observed-model.js"></script><script src="/verification-model.js"></script><script src="/verdicts.js"></script><script src="/hazard-model.js"></script><script src="/risk.js"></script><script src="/portal.js"></script><script>
 nav.innerHTML=PND.nav('Verification');let records=[];
 /* Set false when a record grading depends on could not be read, so the rows
    say so rather than showing a state reached without it. */
@@ -18,17 +18,28 @@ const LEDGER_SORTS=['recorded','windowEnd','observed','hazard','country','title'
    these rows do not have, so a CATASTROPHIC missed event ranked 0. */
 const OBSERVED_RANK={CATASTROPHIC:6,EXTREME:5,SEVERE:4,SIGNIFICANT:3,MODERATE:2,MINOR:1};
 const observedRank=r=>OBSERVED_RANK[String(r&&r.observedSeverity||'').toUpperCase()]||0;
-PND.SORT_DEFS.recorded={label:'Recorded — newest first',cmp:(a,b)=>Date.parse(b.recordedAt||b.observedAt||0)-Date.parse(a.recordedAt||a.observedAt||0)};
+PND.SORT_DEFS.recorded={label:'Date recorded — newest first',cmp:(a,b)=>Date.parse(b.recordedAt||b.observedAt||0)-Date.parse(a.recordedAt||a.observedAt||0)};
 /* Observed-event rows store their classification in `hazard`, forecast rows in
    `type`. The shared `type` comparator reads only the latter, so every observed
    row sorted as a missing value and sat behind the forecasts. */
 PND.SORT_DEFS.hazard={label:'Hazard type — A to Z',cmp:(a,b)=>String(a.hazard||a.type||'\uffff').toLowerCase().localeCompare(String(b.hazard||b.type||'\uffff').toLowerCase())};
-PND.SORT_DEFS.observed={label:'Observed severity — highest first',cmp:(a,b)=>observedRank(b)-observedRank(a)||Date.parse(b.recordedAt||b.observedAt||0)-Date.parse(a.recordedAt||a.observedAt||0)};const esc=PND.esc.bind(PND);/* This page kept its own spelling of the verdicts while the ledger used
+PND.SORT_DEFS.observed={label:'Actual severity — highest first',cmp:(a,b)=>observedRank(b)-observedRank(a)||Date.parse(b.recordedAt||b.observedAt||0)-Date.parse(a.recordedAt||a.observedAt||0)};const esc=PND.esc.bind(PND);/* This page kept its own spelling of the verdicts while the ledger used
    another. Nothing matched, so five graded false alarms and two missed
    events were counted as none and the page published 100% recall. The
    vocabulary now lives in verdicts.js and both spellings map to it. */
 const V=window.PNDVerdicts;const statusLabel=s=>V.LABELS[s]||s;const cls=s=>V.CSS[s]||'';
 const occurredText=s=>V.OCCURRED[s]||'Unknown';
+/* Display only: the ledger's own words stay as they are in the data. */
+const sentence=v=>{const t=String(v||'');return t?t.charAt(0).toUpperCase()+t.slice(1).toLowerCase():''};
+/* The type of forecast, in the words the hazard model publishes for it. */
+const classLabel=k=>{const d=k&&window.PNDHazards&&PNDHazards.FORECAST_CLASSES&&PNDHazards.FORECAST_CLASSES[k];return d?d.label:(k||'')};
+/* The engine writes its reasons with raw timestamps; a reader gets the shared date format. */
+const niceDates=t=>String(t||'').replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})/g,m=>PND.fmtDate(m));
+const pl=(x,one,many)=>x+' '+(x===1?one:many);
+/* A missed event from the hand ledger is not a forecast, so it has no type of forecast. */
+const isForecastRow=r=>!!(r&&(r.targetStart||r.targetEnd||r.forecastKind||r.forecastClass));
+/* The hand ledger's coverage values, said as an answer to "was the place checked?". */
+const COVERED={SCANNED:'Yes',UNVERIFIABLE_NO_SCAN_LEDGER:'We cannot tell: no record of checks'};
 /* A verdict belongs to the claim it graded, and a claim is all of its frozen
    terms. Two rows can share an id and a window start - that is what makes
    them a revision rather than a re-issue - and keying on that pair collapsed
@@ -45,10 +56,10 @@ const claimId=r=>(window.PNDHazards&&PNDHazards.claimKey)?PNDHazards.claimKey(r)
    elsewhere carried the shape too. A level with nothing recorded is not a
    level: it stays unrated rather than borrowing the bottom of the scale. */
 const sevPill=(v,blank)=>window.PNDRisk
-  ?PNDRisk.badge(v||'',{text:v||blank,className:'pill'})
-  :`<span class="pill">${esc(v||blank)}</span>`;
+  ?PNDRisk.badge(v||'',{text:v?sentence(v):blank,className:'pill'})
+  :`<span class="pill">${esc(v?sentence(v):blank)}</span>`;
 
-function card(r){return `<div style="padding:12px 0;border-bottom:1px solid #17372e" class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><div>${sevPill(r.observedSeverity,'NOT YET OBSERVED')} <span class="pill ${cls(r._state||r.status)}">${esc(statusLabel(r._state||r.status))}</span></div><div class="status-title" style="margin-top:8px">${esc(r.id||r.eventId||'Observed event')} · ${esc(r.region||r.country||'Global')}</div><div class="sub">${esc(r.hazard||r.type||'Natural hazard')} · ${esc(r.evidenceConfidence||'Pending evidence')}</div></div>`}
+function card(r){return `<div style="padding:12px 0;border-bottom:1px solid #17372e" class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><div>${sevPill(r.observedSeverity,'Severity not recorded')} <span class="pill ${cls(r._state||r.status)}">${esc(statusLabel(r._state||r.status))}</span></div><div class="status-title" style="margin-top:8px">${esc(r.id||r.eventId||'Observed event')} · ${esc(PND.placeOf(r,'Global'))}</div><div class="sub">${esc(r.hazard||r.type||'Natural hazard')} · ${esc(r.evidenceConfidence?'Evidence: '+sentence(r.evidenceConfidence):'Evidence not rated yet')}</div></div>`}
 /* The ledger is 500 rows and growing. All are rendered - search, filters and
    the tests read every one - but a reader is shown 25 at a time. */
 const PAGE=25;let shown=PAGE,lastFilter='';
@@ -65,33 +76,34 @@ rows.innerHTML=list.map((r,i)=>{const v2=vd(r);
  /* A compound claim is graded on the tolerance of the hazard observed, so
     showing one number would hide the criterion the other half was judged by. */
  const tolText=t=>{const by=t.geographyToleranceKmByHazard||{},ks=Object.keys(by);
-  return ks.length>1?ks.map(k=>by[k]+' km '+k).join(' · '):(t.geographyToleranceKm+' km');};
- const thr=v2&&v2.originalThresholds?(tolText(v2.originalThresholds)+' · significant '+(v2.originalGeography&&v2.originalGeography.country||'—')):'—';
- const matched=v2&&v2.observedEventIds&&v2.observedEventIds.length?v2.observedEventIds.join(', '):(v2?(v2.gradeable?'None observed':'Not gradeable'):'—');
- return `<tr${i>=shown?' hidden':''} class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><td><b>${esc(r.id||r.eventId||'Observed')}</b><div class="sub">${esc(r.title||'')}</div></td><td><b>${gradingAvailable?esc(occurredText(r._state)):'Unavailable'}</b></td><td>${gradingAvailable?`<span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span>`:'<span class="pill ungradeable">Unavailable</span><div class="sub">The record this window would be graded against could not be read, so no verdict is shown for it.</div>'}${r._ledgerState?`<div class="sub">Graded by hand as ${esc(statusLabel(r._ledgerState))}; the engine’s verdict is the one counted.</div>`:''}${r._engineUnreproduced?'<div class="sub">Recorded by hand. The engine cannot reproduce this from the written record of observed disasters, so no rate on this page was computed from it.</div>':''}${v2&&!v2.gradeable&&v2.classificationReason?`<div class="sub">${esc(v2.classificationReason)}</div>`:''}</td><td>${esc(v2&&v2.forecastClass||V.forecastClassOf(r)||'—')}</td><td>${sevPill(r.observedSeverity,'NOT OBSERVED')}</td><td>${esc(r.hazard||r.type||'—')}<div class="sub">${esc([r.region,r.country].filter(Boolean).join(' · '))}</div></td><td>${esc(r.freezeTimestamp?PND.fmtDate(r.freezeTimestamp):'—')}</td><td>${r.targetStart?esc(PND.windowText(r)):'Observed event'}</td><td class="sub">${esc(thr)}</td><td class="sub">${esc(matched)}</td><td>${esc(r.evidenceConfidence||'Not yet checked')}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No records match these filters.</td></tr>'}
+  return ks.length>1?ks.map(k=>by[k]+' km for '+k.replace(/-/g,' ')).join(', '):(t.geographyToleranceKm+' km');};
+ const thrCountry=v2&&v2.originalGeography&&v2.originalGeography.country;
+ const thr=v2&&v2.originalThresholds?('A significant event within '+tolText(v2.originalThresholds)+(thrCountry?' ('+thrCountry+')':'')):'—';
+ const matched=v2&&v2.observedEventIds&&v2.observedEventIds.length?v2.observedEventIds.join(', '):(v2?(v2.gradeable?'None found':(v2.ungradeableReason==='WINDOW_STILL_OPEN'?'Too early to say':'Cannot be checked')):'—');
+ return `<tr${i>=shown?' hidden':''} class="${['CATASTROPHIC','EXTREME','SEVERE'].includes(r.observedSeverity)?'serious':''}"><td><b>${esc(r.id||r.eventId||'Observed')}</b><div class="sub">${esc(PND.titleOf(r))}</div></td><td><b>${gradingAvailable?esc(occurredText(r._state)):'Unavailable'}</b></td><td>${gradingAvailable?`<span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span>`:'<span class="pill ungradeable">Unavailable</span><div class="sub">We could not load the record needed to check this forecast, so no result is shown.</div>'}${r._ledgerState?`<div class="sub">Checked by hand as “${esc(statusLabel(r._ledgerState))}”. The automatic result is the one we count.</div>`:''}${r._engineUnreproduced?'<div class="sub">Checked by hand. Our automatic checker cannot repeat this check from our record of disasters, so no rate on this page uses it.</div>':''}${v2&&!v2.gradeable&&v2.classificationReason?`<div class="sub">${esc(niceDates(v2.classificationReason))}</div>`:''}</td><td>${esc(isForecastRow(r)?(classLabel(v2&&v2.forecastClass||V.forecastClassOf(r))||'—'):'—')}</td><td>${sevPill(r.observedSeverity,'Not recorded')}</td><td>${esc(r.hazard||r.type||'—')}<div class="sub">${esc([r.region,r.country].filter(Boolean).join(' · '))}</div></td><td>${esc(r.freezeTimestamp?PND.fmtDate(r.freezeTimestamp):'—')}</td><td>${r.targetStart?esc(PND.windowText(r)):'An event, not a forecast'}</td><td class="sub">${esc(thr)}</td><td class="sub">${esc(matched)}</td><td>${esc(r.evidenceConfidence?sentence(r.evidenceConfidence):'Not checked yet')}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No forecasts match these filters.</td></tr>'}
 /* Predicted against observed, field by field, for every record that has been
    graded. This is the comparison the ledger was always able to support and
    the page never showed: what was claimed, beside what was found. */
 function comparisons(list){const graded=list.filter(r=>['VERIFIED','PARTIAL','FALSE_ALARM'].includes(r._state));
- if(!graded.length)return '<div class="empty">No prediction has been graded yet.</div>';
+ if(!graded.length)return '<div class="empty">No forecast has been checked yet.</div>';
  return graded.map(r=>{const crit=r.criteria||{};
   const critRows=Object.keys(crit).map(k=>`<tr><td>${esc(k.replace(/([A-Z])/g,' $1').toLowerCase())}</td><td>${crit[k]?'met':'not met'}</td></tr>`).join('');
-  return `<article class="cmp"><h3>${esc(r.id)} · ${esc(r.country||r.region||'')}</h3>
-  <div><span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span> <b>Occurred: ${esc(occurredText(r._state))}</b></div>
+  return `<article class="cmp"><h3>${esc(r.id)} · ${esc(PND.placeOf(r,''))}</h3>
+  <div><span class="pill ${cls(r._state)}">${esc(statusLabel(r._state))}</span> <b>Did it happen? ${esc(occurredText(r._state))}</b></div>
   <div class="split" style="margin-top:10px">
-   <div><h4>What was predicted</h4><table class="cmptbl">
+   <div><h4>What we forecast</h4><table class="cmptbl">
     <tr><td>Hazard</td><td>${esc(r.type||r.hazard||'—')}</td></tr>
-    <tr><td>Area</td><td>${esc(r.region||r.country||'—')}</td></tr>
-    <tr><td>Window</td><td>${esc(PND.windowText(r))}</td></tr>
-    <tr><td>Level claimed</td><td>${esc(r.severity||r.alert||'—')}</td></tr>
+    <tr><td>Area</td><td>${esc(PND.placeOf(r,'—'))}</td></tr>
+    <tr><td>Forecast period</td><td>${esc(PND.windowText(r))}</td></tr>
+    <tr><td>Level forecast</td><td>${esc(r.severity||r.alert||'—')}</td></tr>
     <tr><td>Confidence</td><td>${esc(r.confidence||'—')}</td></tr>
-    <tr><td>Basis</td><td>${esc(r.evidence||'—')}</td></tr>
-    <tr><td>Grading rule</td><td>${esc(r.verificationRule||'—')}</td></tr></table></div>
+    <tr><td>Based on</td><td>${esc(r.evidence||'—')}</td></tr>
+    <tr><td>How it is checked</td><td>${esc(r.verificationRule||'—')}</td></tr></table></div>
    <div><h4>What actually happened</h4><table class="cmptbl">
-    <tr><td>Observed severity</td><td>${esc(r.observedSeverity||'Nothing qualifying observed')}</td></tr>
-    <tr><td>Evidence strength</td><td>${esc(r.evidenceConfidence||'—')}</td></tr>
-    <tr><td>Scanned?</td><td>${esc(r.coverageStatus||'—')}</td></tr>
-    <tr><td>Finding</td><td>${esc(r.summary||'—')}</td></tr>
+    <tr><td>Actual severity</td><td>${esc(r.observedSeverity?sentence(r.observedSeverity):'Not recorded')}</td></tr>
+    <tr><td>Evidence strength</td><td>${esc(r.evidenceConfidence?sentence(r.evidenceConfidence):'—')}</td></tr>
+    <tr><td>Was the place checked?</td><td>${esc(COVERED[r.coverageStatus]||(r.coverageStatus?sentence(String(r.coverageStatus).replace(/_/g,' ')):'—'))}</td></tr>
+    <tr><td>What we found</td><td>${esc(r.summary||'—')}</td></tr>
     ${critRows}</table></div></div></article>`}).join('')}
 /* Read, or said to be unreadable - never quietly turned into an empty one.
    A body that is not 200 is not a record, and a JSON parse that fails on an
@@ -120,10 +132,12 @@ readLedger('/data/outlook-ledger.json'),readLedger('/data/verification-ledger.js
    nothing happened. It was not reporting an empty record; it had not read
    one. The failure is carried through and said out loud instead. */
 readLedger('/data/observed-disasters.json'),readLedger('/data/scan-ledger.json')]);
-const ledgerUnavailable=[l0&&l0.__unavailable?'the record of forecast windows':null,
-  v0&&v0.__unavailable?'the record of hand-written verdicts':null,
-  obsLedger&&obsLedger.__unavailable?'the record of observed disasters':null,
-  scanLedger&&scanLedger.__unavailable?'the record of what was scanned':null].filter(Boolean);
+const ledgerUnavailable=[l0&&l0.__unavailable?'our record of forecasts':null,
+  v0&&v0.__unavailable?'our record of hand-checked results':null,
+  obsLedger&&obsLedger.__unavailable?'our record of disasters':null,
+  scanLedger&&scanLedger.__unavailable?'our record of which places we checked':null].filter(Boolean);
+/* "A, B and C", for naming the records that could not be loaded. */
+const listText=(a,conj)=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' '+conj+' '+a[a.length-1];
 /* Whatever did load, in the shape the rest of this function expects. A record
    that failed contributes nothing and is named above; it is never read as an
    empty one, because canGrade below stops before any figure is computed. */
@@ -202,13 +216,15 @@ records.sort((a,b)=>Date.parse(b.recordedAt||b.observedAt||0)-Date.parse(a.recor
 /* State plainly how little of this record has been checked, rather than
    letting a rate computed from six records read as a track record. */
 const distinct=new Set(l.map(x=>x.id)).size;
+/* How many were recorded, said once and used by both branches below. */
+const recordedText=pl(l.length,'forecast has','forecasts have')+' been recorded. We record a forecast again each time we update it, so '+(l.length===1?'it comes':'these come')+' from '+pl(distinct,'different forecast','different forecasts')+'. ';
 /* Said first, because every figure under it is computed from records this
    page may not have been able to read. */
 if(!canGrade){
   const warn=document.createElement('p');
   warn.className='stale';warn.id='ledgerError';warn.setAttribute('role','alert');
-  warn.textContent='Verification data unavailable: '+ledgerUnavailable.join(' and ')+
-    ' could not be loaded, so no figure on this page is a statement about what happened. '+
+  warn.textContent='Some track record data could not be loaded: '+listText(ledgerUnavailable,'and')+
+    '. So no figure on this page tells you what happened. '+
     'This is not the same as nothing having been recorded.';
   /* Above the answer, where it is read first - not inside an expander. */
   const at=document.getElementById('answer');at.parentNode.insertBefore(warn,at);
@@ -224,23 +240,20 @@ if(!canGrade){
      zero: "0 forecast windows have been recorded" is a claim about the
      record, and this page has not read it. */
   mTotal.textContent=outlookLedgerRead?l.length:'Unavailable';
-  mSample.textContent=outlookLedgerRead?l.length+' windows':'Unavailable';
+  mSample.textContent=outlookLedgerRead?pl(l.length,'forecast','forecasts'):'Unavailable';
   mUpdated.textContent=PND.fmtDate(new Date().toISOString());
   const os=l.map(r=>Date.parse(r.targetStart||'')).filter(Number.isFinite);
   const oe=l.map(r=>Date.parse(r.targetEnd||'')).filter(Number.isFinite);
   mPeriod.textContent=!outlookLedgerRead?'Unavailable':(os.length&&oe.length
-   ?PND.fmtDate(new Date(Math.min(...os)).toISOString())+' — '+PND.fmtDate(new Date(Math.max(...oe)).toISOString())
-   :'No recorded windows');
+   ?'From '+PND.fmtDate(new Date(Math.min(...os)).toISOString())+' to '+PND.fmtDate(new Date(Math.max(...oe)).toISOString())
+   :'No forecasts recorded');
   mEarliest.textContent='Unavailable';
-  const cannot='This page could not read '+ledgerUnavailable.join(' or ')+
-    ', so nothing here has been graded and no figure below is a statement about what happened. Reload, or try again later.';
-  honesty.textContent=(outlookLedgerRead
-    ?l.length+' forecast windows have been recorded ('+distinct+
-      ' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '
-    :'')+cannot;
+  const cannot='We could not load '+listText(ledgerUnavailable,'or')+
+    '. So nothing here has been checked, and no figure below tells you what happened. Reload the page or try again later.';
+  honesty.textContent=(outlookLedgerRead?recordedText:'')+cannot;
   ipNote.textContent=cannot;cdNote.textContent=cannot;obNote.textContent=cannot;
   answerLead.textContent='The track record could not be loaded.';answerPoints.innerHTML='<li>'+esc(cannot)+'</li>';
-  methodNote.textContent='No grading was performed: '+cannot;
+  methodNote.textContent='Nothing was checked. '+cannot;
   classBreak.textContent='';
   obsRows.innerHTML='<tr><td colspan="9" class="empty">'+esc(cannot)+'</td></tr>';
   verifiedList.textContent=cannot;missedList.textContent=cannot;cmpList.textContent=cannot;
@@ -256,16 +269,16 @@ mFalse.textContent=t.falseAlarm;mMissed.textContent=t.missed;
 mUngradeable.textContent=t.ungradeable;mNotPrediction.textContent=t.notPrediction;
 const disagree=records.filter(r=>r._ledgerState).length;
 const unreproduced=records.filter(r=>r._engineUnreproduced).length;
-honesty.textContent=l.length+' forecast windows have been recorded ('+distinct+' distinct outlooks, since a rolling outlook is re-recorded each time it is re-issued). '
- +t.graded+' of them carry a verdict: '+(t.graded-unreproduced)+' graded by the verification engine'
- +(unreproduced?' and '+unreproduced+' recorded by hand, which the engine cannot reproduce from the written record of observed disasters and which are counted towards no rate on this page':'')+'. '
- +(t.ungradeable?t.ungradeable+' matured window(s) cannot be graded either way: nothing in the written record of observed disasters covers the hazard, place and moment they name, so an absence there would say nothing about what happened. ':'')
- +(t.notPrediction?t.notPrediction+' window(s) cannot be graded as predictions at all, because nothing establishes that they existed before the window they claim. ':'')
- +(t.awaiting?t.awaiting+' window(s) closed with no verdict of any kind, so they count towards nothing in either direction. ':'')
- +'Every rate on this page is shown with the number of records it was computed from; none of them is a track record yet. '+'Rates are reported under Forecast verification below, where predictions and conditional outlooks are kept apart.'
- +(disagree?' '+disagree+' window(s) were graded differently by hand; the engine\u2019s verdict is the one shown and counted, and the hand-recorded one is shown beside it.':'')
- +(joined.unattached.length?' '+joined.unattached.length+' verdict(s) could not be matched to a recorded window and are not counted.':'')
- +(t.unknown?' '+t.unknown+' record(s) carry a verdict this page does not recognise and are counted as ungraded.':'');
+honesty.textContent=recordedText
+ +pl(t.graded,'of them has','of them have')+' been checked. '+pl(t.graded-unreproduced,'was','were')+' checked automatically'
+ +(unreproduced?', and '+pl(unreproduced,'was checked by hand','were checked by hand')+'. Our automatic checker cannot repeat the hand checks from our own record of disasters, so they are not used in any rate on this page':'')+'. '
+ +(t.ungradeable?pl(t.ungradeable,'forecast has','forecasts have')+' ended but cannot be checked either way. Our record of disasters does not fully cover the hazard, place and time '+(t.ungradeable===1?'it names':'they name')+'. So a lack of reports there does not show that nothing happened. ':'')
+ +(t.notPrediction?pl(t.notPrediction,'forecast does','forecasts do')+' not count as made in advance at all, because nothing shows '+(t.notPrediction===1?'it was':'they were')+' made before the period '+(t.notPrediction===1?'it covers':'they cover')+'. ':'')
+ +(t.awaiting?pl(t.awaiting,'forecast','forecasts')+' ended without being checked, so '+(t.awaiting===1?'it counts':'they count')+' neither for nor against us. ':'')
+ +'Every rate on this page shows how many forecasts it is based on. None of them is based on enough forecasts to be a real track record yet. '+'The rates are under \u201cFull details\u201d below, where advance forecasts and other forecasts are kept apart.'
+ +(disagree?' '+pl(disagree,'forecast got','forecasts got')+' a different result when checked by hand. We show and count the automatic result, and show the hand result beside it.':'')
+ +(joined.unattached.length?' '+pl(joined.unattached.length,'hand-checked result','hand-checked results')+' could not be matched to a recorded forecast, so '+(joined.unattached.length===1?'it is':'they are')+' not counted.':'')
+ +(t.unknown?' '+pl(t.unknown,'forecast has','forecasts have')+' a result this page does not recognise. '+(t.unknown===1?'It is':'They are')+' counted as not checked.':'');
 const headlineIdx=preds.map((p,i)=>i).filter(i=>preds[i].forecastClass==='independent-prospective');
 const condIdx=preds.map((p,i)=>i).filter(i=>preds[i].forecastClass&&preds[i].forecastClass!=='independent-prospective'&&preds[i].forecastClass!=='invalid-post-event');
 /* Whether this hazard's onset can be forecast at all, read from the published
@@ -285,47 +298,48 @@ const recallIdx=obsEvents.map((e,i)=>i).filter(i=>VER.inRecallPeriod(obsEvents[i
 const sR=VER.score(headlineIdx.map(i=>verdicts[i]),recallIdx.map(i=>assessments[i]));
 const outsideRecall=obsEvents.length-recallIdx.length;
 const sC=VER.score(condIdx.map(i=>verdicts[i]),[]);
-const pct=(x,n,unit)=>x===null?'Not computable':(Math.round(x*1000)/10)+'% ('+n+' '+unit+')';
+const pct=(x,n,unit)=>x===null?'Cannot be calculated':(Math.round(x*1000)/10)+'% ('+n+' '+unit+')';
 
-mSample.textContent=l.length+' windows';
+mSample.textContent=pl(l.length,'forecast','forecasts');
 const onsets=l.map(r=>Date.parse(r.targetStart||'')).filter(Number.isFinite);
-mPeriod.textContent=onsets.length?PND.fmtDate(new Date(Math.min(...onsets)).toISOString())+' — '+PND.fmtDate(new Date(Math.max(...l.map(r=>Date.parse(r.targetEnd||0)).filter(Number.isFinite))).toISOString()):'No recorded windows';
+mPeriod.textContent=onsets.length?'From '+PND.fmtDate(new Date(Math.min(...onsets)).toISOString())+' to '+PND.fmtDate(new Date(Math.max(...l.map(r=>Date.parse(r.targetEnd||0)).filter(Number.isFinite))).toISOString()):'No forecasts recorded';
 const firstProspective=preds.filter(p=>p.forecastClass==='independent-prospective').map(p=>Date.parse(p.freezeTimestamp||p.recordedAt||'')).filter(Number.isFinite);
-mEarliest.textContent=firstProspective.length?PND.fmtDate(new Date(Math.min(...firstProspective)).toISOString()):'None issued yet';
+mEarliest.textContent=firstProspective.length?PND.fmtDate(new Date(Math.min(...firstProspective)).toISOString()):'None yet';
 mUpdated.textContent=PND.fmtDate(new Date().toISOString());
 
 ipTotal.textContent=headlineIdx.length;ipMatured.textContent=sH.eligibleMaturedPredictions;
 ipHit.textContent=sH.hit;ipPartial.textContent=sH.partial;ipMiss.textContent=sH.miss;
 ipPending.textContent=sH.pending;ipInvalid.textContent=verdicts.filter(x=>x.classification==='INVALID_POST_EVENT').length;
-ipPrecision.textContent=pct(sH.precision,sH.eligibleMaturedPredictions,'graded');ipRecall.textContent=pct(sR.recall,sR.significantObservedEvents,'disasters');ipF1.textContent=pct(sR.f1,sR.eligibleMaturedPredictions+' graded, '+sR.significantObservedEvents,'disasters');
-/* Why matured windows cannot be graded, in the engine's own reasons, largest first. One reason stretched over all of them told readers 305 windows fell outside the scans when the scans covered them and no source was complete for their hazard. */
-const WHY_NOT={ABSENCE_NOT_ESTABLISHABLE:' have no source this site reads that is complete for their hazard and place, so an absence there would say nothing about what happened',OBSERVED_RECORD_EMPTY:' had no scan on record to be graded against',OBSERVED_RECORD_STARTS_LATER:' open before the first completed scan of their hazard and place',OBSERVED_RECORD_NOT_YET_UPDATED:' close after the latest completed scan of their hazard and place',OBSERVED_RECORD_HAS_A_GAP:' fall in a gap of more than six hours between scans',SEQUENCE_ATTRIBUTION_AMBIGUOUS:' match activity that another outlook, following a different disaster, claims just as fully',CONTINUATION_EVIDENCE_UNAVAILABLE:' follow a disaster with nothing on record dated inside the window'};
-const whyNot=s=>{const b=s.ungradeableBy||{};return Object.keys(b).sort((x,y)=>b[y]-b[x]).map(k=>b[k]+(WHY_NOT[k]||' cannot be graded ('+k+')')).join('; ')};
+ipPrecision.textContent=pct(sH.precision,sH.eligibleMaturedPredictions,'checked');ipRecall.textContent=pct(sR.recall,sR.significantObservedEvents,'disasters');ipF1.textContent=pct(sR.f1,sR.eligibleMaturedPredictions+' checked, '+sR.significantObservedEvents,'disasters');
+/* Why matured windows cannot be graded, in the engine's own reasons, largest first. One reason stretched over all of them told readers 305 windows fell outside the scans when the scans covered them and no source was complete for their hazard.
+   Each reason is [said of one forecast, said of several], after its count. None may contain a full stop: the list ends at the first one. */
+const WHY_NOT={ABSENCE_NOT_ESTABLISHABLE:[' is for a hazard and place that none of our sources fully covers, so a lack of reports there proves nothing',' are for a hazard and place that none of our sources fully covers, so a lack of reports there proves nothing'],OBSERVED_RECORD_EMPTY:[' had no check of our sources on record to compare with',' had no check of our sources on record to compare with'],OBSERVED_RECORD_STARTS_LATER:[' started before we first checked its hazard and place',' started before we first checked their hazard and place'],OBSERVED_RECORD_NOT_YET_UPDATED:[' ended after our latest check of its hazard and place',' ended after our latest check of their hazard and place'],OBSERVED_RECORD_HAS_A_GAP:[' fell in a gap of more than 6 hours between our checks',' fell in a gap of more than 6 hours between our checks'],SEQUENCE_ATTRIBUTION_AMBIGUOUS:[' matched activity that fits a forecast about a different disaster just as well',' matched activity that fits a forecast about a different disaster just as well'],CONTINUATION_EVIDENCE_UNAVAILABLE:[' followed a disaster with no report dated inside the forecast period',' followed disasters with no report dated inside the forecast period']};
+const whyNot=s=>{const b=s.ungradeableBy||{};return Object.keys(b).sort((x,y)=>b[y]-b[x]).map(k=>b[k]+(WHY_NOT[k]?WHY_NOT[k][b[k]===1?0:1]:' cannot be checked ('+k+')')).join('; ')};
 /* A hit that could not have been a miss is still a hit, and is still not a
    data point for a rate. Said wherever a rate is published. */
 /* Once one window can be graded the rest still cannot, and still say why: a rate
    from 1 window beside 327 unexplained ones reads as the whole record. */
-const otherNote=s=>s.ungradeable?' Of '+s.ungradeable+' other matured window(s): '+whyNot(s)+'.':'';
-const outsideNote=s=>s.hitsOutsideCoverage?' '+s.hitsOutsideCoverage+' window(s) were borne out by a disaster on record but are not counted in this rate: for their hazard and place nothing could have established the opposite, so a rate including them would be made only of the outcomes that could be found.':'';
+const otherNote=s=>s.ungradeable?' Of '+pl(s.ungradeable,'other ended forecast','other ended forecasts')+': '+whyNot(s)+'.':'';
+const outsideNote=s=>s.hitsOutsideCoverage?' '+pl(s.hitsOutsideCoverage,'forecast came','forecasts came')+' true but '+(s.hitsOutsideCoverage===1?'is':'are')+' left out of this rate. For '+(s.hitsOutsideCoverage===1?'its':'their')+' hazard and place, we could never have found out if '+(s.hitsOutsideCoverage===1?'it':'they')+' had been wrong. Including them would count the successes but not the failures.':'';
 /* Said wherever recall leaves disasters out, so a smaller denominator is
    never mistaken for fewer disasters. */
-const recallNote=outsideRecall?' '+outsideRecall+' disaster(s) on record '+(since===null
-   ?'are listed below as unforecast and count towards no recall: nothing here was predicting when they happened.'
-   :'happened before the first independent prediction was recorded ('+PND.fmtDate(new Date(since).toISOString())+'), or have no recorded onset; they are listed below as unforecast and count towards no recall.'):'';
+const recallNote=outsideRecall?' '+pl(outsideRecall,'disaster on record','disasters on record')+' '+(since===null
+   ?(outsideRecall===1?'is':'are')+' listed as not forecast in the table of significant disasters. '+(outsideRecall===1?'It is':'They are')+' not used for recall (the share of real disasters we forecast in advance), because we were not making advance forecasts when '+(outsideRecall===1?'it':'they')+' happened.'
+   :'happened before our first advance forecast was recorded ('+PND.fmtDate(new Date(since).toISOString())+'), or '+(outsideRecall===1?'has':'have')+' no recorded start time. '+(outsideRecall===1?'It is':'They are')+' listed as not forecast in the table of significant disasters, and '+(outsideRecall===1?'is':'are')+' not used for recall (the share of real disasters we forecast in advance).'):'';
 ipNote.textContent=(headlineIdx.length===0
- ? 'No independent prospective prediction has ever been recorded here, so this project has no prediction hit rate and none is shown. Every forecast it has published describes a hazard already reported, follows an observed event, or is a benchmark written after its own window opened.'
+ ? 'We have never recorded a forecast made in advance. So we have no hit rate for advance forecasts, and we do not show one. Every forecast we have published was about a danger already reported, followed an event that had already happened, or was a test case written after its period began.'
  : (sH.eligibleMaturedPredictions===0
-   ? 'No independent prediction can be graded yet. Of '+sH.ungradeable+' matured window(s): '+whyNot(sH)+'.'+outsideNote(sH)
-   : 'Computed from '+sH.eligibleMaturedPredictions+' matured prediction(s). Small samples move a long way on one record.'+otherNote(sH)+outsideNote(sH)))+recallNote;
+   ? 'None of our advance forecasts can be checked yet. Of '+pl(sH.ungradeable,'ended forecast','ended forecasts')+': '+whyNot(sH)+'.'+outsideNote(sH)
+   : 'Based on '+pl(sH.eligibleMaturedPredictions,'checked advance forecast','checked advance forecasts')+'. With so few, one result can change the rate a lot.'+otherNote(sH)+outsideNote(sH)))+recallNote;
 
 cdTotal.textContent=condIdx.length;cdMatured.textContent=sC.eligibleMaturedPredictions;
 cdHit.textContent=sC.hit;cdPartial.textContent=sC.partial;cdMiss.textContent=sC.miss;
-cdPending.textContent=sC.pending;cdPrecision.textContent=pct(sC.precision,sC.eligibleMaturedPredictions,'graded');
+cdPending.textContent=sC.pending;cdPrecision.textContent=pct(sC.precision,sC.eligibleMaturedPredictions,'checked');
 const anyScan=((scanLedger&&scanLedger.scans)||[]).length;
 cdNote.textContent=sC.eligibleMaturedPredictions===0
- ? 'None of these can be graded yet. Of '+sC.ungradeable+' matured window(s): '+whyNot(sC)+'. '
-   +(anyScan?'Coverage is counted per hazard, so a cycle in which that hazard\u2019s providers were down extends nothing.':'No scan has been recorded yet, so there is nothing to grade any of them against.')+outsideNote(sC)
- : 'Computed from '+sC.eligibleMaturedPredictions+' matured outlook(s). This is not a prediction rate.'+otherNote(sC)+outsideNote(sC);
+ ? 'None of these can be checked yet. Of '+pl(sC.ungradeable,'ended forecast','ended forecasts')+': '+whyNot(sC)+'. '
+   +(anyScan?'We track the places we check separately for each hazard. A check made while the sources for that hazard were down does not count.':'We have not recorded any check of our sources yet, so there is nothing to compare these forecasts with.')+outsideNote(sC)
+ : 'Based on '+pl(sC.eligibleMaturedPredictions,'checked forecast','checked forecasts')+'. This is not a rate for advance forecasts.'+otherNote(sC)+outsideNote(sC);
 
 obTotal.textContent=obsEvents.length;
 obFalseNeg.textContent=sH.falseNegatives;
@@ -337,61 +351,62 @@ obUnknown.textContent=sH.coverage.DATA_UNAVAILABLE;obNotForecastable.textContent
    is not the same as this site having failed to forecast it. */
 obNoInput.textContent=sH.coverage.NO_PROSPECTIVE_INPUT;
 obNote.textContent=obsEvents.length===0
- ? 'No significant observed disaster has been recorded yet. The hourly job writes this record from the live feed; until it has run there is no denominator for recall, and none is shown. An empty record is not a claim that nothing happened.'
- : 'A disaster counts as a false negative when no independent prospective forecast covered it. Where no scan is recorded for that hazard and moment, the reason cannot be established either way, and it is reported as such rather than blamed on coverage or on forecasting.';
+ ? 'No significant disaster has been recorded yet. Our hourly update adds them from our live sources. Until it has run, recall cannot be worked out, so it is not shown. An empty record is not a claim that nothing happened.'
+ : 'A disaster counts as “not forecast in advance” when no forecast made in advance covered it. If we have no record of checking that hazard and place at the time, we cannot tell why it was missed. We say so, rather than blame our checks or our forecasts.';
 
 /* The answer, first and in plain words - computed from exactly the figures
    below it, so the summary cannot say something the record does not. */
-{const n=(x,one,many)=>x+' '+(x===1?one:many),pts=[];
+{const n=pl,pts=[];
  answerLead.textContent=headlineIdx.length===0
-  ?'No prediction track record yet: nothing recorded here was a prediction made before its hazard was known.'
+  ?'We do not have a track record of advance forecasts yet. Every forecast we have recorded was made after the danger was already known.'
   :(sH.eligibleMaturedPredictions===0
-    ?'Independent predictions are on record, but none can be graded yet.'
-    :'Of '+n(sH.eligibleMaturedPredictions,'graded prediction','graded predictions')+', '+Math.round(sH.precision*1000)/10+'% were borne out, counting a partial hit as half.');
- pts.push(n(l.length,'forecast window','forecast windows')+' recorded ('+n(distinct,'outlook','outlooks')+'). '
-  +(headlineIdx.length?n(headlineIdx.length,'was an independent prediction','were independent predictions')+'; the rest are graded separately, as outlooks.'
-   :'Every one describes a hazard already under way, follows an event already observed, or was written after its window opened.'));
- pts.push(n(t.graded,'window has','windows have')+' a verdict: '+t.verified+' verified, '+t.partial+' partly verified, '+n(t.falseAlarm,'false alarm','false alarms')
-  +(unreproduced?' ('+unreproduced+' recorded by hand)':'')+'.'
-  +(t.ungradeable?' '+n(t.ungradeable,'more has','more have')+' closed but cannot be graded either way: nothing on record covers that place and time.':''));
- const c=sH.coverage,why=[];
- if(c.NOT_FORECASTABLE)why.push(c.NOT_FORECASTABLE+' of a kind whose onset nobody can forecast');
- if(c.DATA_UNAVAILABLE)why.push(c.DATA_UNAVAILABLE+' with no scan of that hazard and place on record in time');
- if(c.NO_PROSPECTIVE_INPUT)why.push(c.NO_PROSPECTIVE_INPUT+' that no source read here could have seen coming');
- if(c.COVERAGE_FAILURE)why.push(c.COVERAGE_FAILURE+' missed for lack of coverage');
- if(c.FORECAST_FAILURE)why.push(c.FORECAST_FAILURE+' missed by the forecasts');
+    ?'We have made some forecasts in advance, but none of them can be checked yet.'
+    :'Of the '+n(sH.eligibleMaturedPredictions,'advance forecast','advance forecasts')+' we could check, '+Math.round(sH.precision*1000)/10+'% came true. A partly correct forecast counts as half.');
+ pts.push(n(l.length,'forecast has','forecasts have')+' been recorded. We record a forecast again each time we update it, so '+(l.length===1?'it comes':'these come')+' from '+n(distinct,'different forecast','different forecasts')+'.'
+  +(headlineIdx.length?' '+n(headlineIdx.length,'was','were')+' made in advance. We count the rest separately.':''));
+ pts.push(n(t.graded,'forecast has','forecasts have')+' been checked: '+t.verified+' correct, '+t.partial+' partly correct and '+t.falseAlarm+' wrong.'
+  +(unreproduced?' '+unreproduced+' of these '+(unreproduced===1?'was':'were')+' checked by hand.':'')
+  +(t.ungradeable?' Another '+n(t.ungradeable,'has','have')+' ended but cannot be checked either way. No record of events covers that place and time well enough.':''));
+ const c=sH.coverage,why=[],was=x=>x===1?'was':'were';
+ if(c.NOT_FORECASTABLE)why.push(c.NOT_FORECASTABLE+' '+was(c.NOT_FORECASTABLE)+' of a kind nobody can forecast.');
+ if(c.DATA_UNAVAILABLE)why.push('For '+c.DATA_UNAVAILABLE+', we cannot tell whether we were checking that place at the time.');
+ if(c.NO_PROSPECTIVE_INPUT)why.push(c.NO_PROSPECTIVE_INPUT+' could not have been foreseen from any source we read.');
+ if(c.COVERAGE_FAILURE)why.push(c.COVERAGE_FAILURE+' '+was(c.COVERAGE_FAILURE)+' missed because we were not checking that place.');
+ if(c.FORECAST_FAILURE)why.push(c.FORECAST_FAILURE+' '+was(c.FORECAST_FAILURE)+' missed by our forecasts.');
  const predicted=obsEvents.length-sH.falseNegatives;
  pts.push(obsEvents.length
-  ?n(obsEvents.length,'significant disaster','significant disasters')+' recorded, '+(predicted?predicted+' predicted':'none predicted')+(why.length?': '+why.join('; ')+'.':'.')
-  :'No significant disaster has been recorded yet, which is not a claim that nothing happened.');
- if(t.missed)pts.push(n(t.missed,'further missed event is','further missed events are')+' recorded by hand.');
+  ?n(obsEvents.length,'significant disaster has','significant disasters have')+' been recorded. '+(predicted?'We forecast '+predicted+' of them in advance.':'We forecast none of them in advance.')+(why.length?' '+why.join(' '):'')
+  :'No significant disaster has been recorded yet. This does not mean nothing happened.');
+ if(t.missed)pts.push(n(t.missed,'more missed event was','more missed events were')+' recorded by hand.');
  answerPoints.innerHTML=pts.map(x=>'<li>'+esc(x)+'</li>').join('');}
-methodNote.textContent=sH.methodology.precision+' '+sH.methodology.recall+' '+sH.methodology.f1+' '+sH.methodology.partialHitWeight+' Engine '+VER.VERIFICATION_VERSION+'.';
+methodNote.textContent=sH.methodology.precision+' '+sH.methodology.recall+' '+sH.methodology.f1+' '+sH.methodology.partialHitWeight+' Checker version: '+VER.VERIFICATION_VERSION+'.';
 
 const parts=V.partitionByClass(records);
 const classCounts=Object.keys(parts.byClass).sort().map(k=>{
   const def=(window.PNDHazards&&PNDHazards.FORECAST_CLASSES&&PNDHazards.FORECAST_CLASSES[k])||null;
   return (def?def.label:k)+': '+parts.byClass[k].length;});
-classBreak.textContent='Recorded windows by class — '+(classCounts.join(' \u00b7 ')||'none recorded')+'.'
- +(parts.unclassified.length?' '+parts.unclassified.length+' record(s) could not be classified and count toward no rate.':'');
+classBreak.textContent='Forecasts recorded, by type. '+(classCounts.join(' · ')||'None recorded')+'.'
+ +(parts.unclassified.length?' '+pl(parts.unclassified.length,'forecast','forecasts')+' could not be given a type, so '+(parts.unclassified.length===1?'it is':'they are')+' not used in any rate.':'');
 window.__verification={verdicts,byId,preds,assessments,obsEvents,coverageFor,records};
 /* A figure nobody published is shown as not reported, never as a zero. */
 const fig=v=>v===null||v===undefined?'<span class="sub">Not reported</span>':String(v);
+/* Whether anything forecast it, and if not, the engine's reason in a few words. */
+const FORECAST_IN_ADVANCE={NOT_FORECASTABLE:'No: cannot be forecast',DATA_UNAVAILABLE:'No: reason unknown',COVERAGE_FAILURE:'No: not checking there',FORECAST_FAILURE:'No: missed by our forecasts',NO_PROSPECTIVE_INPUT:'No: no advance source'};
 obsRows.innerHTML=obsEvents.length?obsEvents.map((e,i)=>{const a=assessments[i]||{};
-  const verdict=a.falseNegative?(a.status||'FALSE NEGATIVE'):'Predicted';
+  const verdict=a.falseNegative?(FORECAST_IN_ADVANCE[a.status]||'No'):'Yes';
   return `<tr><td><b>${esc(e.canonicalEventId)}</b><div class="sub">${esc(e.significanceReason||'')}</div></td>`+
     `<td>${esc(e.hazardLabel||e.hazard||'—')}</td>`+
     `<td>${esc([(e.geography||{}).region,(e.geography||{}).country].filter(Boolean).join(' · ')||'—')}</td>`+
     `<td>${esc(e.onset?PND.fmtDate(e.onset):'—')}</td>`+
     `<td>${fig(e.deaths)}</td><td>${fig(e.displaced)}</td>`+
-    `<td>${esc(e.evidenceConfidence||'—')}</td>`+
+    `<td>${esc(e.evidenceConfidence?sentence(e.evidenceConfidence):'—')}</td>`+
     `<td><span class="pill ${a.falseNegative?'bad':'good'}">${esc(verdict)}</span></td>`+
-    `<td class="sub">${esc(a.reason||'')}</td></tr>`}).join('')
- :'<tr><td colspan="9" class="empty">No significant observed disaster has been recorded yet. The hourly job writes this record from the live feed; an empty record is not a claim that nothing happened.</td></tr>';
+    `<td class="sub">${esc(niceDates(a.reason||''))}</td></tr>`}).join('')
+ :'<tr><td colspan="9" class="empty">No significant disaster has been recorded yet. Our hourly update adds them from our live sources. An empty record is not a claim that nothing happened.</td></tr>';
 const hits=records.filter(r=>['VERIFIED','PARTIAL'].includes(r._state));
 const ml=records.filter(r=>['MISSED','COVERAGE_FAILURE'].includes(r._state));
-verifiedList.innerHTML=hits.length?hits.map(card).join(''):'<div class="empty">No prediction has been fully verified yet.</div>';
-missedList.innerHTML=ml.length?ml.map(card).join(''):'<div class="empty">No significant missed events have been entered in the verification ledger yet.</div>';
+verifiedList.innerHTML=hits.length?hits.map(card).join(''):'<div class="empty">No forecast has come true yet.</div>';
+missedList.innerHTML=ml.length?ml.map(card).join(''):'<div class="empty">No significant missed events have been recorded by hand yet.</div>';
 cmpList.innerHTML=comparisons(records);
 render()}
-pageMore.onclick=()=>{shown+=PAGE;render()};pageAll.onclick=()=>{shown=Infinity;render()};PND.initSort('sortBy',LEDGER_SORTS,render);[q,outcome,severity].forEach(x=>x.addEventListener(x.tagName==='INPUT'?'input':'change',render));load().catch(e=>{rows.innerHTML='<tr><td colspan="7" class="empty">Verification data unavailable.</td></tr>';verifiedList.textContent='Verification data unavailable.';missedList.textContent='Verification data unavailable.'});</script><script src="/glossary.js"></script></body></html>
+pageMore.onclick=()=>{shown+=PAGE;render()};pageAll.onclick=()=>{shown=Infinity;render()};PND.initSort('sortBy',LEDGER_SORTS,render);[q,outcome,severity].forEach(x=>x.addEventListener(x.tagName==='INPUT'?'input':'change',render));load().catch(e=>{rows.innerHTML='<tr><td colspan="7" class="empty">The track record could not be loaded.</td></tr>';verifiedList.textContent='The track record could not be loaded.';missedList.textContent='The track record could not be loaded.'});</script><script src="/glossary.js"></script></body></html>

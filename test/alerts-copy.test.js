@@ -66,7 +66,7 @@ test('the page offering alerts says where they stop', () => {
   assert.match(src, /While this page is open/,
     'the copy does not say when an alert can be raised without the service');
   assert.match(src, /closed/i, 'the copy does not say what happens when the page is closed');
-  assert.match(src, /national or regional hazard agency/i,
+  assert.match(src, /national or regional disaster agency/i,
     'a reader who needs alerting that follows them is given nowhere to go');
   assert.equal(/no background alerting service/i.test(src), false,
     'the page still denies a service that now exists where it is switched on');
@@ -79,7 +79,7 @@ test('the reader is told the limit without opening anything', async () => {
   const text = r.text();
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   assert.match(text, /not switched on/i, 'where the service is off, the page does not say so');
-  assert.match(text, /nothing reaches you once it is closed/,
+  assert.match(text, /Nothing is sent once you close it/,
     'the limit of in-page alerting is not stated where it is offered');
   assert.match(text, /Alert me while this page is open/,
     'the button no longer says what it does');
@@ -115,7 +115,7 @@ test('the alerting that is promised still happens', async () => {
 test('the alerts page no longer sells a subscription it does not offer', () => {
   const src = read('alerts-notifications.html');
   assert.equal(/Get Notified/.test(src), false, 'the title still promises notification');
-  assert.match(src, /Personal Risk/,
+  assert.match(src, /My places/,
     'the page description does not say where alerts are actually set up');
   // The page itself still has no subscription controls, which is why its
   // title describes a list rather than a sign-up.

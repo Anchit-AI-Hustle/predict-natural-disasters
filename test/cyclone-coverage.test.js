@@ -83,9 +83,11 @@ const byProvider = meta => Object.fromEntries(meta.scan.providers.map(p => [p.pr
 test('a full page of wildfires cannot crowd a cyclone out of the feed', async () => {
   const { events: evs, meta } = await feed({ gdacs: gdacsLike() });
   const titles = evs.filter(e => e.source === 'GDACS').map(e => e.title);
-  assert.ok(titles.includes('Tropical Cyclone 01B-26'),
+  assert.ok(titles.includes('Tropical Cyclone 01B'),
     'the Bay of Bengal cyclone was dropped behind a page of wildfires');
-  assert.ok(titles.includes('Tropical Cyclone DUJUAN-26'), 'the older typhoon was dropped');
+  assert.ok(titles.includes('Tropical Cyclone Dujuan'), 'the older typhoon was dropped');
+  /* Shown by name; the provider's own title is kept beside it. */
+  assert.equal(evs.find(e => e.title === 'Tropical Cyclone Dujuan').sourceTitle, 'Tropical Cyclone DUJUAN-26');
   assert.equal(titles.filter(t => /^WF event/.test(t)).length, 100, 'the wildfires themselves were lost');
   assert.equal(meta.sources.gdacs.byHazard.TC, 2);
   /* And each cyclone is forecast: a cyclone's window is still open. */
@@ -114,7 +116,7 @@ test('pages are followed while they bring new events', async () => {
 
 test('an event GDACS lists as active is carried even when every search fails', async () => {
   const { events: evs, meta } = await feed({ gdacs: gdacsLike({ searchDown: true, active: [CYCLONES[0]] }) });
-  assert.ok(evs.some(e => e.title === 'Tropical Cyclone 01B-26'), 'the active cyclone was lost with the searches');
+  assert.ok(evs.some(e => e.sourceTitle === 'Tropical Cyclone 01B-26'), 'the active cyclone was lost with the searches');
   assert.equal(meta.sources.gdacs.endpoint, 'events4app');
   /* But nothing pretends the history was read. */
   assert.equal(byProvider(meta).gdacs.status, 'INCOMPLETE_SCAN');
@@ -169,7 +171,7 @@ test('a storm the typhoon warning centre tracks is published as a tropical cyclo
   const out = evs.find(e => e.forecast && e.forecastOf === 'eonet-EONET_24785');
   assert.ok(out, 'the Bay of Bengal cyclone has no outlook');
   assert.equal(out.type, 'Tropical Cyclone');
-  assert.match(out.title, /^5-day Tropical Cyclone risk outlook/);
+  assert.match(out.title, /^Storm risk from Tropical Cyclone 01B — 5-day forecast$/);
   assert.match(out.title + ' ' + out.region, /Bay of Bengal/);
 });
 

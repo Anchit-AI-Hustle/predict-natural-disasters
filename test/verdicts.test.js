@@ -207,7 +207,7 @@ test('no headline rate is shown as a bare percentage', async () => {
      to the rates that replaced them. */
   for (const id of ['ipPrecision', 'ipRecall', 'ipF1', 'cdPrecision']) {
     const txt = doc.getElementById(id).textContent;
-    assert.match(txt, /\([^)]*\d+[^)]*\)|Not computable|Not enough/,
+    assert.match(txt, /\([^)]*\d+[^)]*\)|Cannot be calculated|Not enough/,
       `${id} reads "${txt}" — a rate with no denominator`);
   }
   window.close();
@@ -234,7 +234,7 @@ test('every graded prediction gets a predicted-against-observed comparison', asy
   const cards = doc.querySelectorAll('#cmpList .cmp');
   assert.equal(cards.length, t.graded, 'a graded prediction has no comparison');
   const txt = cards[0].textContent;
-  for (const heading of ['What was predicted', 'What actually happened']) {
+  for (const heading of ['What we forecast', 'What actually happened']) {
     assert.ok(txt.includes(heading), `the comparison is missing "${heading}"`);
   }
   window.close();

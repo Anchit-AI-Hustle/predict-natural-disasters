@@ -186,13 +186,13 @@ test('an empty result distinguishes "not here" from "nowhere"', () => {
   /* Matches elsewhere in the feed but not in this page's slice: say so, and
      offer the place it does match. */
   const elsewhere = S.emptyHtml('flood', [], all, 'forecasts');
-  assert.match(elsewhere, /1 record/);
+  assert.match(elsewhere, /1 other event/);
   assert.match(elsewhere, /\/events\?q=flood/);
   /* Matches nothing anywhere: say that the feed carries nothing, and how much
      it does carry, rather than leaving a bare "no results". */
   const nowhere = S.emptyHtml('india', [], all, 'forecasts');
-  assert.match(nowhere, /Nothing in the live feed matches it/);
-  assert.match(nowhere, /1 record from 1 countr/);
+  assert.match(nowhere, /Nothing in our current data matches it/);
+  assert.match(nowhere, /1 event from 1 countr/);
   assert.doesNotMatch(nowhere, /\/events\?q=/);
 });
 

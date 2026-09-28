@@ -51,7 +51,7 @@ const settled = id => doc => {
 };
 const enriched = doc => {
   const n = doc.getElementById('newsBody');
-  return n && /Open coverage/.test(n.innerHTML);
+  return n && /Read more/.test(n.innerHTML);
 };
 
 /* ------------------------------------------ every page renders without error */
@@ -82,7 +82,7 @@ test('incident detail page fills in when, where and impact', async () => {
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   assert.equal(doc.getElementById('title').textContent, official.title);
   assert.ok(doc.getElementById('recordId').textContent.includes(official.id));
-  assert.match(doc.getElementById('startedAt').textContent, /\d{4}|not supplied/i);
+  assert.match(doc.getElementById('startedAt').textContent, /\d{4}|not supplied|did not give a start time/i);
   assert.notEqual(doc.getElementById('updated').textContent, '—');
   assert.ok(doc.getElementById('originText').textContent.length > 2);
   assert.ok(doc.getElementById('locationText').textContent.length > 2);
@@ -118,7 +118,7 @@ test('the action panel answers all seven questions, and names whose claim it is'
   assert.ok(doc.getElementById('aWho').textContent.includes(official.source),
     'the panel does not name the agency behind the record');
   assert.match(doc.getElementById('aWho').textContent,
-    /observed event|official warning|derived by this site|not established/,
+    /event that has happened|official warning|forecast made by this site|type of report not known/,
     'the panel names a source without saying what kind of statement it is');
   /* And the authoritative link is still offered. */
   assert.ok(doc.getElementById('officialAction').textContent.length > 10);
@@ -206,11 +206,11 @@ test('incident detail page renders the full humanitarian context block', async (
   // National authorities.
   assert.ok(doc.getElementById('authoritiesBody').querySelectorAll('a').length >= 2);
   // Distress groups and safety actions.
-  assert.match(doc.getElementById('distressBody').textContent, /Distress \/ priority groups/);
-  assert.match(doc.getElementById('distressBody').textContent, /Safety actions/);
+  assert.match(doc.getElementById('distressBody').textContent, /Who may need help first/);
+  assert.match(doc.getElementById('distressBody').textContent, /How to stay safe/);
   // When and where, including the reverse-geocoded place.
-  assert.match(doc.getElementById('whenWhereBody').textContent, /Where it originated/);
-  assert.match(doc.getElementById('whenWhereBody').textContent, /Resolved location/);
+  assert.match(doc.getElementById('whenWhereBody').textContent, /Where it started/);
+  assert.match(doc.getElementById('whenWhereBody').textContent, /Nearest place/);
   // Source provenance.
   assert.match(doc.getElementById('directoriesBody').textContent, /Google News|ReliefWeb/);
   r.close();
@@ -269,7 +269,7 @@ test('outlook detail pages withhold donation prompts but still show helplines', 
   const outlook = pick(await events(), e => e.forecast && e.id !== 'ND-001' && e.country);
   const r = await renderPage('forecast-detail.html', { search: q(outlook.id), waitFor: enriched });
   const doc = r.document;
-  assert.match(doc.getElementById('reliefBody').textContent, /withheld/i);
+  assert.match(doc.getElementById('reliefBody').textContent, /withheld|held back/i);
   assert.ok(doc.getElementById('helplinesBody').textContent.length > 20);
   assert.match(doc.getElementById('distressBody').textContent, /Immediate needs/);
   r.close();
@@ -339,7 +339,7 @@ test('forecast list shows every outlook, not just the benchmark', async () => {
     { waitFor: doc => doc.querySelectorAll('#cards tbody tr').length > 1 });
   assert.equal(r.document.querySelectorAll('#cards tbody tr').length, expected,
     'forecast list should show all ' + expected + ' forecast records');
-  assert.match(r.document.getElementById('statusLine').textContent, /matching records/);
+  assert.match(r.document.getElementById('statusLine').textContent, /\d+ forecasts/);
   r.close();
 });
 
@@ -355,7 +355,7 @@ test('detail pages stay usable when every upstream provider is down', async () =
   // Static verified context must still render with no network providers.
   assert.match(doc.getElementById('helplinesBody').textContent, /113|114|115|no verified/i);
   assert.ok(doc.getElementById('distressBody').textContent.length > 50);
-  assert.match(doc.getElementById('newsBody').textContent, /No indexed coverage/);
+  assert.match(doc.getElementById('newsBody').textContent, /No news reports found yet/);
   r.close();
 });
 
@@ -539,8 +539,7 @@ test('the homepage lists every outlook, not a hardcoded one', async () => {
 test('the homepage carries its own sort implementation', async () => {
   // The homepage renders its list before anything else has to load, so its
   // ordering is implemented inline rather than deferred to a shared helper.
-  // It does load portal.js for the first-run tour; what must not come back is
-  // the sort depending on it.
+  // What must not come back is the sort depending on portal.js.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.match(html, /const SORTS=\{/, 'index.html no longer defines its own sort table');
   assert.ok(!/PND\.(initSort|sortBy|sortValue|applySort)\b/.test(html),
@@ -568,7 +567,8 @@ test('the homepage carries its own sort implementation', async () => {
 /* --------------------------------------------- insights carries no fiction */
 
 test('the insights page reports the live feed, not hardcoded figures', async () => {
-  const evs = await events();
+  // Lists count what is live; a record its provider stopped updating is not.
+  const evs = (await events()).filter(e => e.live !== false);
   const live = evs.filter(e => !e.forecast);
   const forecasts = evs.filter(e => e.forecast);
 
@@ -628,12 +628,14 @@ test('no page ships a figure that looks live but is written into the markup', ()
 test('every homepage headline figure is measured, not written into the page', async () => {
   // "195 Countries Monitored" was a literal sitting in a row of live counters,
   // and the outlook counter shipped a literal 1.
-  const evs = await events();
+  // Live records only, and a country list counts each country in it once.
+  const evs = (await events()).filter(e => e.live !== false);
   const r = await renderPage('index.html', { waitFor: settled('kCountries') });
   const doc = r.document;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
 
-  const countries = new Set(evs.map(e => e.country).filter(Boolean));
+  const countries = new Set(evs.flatMap(e => String(e.country || '').split(','))
+    .map(c => c.trim().toLowerCase()).filter(Boolean));
   assert.ok(countries.size > 1, 'fixture feed needs several countries');
   assert.equal(doc.getElementById('kCountries').textContent, String(countries.size));
   assert.equal(doc.getElementById('kEvents').textContent, String(evs.length));
@@ -644,7 +646,7 @@ test('every homepage headline figure is measured, not written into the page', as
   const note = doc.getElementById('kEventsNote').textContent;
   const bad = evs.filter(e => e.severityRank >= 4).length;
   const routine = evs.filter(e => e.severityRank === 1).length;
-  assert.equal(note, `${bad} severe or worse · ${routine} routine detections`);
+  assert.equal(note, `${bad} serious · ${routine} minor`);
 
   // Filtering the page must move the counters with it, and say that it did.
   const filter = doc.getElementById('hazardFilter');
@@ -662,8 +664,8 @@ test('every homepage headline figure is measured, not written into the page', as
   const routineIn = inView.filter(e => e.severityRank === 1).length;
   assert.equal(doc.getElementById('kEventsNote').textContent,
     badIn || routineIn
-      ? `${badIn} severe or worse · ${routineIn} routine detections`
-      : 'Matching the current hazard filter');
+      ? `${badIn} serious · ${routineIn} minor`
+      : 'Matching the hazard you chose');
   assert.ok(Number(doc.getElementById('kCountries').textContent) <= countries.size);
   r.close();
 });
@@ -727,9 +729,10 @@ test('the shared disclaimer is stated once, not on every card', async () => {
     waitFor: doc => doc.querySelectorAll('.event-card').length > 0
   });
   const doc = r.document;
-  // The cards said "not a deterministic prediction", the page note says
-  // "not deterministic predictions"; match the claim, not the wording.
-  const phrase = /deterministic prediction/i;
+  // Each outlook's text ends "This is our own estimate, not an official
+  // warning."; the page note says "It is not an official warning"; match the
+  // claim, not the wording.
+  const phrase = /not an official warning/i;
   const repeats = [...doc.querySelectorAll('.event-card')].filter(c => phrase.test(c.textContent));
   assert.equal(repeats.length, 0, repeats.length + ' cards still repeat the disclaimer');
 
@@ -772,5 +775,17 @@ test('Personal Risk says when it was updated and shows no empty warning box', as
   for (const css of ['portal.css', 'app-pages.css']) {
     assert.match(fs.readFileSync(path.join(__dirname, '..', css), 'utf8'), /\.notice:empty,\.stale:empty\{display:none\}/,
       css + ' draws an empty message box');
+  }
+});
+
+test('no page carries a step-by-step tour or coach marks', () => {
+  // The guided tour was removed because its bubbles pointed at the wrong
+  // places. Nothing that starts one, replays one or styles one may return.
+  const banned = [/startTour|replayTour|startHomeTour/, /pnd-coach/, /pnd_tour_done/,
+    /How to use this app/i, /Replay tour/i, /coach ?marks?/i];
+  const files = PAGES.concat(fs.readdirSync(ROOT).filter(f => /\.(js|css)$/.test(f)));
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const re of banned) assert.ok(!re.test(src), `${f} still carries the tour (${re})`);
   }
 });

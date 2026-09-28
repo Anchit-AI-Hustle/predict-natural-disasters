@@ -76,7 +76,6 @@ const measure = () => ({
   const run = async (page, blocked) => {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const pg = await ctx.newPage();
-    await pg.addInitScript(() => localStorage.setItem('pnd_tour_done', '1'));
     const errors = [];
     pg.on('pageerror', e => errors.push(String(e).split('\n')[0]));
     await pg.route(u => /\/vendor\/leaflet\//.test(u.href), r => blocked ? r.abort() : r.continue());
