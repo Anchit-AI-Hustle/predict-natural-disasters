@@ -93,7 +93,6 @@ const server = http.createServer(async (req, res) => {
          it and has its own. Both are measured by forcing flat here and by the
          toggle being one of the controls checked. */
       await pg.addInitScript(() => {
-        localStorage.setItem('pnd_tour_done', '1');
         /* The globe's own preference key; 'pnd_globe_view', which this set
            before, is read by nothing - the flat map was measured only because
            Cesium could not be fetched here. */

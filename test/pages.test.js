@@ -539,8 +539,7 @@ test('the homepage lists every outlook, not a hardcoded one', async () => {
 test('the homepage carries its own sort implementation', async () => {
   // The homepage renders its list before anything else has to load, so its
   // ordering is implemented inline rather than deferred to a shared helper.
-  // It does load portal.js for the first-run tour; what must not come back is
-  // the sort depending on it.
+  // What must not come back is the sort depending on portal.js.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.match(html, /const SORTS=\{/, 'index.html no longer defines its own sort table');
   assert.ok(!/PND\.(initSort|sortBy|sortValue|applySort)\b/.test(html),
@@ -772,5 +771,17 @@ test('Personal Risk says when it was updated and shows no empty warning box', as
   for (const css of ['portal.css', 'app-pages.css']) {
     assert.match(fs.readFileSync(path.join(__dirname, '..', css), 'utf8'), /\.notice:empty,\.stale:empty\{display:none\}/,
       css + ' draws an empty message box');
+  }
+});
+
+test('no page carries a step-by-step tour or coach marks', () => {
+  // The guided tour was removed because its bubbles pointed at the wrong
+  // places. Nothing that starts one, replays one or styles one may return.
+  const banned = [/startTour|replayTour|startHomeTour/, /pnd-coach/, /pnd_tour_done/,
+    /How to use this app/i, /Replay tour/i, /coach ?marks?/i];
+  const files = PAGES.concat(fs.readdirSync(ROOT).filter(f => /\.(js|css)$/.test(f)));
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const re of banned) assert.ok(!re.test(src), `${f} still carries the tour (${re})`);
   }
 });

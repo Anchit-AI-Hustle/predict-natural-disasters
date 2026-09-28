@@ -84,8 +84,6 @@ const server = http.createServer(async (req, res) => {
     for (const width of WIDTHS) {
       const ctx = await browser.newContext({ viewport: { width, height: 900 } });
       const pg = await ctx.newPage();
-      /* The coach marks open over the page and would be measured too. */
-      await pg.addInitScript(() => localStorage.setItem('pnd_tour_done', '1'));
       try { await pg.goto('http://localhost:' + PORT + page, { waitUntil: 'domcontentloaded', timeout: 20000 }); }
       catch (e) { /* measure whatever rendered */ }
       await pg.waitForTimeout(700);

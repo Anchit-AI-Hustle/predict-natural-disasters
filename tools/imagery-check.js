@@ -105,7 +105,6 @@ async function open(browser, { view, nasaDown, esriDown, base = 'Satellite' }) {
     /* Once per context, so a reload keeps whatever the page itself stored. */
     if (sessionStorage.getItem('seeded')) return;
     sessionStorage.setItem('seeded', '1');
-    localStorage.setItem('pnd_tour_done', '1');
     /* The globe's own preference key. The first version of this set
        'pnd_globe_view', which nothing reads - so with WebGL available the
        "flat" run was the globe, and every flat-map check measured it. */
