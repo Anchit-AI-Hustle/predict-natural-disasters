@@ -261,6 +261,10 @@ function normalizeType(raw, hint) {
   if (/landslide|mudslide|debris flow/.test(t)) return 'Landslide';
   if (/tropical cyclone|hurricane|typhoon|tropical storm|tropical depression/.test(t)) return 'Tropical Cyclone';
   if (/tornado/.test(t)) return 'Tornado';
+  /* A Special Marine Warning is the weather service's thunderstorm warning
+     for water: strong winds, hail or waterspouts. It was being published as
+     a hazard type of its own. */
+  if (/marine warning/.test(t)) return 'Severe Storm';
   if (/severe (thunder)?storm|thunderstorm|severe weather|wind|hail|blizzard|winter storm|snow/.test(t)) return 'Severe Storm';
   if (/wildfire|bushfire|fire weather|\bfires?\b/.test(t)) return 'Wildfire';
   if (/volcan/.test(t)) return 'Volcano';
@@ -606,6 +610,393 @@ function mergeSeismicReports(events) {
   return events.filter(e => { const g = groupOf.get(e); return !g || g.lead === e; });
 }
 
+/* Said once on every forecast, and stripped from list cards that say it for
+   the whole page. */
+const FORECAST_DISCLAIMER = 'This is our own estimate, not an official warning.';
+
+/** "28 Sep 2026, 12:00 UTC" - a time a reader can read, in the zone it is in. */
+function utcText(v) {
+  const t = Date.parse(v || '');
+  if (!Number.isFinite(t)) return 'an unknown time';
+  const d = new Date(t);
+  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const p = n => String(n).padStart(2, '0');
+  return d.getUTCDate() + ' ' + M[d.getUTCMonth()] + ' ' + d.getUTCFullYear() + ', ' +
+    p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ' UTC';
+}
+
+/* What an outlook is called: the hazard, the place, the window. */
+function nearText(e) {
+  const p = placeLabel(e);
+  if (!p) return '';
+  return /^\d+\s*km\b/i.test(p) ? p : (e.type === 'Earthquake' ? 'near ' + p : 'in ' + p);
+}
+function outlookTitle(e, windowWords) {
+  const kind = e.type === 'Tropical Cyclone' ? 'Storm risk from ' + e.title
+    : e.type + ' risk ' + nearText(e);
+  return kind.replace(/\s+$/, '') + ' — ' + windowWords + ' forecast';
+}
+
+/* ------------------------------------------------ plain names and places */
+
+/*
+ * What a reader sees as a record's name and its place.
+ *
+ * The providers name things in their own shorthand. The hurricane centre
+ * titles a storm "HU Nolo"; GDACS titles it "Tropical Cyclone NOLO-26" and
+ * repeats that title as the event's location, so the homepage listed a storm
+ * as "Tropical Cyclone · Tropical Cyclone ODALYS-26". A drought's location was
+ * "Drought in Austria, Belgium, ... Ukraine," with the provider's trailing
+ * comma. None of that tells a reader where anything is.
+ *
+ * The fields the forecast ledger freezes - country, region, coordinates - are
+ * left exactly as the source gave them, because a frozen claim's geography is
+ * never rewritten. What changes is the name on the record and a separate
+ * `place` field that says, in words, where it is.
+ */
+const CYCLONE_CODES = {
+  HU: 'Hurricane', MH: 'Major Hurricane', TS: 'Tropical Storm', TD: 'Tropical Depression',
+  STS: 'Subtropical Storm', SS: 'Subtropical Storm', SD: 'Subtropical Depression',
+  PTC: 'Potential Tropical Cyclone', PC: 'Post-Tropical Cyclone', TY: 'Typhoon', STY: 'Super Typhoon'
+};
+const NUMBER_WORDS = {
+  ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5, SIX: 6, SEVEN: 7, EIGHT: 8, NINE: 9, TEN: 10,
+  ELEVEN: 11, TWELVE: 12, THIRTEEN: 13, FOURTEEN: 14, FIFTEEN: 15, SIXTEEN: 16,
+  SEVENTEEN: 17, EIGHTEEN: 18, NINETEEN: 19
+};
+const TENS_WORDS = { TWENTY: 20, THIRTY: 30, FORTY: 40, FIFTY: 50 };
+
+/** "TWENTYTHREE" -> 23, "POLO" -> null. */
+function numberWord(w) {
+  const u = String(w || '').toUpperCase();
+  if (NUMBER_WORDS[u]) return NUMBER_WORDS[u];
+  for (const t of Object.keys(TENS_WORDS)) {
+    if (u === t) return TENS_WORDS[t];
+    if (u.startsWith(t) && NUMBER_WORDS[u.slice(t.length)] && NUMBER_WORDS[u.slice(t.length)] < 10) {
+      return TENS_WORDS[t] + NUMBER_WORDS[u.slice(t.length)];
+    }
+  }
+  return null;
+}
+
+const nameCase = w => String(w || '').toLowerCase().replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+
+/** A storm's own name with the provider's markings taken off: "POLO-26" -> "Polo". */
+function stormName(title) {
+  let t = String(title || '').trim();
+  t = t.replace(/^(?:HU|MH|TS|TD|STS|SS|SD|PTC|PC|TY|STY)\s+/, '');
+  t = t.replace(/^(?:super typhoon|typhoon|major hurricane|hurricane|tropical storm|tropical depression|subtropical storm|subtropical depression|severe tropical storm|potential tropical cyclone|post-tropical cyclone|severe cyclonic storm|very severe cyclonic storm|cyclonic storm|cyclone|tropical cyclone)\s+/i, '');
+  t = t.replace(/-\d{2}$/, '').trim();
+  return t;
+}
+
+/* "VANCOUVER ISLAND, CANADA REGION" -> "Vancouver Island, Canada region". */
+function unshout(text) {
+  const out = String(text || '').replace(/\b[A-Z][A-Z'.]{2,}(?:\s+[A-Z][A-Z'.]*)*\b/g, run =>
+    run.split(/\s+/).map((w, i) => {
+      // A compass bearing ("8 km SSW of") stays as it is written.
+      if (/^[NSEW]{1,3}$/.test(w)) return w;
+      const l = w.toLowerCase();
+      if (/^(of|the|and|near|off|region)$/.test(l) && i) return l;
+      return l.charAt(0).toUpperCase() + l.slice(1);
+    }).join(' '));
+  return out.replace(/\b(Northwest|Northeast|Southwest|Southeast|North|South|East|West) Of\b/g, '$1 of')
+    .replace(/ (Islands?|Coast|Sea|Border) Region\b/g, ' $1 region');
+}
+
+function plainTitle(e) {
+  let t = String(e.title || '').replace(/\s+/g, ' ').trim();
+  if (e.forecast) return t;
+  if (e.type !== 'Tropical Cyclone') {
+    // "Prescribed Fire CRAWFORD CORRAL Prescribed Fire, Tulare" - the
+    // expansion of EONET's "RX" leaves the phrase twice.
+    t = t.replace(/^(Prescribed Fire)\s+(.+?)\s+Prescribed Fire\b/i, '$1 $2');
+    // A GDACS list of countries in a title ends in a stray comma.
+    t = t.replace(/[\s,]+$/, '');
+    const list = /^(Drought|Flood|Forest fires?|Wildfires?) in (.+)$/i.exec(t);
+    if (list && list[2].split(',').length > 3) {
+      const parts = list[2].split(',').map(x => x.trim()).filter(Boolean);
+      t = list[1] + ' in ' + parts[0] + ', ' + parts[1] + ' and ' + (parts.length - 2) + ' other countries';
+    }
+    return unshout(t);
+  }
+  let m = /^(HU|MH|TS|TD|STS|SS|SD|PTC|PC|TY|STY)\s+(.+)$/.exec(t);
+  if (m) return CYCLONE_CODES[m[1]] + ' ' + nameCase(m[2]);
+  m = /^Tropical Cyclone\s+([A-Z0-9]+)(?:-\d{2})?$/.exec(t);
+  if (m) {
+    const n = numberWord(m[1]);
+    // "01B" is a warning centre's number for an unnamed storm, kept as written.
+    return 'Tropical Cyclone ' + (n !== null ? n : /\d/.test(m[1]) ? m[1] : nameCase(m[1]));
+  }
+  return t;
+}
+
+/*
+ * Which body of water a point at sea is in. Coarse, and only ever used for a
+ * storm, where the basin is the place a reader knows it by. The Central
+ * American isthmus is the one boundary drawn by hand: south of it is the
+ * Pacific, north of it the Caribbean.
+ */
+const SEAS = [
+  // [name, south, north, west, east] - enclosed seas a reader names first.
+  ['Caspian Sea', 36.5, 47.5, 46.5, 54.5], ['Black Sea', 40.5, 47, 27.5, 42],
+  ['Persian Gulf', 24, 30.5, 48, 57], ['Red Sea', 12, 30, 32, 44],
+  ['Mediterranean Sea', 30, 46, -6, 36.5], ['South China Sea', 0, 23, 105, 121],
+  ['Sea of Japan', 34, 52, 127, 142]
+];
+function oceanName(lat, lon) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return '';
+  for (const [name, s, n, w, e] of SEAS) if (lat >= s && lat <= n && lon >= w && lon <= e) return name;
+  if (lat >= 66) return 'Arctic Ocean';
+  if (lat <= -60) return 'Southern Ocean';
+  if (lat >= 0) {
+    if (lon >= 100 || lon < -180) return 'Western Pacific Ocean';
+    if (lon >= 77) return 'Bay of Bengal';
+    if (lon >= 40) return 'Arabian Sea';
+    if (lon < -140) return 'Central Pacific Ocean';
+    if (lon < -100) return 'Eastern Pacific Ocean';
+    if (lon < -77) {
+      const coast = lon >= -83 ? 8.5 : lon >= -87 ? 11 : lon >= -92 ? 14 : 16.5;
+      return lat < coast ? 'Eastern Pacific Ocean' : (lat >= 18 && lon < -81 ? 'Gulf of Mexico' : 'Caribbean Sea');
+    }
+    return 'Atlantic Ocean';
+  }
+  if (lon >= 20 && lon < 135) return 'South Indian Ocean';
+  if (lon >= 135 || lon < -70) return 'South Pacific Ocean';
+  return 'South Atlantic Ocean';
+}
+
+/* The outlines abbreviate names to fit a small-scale map. */
+const OUTLINE_NAMES = {
+  'United States of America': 'United States', 'Bosnia and Herz.': 'Bosnia and Herzegovina',
+  'Central African Rep.': 'Central African Republic', 'Dem. Rep. Congo': 'Democratic Republic of the Congo',
+  'Dominican Rep.': 'Dominican Republic', 'Eq. Guinea': 'Equatorial Guinea', 'Falkland Is.': 'Falkland Islands',
+  'Fr. S. Antarctic Lands': 'French Southern Territories', 'N. Cyprus': 'Northern Cyprus',
+  'S. Sudan': 'South Sudan', 'Solomon Is.': 'Solomon Islands', 'W. Sahara': 'Western Sahara',
+  eSwatini: 'Eswatini', Macedonia: 'North Macedonia'
+};
+let WORLD = null;
+/** The country a point falls in, from the same outlines the map draws; '' at sea. */
+function countryAt(lat, lon) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return '';
+  if (WORLD === null) {
+    try {
+      const fc = require('../world-countries.json');
+      WORLD = (fc.features || []).map(f => ({ name: f.properties && f.properties.n, polys: polygonsOf(f.geometry) }))
+        .filter(c => c.name && c.polys.length);
+    } catch (e) { WORLD = []; }
+  }
+  for (const c of WORLD) if (c.polys.some(p => inPolygon(lon, lat, p))) return OUTLINE_NAMES[c.name] || c.name;
+  return '';
+}
+
+/** "A, B, C, D," -> "A, B and 2 other countries". */
+function countryListText(raw) {
+  const parts = String(raw || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (parts.length <= 1) return parts[0] || '';
+  if (parts.length === 2) return parts[0] + ' and ' + parts[1];
+  if (parts.length === 3) return parts[0] + ', ' + parts[1] + ' and ' + parts[2];
+  return parts[0] + ', ' + parts[1] + ' and ' + (parts.length - 2) + ' other countries';
+}
+
+const NHC_BASIN_WORDS = { atlantic: 'Atlantic Ocean', 'eastern pacific': 'Eastern Pacific Ocean',
+  'central pacific': 'Central Pacific Ocean', 'western pacific': 'Western Pacific Ocean',
+  'indian ocean': 'Indian Ocean', 'southern hemisphere': '' };
+
+/** Where a record is, in words a reader would use. */
+function placeLabel(e) {
+  const tidy = s => String(s || '').replace(/[\s,;·]+$/, '').replace(/\s+/g, ' ').trim();
+  const title = tidy(e.sourceTitle || e.title).toLowerCase();
+  let region = tidy(e.region);
+  const country = tidy(e.country);
+  // A region that only repeats the record's own name, or GDACS's "Flood in
+  // Nepal", says nothing the country field does not.
+  if (region && (region.toLowerCase() === title || region.toLowerCase() === tidy(e.title).toLowerCase() ||
+    /^(flood|drought|wildfire|forest fire|earthquake|volcano|tropical cyclone)\b.*\bin\b/i.test(region) ||
+    /^tropical cyclone\s/i.test(region))) region = '';
+  // The hurricane centre's "Polo (eastern Pacific system 2)" is a storm name
+  // and a basin; the basin is the place.
+  // The weather service lists every county a warning covers.
+  if (region.includes(';')) {
+    const areas = region.split(';').map(tidy).filter(Boolean);
+    region = areas[0] + (areas.length > 1 ? ' and ' + (areas.length - 1) + ' nearby area' + (areas.length > 2 ? 's' : '') : '');
+  }
+  const nhc = /\(([a-z ]+?) system \d+\)\s*$/i.exec(region);
+  if (nhc) region = NHC_BASIN_WORDS[nhc[1].toLowerCase()] || '';
+  /* A volcano record's region is the observatory that watches it. */
+  const obs = /^(Alaska|Hawaiian|Cascades|California|Yellowstone|Northern Mariana Islands) Volcano Observatory$/i.exec(region);
+  if (obs) region = { alaska: 'Alaska', hawaiian: 'Hawaii', cascades: 'Cascade Range',
+    california: 'California', yellowstone: 'Yellowstone', 'northern mariana islands': 'Northern Mariana Islands' }[obs[1].toLowerCase()];
+  region = unshout(region);
+  const isStorm = e.type === 'Tropical Cyclone';
+  if (isStorm) {
+    const land = countryAt(e.lat, e.lon);
+    const sea = land ? '' : (region && /ocean|sea|bay|gulf|pacific|atlantic/i.test(region)
+      ? region.replace(/^(eastern|western|central|northern|southern)\b/, w => w[0].toUpperCase() + w.slice(1)) +
+        (/ocean|sea|bay|gulf/i.test(region) ? '' : ' Ocean')
+      : oceanName(e.lat, e.lon));
+    const affected = country ? countryListText(country) : '';
+    if (land) return land;
+    if (sea && affected) return sea + ' (may affect ' + affected + ')';
+    return sea || affected;
+  }
+  const countries = unshout(country.includes(',') ? countryListText(country) : country);
+  if (region && countries && region.toLowerCase().includes(country.toLowerCase())) return region;
+  if (region && countries) return region + ', ' + countries;
+  if (region || countries) return region || countries;
+  return countryAt(e.lat, e.lon) || oceanName(e.lat, e.lon);
+}
+
+/*
+ * One storm, one record.
+ *
+ * Three agencies publish every active storm the hurricane centre tracks, and
+ * two publish every other: measured on 28 September 2026, Hurricane Polo was
+ * listed three times (NHC, GDACS, NASA EONET), and each copy was given its own
+ * five-day outlook. The same rule as the earthquake merge: only ever across
+ * agencies, the fullest record leads, and every member is named.
+ */
+const CYCLONE_PRIORITY = ['NOAA', 'GDACS', 'NASA'];
+const SAME_STORM_KM = 600, SAME_STORM_MS = 2 * 864e5, NEAR_STORM_KM = 150;
+
+function stormKey(e) {
+  const n = stormName(e.sourceTitle || e.title).toLowerCase();
+  const d = /^(\d{1,2})[a-z]?$/.exec(n);
+  if (d) return 'n' + Number(d[1]);
+  const w = numberWord(n);
+  return w !== null ? 'n' + w : n;
+}
+
+function mergeCycloneReports(events) {
+  const groups = [], groupOf = new Map();
+  for (const e of events) {
+    const t = Date.parse(e.updated || '');
+    if (e.type !== 'Tropical Cyclone' || e.forecast || !Number.isFinite(t) ||
+      !Number.isFinite(e.lat) || !Number.isFinite(e.lon)) continue;
+    const key = stormKey(e);
+    const hit = groups.find(g => {
+      const lead = g.members[0];
+      if (g.members.some(m => agencyOf(m) === agencyOf(e))) return false;
+      if (Math.abs(g.t - t) > SAME_STORM_MS) return false;
+      const km = kmBetween(lead, e);
+      return (key && key === g.key && km <= SAME_STORM_KM) || km <= NEAR_STORM_KM;
+    });
+    if (hit) { hit.members.push(e); groupOf.set(e, hit); }
+    else { const g = { t, key, members: [e] }; groups.push(g); groupOf.set(e, g); }
+  }
+  let merged = 0;
+  for (const g of groups) {
+    if (g.members.length < 2) { g.lead = g.members[0]; continue; }
+    const rank = m => { const i = CYCLONE_PRIORITY.indexOf(agencyOf(m)); return i === -1 ? 99 : i; };
+    const ranked = g.members.slice().sort((a, b) => rank(a) - rank(b) ||
+      (Date.parse(b.updated) || 0) - (Date.parse(a.updated) || 0));
+    const lead = g.lead = ranked[0];
+    for (const f of ['windKt', 'pressureMb', 'movementDirDeg', 'movementKt', 'deaths', 'displaced', 'affected']) {
+      if (lead[f] !== undefined && lead[f] !== null) continue;
+      const donor = ranked.find(m => m[f] !== undefined && m[f] !== null);
+      if (donor) lead[f] = donor[f];
+    }
+    /* GDACS names the countries in a storm's forecast path. That is not the
+       storm's own country, and the frozen country of any outlook already
+       derived from the leader must not change, so it is kept apart. */
+    if (!lead.country) {
+      const withCountry = ranked.find(m => m.country);
+      if (withCountry) lead.affectedCountries = withCountry.country;
+    }
+    /* GDACS calls every storm a "Tropical Cyclone"; the warning centres say
+       which kind - a typhoon, a super typhoon, a hurricane. */
+    if (/^Tropical Cyclone\s/.test(lead.title)) {
+      const named = ranked.find(m => m !== lead && !/^Tropical Cyclone\s/.test(m.title) && stormKey(m) === stormKey(lead));
+      if (named) { lead.sourceTitle = lead.sourceTitle || lead.title; lead.title = named.title; }
+    }
+    let strongest = lead;
+    for (const m of ranked) if ((ALERT_STRENGTH[m.alert] || 0) > (ALERT_STRENGTH[strongest.alert] || 0)) strongest = m;
+    if (strongest !== lead) { lead.alert = strongest.alert; lead.alertBasis = strongest.alertBasis || 'issued'; }
+    const others = ranked.slice(1).map(m => m.source).filter(s => s !== lead.source);
+    if (others.length) lead.corroboratedBy = [...new Set(others)];
+    lead.mergedFrom = ranked.map(m => ({ id: m.id, source: m.source || null,
+      sourceUrl: m.sourceUrl || null, updated: m.updated || null }));
+    merged += g.members.length - 1;
+  }
+  const out = events.filter(e => { const g = groupOf.get(e); return !g || g.lead === e; });
+  out.mergedCycloneReports = merged;
+  return out;
+}
+
+/*
+ * Is a record still live?
+ *
+ * GDACS is asked for 120 days of events so that no active storm is lost to its
+ * 100-result page, and NASA EONET leaves a wildfire open until someone closes
+ * it. So the "live" feed carried floods whose last report was three months old
+ * and storms that had dissipated weeks before, and counted all of them as live
+ * events. A record that its own provider has not updated for longer than the
+ * hazard ever goes quiet while it is still happening is kept - its page still
+ * opens - but marked as no longer live, and says for how long it has been
+ * silent.
+ */
+const LIVE_DAYS = {
+  'Tropical Cyclone': 3, 'Severe Storm': 3, Tornado: 2, Earthquake: 7, Flood: 10,
+  Landslide: 14, Wildfire: 10, Volcano: 45, Drought: 60, 'Extreme Heat': 7, 'Extreme Cold': 7
+};
+function markLive(events, nowMs) {
+  let quiet = 0;
+  for (const e of events) {
+    if (e.forecast) continue;
+    const t = Date.parse(e.updated || '');
+    if (!Number.isFinite(t)) continue;
+    const days = (nowMs - t) / 864e5;
+    /* A humanitarian record is a response page opened when the disaster was
+       declared; it stays current for weeks after its date. */
+    const limit = e.humanitarian ? 60 : (LIVE_DAYS[e.type] || 14);
+    /* An event its provider still expects to be running is live however
+       long ago it started. */
+    e.live = days <= limit || Date.parse(e.expectedEnd || '') > nowMs;
+    if (!e.live) {
+      quiet++;
+      e.quietDays = Math.floor(days);
+    }
+  }
+  return quiet;
+}
+
+/** A GDACS location that is a place, not the event's name repeated. */
+function gdacsPlace(location, name, description) {
+  const l = String(location || '').trim();
+  if (!l) return '';
+  const same = v => v && String(v).trim().toLowerCase() === l.toLowerCase();
+  return same(name) || same(description) ? '' : l;
+}
+
+/*
+ * When GDACS last reported on an event.
+ *
+ * "todate" is the last day GDACS saw the event, except that a flood's can lie
+ * in the future, where GDACS expects it to run to: a flood in Guinea was
+ * published as updated at 01:00 the next morning, so it sorted first and a
+ * forecast window was opened from a time that had not happened. A future end
+ * date is kept, but as the expected end, and the report's own modification
+ * time - or its start - stands as the update.
+ */
+function gdacsWhen(modified, to, from, now) {
+  const nowMs = now.getTime();
+  const m = gdacsTime(modified), t = gdacsTime(to), f = gdacsTime(from);
+  const past = v => v && Date.parse(v) <= nowMs + 5 * 60e3;
+  const out = {};
+  if (t && !past(t)) out.expectedEnd = t;
+  out.updated = (past(t) && t) || (past(m) && m) || (past(f) && f) || now.toISOString();
+  return out;
+}
+
+/** GDACS writes "2026-09-29T01:00:00" with no zone; it means UTC. */
+function gdacsTime(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  const withZone = /[zZ]$|[+-]\d\d:?\d\d$/.test(s) ? s : (/T\d/.test(s) ? s + 'Z' : s);
+  const t = Date.parse(withZone);
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+
 /** ?summary=1 asks for the meta block alone. */
 function wantsLedger(req) {
   const v = (req && req.query && req.query.ledger) ||
@@ -701,12 +1092,15 @@ async function handler(req, res) {
         type: GDACS_TYPES[et] || normalizeType(et),
         title: p.name || p.title || p.eventname || (et + ' event'),
         country: p.country || p.countryname || p.iso3 || '',
-        region: p.location || p.description || '',
+        /* GDACS repeats the event's name as its description ("Flood in
+           Nepal"), and that was being published as the place. */
+        region: gdacsPlace(p.location, p.name || p.title || p.eventname, p.description),
         alert: p.alertlevel || p.alertLevel || 'Green',
         alertBasis: 'issued',
         lat: coords[1], lon: coords[0],
-        startedAt: p.fromdate || p.fromDate || null,
-        updated: p.todate || p.toDate || p.fromdate || p.fromDate || p.date || now.toISOString(),
+        startedAt: gdacsTime(p.fromdate || p.fromDate) || null,
+        ...gdacsWhen(p.datemodified || p.dateModified, p.todate || p.toDate,
+          p.fromdate || p.fromDate || p.date, now),
         details: [p.description || p.eventdescription || '', measured.severityText || '']
           .filter(Boolean).join(' · '),
         ...counts,
@@ -734,12 +1128,12 @@ async function handler(req, res) {
         type: GDACS_TYPES[et] || normalizeType(et),
         title: tag('title', b) || (et + ' event'),
         country: tag('gdacs:country', b) || '',
-        region: tag('gdacs:location', b) || '',
+        region: gdacsPlace(tag('gdacs:location', b), tag('title', b), ''),
         alert: tag('gdacs:alertlevel', b) || 'Green',
         alertBasis: 'issued',
         lat, lon,
-        startedAt: tag('gdacs:fromdate', b) || null,
-        updated: tag('gdacs:todate', b) || tag('pubDate', b) || now.toISOString(),
+        startedAt: gdacsTime(tag('gdacs:fromdate', b)) || null,
+        ...gdacsWhen(tag('pubDate', b), tag('gdacs:todate', b), tag('gdacs:fromdate', b), now),
         details: tag('description', b) || '',
         sourceUrl: tag('link', b) || 'https://www.gdacs.org/',
         rawId: eid, rawType: et
@@ -1312,7 +1706,9 @@ async function handler(req, res) {
         push({
           id: 'usgs-volcano-' + (v.vnum || v.volcanoId || name),
           source: 'USGS Volcano Hazards Program', sourceType: 'official', type: 'Volcano',
-          title: name + ' — ' + (level || 'elevated') + ' alert level',
+          /* USGS writes the level in capitals; it is a word, not a shout. */
+          title: name + ' volcano — ' + (level
+            ? 'alert level ' + level.charAt(0) + level.slice(1).toLowerCase() : 'raised alert level'),
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
           alertBasis: 'issued',
@@ -1417,8 +1813,8 @@ async function handler(req, res) {
     updated: '2026-09-13T19:20:03Z', issuedAt: '2026-09-13T19:20:03Z',
     issuedAtBasis: 'First verifiable timestamp: the commit that introduced this record. Any earlier drafting cannot be evidenced, so the later time is used.',
     targetStart: '2026-09-13T00:00:00Z', targetEnd: '2026-09-16T23:59:59Z',
-    details: 'Starts 13 Sep 2026; expected duration 4 days. Written 19 hours after the window opened, so it carries no lead time; it is still graded against independently observed impact rather than against rainfall or a warning alone.',
-    forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Benchmark — frozen, but not issued in advance',
+    details: 'Starts 13 Sep 2026 and lasts 4 days. It was written 19 hours after that period began, so it gave no advance warning. It is still checked against damage or harm that others reported, not against rainfall or a warning alone.',
+    forecast: true, forecastKind: 'frozen-benchmark', confidence: 'Test case: locked when it was made, but not made in advance',
     /* The record already names a corridor. Saying so keeps its coordinate
        from being read as the point where the flooding was expected.
 
@@ -1429,8 +1825,8 @@ async function handler(req, res) {
        under the same id while still citing that commit as its proof, and the
        ledger writer duly recorded the new claim as frozen on 13 September. */
     precision: 'regional',
-    evidence: 'Frozen as the platform’s first graded benchmark. The record was committed at 2026-09-13T19:20:03Z against a window that opened at 2026-09-13T00:00:00Z, so it did not anticipate the onset.',
-    verificationRule: 'Counts as correct only if meaningful flood or landslide impact is independently observed inside the frozen geography and window.',
+    evidence: 'Locked as our first test case. It was saved on 13 Sep 2026 at 19:20 UTC, after its forecast period began at 00:00 UTC that day, so it did not give advance warning.',
+    verificationRule: 'Counts as correct only if others report real flood or landslide damage inside the locked area and dates.',
     sourceUrl: '/verification'
   });
 
@@ -1438,15 +1834,16 @@ async function handler(req, res) {
 
   const mechanism = t => {
     const s = String(t).toLowerCase();
-    if (/flood/.test(s)) return 'continued or renewed flooding and inundation where hydrological stress persists';
-    if (/cyclone|storm|hurricane|typhoon|tornado/.test(s)) return 'continued wind, surge and rainfall impacts along the active storm footprint';
-    if (/wildfire|fire/.test(s)) return 'continued fire spread, smoke and evacuation pressure while the fire remains uncontrolled';
-    if (/volcan/.test(s)) return 'continued volcanic unrest, ashfall or exclusion-zone impacts while official activity remains elevated';
-    if (/landslide/.test(s)) return 'additional slope failures where terrain remains saturated or unstable';
-    if (/drought/.test(s)) return 'continued water stress and agricultural impacts while drought conditions persist';
-    if (/heat/.test(s)) return 'continued heat-health impacts while the heat episode persists';
-    if (/tsunami/.test(s)) return 'continued coastal and harbour hazard while the marine advisory remains in force';
-    return 'continued hazard impacts while the official signal remains active';
+    if (/flood/.test(s)) return 'flooding may continue or return where rivers and ground are still full of water';
+    if (/cyclone|hurricane|typhoon/.test(s)) return 'the storm may keep bringing strong wind, storm surge and heavy rain along its path';
+    if (/storm|tornado/.test(s)) return 'more strong wind, hail or heavy rain may follow while the storm lasts';
+    if (/wildfire|fire/.test(s)) return 'the fire may keep spreading, with smoke and evacuations, until it is under control';
+    if (/volcan/.test(s)) return 'the volcano may stay restless, with ash fall and closed areas, while its alert level stays raised';
+    if (/landslide/.test(s)) return 'more landslides may happen where slopes are still soaked or unstable';
+    if (/drought/.test(s)) return 'water shortages and crop losses may continue while the drought lasts';
+    if (/heat/.test(s)) return 'the heat may keep harming health while it lasts';
+    if (/tsunami/.test(s)) return 'coasts and harbours may stay dangerous while the marine warning is in force';
+    return 'the danger may continue while the official report stays active';
   };
 
   const outlookId = sourceId => 'OUT-' + String(sourceId).replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(-48);
@@ -1470,9 +1867,23 @@ async function handler(req, res) {
    * from a discarded copy. */
   out.events = mergeSeismicReports(out.events);
 
+  /* Plain names first, so the storm merge and every outlook title read them;
+     the provider's own title is kept beside it, and it - not the plain name -
+     is what an outlook falls back to for its frozen region. */
+  for (const e of out.events) {
+    const plain = plainTitle(e);
+    if (plain && plain !== e.title) { e.sourceTitle = e.title; e.title = plain; }
+  }
+  out.events = mergeCycloneReports(out.events);
+  out.meta.mergedCycloneReports = out.events.mergedCycloneReports || 0;
+  out.meta.notLive = markLive(out.events, now.getTime());
+
   const priority = { Red: 4, Orange: 3, High: 3, Green: 1 };
+  /* Only a live record can drive a new outlook: a storm that dissipated four
+     days ago was still producing a five-day cyclone outlook for India. */
   const officialSignals = out.events.filter(e =>
-    e.sourceType === 'official' && !e.forecast && Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
+    e.sourceType === 'official' && !e.forecast && e.live !== false &&
+    Number.isFinite(+e.lat) && Number.isFinite(+e.lon));
 
   // (a) Hazard-continuation outlooks from every non-seismic active official signal.
   const continuation = officialSignals
@@ -1496,7 +1907,7 @@ async function handler(req, res) {
     const windowEndMs = anchorMs + horizonFor(e.type) * 3600e3;
     // A window that has already closed is history, not an outlook.
     if (windowEndMs <= now.getTime()) continue;
-    const area = ((e.country || e.region || e.title) + '|' + e.type).toLowerCase().replace(/\s+/g, ' ').slice(0, 120);
+    const area = ((e.country || e.region || e.sourceTitle || e.title) + '|' + e.type).toLowerCase().replace(/\s+/g, ' ').slice(0, 120);
     if (seenArea.has(area)) continue;
     seenArea.add(area);
     if (outlooks.length >= MAX_OUTLOOKS) { outlooksWithheld++; continue; }
@@ -1504,30 +1915,44 @@ async function handler(req, res) {
       id: outlookId(e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,
       sourceType: 'forecast', type: e.type,
-      title: windowText(horizonFor(e.type)) + ' ' + e.type + ' risk outlook — ' + (e.country || e.region || e.title),
-      country: e.country || '', region: e.region || e.title || '',
+      title: outlookTitle(e, windowText(horizonFor(e.type))),
+      country: e.country || '', region: e.region || e.sourceTitle || e.title || '',
       alert: e.alert === 'Red' ? 'High' : e.alert === 'Orange' ? 'Moderate' : 'Watch',
       lat: e.lat, lon: e.lon,
       updated: new Date(anchorMs).toISOString(), issuedAt: new Date(anchorMs).toISOString(),
       targetStart: new Date(anchorMs).toISOString(),
       targetEnd: new Date(windowEndMs).toISOString(),
-      details: 'Experimental ' + windowText(horizonFor(e.type)) + ' outlook derived from an active ' + e.source +
-        ' signal, over a window matched to how this hazard develops rather than a fixed three days. Outlook: ' +
-        mechanism(e.type) + '. This is not a deterministic prediction and must not replace official warnings.',
+      details: 'Our own ' + windowText(horizonFor(e.type)) + ' forecast, made from a current report by ' + e.source +
+        '. The period matches how long this kind of hazard usually lasts. What may happen: ' +
+        mechanism(e.type) + '. ' + FORECAST_DISCLAIMER,
       /* An outlook is no more precise than the area it is issued for, and
          the title above names that area: the signal's country where it has
          one, else its region, else the single event itself. Without this the
          outlook inherited the parent's coordinate meaning through the source
          string - so a wildfire outlook headed "United States" was read as an
          incident and could be reported as kilometres from a saved home. */
-      forecastScope: e.country ? 'country' : (e.region ? 'regional' : 'event'),
+      /* As wide as the report it follows, and no wider. Every outlook from a
+         report that named a country used to be issued for that whole
+         country, so a drought centred in Andhra Pradesh was published as
+         covering Mumbai, 800 km away, and a wildfire in one county as a risk
+         to all of the United States. Only a report that is itself placed at
+         country level makes a country-wide outlook now. Rows already in the
+         ledger keep the scope they were recorded with. */
+      forecastScope: e.precision === 'country' ? 'country' : 'event',
       forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: e.id,
-      confidence: e.alert === 'Red' ? 'Elevated — driven by a red-level official signal'
-        : e.alert === 'Orange' ? 'Moderate — driven by an orange-level official signal'
-          : 'Watch — driven by an active but lower-level official signal',
-      evidence: 'Active ' + e.source + ' record “' + e.title + '” (' + (e.alert || 'active') + ') last updated ' + e.updated + '.',
+      /* Said as what the level rests on. A storm's colour is this site's
+         reading of its wind speed, not an alert anyone issued. */
+      confidence: e.alertBasis === 'derived-from-intensity'
+        ? (e.alert === 'Red' ? 'Higher — a major storm (category 3 or stronger)'
+          : e.alert === 'Orange' ? 'Moderate — a hurricane-strength storm'
+            : 'Watch — a weaker storm')
+        : (e.alert === 'Red' ? 'Higher — the agency issued its highest (red) alert'
+          : e.alert === 'Orange' ? 'Moderate — the agency issued an orange alert'
+            : 'Watch — the agency issued a lower-level alert'),
+      evidence: 'Based on the ' + e.source + ' report “' + e.title + '”' +
+        (e.alert ? ' (' + e.alert.toLowerCase() + ' level)' : '') + ', last updated ' + utcText(e.updated) + '.',
       sourceUrl: e.sourceUrl || '',
-      verificationRule: 'Grade only against independently observed impacts during the stated window; the pre-existing source alert itself does not count as a successful prediction.'
+      verificationRule: 'We check this forecast only against damage or impacts that others report during the forecast period. The original alert does not count as the forecast coming true.'
     });
   }
 
@@ -1580,17 +2005,17 @@ async function handler(req, res) {
       id: outlookId('aftershock-' + e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,
       sourceType: 'forecast', type: 'Earthquake aftershock sequence',
-      title: 'Aftershock-sequence outlook — ' + (e.region || e.country || e.title),
-      country: e.country || '', region: e.region || e.title || '',
+      title: 'Aftershock risk ' + nearText(e) + ' — 7-day forecast',
+      country: e.country || '', region: e.region || e.sourceTitle || e.title || '',
       alert: num(e.magnitude) >= 6.5 ? 'High' : 'Moderate',
       lat: e.lat, lon: e.lon,
       updated: new Date(shockMs).toISOString(), issuedAt: new Date(shockMs).toISOString(),
       targetStart: new Date(shockMs).toISOString(),
       targetEnd: new Date(shockEndMs).toISOString(),
-      details: 'Experimental 7-day aftershock-sequence outlook following an observed M' + num(e.magnitude) +
-        ' earthquake. Aftershocks decay over days to weeks and the largest is typically about one magnitude below the mainshock, ' +
-        'so further felt shaking and additional damage to already-weakened structures should be expected. ' +
-        'This describes the ongoing sequence — it is not a prediction of a new independent earthquake.',
+      details: 'Our own 7-day aftershock forecast after a magnitude ' + num(e.magnitude) + ' earthquake. ' +
+        'Aftershocks usually become less frequent over days to weeks, and the largest is often about one magnitude smaller than the main earthquake. ' +
+        'More shaking can damage buildings that are already weakened. ' +
+        'This is about the aftershocks of this earthquake. It does not predict a new, separate earthquake.',
       /* The magnitude of the mainshock this sequence follows, kept under its own
          name: the outlook itself has no magnitude, and calling it one would
          read as a forecast of a quake that size. The narrative already states
@@ -1600,10 +2025,10 @@ async function handler(req, res) {
          localised as the epicentre it is derived from. */
       forecastScope: 'event',
       forecast: true, forecastKind: 'aftershock-sequence', forecastOf: e.id,
-      confidence: 'Sequence-based — derived from observed mainshock magnitude and standard aftershock decay behaviour',
-      evidence: 'Observed ' + e.source + ' event “' + e.title + '” at ' + e.updated + '.',
+      confidence: 'Based on the size of the main earthquake and how aftershocks usually behave',
+      evidence: 'Based on the ' + e.source + ' report “' + e.title + '” at ' + utcText(e.updated) + '.',
       sourceUrl: e.sourceUrl || '',
-      verificationRule: 'Grade against observed aftershock activity and any additional impacts in the window. No claim is made about predicting the mainshock.'
+      verificationRule: 'We check this against aftershocks and any further damage reported in the 7 days. We do not claim to have predicted the main earthquake.'
     });
   }
 
@@ -1628,6 +2053,18 @@ async function handler(req, res) {
       return true;
     })
     .sort(byAlertThenTime);
+  for (const e of out.events) {
+    const p = placeLabel(e); if (p) e.place = p;
+    /* Which countries a record belongs to, for anything that groups by
+       country: the source's own list where it gave one, otherwise the country
+       its coordinate falls in, otherwise the sea it is in. Grouping on the
+       raw field made "Tropical Cyclone FAY-26" and "COLOMBIA" regions of
+       their own. */
+    const listed = String(e.country || '').split(',').map(s => unshout(s.trim())).filter(Boolean);
+    const here = listed.length ? [] : [countryAt(e.lat, e.lon)].filter(Boolean);
+    e.countries = listed.length ? listed : here;
+    if (!e.countries.length) { const sea = oceanName(e.lat, e.lon); if (sea) e.sea = sea; }
+  }
 
   /* Merging can raise a record's alert — a leader that inherits a graver
      assessment from a discarded member — and the feed was sorted before that
@@ -1635,7 +2072,7 @@ async function handler(req, res) {
      The merge itself now runs before the outlooks are derived, above. */
   out.events = out.events.sort(byAlertThenTime);
   out.meta.mergedSeismicReports =
-    out.events.filter(e => e.corroboratedBy && e.corroboratedBy.length).length;
+    out.events.filter(e => e.type === 'Earthquake' && e.corroboratedBy && e.corroboratedBy.length).length;
 
   /* ------------------------------------------------- location precision */
 
@@ -2272,4 +2709,11 @@ module.exports.inRing = inRing;
 module.exports.polygonsOf = polygonsOf;
 module.exports.inPolygon = inPolygon;
 module.exports.mergeSeismicReports = mergeSeismicReports;
+module.exports.mergeCycloneReports = mergeCycloneReports;
+module.exports.plainTitle = plainTitle;
+module.exports.placeLabel = placeLabel;
+module.exports.oceanName = oceanName;
+module.exports.countryAt = countryAt;
+module.exports.markLive = markLive;
+module.exports.gdacsTime = gdacsTime;
 module.exports.eonetTropicalCyclone = eonetTropicalCyclone;

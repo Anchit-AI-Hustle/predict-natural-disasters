@@ -1,16 +1,16 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <!-- seo:start -->
-<title>Record not found | Predict Natural Disasters</title>
-<meta name="description" content="This record could not be found. Browse live disaster events, alerts and forecasts instead.">
+<title>Page not found | Predict Natural Disasters</title>
+<meta name="description" content="We could not find this page. See current disaster events, warnings and forecasts instead.">
 <link rel="canonical" href="https://predict-natural-disasters.anchit-tandon.com/404">
 <meta property="og:site_name" content="Predict Natural Disasters">
-<meta property="og:title" content="Record not found | Predict Natural Disasters">
-<meta property="og:description" content="This record could not be found. Browse live disaster events, alerts and forecasts instead.">
+<meta property="og:title" content="Page not found | Predict Natural Disasters">
+<meta property="og:description" content="We could not find this page. See current disaster events, warnings and forecasts instead.">
 <meta property="og:url" content="https://predict-natural-disasters.anchit-tandon.com/404">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Record not found | Predict Natural Disasters">
-<meta name="twitter:description" content="This record could not be found. Browse live disaster events, alerts and forecasts instead.">
+<meta name="twitter:title" content="Page not found | Predict Natural Disasters">
+<meta name="twitter:description" content="We could not find this page. See current disaster events, warnings and forecasts instead.">
 <meta name="theme-color" content="#02110d">
 <meta name="robots" content="noindex,follow">
 <!-- seo:end -->
@@ -22,24 +22,25 @@
 .nf .paths a:hover{border-color:#35d79a}
 .nf code{background:#08251c;border:1px solid #1d654c;border-radius:6px;padding:2px 6px;font-size:12px;word-break:break-all}
 .nf .onward{display:inline-block;margin-top:10px;background:#35d79a;color:#04211a;font-weight:700;border-radius:9px;padding:11px 18px;text-decoration:none}
+.nf .onward[hidden]{display:none}
 @media(max-width:760px){.nf .paths{grid-template-columns:1fr}}</style></head>
 <body><div id="nav"></div>
-<section class="hero"><div class="muted">RECORD NOT FOUND</div><h1 id="headline">Looking for this record…</h1>
-<p id="sub">Checking the live feed for a matching disaster, alert or outlook.</p></section>
+<section class="hero"><div class="muted">PAGE NOT FOUND</div><h1 id="headline">Looking for this page…</h1>
+<p id="sub">Checking the latest data for a matching event, warning or forecast.</p></section>
 <main class="wrap"><div class="nf">
-  <section class="panel"><div class="ph"><h2>What happened</h2><span id="state" class="statusbar">Resolving…</span></div>
+  <section class="panel"><div class="ph"><h2>What happened</h2><span id="state" class="statusbar">Checking…</span></div>
     <div class="detail">
-      <p>The address <code id="attempted">—</code> did not resolve to a page.</p>
-      <p class="muted" id="explain">Live records rotate out of the source feeds as events close, and a page opened from an
-        older link may no longer exist. If the record is still in the feed this page forwards you to it automatically.</p>
+      <p>There is no page at the address <code id="attempted">—</code>.</p>
+      <p class="muted" id="explain">Our sources stop listing an event once it is over. So a page from an old link may no longer
+        exist. If the event is still listed, we will take you to it automatically.</p>
       <a id="onward" class="onward" href="/events" data-keep-href hidden>Continue</a>
     </div></section>
   <section class="panel"><div class="ph"><h2>Go to</h2></div>
     <div class="paths">
-      <a href="/">Home — global live map</a>
-      <a href="/events">All live events</a>
+      <a href="/">Home: check a place</a>
+      <a href="/events">All current events</a>
       <a href="/official-warnings">Official warnings</a>
-      <a href="/forecast-list">Experimental outlooks</a>
+      <a href="/forecast-list">Our forecasts</a>
       <a href="/calamities">Current calamities</a>
       <a href="/regions">Regions</a>
     </div></section>
@@ -79,41 +80,41 @@ function forward(page, params, label) {
   onward.href = dest;
   onward.textContent = label;
   onward.hidden = false;
-  state.textContent = 'Found it — forwarding';
+  state.textContent = 'Found it. Taking you there…';
   location.replace(dest);
 }
 
 async function resolve() {
   if (seg.length >= 2 && DIRECT[seg[0]] && raw) {
     headline.textContent = 'Taking you to ' + raw;
-    sub.textContent = 'That page is built from the live feed under a different address.';
+    sub.textContent = 'That page is at a different address.';
     forward(DIRECT[seg[0]], { [PARAM[seg[0]]]: raw }, 'Continue to ' + raw);
     return;
   }
   if (seg.length >= 2 && KIND[seg[0]] && raw) {
-    state.textContent = 'Searching the live feed…';
+    state.textContent = 'Searching the latest data…';
     try {
       const d = await PND.getEvents();
       const e = PND.findEvent(d.events, raw);
       if (e) {
         headline.textContent = 'Taking you to ' + e.title;
-        sub.textContent = 'The record is live — opening its detail page.';
+        sub.textContent = 'It is still listed. Opening its page now.';
         forward(KIND[seg[0]], { id: e.id }, 'Continue to ' + e.title);
         return;
       }
-      headline.textContent = 'That record is no longer in the live feed';
-      sub.textContent = 'It was found neither by id nor by title in the current source window.';
-      explain.textContent = 'Source feeds keep a rolling window, so a closed or superseded event drops out. '
-        + 'The lists below carry everything currently reported.';
+      headline.textContent = 'That event or forecast is no longer listed';
+      sub.textContent = 'We searched the latest data by its ID and by its title, and found no match.';
+      explain.textContent = 'Our sources only list recent events. An event drops out once it is over or a newer report replaces it. '
+        + 'The links below show everything that is being reported now.';
     } catch (err) {
-      headline.textContent = 'Could not reach the live feed';
-      sub.textContent = 'The record may still exist — the feed did not answer just now.';
+      headline.textContent = 'Could not reach our data';
+      sub.textContent = 'The page may still exist. Our data did not load just now, so please try again later.';
     }
   } else {
     headline.textContent = 'Page not found';
-    sub.textContent = 'That address does not match any page on this site.';
+    sub.textContent = 'There is no page at this address on our site.';
   }
-  state.textContent = 'Resolved';
+  state.textContent = 'Done';
 }
 resolve();
 </script><script src="/glossary.js"></script></body></html>

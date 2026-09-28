@@ -495,7 +495,7 @@ function visibleText(doc) {
 const BLAME = [
   'Feed unavailable', 'Live feed unavailable', 'Upstream feed unavailable',
   'Live forecast feed unavailable', 'Verification data unavailable',
-  'Evidence feed unavailable'
+  'Evidence feed unavailable', 'Live data unavailable'
 ];
 
 test('no page blames the feed while the feed is healthy', async () => {

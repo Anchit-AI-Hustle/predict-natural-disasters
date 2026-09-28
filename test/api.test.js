@@ -387,7 +387,7 @@ test('distress groups and needs are hazard-specific', async () => {
 test('donation prompts are withheld for forecast records', async () => {
   const d = (await runEnrichment(Object.assign({}, NEPAL, { forecast: 'true' }))).body;
   assert.deepEqual(d.reliefGroups, []);
-  assert.match(d.donationPolicy, /withheld/i);
+  assert.match(d.donationPolicy, /do not show donation links until real harm is confirmed/i);
 });
 
 test('enrichment still answers when every external provider is down', async () => {

@@ -1,8 +1,45 @@
 const PND={
   timezone:localStorage.getItem('pnd_timezone')||'Asia/Kolkata',
-  async getEvents(){
-    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');return r.json();
+  /* Lists show what is live. A record its provider stopped updating (the
+     feed marks it live:false) still opens on its own page, so a detail page
+     asks for everything with {all:true}. */
+  async getEvents(opts){
+    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');
+    const d=await r.json();if(opts&&opts.all)return d;
+    const ev=Array.isArray(d.events)?d.events:[];
+    return Object.assign({},d,{events:ev.filter(e=>e&&e.live!==false),notLive:ev.filter(e=>e&&e.live===false)});
   },
+  /* Where a record is, in words. The feed computes it; the rest is for a
+     ledger row or an older payload that carries no place of its own. */
+  placeOf(e,fallback=''){if(!e)return fallback;
+    const tidy=v=>String(v||'').replace(/[\s,;]+$/,'').trim();
+    if(tidy(e.place))return tidy(e.place);
+    const t=tidy(e.title).toLowerCase(),c=tidy(e.country);let r=tidy(e.region);
+    /* A region that only repeats a name ("Flood in China") is not a place;
+       a frozen corridor is, and it is what a forecast was issued for. */
+    if(r&&(r.toLowerCase()===t||/^(flood|drought|wildfire|forest fires?|earthquake|volcano|tropical cyclone)\b.*\bin\b/i.test(r)||/^tropical cyclone\s/i.test(r)))r='';
+    if(r&&c&&!r.toLowerCase().includes(c.toLowerCase()))return r+', '+c;
+    return r||c||fallback;},
+  /* A forecast's name as a reader should see it. Forecasts recorded before
+     September 2026 were titled "3-day Flood risk outlook — Nepal", and the
+     record keeps them as written; this only changes how that name is shown. */
+  titleOf(e){const t=String((e&&e.title)||'');let m=/^(\d+)-(day|hour) (.+?) risk outlook — (.+)$/.exec(t);
+    if(m)return m[3]+' risk in '+m[4]+' — '+m[1]+'-'+m[2]+' forecast';
+    m=/^Aftershock-sequence outlook — (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^\d/.test(m[1])?'':'near ')+m[1]+' — 7-day forecast';
+    return t;},
+  /* How many countries a list names. A drought's country field lists every
+     country it covers, and counting that string as one country - and a
+     storm's "Western Pacific Ocean" as another - is how the homepage came to
+     report 195 countries. */
+  countryCount(list){const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
+  /* Shown under a detail page's heading when the record is no longer live. */
+  showQuiet(e,after,text){const t=text||this.quietNote(e);let n=document.getElementById('quietNote');
+    if(!t){if(n)n.remove();return}
+    if(!n&&after){n=document.createElement('p');n.id='quietNote';n.className='stale';n.setAttribute('role','note');after.insertAdjacentElement('afterend',n)}
+    if(n)n.textContent=t;},
+  /* Said on a record's own page when its provider has gone quiet. */
+  quietNote(e){if(!e||e.live!==false)return '';const d=Number(e.quietDays);
+    return `Not updated by ${e.source||'its source'} for ${Number.isFinite(d)?d+' day'+(d===1?'':'s'):'some time'}. It may have ended; check the source for its current status.`;},
   autoRefresh(fn,ms=60000){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await fn()}finally{busy=false}};run();return setInterval(run,Math.min(ms,60000))},
   esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
   pathParam(k){const p=location.pathname.split('/').filter(Boolean);const map={disasters:'id',calamities:'id',alerts:'id',forecasts:'id',history:'id',regions:'region',locations:'location',hazards:'type',sources:'source'};if(p.length>=2&&map[p[0]]===k){try{return decodeURIComponent(p.slice(1).join('/'))}catch(e){return p.slice(1).join('/')}}return ''},
@@ -230,27 +267,26 @@ const PND={
      stated. Phrased once here so every page says the same thing. */
   horizonText(meta){
     const h=meta&&meta.forecastHorizon;
-    if(!h||!h.furthestWindowEnds)return 'No outlook windows are open right now.';
+    if(!h||!h.furthestWindowEnds)return 'There are no open forecasts right now.';
     const d=h.daysAhead;
     const ahead=d>=1?Math.round(d)+' day'+(Math.round(d)===1?'':'s'):'less than a day';
-    return 'Forecasts currently run to '+this.fmtDate(h.furthestWindowEnds)+
-      ' — '+ahead+' ahead. Windows are '+
-      (h.windowLengthDays&&h.windowLengthDays.length
-        ? h.windowLengthDays.join(', ')+' day'+(h.windowLengthDays.length===1&&h.windowLengthDays[0]===1?'':'s')+' long'
-        : 'of varying length')+
-      '. Nothing here looks further ahead, and that is a limit of the method rather than a forecast of calm.';
+    const lens=(h.windowLengthDays||[]).slice();
+    const lenText=lens.length?(lens.length>1?lens.slice(0,-1).join(', ')+' or '+lens[lens.length-1]:lens[0])+' day'+(lens.length===1&&lens[0]===1?'':'s'):'';
+    return 'Our forecasts reach as far as '+this.fmtDate(h.furthestWindowEnds)+
+      ' ('+ahead+' from now)'+(lenText?'. Each one covers '+lenText:'')+
+      '. We do not forecast further ahead than that. It does not mean nothing will happen after that date.';
   },
   /* "Has anything changed in the forecasts since I last looked" had no answer:
      the ledger appends a re-issued outlook as a new row indistinguishable from
      a new one, and an outlook that stopped being issued left no trace. */
   changesHtml(meta){
     const c=meta&&meta.forecastChanges;
-    if(!c)return '<p class="muted">No change record has been written yet.</p>';
+    if(!c)return '<p class="muted">No changes have been recorded yet.</p>';
     const when=this.fmtDate(c.at)+' · '+this.age(c.at);
-    if(c.baseline)return '<p class="muted">First recorded check, '+this.esc(when)+
-      '. '+c.activeOutlooks+' outlooks are open; there is nothing earlier to compare them with yet.</p>';
+    if(c.baseline)return '<p class="muted">First check, '+this.esc(when)+
+      '. '+c.activeOutlooks+' forecasts are open. There is nothing earlier to compare them with yet.</p>';
     const gap=typeof c.sinceHours==='number'&&c.sinceHours>0
-      ? ' (' + (c.sinceHours<1 ? Math.round(c.sinceHours*60)+' minutes' : c.sinceHours+' hours') + ' after the one before)'
+      ? ' (' + (c.sinceHours<1 ? Math.round(c.sinceHours*60)+' minutes' : c.sinceHours+(c.sinceHours===1?' hour':' hours')) + ' after the check before)'
       : '';
     /* An outage is not a change in the forecasts, so it is deliberately not
        counted in total — but it still has to be shown. Returning on total
@@ -259,7 +295,7 @@ const PND={
        which is the opposite of what recording them was for. */
     const un=Number(c.unavailable)||0;
     if(!c.total&&!un)return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+
-      '. None of the '+c.activeOutlooks+' open outlooks changed level, window or status.</p>';
+      '. None of the '+c.activeOutlooks+' open forecasts changed their risk level, dates or status.</p>';
     const R=c.records||{};
     const row=(label,list,fmt)=>(list&&list.length)
       ? '<div><b>'+label+' ('+list.length+')</b>'+list.slice(0,8).map(x=>
@@ -267,42 +303,42 @@ const PND={
           (list.length>8?'<p class="muted">…and '+(list.length-8)+' more</p>':'')+'</div>'
       : '';
     const headline=c.total
-      ? c.total+' change'+(c.total===1?'':'s')+' across '+c.activeOutlooks+' open outlooks'
-      : 'no changes across '+c.activeOutlooks+' open outlooks';
+      ? c.total+' change'+(c.total===1?'':'s')+' across '+c.activeOutlooks+' open forecasts'
+      : 'no changes across '+c.activeOutlooks+' open forecasts';
     const caveat=un?', and '+un+' that could not be checked':'';
     return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+' · '+
       this.esc(headline+caveat)+'.</p>'+
-      row('Newly issued',R.added,x=>x.title+' — '+x.alert)+
-      row('Raised',R.raised,x=>x.title+' — '+x.from+' → '+x.to)+
-      row('Lowered',R.lowered,x=>x.title+' — '+x.from+' → '+x.to)+
-      row('Window moved',R.windowMoved,x=>x.title+' — now ends '+this.fmtDate(x.toEnd))+
-      row('No longer issued',R.gone,x=>x.title+' — the signal behind it stopped')+
+      row('New',R.added,x=>this.titleOf(x)+' — '+x.alert)+
+      row('Raised',R.raised,x=>this.titleOf(x)+' — '+x.from+' → '+x.to)+
+      row('Lowered',R.lowered,x=>this.titleOf(x)+' — '+x.from+' → '+x.to)+
+      row('Dates changed',R.windowMoved,x=>this.titleOf(x)+' — now ends '+this.fmtDate(x.toEnd))+
+      row('Stopped',R.gone,x=>this.titleOf(x)+' — the event it followed is no longer reported')+
       /* An outlook whose window simply ended did what it said it would. It
          must not read as a withdrawal. */
-      row('Window closed as scheduled',R.expired,x=>x.title+' — its forecast window ended')+
+      row('Ended on schedule',R.expired,x=>this.titleOf(x)+' — its forecast period ended')+
       /* Not a change in the forecasts at all — a gap in what could be seen.
          Reporting it as a withdrawal would blame the forecast for our
          outage, and blame it again as a new forecast on recovery. */
-      row('Could not be checked',R.unavailable,x=>x.title+
-        ' — its source was unreachable on this run, so it is unchanged rather than withdrawn');
+      row('Could not be checked',R.unavailable,x=>this.titleOf(x)+
+        ' — we could not reach its source this time, so it is unchanged, not withdrawn');
   },
   SORT_DEFS:{
-    severity:{label:'Severity — highest first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
-    newest:{label:'Updated — newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},
-    oldest:{label:'Updated — oldest first',cmp(a,b){return PND.timeOf(a)-PND.timeOf(b)}},
-    deaths:{label:'Reported deaths — highest',cmp(a,b){return PND.numOf(b.deaths)-PND.numOf(a.deaths)||PND.timeOf(b)-PND.timeOf(a)}},
-    affected:{label:'People affected — highest',cmp(a,b){return PND.numOf(b.affected)-PND.numOf(a.affected)||PND.numOf(b.displaced)-PND.numOf(a.displaced)||PND.timeOf(b)-PND.timeOf(a)}},
-    country:{label:'Country / region — A to Z',cmp(a,b){return PND.textOf(a,'country','region').localeCompare(PND.textOf(b,'country','region'))||PND.timeOf(b)-PND.timeOf(a)}},
-    type:{label:'Hazard type — A to Z',cmp(a,b){return PND.textOf(a,'type').localeCompare(PND.textOf(b,'type'))||PND.rankOf(b)-PND.rankOf(a)}},
-    source:{label:'Source — A to Z',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
-    title:{label:'Title — A to Z',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
-    distance:{label:'Distance — nearest first',cmp(a,b){return (Number.isFinite(a._d)?a._d:Infinity)-(Number.isFinite(b._d)?b._d:Infinity)}},
+    severity:{label:'Most serious first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
+    newest:{label:'Newest first',cmp(a,b){return PND.timeOf(b)-PND.timeOf(a)}},
+    oldest:{label:'Oldest first',cmp(a,b){return PND.timeOf(a)-PND.timeOf(b)}},
+    deaths:{label:'Most deaths first',cmp(a,b){return PND.numOf(b.deaths)-PND.numOf(a.deaths)||PND.timeOf(b)-PND.timeOf(a)}},
+    affected:{label:'Most people affected first',cmp(a,b){return PND.numOf(b.affected)-PND.numOf(a.affected)||PND.numOf(b.displaced)-PND.numOf(a.displaced)||PND.timeOf(b)-PND.timeOf(a)}},
+    country:{label:'Place (A to Z)',cmp(a,b){return PND.textOf(a,'place','country','region').localeCompare(PND.textOf(b,'place','country','region'))||PND.timeOf(b)-PND.timeOf(a)}},
+    type:{label:'Type of hazard (A to Z)',cmp(a,b){return PND.textOf(a,'type').localeCompare(PND.textOf(b,'type'))||PND.rankOf(b)-PND.rankOf(a)}},
+    source:{label:'Source (A to Z)',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
+    title:{label:'Name (A to Z)',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
+    distance:{label:'Nearest first',cmp(a,b){return (Number.isFinite(a._d)?a._d:Infinity)-(Number.isFinite(b._d)?b._d:Infinity)}},
     windowEnd:{label:'Ending soonest first',cmp(a,b){const x=Date.parse(a.targetEnd||'')||Infinity,y=Date.parse(b.targetEnd||'')||Infinity;return x-y}},
-    yearNew:{label:'Date — most recent first',cmp(a,b){return PND.numOf(b.sort)-PND.numOf(a.sort)}},
-    yearOld:{label:'Date — earliest first',cmp(a,b){return PND.numOf(a.sort)-PND.numOf(b.sort)}},
-    name:{label:'Name — A to Z',cmp(a,b){return PND.textOf(a,'name','title').localeCompare(PND.textOf(b,'name','title'))}},
-    countDesc:{label:'Active records — most first',cmp(a,b){return PND.numOf(b.count)-PND.numOf(a.count)}},
-    countAsc:{label:'Active records — fewest first',cmp(a,b){return PND.numOf(a.count)-PND.numOf(b.count)}}
+    yearNew:{label:'Most recent first',cmp(a,b){return PND.numOf(b.sort)-PND.numOf(a.sort)}},
+    yearOld:{label:'Earliest first',cmp(a,b){return PND.numOf(a.sort)-PND.numOf(b.sort)}},
+    name:{label:'Name (A to Z)',cmp(a,b){return PND.textOf(a,'name','title').localeCompare(PND.textOf(b,'name','title'))}},
+    countDesc:{label:'Most events first',cmp(a,b){return PND.numOf(b.count)-PND.numOf(a.count)}},
+    countAsc:{label:'Fewest events first',cmp(a,b){return PND.numOf(a.count)-PND.numOf(b.count)}}
   },
   /** Default option set for a list of live hazard records. */
   EVENT_SORTS:['newest','severity','oldest','deaths','affected','country','type','source','title'],
@@ -368,9 +404,9 @@ const PND={
      the feed says nothing, this falls to the weaker claim rather than
      inventing a warning nobody issued. */
   provenance(e){const s=e&&e.evidenceState;
-    if(s==='forecast'||(!s&&e&&e.forecast))return e.forecastKind==='frozen-benchmark'?'EXPERIMENTAL PREDICTION':'MODEL-DERIVED OUTLOOK';
+    if(s==='forecast'||(!s&&e&&e.forecast))return e.forecastKind==='frozen-benchmark'?'TEST FORECAST':'OUR FORECAST';
     if(s==='official-warning')return 'OFFICIAL WARNING';
-    return 'OBSERVED EVENT';},
+    return 'REPORTED EVENT';},
   savedLocations(){try{return JSON.parse(localStorage.getItem('pnd_saved_locations')||'[]')}catch(e){return[]}},
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
@@ -395,8 +431,8 @@ const PND={
   NAV_ALIAS:{'Live Map':'Map','Alerts':'Alerts & events','Calamities':'Alerts & events','Events':'Alerts & events','Personal Risk':'My places','Verification':'Track record','Accuracy':'Track record'},
   nav(active=''){const on=this.NAV_ALIAS[active]||active;return `<header class="top"><a class="logo" href="/" aria-label="Predict Natural Disasters — check a place"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Check a place · live hazards · forecasts</small></span></a><nav aria-label="Main">${this.NAV.map(([n,u])=>`<a class="${on===n?'active':''}" href="${u}"${on===n?' aria-current="page"':''}>${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
   /* Everything that left the top bar, kept one tap away on every page. */
-  FOOT:[['Check a place','/'],['Live events','/events'],['Official warnings','/official-warnings'],['Calamities','/calamities'],['Regions','/regions'],['Forecast calendar','/forecast-calendar'],['Methodology','/methodology'],['Sources & coverage','/resources'],['Insights','/insights'],['About','/about']],
-  footer(){return `<footer class="sitefoot" aria-label="More of this site"><nav>${this.FOOT.map(([n,u])=>`<a href="${u}">${n}</a>`).join('')}</nav><p>Situational awareness from public sources. Not an official warning service — in an emergency, follow your local authorities.</p></footer>`;},
+  FOOT:[['Check a place','/'],['Live events','/events'],['Official warnings','/official-warnings'],['Disasters now and in the past','/calamities'],['Regions','/regions'],['Forecast calendar','/forecast-calendar'],['How it works','/methodology'],['Our sources','/resources'],['Insights','/insights'],['About','/about']],
+  footer(){return `<footer class="sitefoot" aria-label="More of this site"><nav>${this.FOOT.map(([n,u])=>`<a href="${u}">${n}</a>`).join('')}</nav><p>Up-to-date information from public sources. This is not an official warning service. In an emergency, follow your local authorities.</p></footer>`;},
   sourceBadge(e){const full=(e&&e.source)||'Source not stated';
     return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(full)}">${this.esc(this.shortSource(full))}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
@@ -415,11 +451,11 @@ const PND={
   /* "Starts <date> · expected duration <n>" for a forecast record. */
   windowText(e){
     const start=e&&(e.targetStart||e.startedAt||e.updated);
-    if(!start)return 'Start not supplied by the source';
+    if(!start)return 'The source gives no start time';
     const dur=this.duration(start,e&&e.targetEnd);
-    return 'Starts '+this.fmtDate(start)+(dur?' · expected duration '+dur:' · duration not stated');
+    return 'Starts '+this.fmtDate(start)+(dur?' · lasts '+dur:' · length not stated');
   },
-  statusText(meta){if(!meta)return 'Refreshing';const all=Object.values(meta.sources||{});const n=all.filter(x=>x&&x.ok).length;/* The denominator was hard-coded to 3 while the feed grew to eight providers, so a healthy feed read "7/3 sources online". */return meta.live?`Live · ${n}/${all.length||n} sources online`:'Source outage · verified fallbacks only';},
+  statusText(meta){if(!meta)return 'Refreshing';const all=Object.values(meta.sources||{});const n=all.filter(x=>x&&x.ok).length;/* The denominator was hard-coded to 3 while the feed grew to eight providers, so a healthy feed read "7/3 sources online". */return meta.live?`Live · ${n} of ${all.length||n} sources working`:'Our data sources are not answering · showing saved copies only';},
   /* Online/total upstream providers. Pages must use this rather than a literal
      denominator: the provider list grows, and a hard-coded one reads "7/3". */
   sourcesRatio(meta){const all=Object.values((meta&&meta.sources)||{});const n=all.filter(x=>x&&x.ok).length;return n+'/'+(all.length||n);},
@@ -444,11 +480,11 @@ const PND={
   /* What a card says about a record: its first sentence, and no more than
      a line and a half. A card is a way into the record, and the whole
      description - often 50 or 60 words - is on the record's own page. */
-  summary(text,max=160){let t=String(text||'').replace(/\s*This is not a deterministic prediction and must not replace official warnings\.?\s*$/,'').replace(/\s+/g,' ').trim();
+  summary(text,max=160){let t=String(text||'').replace(/\s*(This is not a deterministic prediction and must not replace official warnings|This is our own estimate, not an official warning)\.?\s*$/,'').replace(/\s+/g,' ').trim();
     const first=t.match(/^.{20,}?[.!?](?=\s+[A-Z(]|$)/);if(first)t=first[0];
     if(t.length<=max)return t;const cut=t.slice(0,max);return cut.slice(0,Math.max(cut.lastIndexOf(' '),max*0.6|0)).replace(/[\s,;:·—-]+$/,'')+'…';},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
-  countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
+  countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region|Pseudo|European Union|Eurozone|United Nations|Outlying Oceania|^world$/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };
 window.PND=PND;
 const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms,...args)=>__pndSetInterval(fn,Math.min(Number(ms)||60000,60000),...args);
@@ -462,7 +498,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
      its recovery link is deliberately in query form, and rewriting it back to the
      pretty URL the visitor just failed to open would send them straight back. */
   function normalizeLinks(root=document){root.querySelectorAll('a[href]:not([data-keep-href])').forEach(a=>{const old=a.getAttribute('href'),next=PND.canonicalDetailUrl(old);if(next&&next!==old)a.setAttribute('href',next);});}
-  function normalizeRows(root=document){root.querySelectorAll(clickableSelectors).forEach(el=>{const href=PND.routeFromDataset(el);if(href)el.dataset.href=href;if(!el.dataset.href)return;el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.title='Open independent detail page';el.setAttribute('role','link');el.setAttribute('tabindex','0');});root.querySelectorAll('.event,.riskitem,.calamity-card,.forecast-card,.alert-card,.region-card,.hazard-card,.historical-card').forEach(el=>{if(!el.dataset.href){const href=PND.routeFromDataset(el);if(href)el.dataset.href=href}if(el.dataset.href){el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.setAttribute('role','link');el.setAttribute('tabindex','0');el.title='Open independent detail page';}});}
+  function normalizeRows(root=document){root.querySelectorAll(clickableSelectors).forEach(el=>{const href=PND.routeFromDataset(el);if(href)el.dataset.href=href;if(!el.dataset.href)return;el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.title='Open details';el.setAttribute('role','link');el.setAttribute('tabindex','0');});root.querySelectorAll('.event,.riskitem,.calamity-card,.forecast-card,.alert-card,.region-card,.hazard-card,.historical-card').forEach(el=>{if(!el.dataset.href){const href=PND.routeFromDataset(el);if(href)el.dataset.href=href}if(el.dataset.href){el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.setAttribute('role','link');el.setAttribute('tabindex','0');el.title='Open details';}});}
   function normalizeInlineHandlers(root=document){root.querySelectorAll('[onclick]').forEach(el=>{if(el.dataset.href)return;const raw=el.getAttribute('onclick')||'';const m=raw.match(/(?:window\.)?location(?:\.href)?\s*=\s*['\"]([^'\"]+)/)||raw.match(/location\.assign\(['\"]([^'\"]+)/);if(m){el.dataset.href=PND.canonicalDetailUrl(m[1]);el.removeAttribute('onclick');el.style.cursor='pointer';el.setAttribute('role','link');el.setAttribute('tabindex','0');}});}
   function wire(root=document){normalizeLinks(root);normalizeViewAll(root);normalizeRows(root);normalizeInlineHandlers(root);}
   function navigateFrom(el){const href=el&&el.dataset&&el.dataset.href;if(href)PND.redirect(href);}
@@ -481,7 +517,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
       mount=document.createElement('section');mount.id='eventEnrichment';mount.className='wrap';
       main.insertAdjacentElement('afterend',mount)}
     let e=null;
-    try{const d=await PND.getEvents();e=PND.findEvent(d.events,id)}catch(err){return}
+    try{const d=await PND.getEvents({all:true});e=PND.findEvent(d.events,id)}catch(err){return}
     if(!e)return;
     const run=()=>{if(window.PNDEventEnrichment)window.PNDEventEnrichment.load(e)};
     if(window.PNDEventEnrichment){run();return}

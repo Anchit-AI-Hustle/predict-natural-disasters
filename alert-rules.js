@@ -63,6 +63,8 @@
   function live(e, now) {
     if (!e || e.forecast || e.isForecast) return false;
     if (e.cached) return false;
+    /* The feed's own verdict that the provider has gone quiet. */
+    if (e.live === false) return false;
     if (e.evidenceState === 'official-warning') {
       var exp = ms(e.expiresAt);
       return exp === null || exp > now;

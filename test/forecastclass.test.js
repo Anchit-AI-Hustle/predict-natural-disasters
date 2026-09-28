@@ -381,14 +381,14 @@ test('the accuracy page separates predictions from conditional forecasts', async
   // prediction, and the page must say so rather than borrowing the
   // conditional outlooks' record to stand in for one.
   assert.equal(get('ipTotal'), '0');
-  assert.equal(get('ipPrecision'), 'Not computable');
+  assert.equal(get('ipPrecision'), 'Cannot be calculated');
   assert.ok(Number(get('cdTotal')) > 0, 'the conditional outlooks should still be counted and shown');
-  assert.match(get('ipNote'), /no prediction hit rate/i);
+  assert.match(get('ipNote'), /no hit rate for advance forecasts/i);
   const note = get('classBreak');
-  assert.match(note, /Continuation outlook: \d+/);
-  assert.match(note, /Retrospective benchmark: \d+/);
+  assert.match(note, /Follows an ongoing event: \d+/);
+  assert.match(note, /Test case, not made in advance: \d+/);
   // The two performances are headed separately and never added together.
-  assert.match(r.text(), /Independent prediction performance/);
-  assert.match(r.text(), /Conditional \/ continuation outlook performance/);
+  assert.match(r.text(), /How our advance forecasts did/);
+  assert.match(r.text(), /How our other forecasts did/);
   r.close();
 });

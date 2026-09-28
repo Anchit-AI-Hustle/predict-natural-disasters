@@ -111,12 +111,13 @@ test('the source-health line counts against the real number of providers', async
   assert.ok(!/\$\{n\}\/3 sources online/.test(portal), 'the denominator is still hard-coded');
 
   const r = await renderPage('events.html', {
-    waitFor: doc => /sources online|outage/.test(doc.getElementById('statusLine').textContent)
+    waitFor: doc => /sources working|sources are down/.test(doc.getElementById('statusLine').textContent)
   });
   const line = r.document.getElementById('statusLine').textContent;
   r.close();
 
-  const m = line.match(/(\d+)\/(\d+) sources online/);
+  const m = line.match(/(\d+) of (\d+) sources working/);
+  assert.ok(m || /sources are down/.test(line), 'no source count in: ' + line.trim());
   if (m) {
     const [, online, total] = m.map(Number);
     assert.ok(online <= total, 'reported ' + line.trim() + ' — more online than exist');

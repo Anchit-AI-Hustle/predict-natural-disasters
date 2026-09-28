@@ -244,11 +244,11 @@ test('without a store and a schedule the service says it is off, and why', async
   const none = await call(ALERTS, {}, { env: {} });
   assert.equal(none.body.available, false);
   assert.match(none.body.reason, /not switched on/);
-  assert.match(none.body.reason, /no store/);
+  assert.match(none.body.reason, /nowhere to keep your alert settings/);
   assert.equal(none.body.publicKey, null);
   const storeOnly = await call(ALERTS, {}, { env: { KV_REST_API_URL: 'https://s', KV_REST_API_TOKEN: 't' } });
   assert.equal(storeOnly.body.available, false);
-  assert.match(storeOnly.body.reason, /nothing is scheduled/, 'a store with no schedule would take subscriptions and never use them');
+  assert.match(storeOnly.body.reason, /Nothing checks for dangers while the site is closed/, 'a store with no schedule would take subscriptions and never use them');
   const post = await call(ALERTS, { method: 'POST', body: {} }, { env: {} });
   assert.equal(post.statusCode, 503);
 });
@@ -524,7 +524,7 @@ test('where the service is off, the page says so and offers only what works', as
   const status = r.document.getElementById('alertsStatus').textContent;
   assert.match(status, /not switched on/);
   assert.match(status, /While this page is open/);
-  assert.match(status, /national or regional hazard agency/);
+  assert.match(status, /national or regional disaster agency/);
   assert.equal(r.document.getElementById('alertsToggle').textContent, 'Alert me while this page is open');
   r.close();
 });
@@ -588,7 +588,7 @@ test('where it is on, one tap subscribes this device and sends only kinds and ro
   while (Date.now() < deadline && !/^On for/.test(r.document.getElementById('alertsStatus').textContent)) {
     await new Promise(res => setTimeout(res, 30));
   }
-  assert.match(r.document.getElementById('alertsStatus').textContent, /^On for 1 place on this device/);
+  assert.match(r.document.getElementById('alertsStatus').textContent, /^Alerts are on for 1 place on this device/);
   assert.equal(toggle.textContent, 'Turn off alerts');
   const signup = posted.find(p => p.method === 'POST');
   assert.deepEqual(signup.body.places, [{ kind: 'Home', lat: 28.61, lon: 77.21 }]);

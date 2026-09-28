@@ -222,7 +222,7 @@ test('an absence of forecasts is never read as an absence of looking', () => {
   assert.equal(a.falseNegative, true);
   assert.equal(a.status, 'DATA_UNAVAILABLE',
     'with no scan record at all, this must not claim either that it looked or that it did not');
-  assert.match(a.reason, /not evidence that nothing was/i);
+  assert.match(a.reason, /does not mean we were not/i);
 });
 
 test('a disaster before the scan record begins cannot be attributed either way', () => {
@@ -230,7 +230,7 @@ test('a disaster before the scan record begins cannot be attributed either way',
     retention: { detailFrom: '2026-10-01T00:00:00Z' }, providers: {} };
   const a = V.assessCoverage(disaster(), [], led);
   assert.equal(a.status, 'DATA_UNAVAILABLE');
-  assert.match(a.reason, /predates/i);
+  assert.match(a.reason, /before our detailed record of checks begins/i);
 });
 
 test('scanned and nothing forecast is a forecasting failure, not a coverage one', () => {
@@ -315,8 +315,8 @@ test('every score states the counts and the weighting it came from', () => {
   assert.ok(Math.abs(s.recall - 0.5) < 1e-9, 'recall is not the stated formula');
   assert.ok(Math.abs(s.f1 - 0.5) < 1e-9);
   assert.equal(s.partialHitWeight, 0.5);
-  assert.match(s.methodology.partialHitWeight, /PARTIAL HIT weight = 0\.5/);
-  assert.match(s.methodology.f1, /not an accuracy/i);
+  assert.match(s.methodology.partialHitWeight, /partly correct forecast counts as 0\.5/i);
+  assert.match(s.methodology.f1, /not a measure of accuracy/i);
 });
 
 /* ------------------------------------ and against the real recorded data */
@@ -694,7 +694,7 @@ test('an aftershock of one quake does not grade the next quake\u2019s outlook', 
     const v = grade2(p, after(both));
     assert.equal(v.classification, 'PENDING', p.id + ' claimed an observation it cannot claim alone');
     assert.equal(v.ungradeableReason, 'SEQUENCE_ATTRIBUTION_AMBIGUOUS');
-    assert.match(v.classificationReason, /which sequence it belongs to/);
+    assert.match(v.classificationReason, /which disaster it belongs to/);
   }
 
   // A revision of the same claim is not a second sequence.
@@ -873,7 +873,7 @@ test('a window nothing covers says why, and never calls a full record empty', ()
   assert.equal(V.observedCoverageFor(null, ['flood', 'landslide'], {}).why, 'no-scans');
   const none = grade(prediction(), [], { observedCoverage: cover({ scans: [] }) });
   assert.equal(none.ungradeableReason, 'OBSERVED_RECORD_EMPTY');
-  assert.match(none.classificationReason, /No scan of the disaster sources has been recorded yet/);
+  assert.match(none.classificationReason, /not recorded any check of our disaster sources yet/);
   // Undated scans establish nothing, so they are not scans either.
   assert.equal(V.observedCoverageFor({ providers: quakesOnly.providers,
     scans: [scan('', [up('quake')])] }, 'earthquake', {}).why, 'no-scans');
@@ -955,7 +955,7 @@ test('a hazard nobody forecasts is not the engine failing to forecast it', () =>
     'an unpredicted earthquake was attributed to the engine failing to forecast it');
   assert.equal(a.falseNegative, true,
     'it still happened and nothing predicted it: that is still a false negative');
-  assert.match(a.reason, /not forecastable/i);
+  assert.match(a.reason, /Nobody can forecast/i);
 
   /* A hazard the table does say is forecastable does not take this exit: the
      only provider up here covers earthquakes, so a flood is a gap in the

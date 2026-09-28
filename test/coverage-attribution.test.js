@@ -118,7 +118,7 @@ test('a catalogue of what has happened cannot have forecast anything', () => {
   assert.equal(a.falseNegative, true,
     'it still happened and nothing predicted it: that is still a false negative');
   assert.match(a.reason, /already happened/i);
-  assert.match(a.reason, /not as a forecasting failure/i);
+  assert.match(a.reason, /not as a failure of our forecasts/i);
 
   /* A source that says what is expected is a different thing, and with one of
      those up the same disaster is the forecaster's to answer for. */
@@ -394,8 +394,17 @@ test('better evidence renames nothing and duplicates nothing', async () => {
 
 /* ------------------------- a country-wide claim is recorded as one */
 
+/* A country-level report from today: the only kind that makes a country-wide
+   outlook, now that an outlook is no wider than the report it follows. */
+const freshCountryReport = () => ({ feeds: {
+  reliefweb: '<?xml version="1.0"?><rss version="2.0"><channel>' +
+    '<item><title>Madagascar: Drought - Sep 2026</title><link>https://reliefweb.int/disaster/dr-2026-000150-mdg</link>' +
+    '<pubDate>' + new Date(Date.now() - 2 * 3600e3).toUTCString() + '</pubDate><description>Drought.</description></item>' +
+    '</channel></rss>',
+  geocode: { results: [{ name: 'Madagascar', latitude: -19.4, longitude: 46.7, country_code: 'MG' }] } } });
+
 test('the ledger records the scope a forecast was issued for', async () => {
-  const { events } = await feed();
+  const { events } = await feed(freshCountryReport());
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-scope-'));
   const eventsPath = path.join(dir, 'events.json');
   const ledgerPath = path.join(dir, 'ledger.json');

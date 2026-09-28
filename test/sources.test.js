@@ -67,7 +67,7 @@ test('each source says what it covers and what its silence establishes', async (
     'a selective source does not say that its silence proves nothing');
 
   const usgs = cards.find(c => /Earthquake Hazards Program/.test(c));
-  assert.match(usgs, /an absence here is meaningful/i,
+  assert.match(usgs, /real evidence that nothing happened/i,
     'an exhaustive source does not say that its silence is evidence');
 
   const warningFeeds = meta.scan.providers.filter(p => p.recordsObservations === false);
@@ -83,14 +83,14 @@ test('each source says what it covers and what its silence establishes', async (
 test('the page reports which sources answered, from this scan', async () => {
   const up = await open();
   const answeredWhenUp = (up.document.querySelector('#cards .panel') || {}).textContent || '';
-  assert.match(answeredWhenUp, /\d+ of \d+ sources answered this scan in full/);
+  assert.match(answeredWhenUp, /\d+ of \d+ sources answered in full this time/);
   /* "Answered" and "answered in full" are different counts; the page prints a
      status line reporting the first, so the panel must not report the second
      under the same word. */
   const line = (up.document.getElementById('statusLine') || {}).textContent || '';
   assert.equal(/matching records/.test(line), false,
     'the sources page counts event records in a line about sources');
-  assert.match(line, /sources online/i);
+  assert.match(line, /sources working/i);
   up.close();
 
   /* With two sources down, the count moves and the cards say which. */

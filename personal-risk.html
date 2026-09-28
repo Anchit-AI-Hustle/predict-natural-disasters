@@ -1,11 +1,11 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Personal Risk Centre | Predict Natural Disasters</title><meta name="description" content="Save the places that matter to you, or use where you are now, and see which reported hazards bear on them. Where this site's alert service is switched on, it can alert this device while the site is closed.">
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b2a20"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/portal.css"><link rel="stylesheet" href="/risk.css"></head><body><div id="nav"></div><main class="wrap"><section class="hero"><h1>Personal Risk Centre</h1><p>Your places, and the hazards that bear on them.</p></section><section class="panel" id="alertsPanel"><div class="ph"><h3>Alerts</h3></div><div style="padding:10px 12px"><p id="alertsStatus" role="status" style="margin:0 0 10px">Checking what this device can do…</p><div class="toolbar" style="padding:0"><button class="btn" type="button" id="alertsToggle" hidden></button><button class="btn" type="button" id="useLocation">Use my current location</button></div><p id="locationStatus" class="muted" role="status" style="margin:8px 0 0"></p><details style="margin-top:8px"><summary>What is sent, and what is kept</summary><p id="alertsKeeps" class="muted"></p><p id="alertsRules" class="muted"></p></details></div></section><section class="panel" style="margin-top:10px"><div class="ph"><h3>Saved locations</h3></div><form id="f" class="toolbar"><select id="kind" aria-label="Kind of place" class="select"><option>Home</option><option>Office</option><option>Family</option><option>Travel</option></select><input id="placeName" aria-label="Search place, city or address" class="input" required placeholder="Search place, city or address"><button class="btn" type="button" id="findPlace">Find place</button><input id="lat" aria-label="Latitude" class="input" required type="number" step="any" min="-90" max="90" placeholder="Latitude"><input id="lon" aria-label="Longitude" class="input" required type="number" step="any" min="-180" max="180" placeholder="Longitude"><button class="btn">Save</button></form><div id="placeResult" class="muted">Search by place name first. Coordinates remain available as an advanced fallback.</div><div id="saved"></div></section><section class="panel" style="margin-top:10px"><div class="ph"><h3>Risks relevant to your places</h3><span class="muted">Grouped by what each record can establish about a place you saved. A distance is shown only where the published coordinate is the incident itself.</span><span id="fresh" class="muted">Loading…</span><select id="sortBy" class="select" aria-label="Sort nearby risks"></select></div></section><p class="notice" id="scopeNote" style="margin:10px 0 0"></p><div id="risks"></div></main><script src="/hazard-model.js"></script><script src="/risk.js"></script><script src="/alert-rules.js"></script><script src="/portal.js"></script><script src="/alerts-client.js"></script><script>nav.innerHTML=PND.nav('Personal Risk');let events=[];/* Distance first: on this page the question is what is near me, not what is
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My places | Predict Natural Disasters</title><meta name="description" content="Save the places that matter to you, or use where you are now, and see which reported dangers are near them. Where alerts are switched on, this device can be alerted even when the site is closed.">
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b2a20"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/portal.css"><link rel="stylesheet" href="/risk.css"></head><body><div id="nav"></div><main class="wrap"><section class="hero"><h1>My places</h1><p>Your saved places, and the dangers reported near them.</p></section><section class="panel" id="alertsPanel"><div class="ph"><h3>Alerts</h3></div><div style="padding:10px 12px"><p id="alertsStatus" role="status" style="margin:0 0 10px">Checking what this device can do…</p><div class="toolbar" style="padding:0"><button class="btn" type="button" id="alertsToggle" hidden></button><button class="btn" type="button" id="useLocation">Use my current location</button></div><p id="locationStatus" class="muted" role="status" style="margin:8px 0 0"></p><details style="margin-top:8px"><summary>What we send and what we keep</summary><p id="alertsKeeps" class="muted"></p><p id="alertsRules" class="muted"></p></details></div></section><section class="panel" style="margin-top:10px"><div class="ph"><h3>Saved places</h3></div><form id="f" class="toolbar"><select id="kind" aria-label="Kind of place" class="select"><option>Home</option><option>Office</option><option>Family</option><option>Travel</option></select><input id="placeName" aria-label="Search for a neighbourhood, city or address" class="input" required placeholder="Neighbourhood, city or address"><button class="btn" type="button" id="findPlace">Find place</button><input id="lat" aria-label="Latitude" class="input" required type="number" step="any" min="-90" max="90" placeholder="Latitude"><input id="lon" aria-label="Longitude" class="input" required type="number" step="any" min="-180" max="180" placeholder="Longitude"><button class="btn">Save</button></form><div id="placeResult" class="muted">Search for the place by name, then choose the right match. You can also type the latitude and longitude yourself.</div><div id="placeChoices" class="placechoices" hidden></div><div id="saved"></div></section><section class="panel" style="margin-top:10px"><div class="ph"><h3>Dangers near your places</h3><span class="muted">Grouped by how sure we can be that each one affects your place. We show a distance only when the report gives the exact spot.</span><span id="fresh" class="muted">Loading…</span><select id="sortBy" class="select" aria-label="Sort nearby risks"></select></div></section><p class="notice" id="scopeNote" style="margin:10px 0 0"></p><div id="risks"></div></main><script src="/hazard-model.js"></script><script src="/risk.js"></script><script src="/place-risk.js"></script><script src="/place-search.js"></script><script src="/alert-rules.js"></script><script src="/portal.js"></script><script src="/alerts-client.js"></script><script>nav.innerHTML=PND.nav('My places');let events=[];/* Distance first: on this page the question is what is near me, not what is
    worst anywhere. */
 const RISK_SORTS=['nearby','severity','newest','type','country'];
 /* A row is a (saved place, event) pair, so distance belongs to the row: the
    same event can be near Home and near Family at two different distances, and
    hanging the distance off the shared event object loses one of them. */
-PND.SORT_DEFS.nearby={label:'Distance — nearest first',cmp:(a,b)=>a.d-b.d};
+PND.SORT_DEFS.nearby={label:'Distance: nearest first',cmp:(a,b)=>a.d-b.d};
 function orderRisks(rows){const k=PND.sortValue('sortBy',RISK_SORTS);const def=PND.SORT_DEFS[k];
   const far=r=>r.d===Infinity?1:0;
   return rows.slice().sort((a,b)=>(k==='nearby'||!def?0:def.cmp(a.e,b.e))||far(a)-far(b)||(far(a)?0:a.d-b.d));}/* One row per (place, record) pair. Which band a row lands in is decided by
@@ -15,20 +15,22 @@ function buildRows(places){const rows=[];places.forEach(x=>events.forEach(e=>{co
 /* What one saved place is told at a glance. Containment outranks distance:
    being inside a warned area is a fact about this place, while kilometres to
    an area's centre point are a fact about that area's shape. */
-function summarise(rows){if(!rows.length)return 'NO TRACKED RECORD · nothing within 500 km';
-  if(rows.some(r=>r.r.band==='B'&&r.r.containment===true))return 'HIGH · inside an official warning area';
-  if(rows.some(r=>r.r.band==='A'&&r.r.containment===true))return 'HIGH · inside a reported affected area';
-  const near=rows.filter(r=>r.r.band==='A'&&r.r.claimDistance).sort((p,q)=>p.d-q.d)[0];
-  if(near)return (near.d<=50?'HIGH':near.d<=150?'ELEVATED':'MONITOR')+' · nearest incident '+Math.round(near.d)+' km';
-  return 'CONTEXT ONLY · no incident-located hazard within 500 km'}
+/* The same answer the homepage gives for this place (place-risk.js), so the
+   two pages can never rate one place differently. */
+function summarise(x){const A=PNDPlaceRisk.assess(x,events);
+  if(!A.level)return 'NOTHING REPORTED NEARBY';
+  const lead=A.lead;const why=!lead?'':lead.r.band==='B'?'inside an official warning area'
+    :lead.r.band==='A'&&lead.r.containment===true?'inside a reported affected area'
+    :lead.r.band==='C'?'a forecast covers it':isFinite(lead.d)?'event '+Math.round(lead.d)+' km away':'';
+  return A.headline.toUpperCase()+(why?' · '+why:'')}
 function riskCard(r){const where=r.r.claimDistance?Math.round(r.d)+' km from '+PND.esc(r.x.name):PND.esc(r.x.name);
   return `<a class="card" style="display:block;text-decoration:none;color:inherit;margin-bottom:8px" href="${PND.eventUrl(r.e)}"><span class="provenance">${PND.provenance(r.e)}</span><b style="display:block;margin-top:7px">${PND.esc(r.e.title)}</b><div class="muted">${where} · ${PND.esc(r.e.type)}</div>${r.r.applicability?`<div class="muted" style="margin-top:5px">${PND.esc(r.r.applicability)}</div>`:''}</a>`}
 function bandSection(b,rows){const body=rows.length?rows.slice(0,30).map(riskCard).join(''):`<div class="empty muted">${PND.esc(b.empty)}</div>`;
-  return `<section class="panel" style="margin-top:10px"><div class="ph"><h3>${PND.esc(b.key+' · '+b.title)}</h3><span class="muted">${PND.esc(b.blurb)}</span></div><div style="padding:10px">${body}</div></section>`}
+  return `<section class="panel" style="margin-top:10px"><div class="ph"><h3>${PND.esc(b.title)}</h3><span class="muted">${PND.esc(b.blurb)}</span></div><div style="padding:10px">${body}</div></section>`}
 function draw(){const a=PND.savedLocations();
-  saved.innerHTML=a.length?a.map(x=>`<div class="card"><b>${x.kind===x.name?PND.esc(x.kind):PND.esc(x.kind)+' · '+PND.esc(x.name)}</b><div class="muted">${x.lat}, ${x.lon}${x.country?' · '+PND.esc(x.country):' · country not recorded'}${x.updatedAt?' · updated '+PND.esc(PND.age(x.updatedAt)):''}</div><button class="btn" onclick="PND.removeLocation('${x.id}');draw();placesChanged()">Remove</button></div>`).join(''):'<div class="empty">No saved locations yet.</div>';
+  saved.innerHTML=a.length?a.map(x=>`<div class="card"><b>${x.kind===x.name?PND.esc(x.kind):PND.esc(x.kind)+' · '+PND.esc(x.name)}</b><div class="muted">${x.lat}, ${x.lon}${x.country?' · '+PND.esc(x.country):' · country unknown'}${x.updatedAt?' · updated '+PND.esc(PND.age(x.updatedAt)):''}</div><button class="btn" onclick="PND.removeLocation('${x.id}');draw();placesChanged()">Remove</button></div>`).join(''):'<div class="empty">No saved places yet. Search for a place above and save it.</div>';
   const rows=orderRisks(buildRows(a));
-  saved.querySelectorAll('.card').forEach((el,i)=>{const x=a[i];if(!x)return;el.insertAdjacentHTML('beforeend',`<div class="provenance">${PND.esc(summarise(rows.filter(r=>r.x.id===x.id)))}</div>`)});
+  saved.querySelectorAll('.card').forEach((el,i)=>{const x=a[i];if(!x)return;el.insertAdjacentHTML('beforeend',`<div class="provenance">${PND.esc(summarise(x))}</div>`)});
   risks.innerHTML=PNDHazards.RISK_BANDS.map(b=>bandSection(b,rows.filter(r=>r.r.band===b.key))).join('');
   /* A country-wide outlook applies to a country, and a place saved as bare
      coordinates has none recorded — so those outlooks can be neither shown
@@ -37,8 +39,8 @@ function draw(){const a=PND.savedLocations();
   const wide=events.filter(e=>(e.forecast||e.isForecast)&&e.forecastScope==='country'&&e.country).length;
   const placeless=a.filter(x=>!x.country).length;
   scopeNote.textContent=(wide&&placeless)
-    ?placeless+' of your saved places have no country recorded, so '+wide+' country-wide outlook(s) can be neither shown nor ruled out for them. Search for the place by name instead of entering coordinates and this can be answered.'
-    :''}f.onsubmit=e=>{e.preventDefault();PND.saveLocation({kind:kind.value,name:placeName.value,lat:+lat.value,lon:+lon.value,country:foundCountry||'',countryCode:foundCountryCode||''});foundCountry='';foundCountryCode='';f.reset();draw();placesChanged()};PND.getEvents().then(d=>{events=d.events||[];PND.evaluateRiskNotifications(events);fresh.textContent='Updated '+PND.age(d.generatedAt||(d.meta&&d.meta.generatedAt));draw()}).catch(()=>{fresh.textContent='Live feed unavailable';risks.innerHTML='<div class="stale">Live data could not be refreshed. Do not rely on this page for emergency decisions; check local authorities.</div>'});/* The country is asked for and kept, because a country-wide outlook applies
+    ?(placeless===1?'1 of your saved places has':placeless+' of your saved places have')+' no country recorded, so we cannot tell whether '+(wide===1?'1 forecast that covers a whole country applies':wide+' forecasts that cover a whole country apply')+' to '+(placeless===1?'it':'them')+'. Search for the place by name instead of typing coordinates, and we can check.'
+    :''}f.onsubmit=e=>{e.preventDefault();PND.saveLocation({kind:kind.value,name:placeName.value,lat:+lat.value,lon:+lon.value,country:foundCountry||'',countryCode:foundCountryCode||''});foundCountry='';foundCountryCode='';f.reset();draw();placesChanged()};PND.getEvents().then(d=>{events=d.events||[];PND.evaluateRiskNotifications(events);fresh.textContent='Updated '+PND.age(d.generatedAt||(d.meta&&d.meta.generatedAt));draw()}).catch(()=>{fresh.textContent='Live data unavailable';risks.innerHTML='<div class="stale">We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.</div>'});/* The country is asked for and kept, because a country-wide outlook applies
    to a country and not to a radius around whichever point it was anchored at:
    without it, a United States outlook anchored in Florida cannot be shown to
    a home in California. A place entered as bare coordinates has none, and the
@@ -58,20 +60,29 @@ let foundCountryCode='';
 ['input','change'].forEach(ev=>[placeName,lat,lon].forEach(f=>f.addEventListener(ev,()=>{
   if(!foundCountry&&!foundCountryCode)return;
   foundCountry='';foundCountryCode='';
-  placeResult.textContent='Place changed, so the country it was in is no longer known. Search by name again to record it.';
+  placeResult.textContent='You changed the place, so we no longer know its country. Search for it by name again to record the country.';
 })));
-findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.textContent='Enter a place first.';return}placeResult.textContent='Finding place…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&accept-language=en&limit=1&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}),a=await r.json();if(!a.length)throw new Error('not found');lat.value=(+a[0].lat).toFixed(6);lon.value=(+a[0].lon).toFixed(6);foundCountry=(a[0].address&&a[0].address.country)||'';foundCountryCode=String((a[0].address&&a[0].address.country_code)||'').toUpperCase();placeResult.textContent='Found: '+a[0].display_name+' · confirm and Save.'}catch(e){foundCountry='';foundCountryCode='';placeResult.textContent='Place search unavailable. Enter latitude/longitude manually.'}};/* The alerts panel says what this device can do, measured: whether the
+findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.textContent='Type a place first.';return}placeResult.textContent='Finding the place…';PNDPlaceSearch.renderChoices(placeChoices,[]);
+  /* Every match, at every level, for the reader to choose from; the country
+     is kept with the coordinates it came back with. */
+  const use=c=>{lat.value=(+c.lat).toFixed(6);lon.value=(+c.lon).toFixed(6);placeName.value=c.name;foundCountry=c.country||'';foundCountryCode=c.countryCode||'';placeResult.textContent='Chosen: '+c.name+' ('+c.level.toLowerCase()+'). Choose the kind of place and press Save.'};
+  try{const list=await PNDPlaceSearch.search(q);
+    if(!list.length){foundCountry='';foundCountryCode='';placeResult.textContent='We could not find that place. Check the spelling, or add the city or country, for example “Andheri, Mumbai”.';return}
+    if(list.length===1){use(list[0]);return}
+    placeResult.textContent='We found '+list.length+' places with that name. Choose one.';
+    PNDPlaceSearch.renderChoices(placeChoices,list,use);
+  }catch(e){foundCountry='';foundCountryCode='';placeResult.textContent='Place search is not working right now. You can type the latitude and longitude instead.'}};/* The alerts panel says what this device can do, measured: whether the
    service is switched on for this deployment, whether this browser can take
    it, and when the service last actually checked. It never offers a switch
    that would do nothing. Where background alerts are not available, what is
    offered instead is exactly what still works - an alert while this page is
    open - with the limit said beside it. */
-const OPEN_ONLY='While this page is open, it can still alert you to a hazard reported at or near a saved place; nothing reaches you once it is closed. For warnings that follow you, register with your national or regional hazard agency.';
+const OPEN_ONLY='While this page is open, we can alert you to dangers reported at or near your saved places. Nothing is sent once you close it. For warnings that reach you anywhere, sign up with your national or regional disaster agency.';
 let alertMode='';
-function lastCheck(cfg){const r=cfg&&cfg.lastRun;if(!r||!r.at)return ' The service has not completed a check yet.';
+function lastCheck(cfg){const r=cfg&&cfg.lastRun;if(!r||!r.at)return ' Alerts have not been checked yet.';
   const mins=(Date.now()-Date.parse(r.at))/60000;
   const every=(cfg.schedule&&cfg.schedule.everyMinutes)||5;
-  return ' Last checked '+PND.age(r.at)+(mins>every*4?', which is later than scheduled, so an alert may be late.':'.')}
+  return ' Last checked '+PND.age(r.at)+(mins>every*4?'. That is later than planned, so an alert may be late.':'.')}
 async function drawAlerts(){const $=id=>document.getElementById(id);
   if(!window.PNDAlerts){if($('alertsStatus'))$('alertsStatus').textContent=OPEN_ONLY;return}
   const s=await PNDAlerts.state();
@@ -81,14 +92,14 @@ async function drawAlerts(){const $=id=>document.getElementById(id);
   if(!alertsStatus||!alertsToggle)return;
   alertMode=s.mode;const cfg=s.config||{};
   alertsKeeps.textContent=cfg.keeps||'Place names and searched addresses stay in this browser.';
-  alertsRules.textContent=cfg.rules?'An alert is raised when a saved place is inside a published warning or reported affected area, or when a hazard is reported at its own location within '+cfg.rules.nearKm+' km, or within '+cfg.rules.severeNearKm+' km if rated severe. Experimental outlooks are never pushed.':'';
+  alertsRules.textContent=cfg.rules?'You get an alert when a saved place is inside an official warning area or a reported affected area, or when a danger is reported within '+cfg.rules.nearKm+' km of it ('+cfg.rules.severeNearKm+' km if it is severe). We never send alerts for our own forecasts.':'';
   const t=alertsToggle;t.hidden=false;t.disabled=false;
-  if(s.mode==='on'){alertsStatus.textContent='On for '+s.places+' place'+(s.places===1?'':'s')+' on this device, including while this site is closed.'+lastCheck(cfg);t.textContent='Turn off alerts';return}
-  if(s.mode==='off'){alertsStatus.textContent='Get an alert on this device when a hazard is reported at or near your saved places, even with this site closed. Scheduled every '+((cfg.schedule&&cfg.schedule.everyMinutes)||5)+' minutes.'+lastCheck(cfg);t.textContent='Turn on alerts';return}
+  if(s.mode==='on'){alertsStatus.textContent='Alerts are on for '+s.places+' place'+(s.places===1?'':'s')+' on this device, even when this site is closed.'+lastCheck(cfg);t.textContent='Turn off alerts';return}
+  if(s.mode==='off'){alertsStatus.textContent='Get an alert on this device when a danger is reported at or near your saved places, even when this site is closed. We check every '+((cfg.schedule&&cfg.schedule.everyMinutes)||5)+' minutes.'+lastCheck(cfg);t.textContent='Turn on alerts';return}
   alertsStatus.textContent=(s.reason?s.reason+' ':'')+OPEN_ONLY;
   if(s.mode==='blocked'){t.hidden=true;return}
   const granted=('Notification' in window)&&Notification.permission==='granted';
-  t.textContent=granted?'Alerting while this page is open':'Alert me while this page is open';t.disabled=granted}
+  t.textContent=granted?'Alerts on while this page is open':'Alert me while this page is open';t.disabled=granted}
 alertsToggle.onclick=async()=>{alertsToggle.disabled=true;
   if(alertMode==='on'){await PNDAlerts.disable();return drawAlerts()}
   if(alertMode==='off'){const r=await PNDAlerts.enable();await drawAlerts();

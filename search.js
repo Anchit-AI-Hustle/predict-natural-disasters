@@ -96,25 +96,25 @@ const S={
      from a guess. */
   emptyHtml(query,pool,all,noun){
     const q=String(query==null?'':query).trim();
-    const what=noun||'records';
+    const what=noun||'events';
     if(!q)return '<div class="card"><b>No '+S.esc(what)+' to show right now.</b></div>';
     const whole=Array.isArray(all)?all:(Array.isArray(pool)?pool:[]);
     const elsewhere=whole.filter(e=>S.matches(e,q)).length;
     let msg='<div class="card"><b>No '+S.esc(what)+' match “'+S.esc(q)+'”.</b>';
     if(elsewhere>0){
-      msg+='<p class="muted">'+elsewhere+' record'+(elsewhere===1?'':'s')+
-        ' elsewhere in the live feed match this search. This page lists only '+
+      msg+='<p class="muted">'+elsewhere+' other event'+(elsewhere===1?'':'s')+
+        ' in our current data '+(elsewhere===1?'matches':'match')+' this search. This page shows only '+
         S.esc(what)+'.</p>'+
         '<p><a class="btn" href="/events?q='+encodeURIComponent(q)+
-        '">See all '+elsewhere+' in the full feed →</a></p>';
+        '">See '+(elsewhere===1?'it':'all '+elsewhere)+' on the events page →</a></p>';
     }else{
       const countries=[];
       for(const e of whole){const c=e&&e.country;if(c&&countries.indexOf(c)<0)countries.push(c)}
-      msg+='<p class="muted">Nothing in the live feed matches it. The feed carries '+
-        whole.length+' record'+(whole.length===1?'':'s')+' from '+countries.length+
-        ' countries and territories right now, and only reports what the official '+
-        'sources are publishing — a place with no active official signal has no '+
-        'record here rather than a quiet one.</p>';
+      msg+='<p class="muted">Nothing in our current data matches it. Right now we have '+
+        whole.length+' event'+(whole.length===1?'':'s')+' from '+countries.length+
+        (countries.length===1?' country or territory':' countries and territories')+'. '+
+        'We only show what official sources are reporting. If a place has no current '+
+        'official report, it is not listed here. That does not mean nothing is happening there.</p>';
     }
     return msg+'</div>';
   },

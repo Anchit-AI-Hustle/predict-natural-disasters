@@ -18,8 +18,8 @@ test.after(closeAllWindows);
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
-const METRICS = ['Region', 'Start date', 'Start time', 'Duration', 'Extent',
-  'Magnitude / severity', 'Lives lost', 'Missing people'];
+const METRICS = ['Area', 'Start date', 'Start time', 'Duration', 'How widespread',
+  'Strength or severity', 'Lives lost', 'Missing people'];
 
 test('the verification page compares forecast against actual, metric by metric', async () => {
   const r = await renderPage('verification-detail.html', {
@@ -50,7 +50,7 @@ test('an unreported metric says so rather than showing a zero', async () => {
   });
   const rows = [...r.document.querySelectorAll('#compareRows tr')];
   const missing = rows.find(tr => tr.cells[0].textContent.trim() === 'Missing people');
-  assert.match(missing.cells[2].textContent, /Not reported by any connected source/);
+  assert.match(missing.cells[2].textContent, /Not reported by any of our sources/);
   // Casualties are not predicted, and the forecast column must say that rather
   // than imply a prediction of none.
   assert.match(missing.cells[1].textContent, /does not predict casualties/);
@@ -93,7 +93,7 @@ test('a stated duration matches what the helper computes for the same window', (
   const stated = [];
   for (const f of fs.readdirSync(ROOT).filter(n => /\.(html|js)$/.test(n)).concat(['api/events.js'])) {
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
-    for (const m of text.matchAll(/expected duration (\d+ \w+)/g)) stated.push(f + ': ' + m[1]);
+    for (const m of text.matchAll(/(?:expected duration|lasts) (\d+ \w+)/g)) stated.push(f + ': ' + m[1]);
   }
   assert.ok(stated.length > 0, 'no stated duration found to check');
   const wrong = stated.filter(x => !x.endsWith(': ' + computed));
@@ -120,7 +120,7 @@ test('a forecast card states when it starts and how long it is expected to run',
   });
   const text = r.document.getElementById('cards').textContent;
   assert.match(text, /Starts /, 'no start stated on the forecast cards');
-  assert.match(text, /expected duration|duration not stated/, 'no duration stated');
+  assert.match(text, /lasts \d|length not stated/, 'no duration stated');
   assert.ok(!/\d{1,2}\s?[–—]\s?\d{1,2}\s+\w{3}/.test(text), 'a date range is still rendered');
   r.close();
 });

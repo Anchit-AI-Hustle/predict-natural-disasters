@@ -50,7 +50,7 @@ test('nothing claims earthquakes can be predicted', () => {
 });
 
 test('the limits of earthquake forecasting are stated somewhere public', () => {
-  const said = pages().some(f => /exact future quake prediction remains scientifically limited|not treated as scientifically established|does not claim scientifically established/i.test(copyOf(f)));
+  const said = pages().some(f => /no one can predict exactly when and where (an|the next) (earthquake|one) will strike|exact future quake prediction remains scientifically limited|not treated as scientifically established|does not claim scientifically established/i.test(copyOf(f)));
   assert.ok(said, 'no public page states that exact earthquake prediction is not established');
 });
 
@@ -130,7 +130,7 @@ test('the project describes itself as experimental verification, not prediction'
 
 test('an outlook is never described as a prediction made ahead of its signal', () => {
   const detail = read('forecast-detail.html');
-  assert.match(detail, /Nothing here is a prediction made ahead of that signal/,
+  assert.match(detail, /It is not a prediction made before that report/,
     'the forecast detail page no longer distinguishes an outlook from a prediction');
 });
 
@@ -205,12 +205,12 @@ test('a page that names a limit in its body does not deny it in its description'
      described to search engines as cross-checking every record before
      publication. */
   const pairs = [
-    { file: 'verification.html', body: /after issuance|experimental risk outlooks/i },
+    { file: 'verification.html', body: /after the forecast was made|not official warnings/i },
     /* Background alerts exist now, where the service is switched on; the
        limits the bodies state are where alerts are set up, and what still
        happens - and stops happening - without the service. */
-    { file: 'alerts-notifications.html', body: /set up on Personal Risk/i },
-    { file: 'personal-risk.html', body: /nothing reaches you once it is closed/i }
+    { file: 'alerts-notifications.html', body: /alerts for your own places on My places/i },
+    { file: 'personal-risk.html', body: /Nothing is sent once you close it/i }
   ];
   for (const p of pairs) {
     const html = fs.readFileSync(path.join(ROOT, p.file), 'utf8');

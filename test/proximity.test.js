@@ -114,7 +114,7 @@ test('a country-level humanitarian record near a city is context, not a nearby h
   assert.ok(row, 'the record should still be shown as regional context');
   assert.equal(row.band, 'D', 'a country centroid is not a nearby incident');
   assert.equal(row.claimDistance, false, 'a country centroid was given a distance');
-  assert.match(row.applicability, /has not been established/,
+  assert.match(row.applicability, /could not tell whether your place is inside/,
     'the row must say that containment was not established');
 
   // Negative control: the rule this replaces.
@@ -143,8 +143,17 @@ test('an outlook is never more precisely located than the signal it came from', 
   assert.deepEqual(finer.map(o => o.title), [], 'an outlook claims a finer location than its own signal');
 });
 
+/* A country-level report from today: the only kind that makes a country-wide
+   outlook, now that an outlook is no wider than the report it follows. */
+const freshCountryReport = () => ({ feeds: {
+  reliefweb: '<?xml version="1.0"?><rss version="2.0"><channel>' +
+    '<item><title>Madagascar: Drought - Sep 2026</title><link>https://reliefweb.int/disaster/dr-2026-000150-mdg</link>' +
+    '<pubDate>' + new Date(Date.now() - 2 * 3600e3).toUTCString() + '</pubDate><description>Drought.</description></item>' +
+    '</channel></rss>',
+  geocode: { results: [{ name: 'Madagascar', latitude: -19.4, longitude: 46.7, country_code: 'MG' }] } } });
+
 test('an outlook issued for a country is located at a country', async () => {
-  const { events } = await feed();
+  const { events } = await feed(freshCountryReport());
   const countryWide = events.filter(e => e.forecast && e.forecastScope === 'country');
   assert.ok(countryWide.length > 0, 'fixture should contain a country-scope outlook');
   const wrong = countryWide.filter(e => e.proximityEligible);
@@ -224,7 +233,7 @@ test('a warning with no published area says its applicability is unestablished',
     { id: 'h', name: 'Home', lat: 1.5, lon: 0.5 });
   assert.equal(row.band, 'B');
   assert.equal(row.claimDistance, false);
-  assert.match(row.applicability, /has not been established/);
+  assert.match(row.applicability, /could not tell whether it covers your exact place/);
 });
 
 /* --------------------------- a warning covers every zone it was issued for */
@@ -300,9 +309,9 @@ test('the page renders every evidence band, including the one with no data', asy
   const text = r.text();
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   for (const b of H.RISK_BANDS) {
-    assert.ok(text.includes(b.key + ' · ' + b.title), 'band ' + b.key + ' is missing from the page');
+    assert.ok(text.includes(b.title), 'band ' + b.key + ' is missing from the page');
   }
-  assert.ok(/No per-location event history is published/.test(text),
+  assert.ok(/We do not publish a history of past events for each place/.test(text),
     'the historical band should say plainly that it has no data rather than look empty');
   r.close();
 });
@@ -497,7 +506,7 @@ test('a country-wide outlook is not lost to the language the place was saved in'
      language, so it is reported as unestablished rather than dropped. */
   const legacy = H.riskRow(outlook, Object.assign({ country: 'Deutschland' }, berlin));
   assert.ok(legacy, 'an unrecognised country name silently dropped the outlook');
-  assert.match(legacy.applicability, /not one this page can recognise/i);
+  assert.match(legacy.applicability, /could not recognise the country of your saved place/i);
   assert.equal(H.countryComparable({ country: 'Deutschland' }), false);
   assert.equal(H.countryComparable({ country: 'France' }), true);
   assert.equal(H.countryComparable({ country: 'Deutschland', countryCode: 'DE' }), true);
@@ -551,7 +560,7 @@ test('the country a place was found in is forgotten when the place changes', asy
   assert.equal(moved.lat, 35.68);
   assert.equal(moved.country, '',
     'a place moved to Tokyo was saved as being in France');
-  assert.match(d.getElementById('placeResult').textContent, /no longer known/i,
+  assert.match(d.getElementById('placeResult').textContent, /no longer know its country/i,
     'nothing told the reader the country had been dropped');
 
   /* And saved straight from the search, the country is still recorded. */

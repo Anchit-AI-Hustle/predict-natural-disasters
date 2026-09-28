@@ -31,10 +31,10 @@ test('no prediction rate is published when none can be computed', async () => {
   const r = await open();
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   for (const id of ['ipPrecision', 'ipRecall', 'ipF1']) {
-    assert.equal(text(r, id), 'Not computable',
+    assert.equal(text(r, id), 'Cannot be calculated',
       id + ' published a number from a record that cannot support one');
   }
-  assert.match(text(r, 'ipNote'), /no prediction hit rate/i);
+  assert.match(text(r, 'ipNote'), /no hit rate for advance forecasts/i);
   r.close();
 });
 
@@ -57,9 +57,9 @@ test('the disasters on record are listed, and none is put in a rate nothing was 
     /* The defect: "Recall 0% (4 disasters)" under a note saying no prediction
        rate is shown, for disasters that all happened before anything here
        was predicting. */
-    assert.equal(text(r, 'ipRecall'), 'Not computable');
-    assert.match(text(r, 'ipNote'), new RegExp(disasters.length + ' disaster\\(s\\) on record'));
-    assert.match(text(r, 'ipNote'), /count towards no recall/);
+    assert.equal(text(r, 'ipRecall'), 'Cannot be calculated');
+    assert.match(text(r, 'ipNote'), new RegExp(disasters.length + ' disasters? on record'));
+    assert.match(text(r, 'ipNote'), /not used for recall/);
     assert.equal(text(r, 'obFalseNeg'), String(disasters.length),
       'a disaster left out of the rate was also dropped from the unforecast count');
   }
@@ -74,7 +74,7 @@ test('an empty record of disasters is not presented as nothing having happened',
     'an empty ledger is being allowed to read as a quiet world');
   const rows = [...r.document.querySelectorAll('#obsRows tr')].map(t => t.textContent);
   assert.equal(rows.length, 1);
-  assert.match(rows[0], /No significant observed disaster has been recorded yet/);
+  assert.match(rows[0], /No significant disaster has been recorded yet/);
   r.close();
 });
 
@@ -109,7 +109,7 @@ test('a matured forecast is called a false positive only where the scans could h
      not any other window could be. The note used to say all of them fell
      outside the scans, when most had been scanned and simply had no source
      complete for their hazard and place. */
-  const why = text(r, 'cdNote').match(/Of (\d+) (?:other )?matured window\(s\): ([^.]*)\./);
+  const why = text(r, 'cdNote').match(/Of (\d+) (?:other )?ended forecasts?: ([^.]*)\./);
   assert.ok(why, 'the page does not say why the rest could not be graded');
   const counted = why[2].split('; ').map(part => Number((part.match(/^(\d+) /) || [])[1]));
   assert.ok(counted.every(n => n > 0), 'a reason was given without a count: ' + why[2]);
@@ -123,8 +123,8 @@ test('a matured forecast is called a false positive only where the scans could h
 test('prediction performance and outlook performance are never one number', async () => {
   const r = await open();
   const body = r.text();
-  assert.match(body, /Independent prediction performance/);
-  assert.match(body, /Conditional \/ continuation outlook performance/);
+  assert.match(body, /How our advance forecasts did/);
+  assert.match(body, /How our other forecasts did/);
   // Everything recorded is conditional, and the page says so on both sides.
   assert.equal(text(r, 'ipTotal'), '0');
   assert.ok(Number(text(r, 'cdTotal')) > 0, 'the conditional section is empty too, so nothing is being separated');
@@ -134,9 +134,9 @@ test('prediction performance and outlook performance are never one number', asyn
 test('the weighting and the formulas are stated, not assumed', async () => {
   const r = await open();
   const m = text(r, 'methodNote');
-  assert.match(m, /PARTIAL HIT weight = 0\.5/, 'the partial-hit weighting is not disclosed');
-  assert.match(m, /weightedPrecision =/);
-  assert.match(m, /eventRecall =/);
+  assert.match(m, /partly correct forecast counts as 0\.5/i, 'the partial-hit weighting is not disclosed');
+  assert.match(m, /Precision = /);
+  assert.match(m, /Recall = /);
   assert.match(m, /F1 =/);
   assert.match(m, /verify-\d+\.\d+\.\d+/, 'the page does not say which engine version produced these');
   r.close();
@@ -145,15 +145,15 @@ test('the weighting and the formulas are stated, not assumed', async () => {
 test('F1 is never called accuracy', async () => {
   const r = await open();
   const body = r.text();
-  assert.match(body, /F1 verification score/, 'F1 is not labelled as a verification score');
+  assert.match(body, /F1 score/, 'F1 is not labelled as a score');
   assert.equal(/F1 accuracy|accuracy score/i.test(body), false, 'F1 is being presented as accuracy');
-  assert.match(text(r, 'methodNote'), /not an accuracy/i);
+  assert.match(text(r, 'methodNote'), /not a measure of accuracy/i);
   r.close();
 });
 
 test('the sample size and the period it covers are on the page', async () => {
   const r = await open();
-  assert.match(text(r, 'mSample'), /\d+ windows/);
+  assert.match(text(r, 'mSample'), /\d+ forecasts?/);
   assert.ok(text(r, 'mPeriod').length > 8, 'the page does not say what period it covers');
   assert.ok(text(r, 'mEarliest').length > 4, 'the page does not say when the earliest prospective forecast was');
   assert.ok(text(r, 'mUpdated').length > 8);
@@ -165,7 +165,7 @@ test('the sample size and the period it covers are on the page', async () => {
 test('a verdict is shown with what it required and what it matched', async () => {
   const r = await open();
   const heads = [...r.document.querySelectorAll('.ledger thead th')].map(t => t.textContent);
-  for (const col of ['Verdict', 'Forecast class', 'Freeze time', 'Frozen target window', 'Threshold', 'Observed event']) {
+  for (const col of ['Result', 'Type of forecast', 'Locked on', 'Forecast period', 'What counted as a match', 'Matching event']) {
     assert.ok(heads.includes(col), 'the history table does not show ' + col);
   }
   const row = r.document.querySelector('#rows tr');
@@ -281,13 +281,13 @@ test('the page does grade, and does publish rates, once the record covers the fo
   const obs = [...r.document.querySelectorAll('#obsRows tr')].map(t => t.textContent);
   assert.equal(text(r, 'obTotal'), '1', 'the page ignored the disaster record it was given');
   assert.ok(obs[0].includes('OBS-test-1'), 'the observed disaster is not listed');
-  assert.match(obs[0], /FALSE.NEGATIVE|COVERAGE_FAILURE|FORECAST_FAILURE|DATA_UNAVAILABLE|NO_PROSPECTIVE_INPUT|NOT_FORECASTABLE|Predicted/,
+  assert.match(r.document.querySelector('#obsRows tr').children[7].textContent, /^(Yes|No\b)/,
     'the observed disaster carries no verdict about whether anything predicted it');
   // Something in the recorded ledger is now gradeable, so the conditional
   // section has to stop saying nothing could be.
   assert.ok(Number(text(r, 'cdMatured')) > 0,
     'with a covering disaster record, still nothing was graded');
-  assert.notEqual(text(r, 'cdPrecision'), 'Not computable',
+  assert.notEqual(text(r, 'cdPrecision'), 'Cannot be calculated',
     'with gradeable outlooks, no rate was published');
   r.close();
 });
@@ -329,7 +329,7 @@ test('a window the engine graded is shown graded on its own row', async () => {
   const shown = row.children[2].textContent;
   const want = V.LABELS[V.ENGINE_STATES[ver.byId.get(H.claimKey(fx.target)).classification]];
   assert.ok(shown.startsWith(want), 'the row for ' + fx.target.id + ' displays "' + shown.slice(0, 40) + '", not "' + want + '"');
-  assert.equal(/Awaiting verification/.test(shown), false,
+  assert.equal(/Not checked yet/.test(shown), false,
     'a window the engine graded still reads as awaiting verification');
   r.close();
 });
@@ -356,14 +356,14 @@ test('a matured window nothing can grade is not reported as merely unchecked', a
   const r = await open();
   assert.ok(Number(text(r, 'mUngradeable')) > 0,
     'every matured window is still reported as simply unchecked');
-  assert.match(text(r, 'honesty'), /cannot be graded either way/i,
+  assert.match(text(r, 'honesty'), /cannot be checked either way/i,
     'the page does not say why those windows count towards nothing');
   const labels = [...r.document.querySelectorAll('#rows tr')]
     .map(tr => tr.children[2] && tr.children[2].textContent).filter(Boolean);
-  assert.ok(labels.some(t => t.startsWith('Not gradeable')),
+  assert.ok(labels.some(t => t.startsWith('Cannot be checked')),
     'no row reports itself as not gradeable');
-  const ungradeable = labels.filter(t => t.startsWith('Not gradeable'));
-  assert.ok(ungradeable.every(t => t.length > 'Not gradeable'.length + 20),
+  const ungradeable = labels.filter(t => t.startsWith('Cannot be checked'));
+  assert.ok(ungradeable.every(t => t.length > 'Cannot be checked'.length + 20),
     'a row says it cannot be graded without saying why');
   r.close();
 });
@@ -381,19 +381,19 @@ test('a hand-recorded verdict the engine cannot reproduce is kept, shown and exc
     'the recorded ledger holds no hand-graded verdict, so this proves nothing');
   assert.ok(Number(text(r, 'mFalse')) > 0,
     'hand-recorded false alarms disappeared from the figures');
-  assert.match(text(r, 'honesty'), /recorded by hand/i,
+  assert.match(text(r, 'honesty'), /checked by hand/i,
     'the page does not disclose that some verdicts were recorded by hand');
-  assert.match(text(r, 'honesty'), /engine cannot reproduce/i,
+  assert.match(text(r, 'honesty'), /automatic checker cannot repeat/i,
     'the page presents hand-recorded verdicts as the engine\u2019s own');
-  assert.match(text(r, 'honesty'), new RegExp(String(unreproduced.length) + ' recorded by hand'),
+  assert.match(text(r, 'honesty'), new RegExp(String(unreproduced.length) + ' (?:was|were) checked by hand'),
     'the hand-recorded verdicts are not counted in the note');
   const row = [...r.document.querySelectorAll('#rows tr')]
     .find(tr => tr.children[0] && tr.children[0].textContent.includes(unreproduced[0].id));
   assert.ok(row, 'a hand-graded window has no row');
-  assert.match(row.children[2].textContent, /Recorded by hand/,
+  assert.match(row.children[2].textContent, /Checked by hand/,
     'a hand-recorded verdict is displayed as though the engine had produced it');
   // And it counts towards no engine rate.
-  assert.equal(text(r, 'ipPrecision'), 'Not computable');
+  assert.equal(text(r, 'ipPrecision'), 'Cannot be calculated');
   r.close();
 });
 
@@ -424,7 +424,7 @@ test('a ledger it could not read is not a ledger that is empty', async () => {
   assert.match(banner.textContent, /could not be loaded/i);
   assert.match(banner.textContent, /not the same as nothing having been recorded/i);
   assert.equal(banner.getAttribute('role'), 'alert');
-  assert.match(text(r, 'obNote'), /could not read/i,
+  assert.match(text(r, 'obNote'), /could not load/i,
     'the observed-disasters note still reads as though the record were empty');
   r.close();
 });
@@ -441,10 +441,10 @@ test('every record this page reads is reported when it cannot be read', async ()
 
      Each record is tested on its own, because one that rejects is enough. */
   for (const [file, named] of [
-    ['outlook-ledger.json', /record of forecast windows/i],
-    ['verification-ledger.json', /hand-written verdicts/i],
-    ['observed-disasters.json', /record of observed disasters/i],
-    ['scan-ledger.json', /what was scanned/i]]) {
+    ['outlook-ledger.json', /record of forecasts/i],
+    ['verification-ledger.json', /hand-checked results/i],
+    ['observed-disasters.json', /record of disasters/i],
+    ['scan-ledger.json', /which places we checked/i]]) {
     const r = await renderPage('accuracy.html', {
       mock: {},
       waitFor: d => !!d.getElementById('ledgerError'),
@@ -472,9 +472,9 @@ test('every record this page reads is reported when it cannot be read', async ()
         file + ': ' + id + ' reads "' + text(r, id) + '" on a page that graded nothing');
     }
     const obs = r.document.getElementById('obsRows').textContent;
-    assert.equal(/no significant observed disaster has been recorded yet/i.test(obs), false,
+    assert.equal(/no significant disaster has been recorded yet/i.test(obs), false,
       file + ': the page reported an empty record it had not read');
-    assert.match(text(r, 'honesty'), /could not read/i,
+    assert.match(text(r, 'honesty'), /could not load/i,
       file + ': the honesty note does not say a record was unreadable');
     r.close();
   }
@@ -596,11 +596,11 @@ test('the page answers first, in words, from the same figures it publishes', asy
   const points = [...r.document.querySelectorAll('#answerPoints li')].map(li => li.textContent);
   const main = r.document.querySelector('main');
   assert.ok(main.children[1] && main.children[1].id === 'answer', 'the answer is not the first thing after the title');
-  if (text(r, 'ipTotal') === '0') assert.match(lead, /^No prediction track record yet/);
-  assert.ok(points.some(p => p.startsWith(text(r, 'mTotal') + ' forecast windows recorded')),
+  if (text(r, 'ipTotal') === '0') assert.match(lead, /^We do not have a track record of advance forecasts yet/);
+  assert.ok(points.some(p => p.startsWith(text(r, 'mTotal') + ' forecasts have been recorded')),
     'the summary and the figure for recorded windows disagree');
-  assert.ok(points.some(p => p.startsWith(text(r, 'mGraded') + ' window')), 'the summary and the graded figure disagree');
-  assert.ok(points.some(p => p.includes(text(r, 'mFalse') + ' false alarm')), 'false alarms are missing from the answer');
+  assert.ok(points.some(p => p.startsWith(text(r, 'mGraded') + ' forecast')), 'the summary and the graded figure disagree');
+  assert.ok(points.some(p => p.includes(text(r, 'mFalse') + ' wrong')), 'false alarms are missing from the answer');
   assert.ok(points.some(p => p.startsWith(text(r, 'obTotal') + ' significant disaster')),
     'the summary and the disaster count disagree');
   r.close();

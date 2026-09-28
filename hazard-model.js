@@ -37,7 +37,7 @@
       horizonH: 0,
       duration: 'Seconds to minutes of shaking; the aftershock sequence runs days to months.',
       severityBasis: 'USGS PAGER impact alert, which estimates expected fatalities and economic loss. Magnitude on its own is not a severity.',
-      leadTime: 'None. No agency forecasts the onset of an individual earthquake, and neither do we.'
+      leadTime: 'None. No agency can forecast when a particular earthquake will strike, and neither can we.'
     },
     'Earthquake aftershock sequence': {
       name: 'Aftershock sequence',
@@ -47,7 +47,7 @@
       horizonH: 168,
       duration: 'Days to months, decaying roughly with the reciprocal of elapsed time.',
       severityBasis: 'Mainshock magnitude and the state of already-damaged structures in the affected area.',
-      leadTime: 'Hours to days. The sequence is forecastable once the mainshock has happened; the mainshock is not.'
+      leadTime: 'Hours to days. Aftershocks can be forecast once the main earthquake has happened; the main earthquake cannot.'
     },
     'Tropical Cyclone': {
       name: 'Tropical cyclone',
@@ -57,7 +57,7 @@
       horizonH: 120,
       duration: 'Days at sea; landfall impacts run roughly 12 to 72 hours at a given place.',
       severityBasis: 'Saffir-Simpson category from sustained wind, plus expected storm surge and rainfall over populated coast.',
-      leadTime: 'Three to five days. This is the hazard with the longest genuinely skilful warning, which is why official tracks run to 120 hours.'
+      leadTime: 'Three to five days. Storms can be forecast further ahead than most hazards, which is why official storm tracks cover five days.'
     },
     Flood: {
       name: 'Flood',
@@ -67,7 +67,7 @@
       horizonH: 72,
       duration: 'Hours for flash flooding; days to weeks for large river basins.',
       severityBasis: 'People displaced and affected, depth and extent over inhabited land, and the issuing agency’s own alert level.',
-      leadTime: 'Hours to days. Riverine flooding downstream of observed rainfall is the most reliably anticipated case.'
+      leadTime: 'Hours to days. River flooding downstream of heavy rain that has already fallen is the easiest to forecast.'
     },
     'Flood / Landslide': {
       name: 'Flood and landslide',
@@ -77,7 +77,7 @@
       horizonH: 96,
       duration: 'Days, with slope failures often continuing after the rain stops.',
       severityBasis: 'Combined displacement and casualties, and whether failures reach settlements or transport routes.',
-      leadTime: 'One to four days, driven by quantitative rainfall forecasts and antecedent soil saturation.'
+      leadTime: 'One to four days, based on rainfall forecasts and how wet the ground already is.'
     },
     Landslide: {
       name: 'Landslide',
@@ -87,7 +87,7 @@
       horizonH: 72,
       duration: 'Minutes for a single failure; the period of elevated susceptibility lasts days after saturation.',
       severityBasis: 'Whether the runout reaches settlements or routes, and observed casualties.',
-      leadTime: 'Hours to days, and only as susceptibility over an area — never a specific slope at a specific time.'
+      leadTime: 'Hours to days, and only for an area at risk. Never a particular slope at a particular time.'
     },
     Wildfire: {
       name: 'Wildfire',
@@ -97,7 +97,7 @@
       horizonH: 72,
       duration: 'Days to months for a large incident; most detections stay open until containment is reported.',
       severityBasis: 'Area burned, proximity to settlements, evacuation orders and smoke exposure downwind.',
-      leadTime: 'One to three days for fire-weather conditions. Ignition timing and location are not forecastable.'
+      leadTime: 'One to three days for dangerous fire weather. When and where a fire starts cannot be forecast.'
     },
     Drought: {
       name: 'Drought',
@@ -107,7 +107,7 @@
       horizonH: 720,
       duration: 'Months to years. Drought does not have a three-day window and must never be published with one.',
       severityBasis: 'Extent and duration of the deficit, and the population dependent on rain-fed agriculture or affected water supply.',
-      leadTime: 'Weeks to seasons. Drought is the hazard where long-range outlooks genuinely add warning, because it develops slowly.'
+      leadTime: 'Weeks to months. Drought builds slowly, so long-range forecasts give real warning.'
     },
     Volcano: {
       name: 'Volcanic activity',
@@ -117,7 +117,7 @@
       horizonH: 168,
       duration: 'Days to years. Unrest episodes commonly persist for weeks.',
       severityBasis: 'The observatory’s own alert level, exclusion-zone population, and ash dispersal over air routes and settlements.',
-      leadTime: 'Days to weeks of unrest usually precede an eruption, though the eruption onset itself stays uncertain.'
+      leadTime: 'A volcano is usually restless for days to weeks before an eruption, but the exact start is still uncertain.'
     },
     'Extreme Heat': {
       name: 'Extreme heat',
@@ -127,7 +127,7 @@
       horizonH: 120,
       duration: 'Days to a few weeks.',
       severityBasis: 'Duration, night-time minima, and the size of the exposed population without cooling.',
-      leadTime: 'Three to seven days, among the most skilful warnings available for any hazard.'
+      leadTime: 'Three to seven days. These are among the most reliable forecasts for any hazard.'
     },
     'Extreme Cold': {
       name: 'Extreme cold',
@@ -147,7 +147,7 @@
       horizonH: 48,
       duration: 'Hours at any one place; a squall line or outbreak can affect a region for most of a day.',
       severityBasis: 'Wind gust, hail size, rainfall rate and the population under the storm track.',
-      leadTime: 'Hours to two days. Skill falls away quickly beyond the first day.'
+      leadTime: 'Hours to two days. Forecasts become much less reliable after the first day.'
     },
     Tornado: {
       name: 'Tornado',
@@ -157,7 +157,7 @@
       horizonH: 24,
       duration: 'Minutes for an individual tornado; an outbreak lasts hours.',
       severityBasis: 'Observed damage rating and whether the track crosses built-up areas.',
-      leadTime: 'Minutes for a specific tornado warning; up to a day for the area at risk. Never a specific place and time in advance.'
+      leadTime: 'Minutes for a warning about a particular tornado, and up to a day for the area at risk. Never an exact place and time in advance.'
     },
     Tsunami: {
       name: 'Tsunami',
@@ -167,7 +167,7 @@
       horizonH: 24,
       duration: 'Hours of wave trains; the first wave is often not the largest.',
       severityBasis: 'Expected run-up height against coastal population and evacuation time available.',
-      leadTime: 'Minutes to hours, set by travel time from the source — not by any predictive model.'
+      leadTime: 'Minutes to hours, depending on how far the wave has to travel. It is not forecast by any model.'
     }
   };
 
@@ -337,10 +337,11 @@
     if (h === null) return '';
     // Issued after the window opened is a different claim from issued as it
     // opened, and the benchmark turned out to be the former.
-    if (h < 0) return 'Issued ' + Math.abs(Math.round(h)) + ' hours after the window opened, so it did not anticipate the onset.';
-    if (h === 0) return 'No lead time — this window opened as the outlook was issued, so it describes conditions under way rather than anticipating them.';
-    if (h < 48) return 'Issued ' + Math.round(h) + ' hours before the window opens.';
-    return 'Issued ' + Math.round(h / 24) + ' days before the window opens.';
+    var n = function (x, unit) { x = Math.round(x); return x + ' ' + unit + (x === 1 ? '' : 's'); };
+    if (h < 0) return 'Made ' + n(Math.abs(h), 'hour') + ' after the forecast period began, so it gave no advance warning.';
+    if (h === 0) return 'No advance warning. This forecast began when it was made, so it describes something already under way.';
+    if (h < 48) return 'Made ' + n(h, 'hour') + ' before the forecast period begins.';
+    return 'Made ' + n(h / 24, 'day') + ' before the forecast period begins.';
   }
 
 
@@ -662,39 +663,39 @@
    * it — not how alarming they look.
    */
   var RISK_BANDS = [
-    { key: 'A', title: 'Confirmed nearby incidents',
-      blurb: 'Reported by an authority at an incident location, within 500 km of a place you saved.',
-      empty: 'No incident-located hazard within 500 km of a saved place.' },
-    { key: 'B', title: 'Official warnings affecting this location',
-      blurb: 'Warnings in force. Where the issuing agency published an affected area, your place was tested against that area rather than against a distance.',
-      empty: 'No official warning currently reaches a saved place.' },
-    { key: 'C', title: 'Forecast outlooks',
-      blurb: 'Windows this project is watching. Nothing here is a report that an event has occurred, and nothing here is an official warning.',
-      empty: 'No outlook currently covers a saved place.' },
-    { key: 'D', title: 'Broader regional signals',
-      blurb: 'Records whose coordinate marks an area rather than an incident. Listed because that area\u2019s centre point is within range \u2014 not because this place has been shown to fall inside it.',
-      empty: 'No area-level record currently sits within range of a saved place.' },
+    { key: 'A', title: 'Confirmed events nearby',
+      blurb: 'Events an official agency has reported at an exact spot within 500 km of one of your places.',
+      empty: 'No reported event within 500 km of your places.' },
+    { key: 'B', title: 'Official warnings for your places',
+      blurb: 'Warnings in force now. Where the agency published the area a warning covers, we checked whether your place is inside it.',
+      empty: 'No official warning covers your places right now.' },
+    { key: 'C', title: 'Forecasts',
+      blurb: 'Our own estimates of what may happen next. They are not reports that something has happened, and they are not official warnings.',
+      empty: 'No forecast covers your places right now.' },
+    { key: 'D', title: 'Wider-area reports',
+      blurb: 'Reports that give only the centre of a large area, not an exact spot. They are listed because that centre is within range; your place may or may not be inside the affected area.',
+      empty: 'No wider-area report near your places right now.' },
     /* Kept in the list and kept empty. The band is a real part of the answer
        to "how exposed is this place", and this project publishes no
        per-location history to fill it with - so it says that, rather than
        being quietly dropped or filled with something that looks like one. */
-    { key: 'E', title: 'Historical susceptibility',
-      blurb: 'What a place has experienced before.',
+    { key: 'E', title: 'Past disasters',
+      blurb: 'What has happened at a place before.',
       dataAvailable: false,
-      empty: 'No per-location event history is published by this project, so nothing can be shown here. Your national or regional hazard agency holds the authoritative record for a location\u2019s past events.' }
+      empty: 'We do not publish a history of past events for each place, so nothing can be shown here. Your national or regional disaster agency keeps the official record.' }
   ];
 
   var APPLICABILITY = {
-    insideIncident: 'Your saved place is inside the reported affected area.',
-    insideWarning: 'Your saved place is inside the published warning area.',
-    outsideWarning: 'Your saved place is outside the published warning area.',
-    undetermined: 'Regional warning — exact applicability to this location has not been established.',
-    forecast: 'A window being watched, not a report that anything has happened.',
-    outsideForecast: 'Your saved place is outside the published outlook area.',
-    countryForecast: 'This outlook was issued for the whole country your saved place is in, not for a point within it.',
-    countryUnknownPlace: 'This outlook covers a whole country. Your saved place has no country recorded \u2014 search for it by name rather than entering coordinates, and this can be answered.',
-    countryUnrecognisedPlace: 'This outlook covers a whole country. The country recorded for your saved place is not one this page can recognise \u2014 a place search made in another language records the country in that language \u2014 so whether the outlook covers you cannot be established. Search for the place by name again to record it afresh.',
-    areaLevel: 'Area-level record: its coordinate marks an area centre, not an incident. Whether this place falls inside the affected area has not been established.'
+    insideIncident: 'Your place is inside the reported affected area.',
+    insideWarning: 'Your place is inside the official warning area.',
+    outsideWarning: 'Your place is outside the official warning area.',
+    undetermined: 'This is a regional warning. We could not tell whether it covers your exact place.',
+    forecast: 'This is a forecast of what may happen, not a report that something has happened.',
+    outsideForecast: 'Your place is outside the forecast area.',
+    countryForecast: 'This forecast covers the whole country your place is in, not one specific spot.',
+    countryUnknownPlace: 'This forecast covers a whole country, but your saved place has no country recorded. Search for the place by name instead of entering coordinates, and we can check.',
+    countryUnrecognisedPlace: 'This forecast covers a whole country, but we could not recognise the country of your saved place. This can happen if you searched in another language. Search for the place by name again to fix it.',
+    areaLevel: 'This report gives only the centre of an area, not an exact spot. We could not tell whether your place is inside the affected area.'
   };
 
   /**
@@ -875,33 +876,33 @@
    */
   var FORECAST_CLASSES = {
     'independent-prospective': {
-      label: 'Independent prospective',
-      definition: 'Frozen before the qualifying hazard was observed.',
+      label: 'Made in advance',
+      definition: 'Recorded before the event it forecasts had started.',
       headline: true
     },
     'warning-derived': {
-      label: 'Warning-derived',
-      definition: 'Derived from an official warning that had already been issued.',
+      label: 'Based on an official warning',
+      definition: 'Made from an official warning that had already been issued.',
       headline: false
     },
     'continuation-outlook': {
-      label: 'Continuation outlook',
-      definition: 'Written after the hazard existed, forecasting that it continues or escalates.',
+      label: 'Follows an ongoing event',
+      definition: 'Made after the event had started. It forecasts that the event will continue or get worse.',
       headline: false
     },
     'post-event-conditional': {
-      label: 'Post-event conditional',
-      definition: 'Conditional on an event already observed, such as an aftershock sequence following a mainshock.',
+      label: 'After an earthquake',
+      definition: 'Made after an event that has already happened, such as aftershocks following a large earthquake.',
       headline: false
     },
     'retrospective-benchmark': {
-      label: 'Retrospective benchmark',
-      definition: 'A benchmark or backtest, not issued prospectively.',
+      label: 'Test case, not made in advance',
+      definition: 'A test of the method, written after the period it covers had started.',
       headline: false
     },
     'invalid-post-event': {
-      label: 'Invalid post-event',
-      definition: 'Offered as prospective although nothing shows it existed before the window it claims.',
+      label: 'Not valid: no proof it came first',
+      definition: 'Presented as made in advance, but nothing shows it existed before the period it covers.',
       headline: false
     }
   };

@@ -181,7 +181,7 @@ test('a filtered link keeps its filter through the recovery', async () => {
 test('an id that is genuinely gone gets an explanation, not a silent dead end', async () => {
   const { dest, headline } = await forwardedTo('/alerts/' + encodeURIComponent('no-such-record-12345'));
   assert.equal(dest, null, 'a missing record should not forward anywhere');
-  assert.match(headline, /no longer in the live feed/);
+  assert.match(headline, /no longer listed/);
 });
 
 test('dynamic detail routes are never edge-cached', () => {

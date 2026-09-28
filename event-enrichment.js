@@ -30,7 +30,7 @@
 
   const list = items => (items && items.length)
     ? '<ul class="intellist">' + items.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
-    : '<p class="muted">Not available for this record.</p>';
+    : '<p class="muted">Not available for this event.</p>';
 
   const STYLE = `<style>
     .intelgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:10px}
@@ -53,16 +53,16 @@
   </style>`;
 
   const PANELS = [
-    ['whenWhere', 'When & Where It Happened', 'Origin, resolved location and affected regions', 'kv'],
-    ['distress', 'Distress Groups, Needs & Safety Actions', 'Hazard-response categories — not confirmed per-person impact', 'grid2'],
-    ['news', 'Live News Coverage', '', 'grid'],
-    ['reports', 'Official Situation Reports', 'UN OCHA ReliefWeb', 'grid'],
-    ['videos', 'Videos & Field Reports', '', 'grid'],
-    ['helplines', 'Emergency Helplines', 'Nationally published numbers only', 'grid'],
-    ['authorities', 'Official Authorities & Contact Points', '', 'grid'],
-    ['support', 'Local & National Support Groups', '', 'grid'],
-    ['relief', 'Relief Organisations & Donation Links', 'Official organisation domains only', 'grid'],
-    ['directories', 'Directories & Source Provenance', '', 'grid']
+    ['whenWhere', 'When and where it happened', 'Where it started, the nearest place and the areas affected', 'kv'],
+    ['distress', 'Who may need help, and how to stay safe', 'General guidance for this type of disaster, not confirmed reports about people', 'grid2'],
+    ['news', 'News reports', '', 'grid'],
+    ['reports', 'Official situation reports', 'From ReliefWeb (UN OCHA)', 'grid'],
+    ['videos', 'Videos', '', 'grid'],
+    ['helplines', 'Emergency phone numbers', 'Only numbers published by national authorities', 'grid'],
+    ['authorities', 'Official agencies and contacts', '', 'grid'],
+    ['support', 'Local and national support groups', '', 'grid'],
+    ['relief', 'Relief organisations and donations', 'Links to official organisation websites only', 'grid'],
+    ['directories', 'Directories, and where this information comes from', '', 'grid']
   ];
 
   function shell() {
@@ -86,15 +86,15 @@
     row('When it was reported', esc(fmt(when.reportedAt || e.updated)) +
       (age(when.reportedAt || e.updated) ? ' <span class="muted">· ' + esc(age(when.reportedAt || e.updated)) + '</span>' : ''));
     if (e.startedAt) row('When it started', esc(fmt(e.startedAt)));
-    if (e.forecast && e.targetStart) row('Outlook window', esc(window.PND && PND.windowText ? PND.windowText(e) : fmt(e.targetStart)));
-    if (e.expiresAt) row('Official warning expires', esc(fmt(e.expiresAt)));
-    row('Where it originated', esc(w.originArea || e.region || e.country || 'Not supplied by the upstream source'));
+    if (e.forecast && e.targetStart) row('Forecast period', esc(window.PND && PND.windowText ? PND.windowText(e) : fmt(e.targetStart)));
+    if (e.expiresAt) row('Official warning ends', esc(fmt(e.expiresAt)));
+    row('Where it started', esc(w.originArea || e.region || e.country || 'Not given by the source'));
     if (place) {
-      row('Resolved location', esc([place.locality, place.city, place.state, place.country].filter(Boolean).join(' · ') || '—') +
-        '<br><span class="muted">Resolved from the source coordinates · ' + esc(place.resolvedBy || 'reverse geocoding') + '</span>');
+      row('Nearest place', esc([place.locality, place.city, place.state, place.country].filter(Boolean).join(' · ') || '—') +
+        '<br><span class="muted">Worked out from the map position the source gave · ' + esc(place.resolvedBy || 'map lookup') + '</span>');
       if (place.continent) row('Continent', esc(place.continent));
     }
-    row('Affected / reported regions', esc(w.affectedAreaText || '—'));
+    row('Areas affected', esc(w.affectedAreaText || '—'));
     if (w.coordinates) {
       const c = w.coordinates, m = w.mapLinks || {};
       row('Coordinates', esc(c.lat.toFixed(4) + ', ' + c.lon.toFixed(4)) +
@@ -102,10 +102,10 @@
         (m.googleMaps ? ' · <a href="' + esc(m.googleMaps) + '" target="_blank" rel="noopener">Google Maps ↗</a>' : '') +
         (m.windy ? ' · <a href="' + esc(m.windy) + '" target="_blank" rel="noopener">Weather map ↗</a>' : ''));
     }
-    row('Hazard type', esc(e.type || '—'));
-    row('Reporting source', esc(e.source || '—') +
-      (e.sourceUrl ? ' · <a href="' + esc(e.sourceUrl) + '" target="_blank" rel="noopener">Open source record ↗</a>' : ''));
-    row('Timestamp note', '<span class="muted">' + esc(when.note || '') + '</span>');
+    row('Type', esc(e.type || '—'));
+    row('Source', esc(e.source || '—') +
+      (e.sourceUrl ? ' · <a href="' + esc(e.sourceUrl) + '" target="_blank" rel="noopener">Open the original report ↗</a>' : ''));
+    row('About these times', '<span class="muted">' + esc(when.note || '') + '</span>');
 
     setBody('whenWhere', rows.join(''));
     setMeta('whenWhere', 'Updated ' + fmt(d.generatedAt));
@@ -113,10 +113,10 @@
 
   function renderDistress(d) {
     setBody('distress', [
-      card('Distress / priority groups', list(d.distressGroups)),
+      card('Who may need help first', list(d.distressGroups)),
       card('Immediate needs', list(d.immediateNeeds)),
-      card('Secondary risks to expect', list(d.secondaryRisks)),
-      card('Safety actions', list(d.safetyActions))
+      card('Other dangers to watch for', list(d.secondaryRisks)),
+      card('How to stay safe', list(d.safetyActions))
     ].join(''));
     setMeta('distress', (d.distressGroups || []).length + ' groups · ' + (d.immediateNeeds || []).length + ' needs');
   }
@@ -127,19 +127,19 @@
       (x.established ? '<span class="inteltag verified">Established newsroom</span>' : '') +
       '<h3>' + esc(x.title) + '</h3>' +
       '<p class="muted">' + esc((x.summary || '').slice(0, 200)) + '</p>' +
-      '<small class="muted">' + esc(x.publishedAt ? fmt(x.publishedAt) : 'Publication time not supplied') +
-      (x.via ? ' · via ' + esc(x.via) : '') + '</small><br><b>Open coverage ↗</b></a>';
+      '<small class="muted">' + esc(x.publishedAt ? fmt(x.publishedAt) : 'Publication time not given') +
+      (x.via ? ' · via ' + esc(x.via) : '') + '</small><br><b>Read more ↗</b></a>';
   }
 
   function renderNews(d) {
     const items = d.news || [];
     setBody('news', items.length
       ? items.map(newsCard).join('')
-      : card('No indexed coverage returned right now',
-        '<p class="muted">News indexes can lag a newly reported event. Use the source directories below and retry — this panel refreshes automatically.</p>',
+      : card('No news reports found yet',
+        '<p class="muted">News searches can be slow to pick up a new event. Try the directories below. This section refreshes by itself.</p>',
         d.searches && d.searches.googleNews
           ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(d.searches.googleNews) + '">Search news ↗</a>' : ''));
-    setMeta('news', items.length + ' item' + (items.length === 1 ? '' : 's') + ' · recognised newsrooms and official agencies only');
+    setMeta('news', items.length + ' report' + (items.length === 1 ? '' : 's') + ' · only from established newsrooms and official agencies');
   }
 
   function renderReports(d) {
@@ -147,10 +147,10 @@
     setBody('reports', items.length
       ? items.map(newsCard).join('')
       : card('No matching ReliefWeb report yet',
-        '<p class="muted">Situation reports are published once a humanitarian response is coordinated, which can lag the first hours of an event.</p>',
+        '<p class="muted">Situation reports come out once aid groups organise a response, so there may be none in the first hours of an event.</p>',
         d.searches && d.searches.reliefweb
           ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(d.searches.reliefweb) + '">Search ReliefWeb ↗</a>' : ''));
-    setMeta('reports', items.length + ' official reports');
+    setMeta('reports', items.length + ' official report' + (items.length === 1 ? '' : 's'));
   }
 
   function renderVideos(d) {
@@ -159,11 +159,11 @@
       ? items.map(x => '<a class="card intelcard" target="_blank" rel="noopener" href="' + esc(x.url) + '">' +
         '<img class="intelthumb" loading="lazy" src="' + esc(x.thumbnail) + '" alt="">' +
         '<h3>' + esc(x.title) + '</h3><b>Watch ↗</b></a>').join('')
-      : card('No video results returned',
-        '<p class="muted">Video search is temporarily unavailable or has not indexed this event yet.</p>',
+      : card('No videos found',
+        '<p class="muted">Video search may be down, or it has not picked up this event yet.</p>',
         d.searches && d.searches.youtube
-          ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(d.searches.youtube) + '">Search video reports ↗</a>' : ''));
-    setMeta('videos', items.length + ' results');
+          ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(d.searches.youtube) + '">Search for videos ↗</a>' : ''));
+    setMeta('videos', items.length + ' video' + (items.length === 1 ? '' : 's'));
   }
 
   function renderHelplines(d) {
@@ -176,34 +176,34 @@
 
     const emails = [];
     (d.authorities || []).forEach(a => {
-      if (a.email) emails.push(card(a.name + ' — email',
+      if (a.email) emails.push(card(a.name + ' (email)',
         '<p><a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a></p>',
         a.contactUrl ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(a.contactUrl) + '">Official contact page ↗</a>' : ''));
     });
     (d.reliefGroups || []).forEach(r => {
-      if (r.email) emails.push(card(r.name + ' — email / phone',
+      if (r.email) emails.push(card(r.name + ' (email and phone)',
         '<p><a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a></p>' +
         (r.phone ? '<p><a class="intelphone" style="font-size:17px" href="' + esc(telHref(r.phone)) + '">' + esc(r.phone) + '</a></p>' : ''),
         r.contactUrl ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(r.contactUrl) + '">Official contact page ↗</a>' : ''));
     });
 
-    const note = card('How these contacts are sourced', '<p class="muted">' + esc(h.note || '') + '</p>');
-    setBody('helplines', (cards.length ? cards.join('') : card('No verified national emergency number stored',
-      '<p class="muted">Unverified numbers are never guessed. Use the official authority links in the next panel, or your local emergency service.</p>'))
+    const note = card('Where these contacts come from', '<p class="muted">' + esc(h.note || '') + '</p>');
+    setBody('helplines', (cards.length ? cards.join('') : card('We have no verified national emergency number for this place',
+      '<p class="muted">We never guess a number. Use the official agency links in the next section, or call your local emergency service.</p>'))
       + emails.join('') + note);
-    setMeta('helplines', (h.country ? h.country + ' · ' : '') + nums.length + ' verified numbers · ' + emails.length + ' published contact addresses');
+    setMeta('helplines', (h.country ? h.country + ' · ' : '') + nums.length + ' verified number' + (nums.length === 1 ? '' : 's') + ' · ' + emails.length + ' published email contact' + (emails.length === 1 ? '' : 's'));
   }
 
   function renderAuthorities(d) {
     const items = d.authorities || [];
     const cards = items.map(x => card(x.name,
-      '<p class="muted">Official national authority for warnings, guidance and response.</p>',
-      '<a class="btn" target="_blank" rel="noopener" href="' + esc(x.url) + '">Open official site ↗</a>' +
+      '<p class="muted">Official national agency for warnings, advice and emergency response.</p>',
+      '<a class="btn" target="_blank" rel="noopener" href="' + esc(x.url) + '">Open the official website ↗</a>' +
       (x.contactUrl ? ' <a target="_blank" rel="noopener" href="' + esc(x.contactUrl) + '">Contact ↗</a>' : '')));
     setBody('authorities', cards.length ? cards.join('')
-      : card('No national authority mapped for this country yet',
-        '<p class="muted">Use the global directories below to reach the relevant national agency.</p>'));
-    setMeta('authorities', items.length + ' authorities');
+      : card('We do not have a national agency listed for this country yet',
+        '<p class="muted">Use the directories below to find the right national agency.</p>'));
+    setMeta('authorities', items.length + ' agenc' + (items.length === 1 ? 'y' : 'ies'));
   }
 
   function renderSupport(d) {
@@ -211,11 +211,11 @@
     setBody('support', items.length
       ? items.map(x => card(x.name, '<p class="muted">National relief and support organisation.</p>',
         (x.donate ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(x.donate) + '">Donate ↗</a> ' : '') +
-        '<a target="_blank" rel="noopener" href="' + esc(x.url) + '">Organisation site ↗</a>')).join('')
-      : card('No national support organisation mapped yet',
-        '<p class="muted">The IFRC national society directory below finds the Red Cross or Red Crescent society for any country.</p>',
-        '<a class="btn" target="_blank" rel="noopener" href="https://www.ifrc.org/national-societies-directory">Find the national society ↗</a>'));
-    setMeta('support', items.length + ' local organisations');
+        '<a target="_blank" rel="noopener" href="' + esc(x.url) + '">Website ↗</a>')).join('')
+      : card('We do not have a national support group listed yet',
+        '<p class="muted">The IFRC directory below lists the Red Cross or Red Crescent society for every country.</p>',
+        '<a class="btn" target="_blank" rel="noopener" href="https://www.ifrc.org/national-societies-directory">Find your national Red Cross or Red Crescent ↗</a>'));
+    setMeta('support', items.length + ' support group' + (items.length === 1 ? '' : 's'));
   }
 
   function renderRelief(d) {
@@ -224,22 +224,22 @@
       ? items.map(x => card(x.name, '<p class="muted">' + esc(x.kind || 'Humanitarian support') + '</p>',
         '<a class="btn" target="_blank" rel="noopener" href="' + esc(x.donate || x.url) + '">Official donation page ↗</a> ' +
         '<a target="_blank" rel="noopener" href="' + esc(x.url) + '">Emergency page ↗</a>')).join('') +
-        card('Donation policy', '<p class="muted">' + esc(d.donationPolicy || '') + '</p>')
-      : card('Donation prompts withheld', '<p class="muted">' + esc(d.donationPolicy || '') + '</p>'));
-    setMeta('relief', items.length + ' organisations with live donation pages');
+        card('About donations', '<p class="muted">' + esc(d.donationPolicy || '') + '</p>')
+      : card('Donation links held back', '<p class="muted">' + esc(d.donationPolicy || '') + '</p>'));
+    setMeta('relief', items.length + ' organisation' + (items.length === 1 ? '' : 's') + ' with donation pages');
   }
 
   function renderDirectories(d) {
     const dirs = (d.directories || []).map(x => card(x.name, '<p class="muted">' + esc(x.kind || '') + '</p>',
       '<a class="btn" target="_blank" rel="noopener" href="' + esc(x.url) + '">Open ↗</a>'));
-    const provenance = card('Where this page\'s context comes from',
+    const provenance = card('Where this information comes from',
       '<ul class="intellist">' + (d.sources || []).map(s =>
-        '<li>' + esc(s.name) + ' — ' + esc(s.role) + ' · <b>' + (s.items || 0) + '</b> item(s)</li>').join('') + '</ul>',
+        '<li>' + esc(s.name) + ': ' + esc(s.role) + ' · <b>' + (s.items || 0) + '</b> item' + (s.items === 1 ? '' : 's') + '</li>').join('') + '</ul>',
       '<p class="muted" style="margin-top:8px">' + esc(d.disclaimer || '') + '</p>');
     setBody('directories', dirs.join('') + provenance);
     /* The fallback used to assert a five-minute rate, so a payload with no
        coverage block still published a refresh rate nothing was meeting. */
-    setMeta('directories', 'Refresh ' + ((d.coverage && d.coverage.refreshTarget) || 'recomputed on every request'));
+    setMeta('directories', 'How often this updates: ' + ((d.coverage && d.coverage.refreshTarget) || 'each time the page loads'));
   }
 
   function render(d, e) {
@@ -257,9 +257,9 @@
 
   function failure(message) {
     PANELS.forEach(([id]) => {
-      setBody(id, card('Context temporarily unavailable',
-        '<p class="muted">' + esc(message) + ' Core incident data on this page remains live; this block retries automatically.</p>'));
-      setMeta(id, 'Retrying');
+      setBody(id, card('This information is not available right now',
+        '<p class="muted">' + esc(message) + ' The rest of this page is still live. This section will try again by itself.</p>'));
+      setMeta(id, 'Trying again');
     });
   }
 
@@ -293,7 +293,7 @@
     try {
       await fetchAndRender(e);
     } catch (err) {
-      failure('The enrichment service did not respond.');
+      failure('Our help-information service did not respond.');
     }
     if (!timer) {
       timer = setInterval(() => {

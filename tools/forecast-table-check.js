@@ -34,9 +34,10 @@ const PAGE = process.env.PAGE || '/forecast-list';
 /* Where the list is mounted on that page. */
 const MOUNT = process.env.MOUNT || '#cards';
 /* Folded away on a phone: each is on the page the row opens. */
-const FOLDED = ['Starts', 'Ends', 'Provenance', 'Source', 'Updated'];
+/* By the heading a reader sees; the cell is found under that heading. */
+const FOLDED = ['Starts', 'Ends', 'What it is', 'Source', 'Updated'];
 /* And these appear only there. */
-const NARROW_ONLY = ['Window', 'Status'];
+const NARROW_ONLY = ['Dates', 'Status'];
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -78,7 +79,12 @@ const check = (ok, what) => { console.log((ok ? '  ok   ' : '  FAIL ') + what); 
       const m = await page.evaluate((args) => {
         const MOUNT = args.mount;
         const seen = l => {
-          const td = document.querySelector(MOUNT + ' tbody tr td[data-label="' + l + '"]');
+          /* The cell in the column this heading heads. A cell's data-label is
+             not always its heading: a column the phone fold hides keeps the
+             name portal.css hides it by. */
+          const heads = [...document.querySelectorAll(MOUNT + ' thead th')].map(th => th.textContent.trim());
+          const tr = document.querySelector(MOUNT + ' tbody tr');
+          const td = tr && heads.indexOf(l) >= 0 ? tr.children[heads.indexOf(l)] : null;
           if (!td) return null;
           const s = getComputedStyle(td);
           return s.display !== 'none' && td.getBoundingClientRect().width > 0;

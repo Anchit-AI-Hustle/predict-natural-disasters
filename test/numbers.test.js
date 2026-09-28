@@ -271,7 +271,9 @@ test('a chip count equals the count on the page it opens', async () => {
     const shown = Number(page.document.getElementById('kEvents').textContent.replace(/\D+/g, ''));
     const heading = page.document.getElementById('title').textContent;
     page.close();
-    assert.ok(heading.includes(chip.name),
+    /* The heading is in sentence case ("Tropical cyclone events"), so the
+       hazard is matched without regard to capitals. */
+    assert.ok(heading.toLowerCase().includes(chip.name.toLowerCase()),
       'the chip for ' + chip.name + ' opened a page headed "' + heading + '"');
     assert.equal(shown, chip.count,
       'the ' + chip.name + ' chip says ' + chip.count + ' but its page shows ' + shown);

@@ -28,10 +28,14 @@ const open = () => renderPage('forecast-list.html',
   { waitFor: d => d.querySelectorAll('#cards tbody tr').length > 1 });
 
 /* The columns the spec names, in the order it names them. */
-const COLUMNS = ['Risk', 'Forecast', 'Geography', 'Hazard', 'Starts', 'Ends',
-  'Class', 'Provenance', 'Source', 'Updated'];
+const COLUMNS = ['Risk', 'Forecast', 'Place', 'Hazard', 'Starts', 'Ends',
+  'Kind of forecast', 'What it is', 'Source', 'Updated'];
 /* Shown only once the table has folded into cards. */
-const NARROW_ONLY = ['Window', 'Status'];
+const NARROW_ONLY = ['Dates', 'Status'];
+/* Each cell's data-label is the word printed beside it on a phone. The
+   columns the phone fold hides keep the name portal.css hides them by, so
+   "What it is" is labelled Provenance there - and is never shown. */
+const CELL_LABELS = COLUMNS.map(c => (c === 'What it is' ? 'Provenance' : c));
 
 test('the outlook list is a table with the columns it promises', async () => {
   const r = await open();
@@ -59,7 +63,7 @@ test('every row is one outlook, and every row opens it', async () => {
     assert.ok(link, 'a row carries no link at all');
     assert.ok(link.textContent.trim().length > 3, 'a link with no name: ' + link.outerHTML.slice(0, 80));
     const cells = [...tr.querySelectorAll('td')].map(td => td.getAttribute('data-label'));
-    assert.deepEqual(cells, COLUMNS.concat(NARROW_ONLY), 'a row does not carry every column');
+    assert.deepEqual(cells, CELL_LABELS.concat(NARROW_ONLY), 'a row does not carry every column');
     for (const td of tr.querySelectorAll('td')) {
       assert.ok(td.textContent.trim().length > 0,
         'an empty cell says nothing; it should say what is not recorded: ' + td.getAttribute('data-label'));
@@ -74,12 +78,12 @@ test('the paragraph that is true of every outlook is printed once', async () => 
      page still carries the rule in full, which is what the row opens. */
   const r = await open();
   const body = r.document.getElementById('cards').textContent;
-  const phrase = 'not deterministic predictions';
+  const phrase = 'not an official warning';
   const rowText = [...r.document.querySelectorAll('#cards tbody tr')].map(t => t.textContent).join(' ');
   assert.equal(rowText.includes(phrase), false, 'the disclaimer is repeated on every row again');
   assert.ok(body.length > 0);
   const note = r.document.getElementById('forecastNote');
-  assert.ok(note && /do not replace official warnings/i.test(note.textContent),
+  assert.ok(note && /not an official warning and does not replace one/i.test(note.textContent),
     'the page no longer states the limit that applies to all of them');
   r.close();
 });

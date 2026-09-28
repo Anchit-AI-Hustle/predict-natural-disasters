@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <!-- seo:start -->
-<title>Home v2 (legacy layout) | Predict Natural Disasters</title>
-<meta name="description" content="Legacy homepage layout kept for reference.">
+<title>Home, older layout 2 | Predict Natural Disasters</title>
+<meta name="description" content="An older home page layout, kept for reference.">
 <link rel="canonical" href="https://predict-natural-disasters.anchit-tandon.com/home-v2">
 <meta property="og:site_name" content="Predict Natural Disasters">
-<meta property="og:title" content="Home v2 (legacy layout) | Predict Natural Disasters">
-<meta property="og:description" content="Legacy homepage layout kept for reference.">
+<meta property="og:title" content="Home, older layout 2 | Predict Natural Disasters">
+<meta property="og:description" content="An older home page layout, kept for reference.">
 <meta property="og:url" content="https://predict-natural-disasters.anchit-tandon.com/home-v2">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Home v2 (legacy layout) | Predict Natural Disasters">
-<meta name="twitter:description" content="Legacy homepage layout kept for reference.">
+<meta name="twitter:title" content="Home, older layout 2 | Predict Natural Disasters">
+<meta name="twitter:description" content="An older home page layout, kept for reference.">
 <meta name="theme-color" content="#02110d">
 <meta name="robots" content="noindex,follow">
 <!-- seo:end -->
@@ -30,20 +30,20 @@
 <body>
 <div id="nav"></div>
 <section class="hero homehero">
-<h1>Global Natural Disaster Outlook</h1>
-<p>Real-time monitoring. Forecasting. Evidence-based insights.</p>
+<h1>Natural disasters around the world</h1>
+<p>See what official agencies are reporting now, and our own forecasts of what may happen next.</p>
 <div class="grid" style="margin-top:14px">
-<button class="card redirectCard" data-href="/events" onclick="go(this.dataset.href)"><span class="muted">VISIBLE EVENTS</span><div class="big" id="kEvents">—</div></button>
-<button class="card redirectCard" data-href="/resources" onclick="go(this.dataset.href)"><span class="muted">OFFICIAL SOURCES</span><div class="big" id="kOfficial">—</div></button>
-<button class="card redirectCard" data-href="/alerts" onclick="go(this.dataset.href)"><span class="muted">HIGH-RISK EVENTS</span><div class="big" id="kHigh">—</div></button>
-<button class="card redirectCard" data-href="/live-map" onclick="go(this.dataset.href)"><span class="muted">LIVE FEEDS</span><div class="big" id="kFeeds">—</div></button>
+<button class="card redirectCard" data-href="/events" onclick="go(this.dataset.href)"><span class="muted">EVENTS AND FORECASTS</span><div class="big" id="kEvents">—</div></button>
+<button class="card redirectCard" data-href="/resources" onclick="go(this.dataset.href)"><span class="muted">FROM OFFICIAL AGENCIES</span><div class="big" id="kOfficial">—</div></button>
+<button class="card redirectCard" data-href="/alerts" onclick="go(this.dataset.href)"><span class="muted">HIGH RISK</span><div class="big" id="kHigh">—</div></button>
+<button class="card redirectCard" data-href="/live-map" onclick="go(this.dataset.href)"><span class="muted">SOURCES WORKING</span><div class="big" id="kFeeds">—</div></button>
 </div>
 </section>
 <main class="wrap">
 <div class="homegrid">
 <aside class="panel side">
 <div class="ph"><h3>Explore</h3></div>
-<button class="navitem active" data-href="/" onclick="go(this.dataset.href)">◉ Global View</button>
+<button class="navitem active" data-href="/" onclick="go(this.dataset.href)">◉ Whole world</button>
 <button class="navitem" data-href="/regions/Asia" onclick="go(this.dataset.href)">◆ Asia</button>
 <button class="navitem" data-href="/regions/Africa" onclick="go(this.dataset.href)">◆ Africa</button>
 <button class="navitem" data-href="/regions/North%20America" onclick="go(this.dataset.href)">◆ North America</button>
@@ -51,35 +51,35 @@
 <button class="navitem" data-href="/regions/Europe" onclick="go(this.dataset.href)">◆ Europe</button>
 <button class="navitem" data-href="/regions/Oceania" onclick="go(this.dataset.href)">◆ Oceania</button>
 <div class="ph"><h3>Tools</h3></div>
-<button class="navitem" data-href="/live-map" onclick="go(this.dataset.href)">🗺 Risk Map</button>
-<button class="navitem" data-href="/alerts-notifications" onclick="go(this.dataset.href)">🔔 Alerts & Notifications</button>
-<button class="navitem" data-href="/forecast-calendar" onclick="go(this.dataset.href)">▣ Forecast Calendar</button>
-<button class="navitem" data-href="/historical-events" onclick="go(this.dataset.href)">◷ Historical Events</button>
-<button class="navitem" data-href="/compare-locations" onclick="go(this.dataset.href)">◎ Compare Locations</button>
-<button class="navitem" data-href="/resources" onclick="go(this.dataset.href)">? Learn & Resources</button>
+<button class="navitem" data-href="/live-map" onclick="go(this.dataset.href)">🗺 Map</button>
+<button class="navitem" data-href="/alerts-notifications" onclick="go(this.dataset.href)">🔔 Alerts</button>
+<button class="navitem" data-href="/forecast-calendar" onclick="go(this.dataset.href)">▣ Forecast calendar</button>
+<button class="navitem" data-href="/historical-events" onclick="go(this.dataset.href)">◷ Past events</button>
+<button class="navitem" data-href="/compare-locations" onclick="go(this.dataset.href)">◎ Compare places</button>
+<button class="navitem" data-href="/resources" onclick="go(this.dataset.href)">? Our sources</button>
 </aside>
 <section>
 <div class="panel">
-<div class="ph"><h3>Global Live Hazard Map</h3><div class="statusbar"><span id="freshness">Loading…</span><button class="viewall" data-href="/live-map" onclick="go(this.dataset.href)">Open full map →</button></div></div>
-<div class="toolbar" style="padding:8px;margin:0"><input class="input" id="search" aria-label="Search location or event" placeholder="Search location or event"><select class="select" id="haz" aria-label="Filter by hazard type"><option value="">All Hazards</option><option>Flood</option><option>Earthquake</option><option>Wildfires</option><option>Volcanoes</option><option>Severe Storms</option></select><select id="sortBy" aria-label="Sort results" class="select" style="max-width:200px"></select><select class="select" aria-label="Event status"><option>Currently Active</option></select></div>
+<div class="ph"><h3>Map of current events</h3><div class="statusbar"><span id="freshness">Loading…</span><button class="viewall" data-href="/live-map" onclick="go(this.dataset.href)">Open full map →</button></div></div>
+<div class="toolbar" style="padding:8px;margin:0"><input class="input" id="search" aria-label="Search for a place or event" placeholder="Search a place or event"><select class="select" id="haz" aria-label="Filter by hazard type"><option value="">All hazards</option><option>Flood</option><option>Earthquake</option><option>Wildfires</option><option>Volcanoes</option><option>Severe storms</option></select><select id="sortBy" aria-label="Sort results" class="select" style="max-width:200px"></select><select class="select" aria-label="Event status"><option>Current only</option></select></div>
 <div id="map" class="map"></div>
 </div>
 <section class="panel">
-<div class="ph"><h3>Tracked Events by Hazard Type</h3><button class="viewall" data-href="/hazard-types" onclick="go(this.dataset.href)">View All →</button></div>
+<div class="ph"><h3>Events by type of hazard</h3><button class="viewall" data-href="/hazard-types" onclick="go(this.dataset.href)">View all →</button></div>
 <div class="hazards">
-<button class="haz" data-href="/hazards/Extreme%20Heat" onclick="go(this.dataset.href)">🌡 Extreme Heat</button><button class="haz" data-href="/hazards/Flood" onclick="go(this.dataset.href)">💧 Flooding</button><button class="haz" data-href="/hazards/Tropical%20Cyclone" onclick="go(this.dataset.href)">🌀 Tropical Cyclones</button><button class="haz" data-href="/hazards/Earthquake" onclick="go(this.dataset.href)">〽 Earthquakes</button><button class="haz" data-href="/hazards/Volcanic%20Eruption" onclick="go(this.dataset.href)">🌋 Volcanic Activity</button><button class="haz" data-href="/hazards/Wildfire" onclick="go(this.dataset.href)">🔥 Wildfires</button><button class="haz" data-href="/hazards/Landslide" onclick="go(this.dataset.href)">⛰ Landslides</button><button class="haz" data-href="/hazards/Drought" onclick="go(this.dataset.href)">☀ Drought</button>
+<button class="haz" data-href="/hazards/Extreme%20Heat" onclick="go(this.dataset.href)">🌡 Extreme heat</button><button class="haz" data-href="/hazards/Flood" onclick="go(this.dataset.href)">💧 Floods</button><button class="haz" data-href="/hazards/Tropical%20Cyclone" onclick="go(this.dataset.href)">🌀 Tropical cyclones</button><button class="haz" data-href="/hazards/Earthquake" onclick="go(this.dataset.href)">〽 Earthquakes</button><button class="haz" data-href="/hazards/Volcanic%20Eruption" onclick="go(this.dataset.href)">🌋 Volcanoes</button><button class="haz" data-href="/hazards/Wildfire" onclick="go(this.dataset.href)">🔥 Wildfires</button><button class="haz" data-href="/hazards/Landslide" onclick="go(this.dataset.href)">⛰ Landslides</button><button class="haz" data-href="/hazards/Drought" onclick="go(this.dataset.href)">☀ Drought</button>
 </div>
 </section>
 </section>
-<aside class="panel"><div class="ph"><h3>Top Active Events (Global)</h3><button class="viewall" data-href="/events" onclick="go(this.dataset.href)">View All →</button></div><div id="topEvents" class="risklist"></div></aside>
+<aside class="panel"><div class="ph"><h3>Current events worldwide</h3><button class="viewall" data-href="/events" onclick="go(this.dataset.href)">View all →</button></div><div id="topEvents" class="risklist"></div></aside>
 </div>
 <div class="lower" style="margin-top:10px">
-<section class="panel"><div class="ph"><h3>Upcoming High-Risk Forecasts</h3><button class="viewall" data-href="/forecast-list" onclick="go(this.dataset.href)">View All →</button></div><table class="table"><tbody><tr data-href="/forecasts/ND-001" onclick="go(this.dataset.href)"><td>14 Sep 2026</td><td>Central Vietnam</td><td><span class="tapHint">View details →</span></td></tr><tr data-href="/forecasts" onclick="go(this.dataset.href)"><td>Live</td><td>Global forecast feed</td><td><span class="tapHint">Open →</span></td></tr></tbody></table></section>
-<section class="panel"><div class="ph"><h3>Recent Major Events</h3><button class="viewall" data-href="/recent-events" onclick="go(this.dataset.href)">View All →</button></div><table class="table"><tbody id="recentRows"></tbody></table></section>
-<section class="panel"><div class="ph"><h3>Official Warnings & Alerts</h3><button class="viewall" data-href="/official-warnings" onclick="go(this.dataset.href)">View All →</button></div><table class="table"><tbody id="warningRows"></tbody></table></section>
+<section class="panel"><div class="ph"><h3>High-risk forecasts</h3><button class="viewall" data-href="/forecast-list" onclick="go(this.dataset.href)">View all →</button></div><table class="table"><tbody><tr data-href="/forecasts/ND-001" onclick="go(this.dataset.href)"><td>14 Sep 2026</td><td>Central Vietnam</td><td><span class="tapHint">View details →</span></td></tr><tr data-href="/forecasts" onclick="go(this.dataset.href)"><td>Now</td><td>All current forecasts</td><td><span class="tapHint">Open →</span></td></tr></tbody></table></section>
+<section class="panel"><div class="ph"><h3>Recent official reports</h3><button class="viewall" data-href="/recent-events" onclick="go(this.dataset.href)">View all →</button></div><table class="table"><tbody id="recentRows"></tbody></table></section>
+<section class="panel"><div class="ph"><h3>Official warnings</h3><button class="viewall" data-href="/official-warnings" onclick="go(this.dataset.href)">View all →</button></div><table class="table"><tbody id="warningRows"></tbody></table></section>
 </div>
-<section class="panel" style="margin-top:10px"><div class="ph"><h3>Forecast Verification Center</h3><button class="viewall" data-href="/forecasts/ND-001" onclick="go(this.dataset.href)">View Details →</button></div><div class="verify"><button class="card redirectCard" data-href="/forecasts/ND-001" onclick="go(this.dataset.href)"><b>ND-001 · Central Vietnam flood + landslide</b><p class="muted">Target: 14 Sep 2026 · Starts 13 Sept 2026 · expected duration 4 days</p><span class="verdict">PENDING VERIFICATION</span></button><button class="card redirectCard" data-href="/verification" onclick="go(this.dataset.href)"><b>Verification factors</b><div class="muted">Timing</div><div class="progress"><i></i></div><div class="muted">Geography</div><div class="progress"><i></i></div><div class="muted">Mechanism</div><div class="progress"><i></i></div><div class="muted">Meaningful impacts</div><div class="progress"><i></i></div></button></div></section>
-<div class="foot">Live data sources: GDACS, USGS, NASA EONET. Forecasts are informational and do not replace official government warnings.</div>
+<section class="panel" style="margin-top:10px"><div class="ph"><h3>Checking our forecasts</h3><button class="viewall" data-href="/forecasts/ND-001" onclick="go(this.dataset.href)">View details →</button></div><div class="verify"><button class="card redirectCard" data-href="/forecasts/ND-001" onclick="go(this.dataset.href)"><b>ND-001 · Central Vietnam flood and landslides</b><p class="muted">A test case, not made in advance. Target date: 14 Sep 2026 · starts 13 Sept 2026 · expected to last 4 days</p><span class="verdict">PARTLY CORRECT</span></button><button class="card redirectCard" data-href="/verification" onclick="go(this.dataset.href)"><b>What we check</b><div class="muted">Timing</div><div class="progress"><i></i></div><div class="muted">Place</div><div class="progress"><i></i></div><div class="muted">Type of hazard</div><div class="progress"><i></i></div><div class="muted">Real harm or damage</div><div class="progress"><i></i></div></button></div></section>
+<div class="foot">Data from the GDACS, the USGS, NASA EONET and other agencies. Our forecasts are for information only. They do not replace official government warnings.</div>
 </main>
 <script>function go(u){if(!u)return;window.location.href=u;}document.addEventListener('click',function(e){const el=e.target.closest('[data-href]');if(!el)return;if(e.defaultPrevented)return;if(el.getAttribute('onclick'))return;e.preventDefault();go(el.dataset.href);},false);document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-href]')){e.preventDefault();go(e.target.closest('[data-href]').dataset.href)}},false);</script>
 <script src="/vendor/leaflet/leaflet.js"></script><script src="/globe.js"></script><script src="/map-setup.js"></script>
@@ -87,8 +87,8 @@
 <script>
 nav.innerHTML=PND.nav('Home');
 const map=L.map('map',{worldCopyJump:true});PNDMap.basemap(map);const layer=L.layerGroup().addTo(map);let all=[];
-function render(){PND.initSort('sortBy',PND.EVENT_SORTS,render);const q=search.value.toLowerCase(),h=haz.value.toLowerCase();const es=PND.sortBy('sortBy',all.filter(e=>(!q||PND.matches(e,q))&&(!h||String(e.type).toLowerCase().includes(h.replace('s','')))));layer.clearLayers();es.slice(0,150).forEach(e=>{const u=PND.eventUrl(e);PNDMap.riskMarker([e.lat,e.lon],e.alert,e.title).addTo(layer).bindPopup(`<b>${PND.esc(e.title)}</b><br>${PND.esc(e.type)} · ${PND.esc(e.source)}<br><button class="detailBtn" data-href="${u}" onclick="go(this.dataset.href)">Open full detail page →</button>`)});topEvents.innerHTML=es.slice(0,8).map((e,i)=>{const u=PND.eventUrl(e);return `<button class="riskitem" data-href="${u}" onclick="go(this.dataset.href)"><b>${i+1}. ${PND.esc(e.title)}</b><div class="muted">${PND.esc(e.type)} · ${PND.esc(e.country||e.region||'Global')}</div>${PND.riskTag(e)}<div class="tapHint" style="margin-top:5px">Open full detail page →</div></button>`}).join('');recentRows.innerHTML=es.filter(e=>e.sourceType==='official').slice(0,5).map(e=>{const u=PND.eventUrl(e);return `<tr data-href="${u}" onclick="go(this.dataset.href)"><td>${PND.fmtDate(e.updated)}</td><td>${PND.esc(e.title)}</td><td><span class="tapHint">View details →</span></td></tr>`}).join('');warningRows.innerHTML=es.filter(e=>e.source==='GDACS'&&['Red','Orange'].includes(e.alert)).slice(0,5).map(e=>{const u=PND.eventUrl(e);return `<tr data-href="${u}" onclick="go(this.dataset.href)"><td>${PND.esc(e.source)}</td><td>${PND.esc(e.title)}</td><td><span class="tapHint">View details →</span></td></tr>`}).join('')}
-async function load(){try{const d=await PND.getEvents();all=d.events;kEvents.textContent=all.length;kOfficial.textContent=all.filter(e=>e.sourceType==='official').length;kHigh.textContent=all.filter(e=>['Red','Orange','High'].includes(e.alert)).length;kFeeds.textContent=PND.sourcesRatio(d.meta);freshness.textContent=(d.meta.live?'Live · ':'Cached · ')+PND.fmtDate(d.generatedAt);render()}catch(e){freshness.textContent='Live feed error — retrying'}}search.oninput=render;haz.onchange=render;PND.autoRefresh(load,60000);
+function render(){PND.initSort('sortBy',PND.EVENT_SORTS,render);const q=search.value.toLowerCase(),h=haz.value.toLowerCase();const es=PND.sortBy('sortBy',all.filter(e=>(!q||PND.matches(e,q))&&(!h||String(e.type).toLowerCase().includes(h.replace(/e?s$/,'')))));layer.clearLayers();es.slice(0,150).forEach(e=>{const u=PND.eventUrl(e);PNDMap.riskMarker([e.lat,e.lon],e.alert,e.title).addTo(layer).bindPopup(`<b>${PND.esc(e.title)}</b><br>${PND.esc(e.type)} · ${PND.esc(e.source)}<br><button class="detailBtn" data-href="${u}" onclick="go(this.dataset.href)">See details →</button>`)});topEvents.innerHTML=es.slice(0,8).map((e,i)=>{const u=PND.eventUrl(e);return `<button class="riskitem" data-href="${u}" onclick="go(this.dataset.href)"><b>${i+1}. ${PND.esc(e.title)}</b><div class="muted">${PND.esc(e.type)} · ${PND.esc(PND.placeOf(e,'Global'))}</div>${PND.riskTag(e)}<div class="tapHint" style="margin-top:5px">See details →</div></button>`}).join('');recentRows.innerHTML=es.filter(e=>e.sourceType==='official').slice(0,5).map(e=>{const u=PND.eventUrl(e);return `<tr data-href="${u}" onclick="go(this.dataset.href)"><td>${PND.fmtDate(e.updated)}</td><td>${PND.esc(e.title)}</td><td><span class="tapHint">View details →</span></td></tr>`}).join('');warningRows.innerHTML=es.filter(e=>e.source==='GDACS'&&['Red','Orange'].includes(e.alert)).slice(0,5).map(e=>{const u=PND.eventUrl(e);return `<tr data-href="${u}" onclick="go(this.dataset.href)"><td>${PND.esc(e.source)}</td><td>${PND.esc(e.title)}</td><td><span class="tapHint">View details →</span></td></tr>`}).join('')}
+async function load(){try{const d=await PND.getEvents();all=d.events;kEvents.textContent=all.length;kOfficial.textContent=all.filter(e=>e.sourceType==='official').length;kHigh.textContent=all.filter(e=>['Red','Orange','High'].includes(e.alert)).length;kFeeds.textContent=PND.sourcesRatio(d.meta);freshness.textContent=(d.meta.live?'Live · ':'Saved copy · ')+PND.fmtDate(d.generatedAt);render()}catch(e){freshness.textContent='Could not load the latest data. Trying again…'}}search.oninput=render;haz.onchange=render;PND.autoRefresh(load,60000);
 </script>
 <script src="/glossary.js"></script></body>
 </html>

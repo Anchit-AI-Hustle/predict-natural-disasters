@@ -520,7 +520,7 @@
     }
     if (end > at) {
       return say(CLASSIFICATION.PENDING,
-        'The target window has not closed yet; it runs to ' + claim.window.targetEnd + '.', [],
+        'The forecast period has not ended yet. It runs until ' + claim.window.targetEnd + '.', [],
         'WINDOW_STILL_OPEN');
     }
 
@@ -556,24 +556,25 @@
              and could not vouch for this place are not an empty record. */
           if (cov.why === 'not-watched' || cov.why === 'not-together') {
             return say(CLASSIFICATION.PENDING, cov.why === 'not-together'
-              ? 'This forecast names more than one hazard, and at no time were the sources this site reads complete for all of them here at once, so the lack of a matching report would not show that nothing happened.'
-              : 'None of the sources this site reads is complete for this hazard in this place, so the lack of a matching report would not show that nothing happened.',
+              ? 'This forecast names more than one hazard. Our sources never fully covered all of them here at the same time. So a lack of reports would not show that nothing happened.'
+              : 'None of our sources fully covers this hazard in this place. So a lack of reports would not show that nothing happened.',
               [], 'ABSENCE_NOT_ESTABLISHABLE');
           }
           return say(CLASSIFICATION.PENDING, cov.why === 'no-scans'
-            ? 'No scan of the disaster sources has been recorded yet, so there is nothing this window can be graded against.'
-            : 'The record of observed disasters is empty, so there is nothing this window can be graded against.', [],
+            ? 'We have not recorded any check of our disaster sources yet. So there is nothing to check this forecast against.'
+            : 'Our record of disasters is empty. So there is nothing to check this forecast against.', [],
             'OBSERVED_RECORD_EMPTY');
         }
         if (start !== null && start < covFrom) {
           return say(CLASSIFICATION.PENDING,
-            'This window opens before the record of observed disasters begins (' + cov.from +
-            '), so an absence of matching disasters would say nothing about what happened.', [],
+            'This forecast period starts before we began checking this hazard and place (' + cov.from +
+            '). So a lack of matching disasters would say nothing about what happened.', [],
             'OBSERVED_RECORD_STARTS_LATER');
         }
         if (end > covTo) {
           return say(CLASSIFICATION.PENDING,
-            'This window closes after the record of observed disasters was last updated (' + cov.to + ').', [],
+            'This forecast period ends after our latest check of this hazard and place (' + cov.to +
+            '). So it cannot be checked yet.', [],
             'OBSERVED_RECORD_NOT_YET_UPDATED');
         }
         /* Inside the outer bounds is not the same as watched throughout. A
@@ -589,8 +590,8 @@
           }
           if (!whole) {
             return say(CLASSIFICATION.PENDING,
-              'No unbroken run of scans covers this window: the record of what was examined has a gap of more than ' +
-              (cov.maxGapHours || MAX_SCAN_GAP_HOURS) + ' hours inside it, so an absence of matching disasters would say nothing about what happened.',
+              'There was a gap of more than ' + (cov.maxGapHours || MAX_SCAN_GAP_HOURS) +
+              ' hours in our checks of this hazard and place during this forecast period. So a lack of matching disasters would say nothing about what happened.',
               [], 'OBSERVED_RECORD_HAS_A_GAP');
           }
         }
@@ -735,10 +736,11 @@
        means and this is not one. */
     if (unattributed.length) {
       return say(CLASSIFICATION.PENDING,
-        'Activity of this hazard was observed inside the frozen geography and window, but it falls inside ' +
-        (unattributed[0].also.length === 1 ? 'another outlook' : unattributed[0].also.length + ' other outlooks') +
-        ' following a different disaster (' + unattributed[0].also.join(', ') + '), whose claim accepts it just as fully. ' +
-        'Nothing on record says which sequence it belongs to, so it is not counted for either.',
+        'Activity of this hazard was seen in the forecast area and period. But it fits ' +
+        (unattributed[0].also.length === 1 ? 'a forecast about another disaster'
+          : 'forecasts about ' + unattributed[0].also.length + ' other disasters') +
+        ' (' + unattributed[0].also.join(', ') + ') just as well. ' +
+        'Nothing on record says which disaster it belongs to, so it is not counted for either.',
         [], 'SEQUENCE_ATTRIBUTION_AMBIGUOUS');
     }
 
@@ -752,8 +754,9 @@
     }
     if (awaitingActivity.length) {
       return say(CLASSIFICATION.PENDING,
-        'The ' + claim.hazard + ' this outlook follows is on record, but nothing dated inside the window shows whether it continued, ' +
-        'so this can be graded neither way yet.', [], 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+        'The ' + String(claim.hazard).replace(/-/g, ' ') + ' this forecast follows is on record. ' +
+        'But nothing dated inside the forecast period shows whether it continued. So it cannot be checked either way yet.',
+        [], 'CONTINUATION_EVIDENCE_UNAVAILABLE');
     }
     return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
       subjectClaim
@@ -1079,7 +1082,7 @@
     }
     if (matched.length) {
       return { falseNegative: false, status: null, matched: matched,
-        reason: 'An independent prospective forecast covering this disaster existed beforehand.' };
+        reason: 'We had a forecast made in advance that covered this disaster.' };
     }
 
     /* Nothing forecast it, and nothing could have.
@@ -1096,7 +1099,7 @@
     var forecastable = (opts || {}).hazardForecastable;
     if (typeof forecastable === 'function' && forecastable(event) === false) {
       return { falseNegative: true, status: COVERAGE.NOT_FORECASTABLE, matched: [],
-        reason: 'The onset of this hazard is not forecastable. No agency forecasts it and neither does this project, so nothing here was in a position to predict it; it is counted as unforecast, not as a forecasting failure.' };
+        reason: 'Nobody can forecast when this kind of disaster will start. No agency forecasts it, and neither do we. We count it as not forecast, not as a failure of our forecasts.' };
     }
 
     var onset = ms(event.onset);
@@ -1105,11 +1108,11 @@
 
     if (!scans.length) {
       return { falseNegative: true, status: COVERAGE.DATA_UNAVAILABLE, matched: [],
-        reason: 'No scan has been recorded, so whether anything was examining this hazard and place at the time cannot be established. It is not evidence that nothing was.' };
+        reason: 'We have no record of checking our sources, so we cannot tell whether we were watching this hazard and place at the time. That does not mean we were not.' };
     }
     if (onset === null || (detailFrom !== null && onset < detailFrom)) {
       return { falseNegative: true, status: COVERAGE.DATA_UNAVAILABLE, matched: [],
-        reason: 'This disaster predates the scan ledger’s detailed record, so whether its hazard and place were being examined cannot be established either way.' };
+        reason: 'This disaster happened before our detailed record of checks begins. So we cannot tell whether we were watching its hazard and place.' };
     }
 
     /* Was anything that covers this hazard actually evaluated around then? */
@@ -1127,7 +1130,7 @@
     });
     if (!near.length) {
       return { falseNegative: true, status: COVERAGE.DATA_UNAVAILABLE, matched: [],
-        reason: 'No scan is recorded in the day before this disaster, so whether it was being watched in time to forecast it cannot be established.' };
+        reason: 'We have no record of a check in the day before this disaster. So we cannot tell whether we were watching in time to forecast it.' };
     }
     var coveringMetas = [];
     near.forEach(function (s) {
@@ -1138,19 +1141,19 @@
     });
     if (!coveringMetas.length) {
       return { falseNegative: true, status: COVERAGE.COVERAGE_FAILURE, matched: [],
-        reason: 'No provider covering this hazard completed a scan within a day of it, so nothing was in a position to forecast it.' };
+        reason: 'None of our sources for this hazard finished a check of this place in the day before it. So we were not in a position to forecast it.' };
     }
     /* Scanned, and by something that could have seen it coming. */
     var prospective = coveringMetas.filter(providerIsProspective);
     if (!prospective.length) {
       return { falseNegative: true, status: COVERAGE.NO_PROSPECTIVE_INPUT, matched: [],
-        reason: 'Every source covering this hazard and place reports what has already happened, so nothing this system reads could have forecast it. ' +
-          'It is counted as unforecast, not as a forecasting failure.' };
+        reason: 'Our sources for this hazard and place only report what has already happened. So nothing we read could have warned of it in advance. ' +
+          'We count it as not forecast, not as a failure of our forecasts.' };
     }
     return { falseNegative: true, status: COVERAGE.FORECAST_FAILURE, matched: [],
-      reason: 'A source that states what is expected for this hazard (' +
+      reason: 'A source that forecasts this hazard (' +
         (prospective[0].label || 'a forecasting source') +
-        ') completed a scan of this place within a day of the disaster, and no qualifying independent forecast was produced.' };
+        ') was checked for this place in the day before the disaster. We still made no advance forecast that counts.' };
   }
 
   /* --------------------------------------------------------------- scoring */
@@ -1212,10 +1215,10 @@
       partialHitWeight: PARTIAL_WEIGHT,
       precision: precision, recall: recall, f1: f1,
       methodology: {
-        precision: 'weightedPrecision = (HIT + ' + PARTIAL_WEIGHT + ' × PARTIAL_HIT) ÷ eligible matured predictions.',
-        recall: 'eventRecall = (fully predicted events + ' + PARTIAL_WEIGHT + ' × partly predicted events) ÷ significant observed events whose onset is at or after the first independent prediction on record.',
-        f1: 'F1 = 2 × precision × recall ÷ (precision + recall). It is a verification score, not an accuracy.',
-        partialHitWeight: 'PARTIAL HIT weight = ' + PARTIAL_WEIGHT + '. A partial hit was right about the hazard and the window and wrong about part of where, so it counts as half.',
+        precision: 'Precision = (correct + ' + PARTIAL_WEIGHT + ' × partly correct) ÷ forecasts checked.',
+        recall: 'Recall = (disasters fully forecast + ' + PARTIAL_WEIGHT + ' × disasters partly forecast) ÷ significant disasters that started on or after our first advance forecast.',
+        f1: 'F1 = 2 × precision × recall ÷ (precision + recall). It combines the two into one score. It is not a measure of accuracy.',
+        partialHitWeight: 'A partly correct forecast counts as ' + PARTIAL_WEIGHT + '. It was right about the hazard and the period but wrong about part of the place, so it counts as half.',
         version: VERIFICATION_VERSION
       }
     };

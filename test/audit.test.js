@@ -109,7 +109,7 @@ test('no page reports more of something than can exist', async () => {
   // "Live · 7/3 sources online" shipped, because the denominator was a literal.
   const found = await sweep((doc, v) => {
     const out = [];
-    for (const m of v.text.matchAll(/(\d+)\s*\/\s*(\d+)\s+(sources|records|feeds)/g)) {
+    for (const m of v.text.matchAll(/(\d+)\s*(?:\/|of)\s*(\d+)\s+(sources|records|feeds)/g)) {
       if (Number(m[1]) > Number(m[2])) out.push('reports "' + m[0] + '"');
     }
     return out;
