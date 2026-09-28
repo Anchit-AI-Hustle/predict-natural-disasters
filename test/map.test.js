@@ -104,7 +104,7 @@ test('the clear map opens; satellite and political stay one click away', () => {
   assert.match(src, /choices\['Satellite'\] = views\['Satellite'\];/, 'the satellite view is no longer offered');
   assert.match(src, /choices\['Political'\] = plain;/, 'the political world is no longer offered');
   /* Open where there is room, so the other views can be found at all. */
-  assert.match(src, /L\.control\.layers\(choices, null, \{ position: 'topright', collapsed: !roomy \}\)/);
+  assert.match(src, /L\.control\.layers\(choices, daily \? extras : null, \{ position: 'topright', collapsed: !roomy \}\)/);
   /* The satellite view keeps its drawn floor for tiles a network refuses. */
   assert.match(src, /political\(map, false\)/,
     'the imagery has no drawn world underneath it to fall back to');
@@ -368,7 +368,7 @@ test('both views carry place names, and satellite stays available', () => {
   assert.match(sat[0], /PLACES/, 'the satellite view has no place-name layer');
   /* The imagery layer is built just above the group so a tileerror on it can
      bring the fallback world's names back; it still has to be the imagery. */
-  assert.match(src, /var imagery = L\.tileLayer\(IMAGERY,/,
+  assert.match(src, /imagery = L\.tileLayer\(IMAGERY,/,
     'the satellite view is no longer built from the world imagery tiles');
 });
 
@@ -481,10 +481,11 @@ test('the political layer draws countries, not an empty ocean', async () => {
 
 /* ------------------------------------ the picture is today's, and says so */
 
-test('zoomed out, the satellite view is NASA’s picture of the latest complete day', async () => {
-  /* The satellite view was Esri's World Imagery alone: sharp, and a mosaic of
-     captures months to years old, with nothing saying so. Opened on a flood it
-     showed the dry ground from before the flood under the flood's marker. */
+test('the satellite view is one seamless mosaic, and NASA’s photo of the day is one switch away', async () => {
+  /* NASA's daily photo used to fill every zoom up to 9 with Esri's mosaic
+     after it, and a slow or refused NASA tile let the drawn map show through:
+     the view read as a patchwork of squares, and not at all like the
+     god's-eye-view globe it is adapted from, which opens on the mosaic. */
   const r = await renderPage('live-map.html', { timeoutMs: 4000 });
   const M = r.window.PNDMap;
   assert.equal(typeof M.dailyImagery, 'function', 'the daily picture is not defined');
@@ -496,57 +497,51 @@ test('zoomed out, the satellite view is NASA’s picture of the latest complete 
   assert.equal(M.dailyImagery(Date.parse('2026-09-23T02:00:00Z')).day, '2026-09-21',
     'before NASA has processed the last passes, the day before is not yet complete');
   assert.equal(M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).label, '22 Sep 2026');
-
-  /* Exactly the URL shape of NASA's own Leaflet example for this service. */
   const u = M.dailyImagery(Date.parse('2026-09-23T10:30:00Z')).url;
   assert.equal(u, 'https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/' +
     'VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-09-22/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg');
-  /* VIIRS rather than MODIS, and the globe is the reason. MODIS sweeps 2330 km
-     while the Earth turns ~2750 km between orbits, so its swaths miss each
-     other at the equator and a MODIS day arrives striped with the opaque black
-     that unimaged ground returns. VIIRS sweeps 3060 km and closes in one day. */
   assert.match(u, /VIIRS/, 'the daily picture is back on an instrument whose swaths do not close a day');
   assert.equal(M.DAILY_MAX_ZOOM, 9, 'the daily picture is asked for past the zoom it exists at');
+  assert.equal(typeof M.dailyWanted, 'function', 'the reader’s choice of NASA’s photo is not shared with the globe');
   r.close();
 
   const src = read('map-setup.js');
   const sat = src.match(/views\['Satellite'\] = L\.layerGroup\(\[[\s\S]*?\]\)/);
-  assert.match(sat[0], /\bdaily\b/, 'the satellite view does not carry the daily picture');
+  assert.doesNotMatch(sat[0], /\bdaily\b/, 'the daily photo is back inside the satellite view, patching it');
+  assert.match(src, /imagery = L\.tileLayer\(IMAGERY, \{ attribution: ESRI_CREDIT, maxZoom: 18, noWrap: true \}\)/,
+    'the mosaic no longer covers every zoom');
   assert.match(src, /maxZoom: DAILY_MAX_ZOOM,\s*\n?\s*maxNativeZoom: DAILY_MAX_ZOOM/,
     'the daily layer is not capped at the zoom it exists at');
-  assert.match(src, /L\.tileLayer\(IMAGERY, \{ attribution: ESRI_CREDIT, minZoom: DAILY_MAX_ZOOM \+ 1,/,
-    'the detailed mosaic is fetched even where the daily picture is shown');
+  assert.match(src, /extras\['NASA today \(' \+ latest\.label \+ '\)'\] = daily;/, 'NASA’s photo is not offered as its own layer');
+  assert.match(src, /var DAILY_PREF = 'pnd_nasa_today';/, 'the choice is not remembered');
 });
 
 test('the caption never lets an old picture pass for the scene now', async () => {
   const r = await renderPage('live-map.html', { timeoutMs: 4000 });
   const M = r.window.PNDMap;
   const latest = M.dailyImagery(Date.parse('2026-09-23T10:30:00Z'));
-  assert.match(M.imageryText('daily', latest), /NASA, 22 Sep 2026/);
-  assert.match(M.imageryText('daily', latest), /cloud is part of the picture/i,
+  assert.match(M.imageryText('mosaic', latest), /not a live picture of today/,
+    'the mosaic can read as the scene now');
+  assert.match(M.imageryText('daily', latest), /NASA’s photo of 22 Sep 2026/);
+  assert.match(M.imageryText('daily', latest), /Clouds are part of the picture/,
     'the daily caption does not warn that a satellite photographs cloud tops');
-  /* The stripes in the daily picture read as a broken map unless something
-     says what they are. */
-  assert.match(M.imageryText('daily', latest), /Black stripes are gaps between the satellite’s passes/,
-    'the daily caption does not say what the black stripes are');
-  for (const s of ['detail', 'fallback']) {
-    assert.match(M.imageryText(s, latest), /not the scene now/,
-      'the ' + s + ' caption lets the old mosaic read as current');
-  }
   assert.match(M.imageryText('fallback', latest), /did not load/);
+  assert.match(M.imageryText('fallback', latest), /NASA’s photo of 22 Sep 2026/);
   /* Both hosts refused: what is left is the drawn world, and the caption must
      not describe a photograph that is not there. */
   assert.match(M.imageryText('drawn', latest), /drawn map/);
-  assert.doesNotMatch(M.imageryText('drawn', latest), /mosaic|NASA, /);
+  assert.doesNotMatch(M.imageryText('drawn', latest), /mosaic|NASA/);
+  for (const s of ['mosaic', 'daily', 'fallback', 'drawn']) {
+    assert.doesNotMatch(M.imageryText(s, latest), /Black stripes/, 'the caption still describes stripes');
+  }
   r.close();
 
   const src = read('map-setup.js');
   assert.match(src, /imageryNote\(map, views\['Satellite'\]/, 'nothing puts the caption on the map');
-  assert.match(src, /state\.rescueFailed \? 'drawn' : 'fallback'/,
-    'a double failure is still captioned as a mosaic');
-  /* Built last, in its own try: a caption fault must not take the map with it.
-     The first version threw before the layers control was added. */
-  assert.match(src, /try \{ imageryNote\(map, views\['Satellite'\], daily, latest, under\); \} catch \(e\)/);
+  assert.match(src, /if \(state\.failed\) return dayShown \? 'fallback' : 'drawn';/,
+    'a double failure is still captioned as a photograph');
+  /* Built last, in its own try: a caption fault must not take the map with it. */
+  assert.match(src, /try \{ imageryNote\(map, views\['Satellite'\], daily, latest, under, imagery\); \} catch \(e\)/);
 });
 
 test('the globe - the view readers open on - carries the same two pictures', () => {

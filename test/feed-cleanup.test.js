@@ -223,3 +223,13 @@ test('a Special Marine Warning is a severe storm, not a hazard of its own', () =
 test('the NHC fixture still reaches the feed', () => {
   assert.ok(FIXTURES.nhc.activeStorms.length > 0);
 });
+
+test('a GDACS "Forest fires in Brazil" is not a place, and nautical miles are spelled out', () => {
+  assert.equal(api.placeLabel({ type: 'Wildfire', title: 'Wildfire risk in Brazil — 3-day forecast',
+    region: 'Forest fires in Brazil', country: 'Brazil', lat: -10, lon: -55 }), 'Brazil');
+  assert.equal(api.plainTitle({ type: 'Severe Storm', title: 'Special Marine Warning — Waters from Pensacola FL out 20 to 60 NM' }),
+    'Special Marine Warning — Waters from Pensacola FL out 20 to 60 nautical miles');
+  assert.equal(api.placeLabel({ type: 'Severe Storm', title: 'x', country: 'United States',
+    region: 'Coastal waters from Pascagoula Mississippi out 20 to 60 NM', lat: 30, lon: -88 }),
+  'Coastal waters from Pascagoula Mississippi out 20 to 60 nautical miles, United States');
+});

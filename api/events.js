@@ -627,8 +627,10 @@ function utcText(v) {
 
 /* What an outlook is called: the hazard, the place, the window. */
 function nearText(e) {
-  const p = placeLabel(e);
+  let p = placeLabel(e);
   if (!p) return '';
+  // "in coastal waters from ...", not "in Coastal waters from ..."
+  p = p.replace(/^(Coastal waters|Waters|Offshore)\b/, w => w.toLowerCase());
   return /^\d+\s*km\b/i.test(p) ? p : (e.type === 'Earthquake' ? 'near ' + p : 'in ' + p);
 }
 function outlookTitle(e, windowWords) {
@@ -692,7 +694,7 @@ function stormName(title) {
 
 /* "VANCOUVER ISLAND, CANADA REGION" -> "Vancouver Island, Canada region". */
 function unshout(text) {
-  const out = String(text || '').replace(/\b[A-Z][A-Z'.]{2,}(?:\s+[A-Z][A-Z'.]*)*\b/g, run =>
+  const out = String(text || '').replace(/\b(\d+) NM\b/g, '$1 nautical miles').replace(/\b[A-Z][A-Z'.]{2,}(?:\s+[A-Z][A-Z'.]*)*\b/g, run =>
     run.split(/\s+/).map((w, i) => {
       // A compass bearing ("8 km SSW of") stays as it is written.
       if (/^[NSEW]{1,3}$/.test(w)) return w;
@@ -812,7 +814,7 @@ function placeLabel(e) {
   // A region that only repeats the record's own name, or GDACS's "Flood in
   // Nepal", says nothing the country field does not.
   if (region && (region.toLowerCase() === title || region.toLowerCase() === tidy(e.title).toLowerCase() ||
-    /^(flood|drought|wildfire|forest fire|earthquake|volcano|tropical cyclone)\b.*\bin\b/i.test(region) ||
+    /^(floods?|droughts?|wildfires?|forest fires?|earthquakes?|volcan\w*|eruption|tropical cyclone)\b.*\bin\b/i.test(region) ||
     /^tropical cyclone\s/i.test(region))) region = '';
   // The hurricane centre's "Polo (eastern Pacific system 2)" is a storm name
   // and a basin; the basin is the place.

@@ -528,18 +528,19 @@ test('and it does say so when the feed really is down', async () => {
 });
 
 test('with both photographs unreachable, the globe says the painted map is showing', async () => {
-  /* Found in review: the globe counted NASA's failed tiles and then named the
-     mosaic without watching it, so with both hosts down it captioned a
-     photograph over the painted countries. */
+  /* Found in review: the globe counted one host's failed tiles and then named
+     the other's photo without watching it, so with both hosts down it
+     captioned a photograph over the painted countries. */
   const r = await renderPage('live-map.html', { timeoutMs: 18000,
     waitFor: (d, w) => (w.__pndViewers || []).length && w.__pndViewers[0].imageryLayers.length >= 3 });
   const added = r.window.__pndViewers[0].imageryLayers.__all;
   const esri = added[1], nasa = added[2];
   const source = () => (r.document.querySelector('.pnd-imagery-note') || { getAttribute: () => null }).getAttribute('data-source');
-  nasa.__fail(3);
+  assert.equal(source(), 'mosaic', 'the globe does not open on the mosaic');
+  esri.__fail(2);
   await new Promise(res => setTimeout(res, 20));
-  assert.equal(source(), 'fallback', 'control: with NASA down the mosaic stands in and says so');
-  esri.__fail(3);
+  assert.equal(source(), 'fallback', 'control: with Esri down NASA’s photo stands in and says so');
+  nasa.__fail(3);
   await new Promise(res => setTimeout(res, 20));
   assert.equal(source(), 'drawn', 'the caption still names a photograph nobody can see');
   r.window.close();
