@@ -252,7 +252,18 @@
     return R / Math.sin(half) - R;
   }
 
-  function frame(Cesium, viewer, map) {
+  /* Where the flat map is looking, as one comparable string, or '' before
+     it has been given a view. */
+  function viewKey(map) {
+    try {
+      var c = map && map.getCenter && map.getCenter();
+      var z = map && map.getZoom && map.getZoom();
+      if (!c || !isFinite(c.lat) || !isFinite(c.lng) || !isFinite(z)) return '';
+      return c.lat.toFixed(4) + ',' + c.lng.toFixed(4) + ',' + z.toFixed(2);
+    } catch (e) { return ''; }
+  }
+
+  function frame(Cesium, viewer, map, fly) {
     if (!viewer || viewer.isDestroyed()) return;
     /* A viewer without these is not one this can aim, and failing to aim is
        no reason to take the whole globe down with it — that is exactly what
@@ -283,9 +294,13 @@
     try { if (typeof wz === 'function') { var w = wz(map); if (isFinite(w)) base = w; } }
     catch (e) { /* a stub map with no size */ }
     var h = fit / Math.pow(2, Math.max(0, zoom - base));
-    viewer.camera.setView({
-      destination: Cesium.Cartesian3.fromDegrees(lon, lat, Math.max(250000, h))
-    });
+    var to = { destination: Cesium.Cartesian3.fromDegrees(lon, lat, Math.max(250000, h)) };
+    if (fly && typeof viewer.camera.flyTo === 'function') {
+      to.duration = 1.2;
+      viewer.camera.flyTo(to);
+    } else {
+      viewer.camera.setView(to);
+    }
   }
 
   /*
@@ -788,8 +803,34 @@
       } catch (e) { /* no controls on this map */ }
     }
 
+    /*
+     * The page moves the flat map itself: a detail page centres it on its
+     * event once the data arrives, and the homepage and dashboard fly it to
+     * an event the reader picks from a list. The globe was framed once, when
+     * it mounted - usually before the data arrived - so an event page's globe
+     * sat on the whole world with "0 events in view", and picking an event
+     * from a list moved nothing the reader could see. It now follows those
+     * moves. While the globe is showing, the flat map is hidden, so any move
+     * it makes came from the page, not from the reader dragging it.
+     *
+     * Only a move to somewhere new is followed: the event page sets the same
+     * view again every minute when it refreshes, and snapping the camera back
+     * each time would undo whatever the reader was looking at.
+     */
+    var followed = viewKey(map);
+    function follow() {
+      if (disposed || !viewer || viewer.isDestroyed() || host.style.display === 'none') return;
+      var k = viewKey(map);
+      if (!k || k === followed) return;
+      followed = k;
+      frame(window.Cesium, viewer, map, true);
+      requestRender();
+    }
+    if (typeof map.on === 'function') map.on('moveend', follow);
+
     function destroy() {
       disposed = true;
+      if (typeof map.off === 'function') map.off('moveend', follow);
       if (state.clock) clearInterval(state.clock);
       state.animated = false;
       try { if (viewer && !viewer.isDestroyed()) viewer.destroy(); } catch (e) { /* gone */ }
@@ -1016,6 +1057,7 @@
           var c = viewer.scene.canvas;
           if (c && c.clientWidth > 0 && c.clientHeight > 0) {
             frame(window.Cesium, viewer, map);
+            followed = viewKey(map);
             if (reannounce) reannounce();
             if (state.where) state.where();
             if (state.animate) state.animate(state.animated);

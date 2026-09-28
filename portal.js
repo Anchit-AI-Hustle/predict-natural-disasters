@@ -113,8 +113,11 @@ const PND={
     }
     const top=known.reduce((x,y)=>R.BY_KEY[x].rank>=R.BY_KEY[y].rank?x:y);
     const from=[];
+    /* A merged storm can carry a level another agency gave; it names that
+       agency, not the one whose report leads the record. */
+    const alertBy=e.alertSource||e.source;
     if(a!=='UNKNOWN')from.push('the alert level \u201c'+rawAlert+'\u201d'+
-      (e.source?' published by '+this.shortSource(e.source):''));
+      (alertBy?' published by '+this.shortSource(alertBy):''));
     if(sv!=='UNKNOWN')from.push('an assessed severity of \u201c'+rawSev+'\u201d');
     const title=R.BY_KEY[top].label+' on this site\u2019s six-level risk scale, from '+
       from.join(' and ')+(a!=='UNKNOWN'&&sv!=='UNKNOWN'&&a!==sv?'. Where these differ the higher decides.':'.');

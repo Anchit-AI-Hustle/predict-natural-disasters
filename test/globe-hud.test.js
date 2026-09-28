@@ -80,3 +80,32 @@ test('a globe with nothing to draw between changes does not redraw', () => {
   /* The looks are the reference viewer's, credited. */
   assert.match(src, /adapted from gods-eye-view's style shaders \(MIT, Copyright\s*\n?\s*\(c\) 2026 Bilawal Sidhu\)/);
 });
+
+test('the globe goes where the page sends the map, and stays put on a refresh', async () => {
+  /* The event page centres its map on the event once the data arrives - after
+     the globe has mounted. Rendered for real, the globe stayed on the whole
+     world with "0 events in view". */
+  const r = await renderPage('event-detail.html', { search: '?id=nhc-al072026', timeoutMs: 18000,
+    waitFor: (d, w) => (w.__pndViewers || []).length && w.__pndMaps[0].__view &&
+      w.__pndViewers[0].camera.__view && !/Loading/.test(d.getElementById('title').textContent) &&
+      d.querySelector('.pnd-globe').style.display !== 'none' });
+  const w = r.window;
+  const map = w.__pndMaps[0];
+  const cam = w.__pndViewers[0].camera;
+  const at = () => cam.__view.destination;
+  const c = map.getCenter();
+  assert.ok(Math.abs(at().lat - c.lat) < 1e-6 && Math.abs(at().lon - c.lng) < 1e-6,
+    `the globe looks at ${at().lat},${at().lon}, the event is at ${c.lat},${c.lng}`);
+  assert.ok(!(Math.abs(at().lat - 20) < 1e-6 && Math.abs(at().lon) < 1e-6), 'the globe is still on the default world view');
+
+  /* The page sets the same view again when it refreshes: the camera stays. */
+  const flew = cam.__flew || 0;
+  map.setView([c.lat, c.lng], map.getZoom());
+  assert.equal(cam.__flew || 0, flew, 'a refresh to the same view moved the camera');
+
+  /* A move somewhere new - an event picked from a list - is followed. */
+  map.flyTo([-33.86, 151.21], 6);
+  assert.equal(cam.__flew, flew + 1, 'the globe ignored the page moving the map');
+  assert.ok(Math.abs(at().lat + 33.86) < 1e-6 && Math.abs(at().lon - 151.21) < 1e-6);
+  r.close();
+});
