@@ -72,11 +72,20 @@
     return out;
   }
 
-  /** The level a record itself carries, where it carries one. */
+  /*
+   * The level a record itself carries, where it carries one, read the way its
+   * risk badge reads it (PND.riskTag): the severity the feed computed first,
+   * since that is already the graver of the reported impact and the issuer's
+   * alert, and the alert only where there is no severity. Reading the alert
+   * first rated a Green-alert event the feed had computed Extreme from its
+   * reported deaths as if it were routine, and disagreed with the badge on
+   * the same event.
+   */
   function ownLevel(e) {
     var R = risk();
-    if (!R) return null;
-    var k = R.levelOf((e && (e.alert || e.severity)) || '');
+    if (!R || !e) return null;
+    var s = R.levelOf(e.severity || '');
+    var k = s !== 'UNKNOWN' ? s : R.levelOf(e.alert || '');
     return k === 'UNKNOWN' ? null : k;
   }
 

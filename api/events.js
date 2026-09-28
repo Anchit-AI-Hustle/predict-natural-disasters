@@ -837,7 +837,11 @@ function placeLabel(e) {
       ? region.replace(/^(eastern|western|central|northern|southern)\b/, w => w[0].toUpperCase() + w.slice(1)) +
         (/ocean|sea|bay|gulf/i.test(region) ? '' : ' Ocean')
       : oceanName(e.lat, e.lon));
-    const affected = country ? countryListText(country) : '';
+    /* A merged storm led by a report with no country keeps the countries
+       another agency named in its path apart from its own (frozen) country;
+       they are still where it may strike. */
+    const inPath = country || tidy(e.affectedCountries);
+    const affected = inPath ? countryListText(inPath) : '';
     if (land) return land;
     if (sea && affected) return sea + ' (may affect ' + affected + ')';
     return sea || affected;
@@ -847,6 +851,19 @@ function placeLabel(e) {
   if (region && countries) return region + ', ' + countries;
   if (region || countries) return region || countries;
   return countryAt(e.lat, e.lon) || oceanName(e.lat, e.lon);
+}
+
+/*
+ * Which countries a record belongs to, for anything that groups by country:
+ * the source's own list where it gave one (for a merged storm, the countries
+ * another agency named in its path), otherwise the country its coordinate
+ * falls in, otherwise the sea it is in. Grouping on the raw field made
+ * "Tropical Cyclone FAY-26" and "COLOMBIA" regions of their own.
+ */
+function countriesOf(e) {
+  const listed = String(e.country || e.affectedCountries || '').split(',').map(s => unshout(s.trim())).filter(Boolean);
+  const countries = listed.length ? listed : [countryAt(e.lat, e.lon)].filter(Boolean);
+  return { countries, sea: countries.length ? '' : (oceanName(e.lat, e.lon) || '') };
 }
 
 /*
@@ -913,7 +930,15 @@ function mergeCycloneReports(events) {
     }
     let strongest = lead;
     for (const m of ranked) if ((ALERT_STRENGTH[m.alert] || 0) > (ALERT_STRENGTH[strongest.alert] || 0)) strongest = m;
-    if (strongest !== lead) { lead.alert = strongest.alert; lead.alertBasis = strongest.alertBasis || 'issued'; }
+    /* The graver level is carried over with the agency that gave it. The
+       lead's own source and link stay the lead's, so without this the badge
+       said a GDACS Red was "published by NOAA" and linked to NOAA for it. */
+    if (strongest !== lead) {
+      lead.alert = strongest.alert;
+      lead.alertBasis = strongest.alertBasis || 'issued';
+      lead.alertSource = strongest.source || null;
+      lead.alertSourceUrl = strongest.sourceUrl || null;
+    }
     const others = ranked.slice(1).map(m => m.source).filter(s => s !== lead.source);
     if (others.length) lead.corroboratedBy = [...new Set(others)];
     lead.mergedFrom = ranked.map(m => ({ id: m.id, source: m.source || null,
@@ -952,8 +977,11 @@ function markLive(events, nowMs) {
        declared; it stays current for weeks after its date. */
     const limit = e.humanitarian ? 60 : (LIVE_DAYS[e.type] || 14);
     /* An event its provider still expects to be running is live however
-       long ago it started. */
-    e.live = days <= limit || Date.parse(e.expectedEnd || '') > nowMs;
+       long ago it started, and so is a warning its issuer has not yet let
+       expire: the agency's own expiry is the better word on whether it is
+       still in force than how long ago it was last reissued. */
+    e.live = days <= limit || Date.parse(e.expectedEnd || '') > nowMs ||
+      Date.parse(e.expiresAt || '') > nowMs;
     if (!e.live) {
       quiet++;
       e.quietDays = Math.floor(days);
@@ -2057,15 +2085,9 @@ async function handler(req, res) {
     .sort(byAlertThenTime);
   for (const e of out.events) {
     const p = placeLabel(e); if (p) e.place = p;
-    /* Which countries a record belongs to, for anything that groups by
-       country: the source's own list where it gave one, otherwise the country
-       its coordinate falls in, otherwise the sea it is in. Grouping on the
-       raw field made "Tropical Cyclone FAY-26" and "COLOMBIA" regions of
-       their own. */
-    const listed = String(e.country || '').split(',').map(s => unshout(s.trim())).filter(Boolean);
-    const here = listed.length ? [] : [countryAt(e.lat, e.lon)].filter(Boolean);
-    e.countries = listed.length ? listed : here;
-    if (!e.countries.length) { const sea = oceanName(e.lat, e.lon); if (sea) e.sea = sea; }
+    const where = countriesOf(e);
+    e.countries = where.countries;
+    if (where.sea) e.sea = where.sea;
   }
 
   /* Merging can raise a record's alert — a leader that inherits a graver
@@ -2712,6 +2734,7 @@ module.exports.polygonsOf = polygonsOf;
 module.exports.inPolygon = inPolygon;
 module.exports.mergeSeismicReports = mergeSeismicReports;
 module.exports.mergeCycloneReports = mergeCycloneReports;
+module.exports.countriesOf = countriesOf;
 module.exports.plainTitle = plainTitle;
 module.exports.placeLabel = placeLabel;
 module.exports.oceanName = oceanName;

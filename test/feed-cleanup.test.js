@@ -110,6 +110,56 @@ test('one storm reported by three agencies is one record, naming all three', () 
   assert.equal(merged.mergedCycloneReports, 2);
 });
 
+test('a graver alert carried onto a merged storm keeps the agency that gave it', () => {
+  /* NOAA leads, GDACS rated it Red. The record kept NOAA's source and link,
+     so the badge said the Red level was "published by NOAA". */
+  const [lead] = api.mergeCycloneReports([
+    storm('NOAA National Hurricane Center', 'nhc', 'Hurricane Polo', 18.0, -110.0,
+      { alert: 'Orange', alertBasis: 'derived-from-intensity', sourceUrl: 'https://www.nhc.noaa.gov/' }),
+    storm('GDACS', 'g', 'Tropical Cyclone Polo', 18.1, -110.1,
+      { alert: 'Red', alertBasis: 'issued', sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=1' })
+  ]);
+  assert.equal(lead.id, 'nhc');
+  assert.equal(lead.alert, 'Red');
+  assert.equal(lead.alertSource, 'GDACS');
+  assert.equal(lead.alertSourceUrl, 'https://www.gdacs.org/report.aspx?eventid=1');
+  assert.equal(lead.source, 'NOAA National Hurricane Center', 'the lead\'s own source changed');
+  /* Where the lead's own alert is the gravest, nothing is carried over. */
+  const [own] = api.mergeCycloneReports([
+    storm('NOAA National Hurricane Center', 'nhc', 'Hurricane Polo', 18.0, -110.0, { alert: 'Red' }),
+    storm('GDACS', 'g', 'Tropical Cyclone Polo', 18.1, -110.1, { alert: 'Orange' })
+  ]);
+  assert.equal(own.alertSource, undefined);
+});
+
+test('the badge names the agency that gave a carried-over alert', async () => {
+  const { renderPage, closeAllWindows } = require('./render.js');
+  const { window } = await renderPage('index.html', { timeoutMs: 15000, waitFor: (d, w) => w.PND && w.PNDRisk });
+  const tag = window.PND.riskTag({ alert: 'Red', source: 'NOAA National Hurricane Center', alertSource: 'GDACS' });
+  assert.match(tag, /published by GDACS/);
+  assert.doesNotMatch(tag, /published by NOAA/);
+  assert.match(window.PND.riskTag({ alert: 'Red', source: 'GDACS' }), /published by GDACS/);
+  window.close();
+  closeAllWindows();
+});
+
+test('a merged storm at sea shows the countries in its path, without changing its own country', () => {
+  const [lead] = api.mergeCycloneReports([
+    storm('NOAA National Hurricane Center', 'nhc', 'Hurricane Polo', 18.0, -110.0, { alert: 'Orange' }),
+    storm('GDACS', 'g', 'Tropical Cyclone Polo', 18.1, -110.1, { country: 'Mexico' })
+  ]);
+  assert.equal(lead.country, '', 'the frozen country changed');
+  assert.equal(lead.affectedCountries, 'Mexico');
+  assert.equal(api.placeLabel(lead), 'Eastern Pacific Ocean (may affect Mexico)');
+  assert.deepEqual(api.countriesOf(lead), { countries: ['Mexico'], sea: '' });
+  /* A storm with neither is in its sea. */
+  assert.deepEqual(api.countriesOf({ type: 'Tropical Cyclone', lat: 18, lon: -110, country: '' }),
+    { countries: [], sea: 'Eastern Pacific Ocean' });
+  /* Search for the country finds it. */
+  const S = require('../search.js');
+  assert.ok(S.matchesPlace(lead, 'mexico'), 'searching for Mexico does not find the storm heading for it');
+});
+
 test('two storms, or two records from one agency, are never merged', () => {
   const merged = api.mergeCycloneReports([
     storm('GDACS', 'a', 'Tropical Cyclone Polo', 23.6, -113.8),
@@ -145,6 +195,20 @@ test('a record its provider stopped updating is kept but not live', () => {
   assert.equal(api.markLive(evs, now), 2);
   assert.deepEqual(evs.map(e => e.live), [false, true, true, false, true, undefined]);
   assert.equal(evs[0].quietDays, 40);
+});
+
+test('a warning its issuer has not let expire stays live, however old its last reissue', () => {
+  /* An NWS warning reissued five days ago but in force until tomorrow was
+     marked not live, dropped from every list and kept out of alerts. */
+  const now = Date.now();
+  const evs = [
+    { type: 'Flood', sourceType: 'official', updated: hoursAgo(20 * 24), expiresAt: hoursAhead(24) },
+    { type: 'Tornado', sourceType: 'official', updated: hoursAgo(5 * 24), expiresAt: hoursAhead(3) },
+    { type: 'Tornado', sourceType: 'official', updated: hoursAgo(5 * 24), expiresAt: hoursAgo(1) },
+    { type: 'Tornado', sourceType: 'official', updated: hoursAgo(5 * 24), expiresAt: 'not a date' }
+  ];
+  assert.equal(api.markLive(evs, now), 2);
+  assert.deepEqual(evs.map(e => e.live), [true, true, false, false]);
 });
 
 test('GDACS times without a zone are UTC, and a future end is not an update', () => {

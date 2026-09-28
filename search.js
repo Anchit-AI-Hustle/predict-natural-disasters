@@ -15,7 +15,7 @@ const S={
      subset, so the same word answered differently depending on where it was
      typed: the homepage's list omitted the hazard type entirely and matched 1
      of 349 earthquake records for "earthquake". */
-  SEARCH_FIELDS:['title','name','country','region','location','type','hazard',
+  SEARCH_FIELDS:['title','name','country','affectedCountries','region','location','type','hazard',
     'source','src','details','summary','id','eventId'],
   /* Built once per record and cached off the enumerable keys, because a
      keystroke re-filters the whole feed. A refresh replaces the records, so
@@ -83,7 +83,7 @@ const S={
      opened a region named "flood". Measured against the same feed, only 2
      records have no country, region or location at all, and both are named
      storms whose titles are storm names rather than places. */
-  PLACE_FIELDS:['country','region','location'],
+  PLACE_FIELDS:['country','affectedCountries','region','location'],
   matchesPlace(e,q){
     const terms=String(q==null?'':q).toLowerCase().split(/\s+/).filter(Boolean);
     if(!terms.length)return true;

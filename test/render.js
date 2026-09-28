@@ -83,7 +83,15 @@ const LEAFLET_STUB = `
     m.setMinZoom = function(z){ m.__minZoom = z; return m; };
     m.setMaxBounds = function(b){ m.__maxBounds = b; return m; };
     m.invalidateSize = function(){ m.__invalidated = (m.__invalidated || 0) + 1; return m; };
-    m.setView = function(c, z){ m.__view = { center: c, zoom: z }; return m; };
+    /* As Leaflet does: a move ends in moveend, and a map with no view yet
+       has no centre to give. */
+    m.setView = function(c, z){ m.__view = { center: c, zoom: z }; m.fire('moveend'); return m; };
+    m.flyTo = m.setView;
+    m.getCenter = function(){
+      if (!m.__view) throw new Error('Set map center and zoom first.');
+      var c = m.__view.center;
+      return Array.isArray(c) ? { lat: +c[0], lng: +c[1] } : { lat: +c.lat, lng: +(c.lng !== undefined ? c.lng : c.lon) };
+    };
     m.getZoom = function(){ return m.__view ? m.__view.zoom : 3; };
     m.on = function(name, fn){
       String(name).split(' ').forEach(function(n){ (handlers[n] = handlers[n] || []).push(fn); });
@@ -176,7 +184,8 @@ const CESIUM_STUB = `
       this.camera = {
         frustum: { fov: Math.PI / 3, aspectRatio: 2 },
         positionWC: { x: 0, y: 0, z: 0 },
-        setView: function (o) { this.__view = o; }
+        setView: function (o) { this.__view = o; },
+        flyTo: function (o) { this.__view = o; this.__flew = (this.__flew || 0) + 1; }
       };
       this.scene = { skyAtmosphere: {}, globe: {}, camera: this.camera,
         canvas: { clientWidth: 800, clientHeight: 400, width: 800, height: 400 } };
