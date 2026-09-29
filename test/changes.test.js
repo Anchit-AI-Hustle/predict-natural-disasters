@@ -429,7 +429,7 @@ test('the recorded cadence is measured, not declared', async () => {
   assert.ok(Number.isFinite(rr.runsRecorded));
   /* And it must say that the feed itself is not on that schedule, so an
      hourly record is not read as hourly data. */
-  assert.match(rr.note, /recomputed from the upstream sources on every request/);
+  assert.match(rr.note, /recomputed from the upstream sources whenever the last copy is more than 30 seconds old/);
 });
 
 test('the workflow asks for an interval it can actually be given', () => {

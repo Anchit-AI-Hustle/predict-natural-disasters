@@ -1043,6 +1043,15 @@ function wantsSummary(req) {
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
+  /* One shared copy at Vercel's edge, never in a browser. Rebuilding the feed
+     from every provider took 3 to 6 seconds, measured on the live site, and
+     every visitor paid it: a detail page read "Loading event…" for that long
+     and the homepage's forecast table for 13 seconds. A copy is rebuilt once
+     it is 30 seconds old, and the stale one is served for up to a minute more
+     while that happens, so no copy is older than 90 seconds. Pages print when
+     their copy was made. The scheduled jobs ask with ?cron=<time> and the
+     Refresh buttons with ?ts=<time>, so neither is ever served a copy. */
+  res.setHeader('Vercel-CDN-Cache-Control', 'max-age=30, stale-while-revalidate=60');
 
   const now = new Date();
   const from = new Date(now.getTime() - 120 * 864e5);
@@ -1056,13 +1065,13 @@ async function handler(req, res) {
       sourceCount: 0,
       coverage: 'Global terrestrial and coastal coverage; all countries and territories are supported by the UI, subject to upstream reporting.',
       forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
-      /* The feed itself is recomputed from the upstream sources on every
-         request, so a page load is never serving a cached forecast. What runs
+      /* The feed itself is recomputed from the upstream sources whenever the
+         shared copy is more than 30 seconds old (see the handler's headers). What runs
          on a schedule is the written record — the ledger and the change log —
          and that is described by refreshRecorded, measured rather than
          declared. This field used to state a five-minute rate, which was the cron's
          request and about a fortieth of what GitHub actually granted it. */
-      refreshTarget: 'recomputed on every request'
+      refreshTarget: 'recomputed when the last copy is more than 30 seconds old; no copy served is older than 90 seconds'
     },
     events: []
   };
@@ -2641,7 +2650,8 @@ async function handler(req, res) {
       { schedule: 'hourly', runsRecorded: FORECAST_CHANGES.runs.length },
       FORECAST_CHANGES.observedCadenceHours || {},
       { note: 'The written record is what runs on a schedule. The feed above ' +
-        'is recomputed from the upstream sources on every request.' });
+        'is recomputed from the upstream sources whenever the last copy is more than ' +
+        '30 seconds old, and no copy served is older than 90 seconds.' });
   } else {
     out.meta.forecastChanges = null;
   }

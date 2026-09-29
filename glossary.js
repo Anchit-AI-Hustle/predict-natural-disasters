@@ -180,7 +180,11 @@
        "NASA" in the credits became "National Aeronautics and Space
        Administration (NASA)", and on a phone the attribution wrapped to three
        lines and ran under the caption above it. */
-    'leaflet-control-attribution': 1, 'pnd-imagery-note': 1 };
+    'leaflet-control-attribution': 1, 'pnd-imagery-note': 1,
+    /* The map's layer menu. Its "NASA today" choice was written out as
+       "National Aeronautics and Space Administration (NASA) today (27 Sep
+       2026)", which made the menu wider than a phone's map. */
+    'leaflet-control-layers': 1 };
   function isLabel(el) {
     if (!el || !el.classList) return false;
     for (var i = 0; i < el.classList.length; i++) if (LABEL[el.classList[i]]) return true;
@@ -336,6 +340,14 @@
     noteLabelAcronyms();
   }
 
+  /** Is this node inside a label, where nothing is ever expanded? */
+  function insideLabel(n) {
+    for (var el = n && n.nodeType === 1 ? n : n && n.parentNode; el && el !== document.body; el = el.parentNode) {
+      if (isLabel(el)) return true;
+    }
+    return false;
+  }
+
   /** Does this mutation carry any text worth looking at? */
   function carriesText(nodes) {
     for (var i = 0; i < nodes.length; i++) {
@@ -351,9 +363,13 @@
        but a full pass reads the whole document, and Leaflet adds and removes
        tile <img> elements continuously while the map is panned. Those carry no
        text, so skipping them keeps the map's animation off this path. */
+    /* Changes inside a label are skipped as well. Switching the map's layer
+       rewrote its credit line, and the full pass that followed ran inside the
+       click: 472 ms before the page could paint again, measured on the live
+       home page. A label is never expanded, so the pass had nothing to do. */
     var mo = new MutationObserver(function (muts) {
       for (var i = 0; i < muts.length; i++) {
-        if (carriesText(muts[i].addedNodes)) { pass(); return; }
+        if (carriesText(muts[i].addedNodes) && !insideLabel(muts[i].target)) { pass(); return; }
       }
     });
     mo.observe(document.body, { childList: true, subtree: true });

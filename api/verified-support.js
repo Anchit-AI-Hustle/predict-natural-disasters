@@ -10,6 +10,10 @@
  *  - Every organisation URL points at the organisation's own domain.
  *  - Email addresses are only included where the organisation publishes them
  *    on its own contact page. Otherwise `contactUrl` is used.
+ *  - A link that answered 404 Not Found to a browser is replaced by the same
+ *    organisation's page that answered instead, or dropped where none did
+ *    (checked 29 September 2026). A 403 or a timeout is not treated as dead:
+ *    many of these sites refuse any automated visitor.
  *
  * CommonJS on purpose: Vercel's Node runtime treats `api/*.js` as CommonJS
  * unless the project declares ESM, so `import`/`export` here would make the
@@ -57,7 +61,7 @@ const GLOBAL_RELIEF = [
   {
     name: 'Médecins Sans Frontières (Doctors Without Borders)',
     kind: 'Emergency medical response',
-    url: 'https://www.msf.org/crisis-updates',
+    url: 'https://www.msf.org/',
     donate: 'https://www.msf.org/donate',
     contactUrl: 'https://www.msf.org/contact-us'
   },
@@ -85,7 +89,7 @@ const GLOBAL_RELIEF = [
   {
     name: 'CARE International',
     kind: 'Emergency relief, food security and women-led response',
-    url: 'https://www.care-international.org/our-work/emergencies',
+    url: 'https://www.care-international.org/',
     donate: 'https://www.care-international.org/donate',
     contactUrl: 'https://www.care-international.org/contact-us'
   }
@@ -122,7 +126,7 @@ const COUNTRY_SUPPORT = {
     authorities: [
       { name: 'National Disaster Management Authority (NDMA)', url: 'https://ndma.gov.in/', contactUrl: 'https://ndma.gov.in/Contact-Us' },
       { name: 'National Disaster Response Force (NDRF)', url: 'https://www.ndrf.gov.in/', contactUrl: 'https://www.ndrf.gov.in/contact-us' },
-      { name: 'India Meteorological Department (IMD)', url: 'https://mausam.imd.gov.in/', contactUrl: 'https://mausam.imd.gov.in/responsive/contactus.php' },
+      { name: 'India Meteorological Department (IMD)', url: 'https://mausam.imd.gov.in/' },
       { name: 'Central Water Commission — flood forecasting', url: 'https://ffs.india-water.gov.in/' }
     ],
     relief: [
@@ -146,7 +150,7 @@ const COUNTRY_SUPPORT = {
       { name: 'Ministry of Home Affairs — Nepal', url: 'https://www.moha.gov.np/' }
     ],
     relief: [
-      { name: 'Nepal Red Cross Society', url: 'https://nrcs.org/', donate: 'https://nrcs.org/donate/' }
+      { name: 'Nepal Red Cross Society', url: 'https://nrcs.org/' }
     ]
   },
   vietnam: {
@@ -195,7 +199,7 @@ const COUNTRY_SUPPORT = {
       { name: 'PHIVOLCS — volcano and earthquake', url: 'https://www.phivolcs.dost.gov.ph/' }
     ],
     relief: [
-      { name: 'Philippine Red Cross', url: 'https://redcross.org.ph/', donate: 'https://redcross.org.ph/donate/' }
+      { name: 'Philippine Red Cross', url: 'https://redcross.org.ph/' }
     ]
   },
   bangladesh: {
@@ -212,7 +216,7 @@ const COUNTRY_SUPPORT = {
     ],
     relief: [
       { name: 'Bangladesh Red Crescent Society', url: 'https://bdrcs.org/' },
-      { name: 'BRAC', url: 'https://www.brac.net/', donate: 'https://www.brac.net/donate' }
+      { name: 'BRAC', url: 'https://www.brac.net/' }
     ]
   },
   pakistan: {
@@ -337,7 +341,7 @@ const COUNTRY_SUPPORT = {
       { name: 'Singapore Civil Defence Force', url: 'https://www.scdf.gov.sg/' },
       { name: 'Meteorological Service Singapore', url: 'https://www.weather.gov.sg/' }
     ],
-    relief: [{ name: 'Singapore Red Cross', url: 'https://www.redcross.sg/', donate: 'https://www.redcross.sg/donate.html' }]
+    relief: [{ name: 'Singapore Red Cross', url: 'https://www.redcross.sg/', donate: 'https://www.redcross.sg/donate-now/' }]
   },
   cambodia: {
     name: 'Cambodia',
@@ -369,8 +373,8 @@ const COUNTRY_SUPPORT = {
     ],
     relief: [
       { name: 'American Red Cross', url: 'https://www.redcross.org/', donate: 'https://www.redcross.org/donate/donation.html' },
-      { name: 'Team Rubicon', url: 'https://teamrubiconusa.org/', donate: 'https://teamrubiconusa.org/donate/' },
-      { name: 'National VOAD member directory', url: 'https://www.nvoad.org/voad-members/' }
+      { name: 'Team Rubicon', url: 'https://teamrubiconusa.org/' },
+      { name: 'National VOAD', url: 'https://www.nvoad.org/' }
     ]
   },
   canada: {
@@ -379,7 +383,7 @@ const COUNTRY_SUPPORT = {
     emergency: [n('Emergency services', '911')],
     authorities: [
       { name: 'Public Safety Canada', url: 'https://www.publicsafety.gc.ca/' },
-      { name: 'Environment and Climate Change Canada — weather alerts', url: 'https://weather.gc.ca/warnings/index_e.html' }
+      { name: 'Environment and Climate Change Canada — weather', url: 'https://weather.gc.ca/' }
     ],
     relief: [{ name: 'Canadian Red Cross', url: 'https://www.redcross.ca/', donate: 'https://donate.redcross.ca/' }]
   },
@@ -416,7 +420,7 @@ const COUNTRY_SUPPORT = {
     emergency: [n('Emergency services', '911'), n('Fire brigade', '100'), n('Ambulance', '107')],
     authorities: [
       { name: 'Servicio Meteorológico Nacional', url: 'https://www.smn.gob.ar/' },
-      { name: 'Protección Civil', url: 'https://www.argentina.gob.ar/seguridad/proteccioncivil' }
+      { name: 'Ministerio de Seguridad', url: 'https://www.argentina.gob.ar/seguridad' }
     ],
     relief: [{ name: 'Cruz Roja Argentina', url: 'https://www.cruzroja.org.ar/' }]
   },
@@ -474,7 +478,7 @@ const COUNTRY_SUPPORT = {
   ireland: {
     name: 'Ireland', iso2: 'IE',
     emergency: [n('Emergency services', '112'), n('Emergency services', '999')],
-    authorities: [{ name: 'Met Éireann warnings', url: 'https://www.met.ie/warnings' }, { name: 'Emergency Planning Ireland', url: 'https://www.gov.ie/en/campaigns/be-winter-ready/' }],
+    authorities: [{ name: 'Met Éireann warnings', url: 'https://www.met.ie/warnings' }],
     relief: [{ name: 'Irish Red Cross', url: 'https://www.redcross.ie/' }]
   },
   france: {
@@ -486,7 +490,7 @@ const COUNTRY_SUPPORT = {
   germany: {
     name: 'Germany', iso2: 'DE',
     emergency: [n('Fire, rescue and ambulance', '112'), n('Police', '110')],
-    authorities: [{ name: 'BBK — Federal Office of Civil Protection', url: 'https://www.bbk.bund.de/' }, { name: 'Deutscher Wetterdienst warnings', url: 'https://www.dwd.de/EN/weather/warnings_landingpage/warnings_node.html' }],
+    authorities: [{ name: 'BBK — Federal Office of Civil Protection', url: 'https://www.bbk.bund.de/' }, { name: 'Deutscher Wetterdienst warnings', url: 'https://www.dwd.de/EN/weather/warnings/warnings_node.html' }],
     relief: [{ name: 'Deutsches Rotes Kreuz', url: 'https://www.drk.de/' }]
   },
   italy: {
@@ -559,7 +563,7 @@ const COUNTRY_SUPPORT = {
     authorities: [{ name: 'National Disaster Management Centre', url: 'https://www.cogta.gov.za/' }, { name: 'South African Weather Service', url: 'https://www.weathersa.co.za/' }],
     relief: [{ name: 'South African Red Cross Society', url: 'https://www.redcross.org.za/' }, { name: 'Gift of the Givers', url: 'https://giftofthegivers.org/' }]
   },
-  kenya: { name: 'Kenya', iso2: 'KE', emergency: [n('Emergency services', '999'), n('Emergency services', '112')], authorities: [{ name: 'Kenya Meteorological Department', url: 'https://meteo.go.ke/' }, { name: 'National Disaster Operations Centre', url: 'https://www.ndoc.go.ke/' }], relief: [{ name: 'Kenya Red Cross Society', url: 'https://www.redcross.or.ke/', donate: 'https://www.redcross.or.ke/donate' }] },
+  kenya: { name: 'Kenya', iso2: 'KE', emergency: [n('Emergency services', '999'), n('Emergency services', '112')], authorities: [{ name: 'Kenya Meteorological Department', url: 'https://meteo.go.ke/' }, { name: 'National Disaster Operations Centre', url: 'https://www.ndoc.go.ke/' }], relief: [{ name: 'Kenya Red Cross Society', url: 'https://www.redcross.or.ke/' }] },
   nigeria: { name: 'Nigeria', iso2: 'NG', emergency: [n('National emergency number', '112', 'Police, fire and medical emergencies')], authorities: [{ name: 'NEMA — National Emergency Management Agency', url: 'https://nema.gov.ng/' }, { name: 'NiMet — Nigerian Meteorological Agency', url: 'https://nimet.gov.ng/' }], relief: [{ name: 'Nigerian Red Cross Society', url: 'https://www.redcrossnigeria.org/' }] },
   ghana: { name: 'Ghana', iso2: 'GH', emergency: [n('National emergency number', '112'), n('Police', '191'), n('Ambulance', '193')], authorities: [{ name: 'NADMO — National Disaster Management Organisation', url: 'https://nadmo.gov.gh/' }, { name: 'Ghana Meteorological Agency', url: 'https://www.meteo.gov.gh/' }], relief: [{ name: 'Ghana Red Cross Society', url: 'https://www.ghanaredcross.org/' }] },
   ethiopia: { name: 'Ethiopia', iso2: 'ET', emergency: [], authorities: [{ name: 'Ethiopian Meteorology Institute', url: 'http://www.ethiomet.gov.et/' }], relief: [{ name: 'Ethiopian Red Cross Society', url: 'https://redcrosseth.org/' }] },

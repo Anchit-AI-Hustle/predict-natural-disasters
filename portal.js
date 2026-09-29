@@ -4,7 +4,12 @@ const PND={
      feed marks it live:false) still opens on its own page, so a detail page
      asks for everything with {all:true}. */
   async getEvents(opts){
-    const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('Live feed unavailable');
+    /* The feed is one shared copy at the edge, rebuilt once it is 30 seconds
+       old (api/events.js), so a page opens on it at once instead of waiting
+       3 to 6 seconds for every provider. A Refresh button asks past it: the
+       click is marked before the page's own handler runs (see init). */
+    const fresh=!!(opts&&opts.fresh)||PND._freshNext;PND._freshNext=false;
+    const r=await fetch(fresh?'/api/events?ts='+Date.now():'/api/events',fresh?{cache:'no-store'}:{});if(!r.ok)throw new Error('Live feed unavailable');
     const d=await r.json();if(opts&&opts.all)return d;
     const ev=Array.isArray(d.events)?d.events:[];
     return Object.assign({},d,{events:ev.filter(e=>e&&e.live!==false),notLive:ev.filter(e=>e&&e.live===false)});
@@ -553,6 +558,6 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
       }
     });
   }
-  function init(){if(document.body&&!document.querySelector('.sitefoot,.seo-nav'))document.body.insertAdjacentHTML('beforeend',PND.footer());wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
+  function init(){if(document.body&&!document.querySelector('.sitefoot,.seo-nav'))document.body.insertAdjacentHTML('beforeend',PND.footer());document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#refresh'))PND._freshNext=true},true);wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
