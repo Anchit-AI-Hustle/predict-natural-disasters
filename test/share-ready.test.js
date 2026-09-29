@@ -163,6 +163,15 @@ test('a count of events is a count of reports, the same on every page', async ()
   const regions = await renderPage('regions.html', { timeoutMs: 8000,
     waitFor: d => /^\d+$/.test(d.getElementById('kEvents').textContent) });
   assert.equal(regions.document.getElementById('kEvents').textContent, String(reports), 'Regions counts forecasts as events');
+  /* And each place's card counts the same records as the headline above it. */
+  const placesOf = e => (Array.isArray(e.countries) && e.countries.length ? e.countries : (e.sea ? [e.sea] : [String(e.country || '').trim()])).filter(Boolean);
+  const perPlace = {};
+  for (const e of live.filter(x => !x.forecast)) for (const n of placesOf(e)) perPlace[n] = (perPlace[n] || 0) + 1;
+  const cards = [...regions.document.querySelectorAll('#regionGrid .reg')].map(c => [c.querySelector('h3').textContent, Number(c.querySelector('p b').textContent)]);
+  assert.ok(cards.length > 0, 'Regions listed no places');
+  for (const [name, n] of cards) assert.equal(n, perPlace[name], name + ' shows ' + n + ' current events; its reports number ' + perPlace[name]);
+  const forecastOnly = [...new Set(live.filter(x => x.forecast).flatMap(placesOf))].filter(n => !perPlace[n]);
+  for (const n of forecastOnly) assert.ok(!cards.some(c => c[0] === n), n + ' has only forecasts but is listed with current events');
   regions.close();
   const list = await renderPage('events.html', { timeoutMs: 8000,
     waitFor: d => /updated/.test(d.getElementById('statusLine').textContent) });
