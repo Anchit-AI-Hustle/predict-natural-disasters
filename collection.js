@@ -147,13 +147,13 @@ cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="even
    and a storm's prose then repeated its wind and pressure a third time. The
    prose is the fallback for a record with no figures; the full text is on the
    record's own page. */const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':'<br>'+PND.esc(gist(PND.impactText(e)||e.details||''));})()}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}Source updated ${PND.fmtDate(e.updated)} · ${PND.age(e.updated)}</small></a>`).join(''):PND.emptyHtml(q.value,all.filter(keep),all,cfg[2])}
-async function load(){statusLine.textContent='Loading the latest data…';try{const d=await PND.getEvents({all:mode==='historical-events'});all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;
+/* A list that holds agency reports and our own forecasts says how many of each: "765 events" counted 56 forecasts as events, so the same moment read 765 here and 709 on Alerts. */function countText(shown,noun){const one=(n,w)=>n+' '+(n===1?w.replace(/s$/,''):w);const fc=forecastMode?0:all.filter(keep).filter(e=>e&&e.forecast).length;return fc?one(shown-fc,noun)+' · '+one(fc,'forecasts'):one(shown,noun)}async function load(){statusLine.textContent='Loading the latest data…';try{const d=await PND.getEvents({all:mode==='historical-events'});all=d.events;lastMeta=d.meta;const shown=all.filter(keep).length;
 /* The sources view is about the sources, so its status line counts those
    rather than the records they produced. */
 if(forecastMode)PND.fillHazardSelect(document.getElementById('type'),all.filter(keep));
 statusLine.textContent=mode==='resources'
   ?`${PND.statusText(d.meta)} · sources checked ${PND.fmtDate((d.meta&&d.meta.scan&&d.meta.scan.scanTimestamp)||d.generatedAt)} · updated ${PND.age(d.generatedAt)}`
-  :`${PND.statusText(d.meta)} · ${shown} ${shown===1?cfg[2].replace(/s$/,''):cfg[2]} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name — A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name — Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
+  :`${PND.statusText(d.meta)} · ${countText(shown,cfg[2])} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name — A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name — Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
 /* Looked up rather than assumed: the sources view has no search box and no
    hazard or level filter, because on that page they filtered nothing and a
    control that cannot be operated is not a control. */

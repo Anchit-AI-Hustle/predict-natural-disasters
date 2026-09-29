@@ -578,7 +578,7 @@ async function handler(req, res) {
          by the same scheduled job as the ledger, which GitHub runs every few
          hours, not every few minutes; what is genuinely per-request is the
          event feed. Saying which is which beats claiming a rate for both. */
-      refreshTarget: 'Events are fetched again each time you open a page. News and help information is refreshed by a scheduled job',
+      refreshTarget: 'Events are at most 90 seconds old when a page opens. News and help information is refreshed by a scheduled job',
       scope: 'Every event in the live feed, worldwide',
       newsProviders: ['Google News', 'Bing News', 'ReliefWeb (UN OCHA)'],
       videoProviders: ['YouTube'],

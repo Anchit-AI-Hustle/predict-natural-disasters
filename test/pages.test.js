@@ -629,7 +629,9 @@ test('every homepage headline figure is measured, not written into the page', as
   // "195 Countries Monitored" was a literal sitting in a row of live counters,
   // and the outlook counter shipped a literal 1.
   // Live records only, and a country list counts each country in it once.
-  const evs = (await events()).filter(e => e.live !== false);
+  // Events are what agencies reported: our own forecasts have their own tile,
+  // and counting them here as well made this figure disagree with Alerts.
+  const evs = (await events()).filter(e => e.live !== false && !e.forecast);
   const r = await renderPage('index.html', { waitFor: settled('kCountries') });
   const doc = r.document;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));

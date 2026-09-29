@@ -16,7 +16,8 @@ name: Refresh disaster intelligence
 # rather than a promise.
 #
 # The pages themselves are not stale in between: /api/events recomputes the
-# feed from the upstream sources on every request. What this job adds is the
+# feed from the upstream sources whenever its shared copy is more than 30
+# seconds old, and this job's ?cron=<time> is never served a copy. What this job adds is the
 # written record — which outlook existed when, and what changed since.
 on:
   schedule:

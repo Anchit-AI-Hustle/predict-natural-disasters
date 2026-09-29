@@ -9,6 +9,8 @@
  * be rebuilt from source rather than being unexplained binaries.
  *
  *   node tools/build-icons.js
+ *
+ * Also writes favicon.ico at the site root.
  */
 const fs = require('fs');
 const path = require('path');
@@ -84,6 +86,28 @@ function draw(size, opts) {
   return png(size, buf);
 }
 
+/**
+ * favicon.ico, with each size stored as a PNG (every current browser reads
+ * that). Browsers ask for /favicon.ico whether or not a page names an icon,
+ * and it was a 404: the tab showed a blank page and a shared link had no
+ * logo beside it.
+ */
+function ico(sizes) {
+  const imgs = sizes.map(n => ({ n, data: draw(n, { pad: 0.02 }) }));
+  const head = Buffer.alloc(6);
+  head.writeUInt16LE(0, 0); head.writeUInt16LE(1, 2); head.writeUInt16LE(imgs.length, 4);
+  let offset = 6 + 16 * imgs.length;
+  const dir = imgs.map(({ n, data }) => {
+    const e = Buffer.alloc(16);
+    e[0] = n >= 256 ? 0 : n; e[1] = n >= 256 ? 0 : n; e[2] = 0; e[3] = 0;
+    e.writeUInt16LE(1, 4); e.writeUInt16LE(32, 6);
+    e.writeUInt32LE(data.length, 8); e.writeUInt32LE(offset, 12);
+    offset += data.length;
+    return e;
+  });
+  return Buffer.concat([head, ...dir, ...imgs.map(i => i.data)]);
+}
+
 fs.mkdirSync(OUT, { recursive: true });
 const files = {
   'icon-192.png': draw(192, { pad: 0.12 }),
@@ -95,3 +119,6 @@ for (const [name, data] of Object.entries(files)) {
   fs.writeFileSync(path.join(OUT, name), data);
   console.log('icons/' + name + ' ' + data.length + ' bytes');
 }
+const fav = ico([16, 32, 48]);
+fs.writeFileSync(path.join(OUT, '..', 'favicon.ico'), fav);
+console.log('favicon.ico ' + fav.length + ' bytes');

@@ -83,6 +83,38 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home-v2",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home-v2.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home-v3",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home-v3.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/disasters/:id",
