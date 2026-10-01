@@ -3,15 +3,783 @@
   "note": "Canonical ledger of significant observed disasters, built by tools/record-observed.js from the live feed. Empty until the first production run: a fixture-derived row would describe a disaster that never happened.",
   "events": [
     {
+      "eventId": "gdacs-DR-1018332",
+      "canonicalEventId": "OBS-drought-ABH-20251221T0000-n49e013",
+      "hazard": "drought",
+      "hazardLabel": "Drought",
+      "geography": {
+        "country": "Austria, Bosnia & Herzegovina, Belgium, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Norway, Poland, Romania, Serbia, Sweden, Slovenia, Slovakia, San Marino, Ukraine, ",
+        "region": null,
+        "lat": 48.619,
+        "lon": 13.24,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2025-12-21T00:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-30T13:47:57.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1018332&eventtype=DR",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-30T13:47:57.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-DR-1018332",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1018332&eventtype=DR",
+          "updated": "2026-09-30T13:47:57.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Austria, Bosnia & Herzegovina, Belgium, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Norway, Poland, Romania, Serbia, Sweden, Slovenia, Slovakia, San Marino, Ukraine, ",
+        "region": null,
+        "lat": 48.619,
+        "lon": 13.24,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-DR-1027449",
+      "canonicalEventId": "OBS-drought-TBB-20260421T0000-n17w093",
+      "hazard": "drought",
+      "hazardLabel": "Drought",
+      "geography": {
+        "country": "The Bahamas, Belize, Cuba, Dominican Republic, Guatemala, Honduras, Haiti, Mexico, Nicaragua, El Salvador",
+        "region": null,
+        "lat": 17.027,
+        "lon": -93.302,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-04-21T00:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-30T13:48:38.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1027449&eventtype=DR",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-30T13:48:38.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-DR-1027449",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1027449&eventtype=DR",
+          "updated": "2026-09-30T13:48:38.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "The Bahamas, Belize, Cuba, Dominican Republic, Guatemala, Honduras, Haiti, Mexico, Nicaragua, El Salvador",
+        "region": null,
+        "lat": 17.027,
+        "lon": -93.302,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-DR-1027465",
+      "canonicalEventId": "OBS-drought-DRO-20260521T0000-n01e034",
+      "hazard": "drought",
+      "hazardLabel": "Drought",
+      "geography": {
+        "country": "Democratic Republic of Congo, Kenya, Tanzania, Uganda",
+        "region": null,
+        "lat": 0.763,
+        "lon": 33.606,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-05-21T00:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-30T13:48:57.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1027465&eventtype=DR",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-30T13:48:57.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-DR-1027465",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1027465&eventtype=DR",
+          "updated": "2026-09-30T13:48:57.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Democratic Republic of Congo, Kenya, Tanzania, Uganda",
+        "region": null,
+        "lat": 0.763,
+        "lon": 33.606,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-FL-1103933",
+      "canonicalEventId": "OBS-flood-CHI-20260606T0100-n36e103",
+      "hazard": "flood",
+      "hazardLabel": "Flood",
+      "geography": {
+        "country": "China",
+        "region": null,
+        "lat": 35.7003,
+        "lon": 103.2791,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-06-06T01:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-07-14T01:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1103933&eventtype=FL",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-07-14T01:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-FL-1103933",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1103933&eventtype=FL",
+          "updated": "2026-07-14T01:00:00.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "China",
+        "region": null,
+        "lat": 35.7003,
+        "lon": 103.2791,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-DR-1027450",
+      "canonicalEventId": "OBS-drought-DRO-20260621T0000-n10e026",
+      "hazard": "drought",
+      "hazardLabel": "Drought",
+      "geography": {
+        "country": "Democratic Republic of Congo, Central African Republic, Cameroon, Djibouti, Eritrea, Ethiopia, Kenya, Niger, Nigeria, Sudan, Somalia, South Sudan, Chad",
+        "region": null,
+        "lat": 9.57,
+        "lon": 26.314,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-06-21T00:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-30T13:48:55.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1027450&eventtype=DR",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-30T13:48:55.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-DR-1027450",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1027450&eventtype=DR",
+          "updated": "2026-09-30T13:48:55.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Democratic Republic of Congo, Central African Republic, Cameroon, Djibouti, Eritrea, Ethiopia, Kenya, Niger, Nigeria, Sudan, Somalia, South Sudan, Chad",
+        "region": null,
+        "lat": 9.57,
+        "lon": 26.314,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-TC-1001279",
+      "canonicalEventId": "OBS-tropical-cyclone-GNM-20260701T0000-n29e120",
+      "hazard": "tropical-cyclone",
+      "hazardLabel": "Tropical Cyclone",
+      "geography": {
+        "country": "Guam, Northern Mariana Islands, Japan, Taiwan, China",
+        "region": null,
+        "lat": 28.7,
+        "lon": 120.4,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-07-01T00:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-07-11T18:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001279&eventtype=TC",
+      "severity": "Extreme",
+      "alert": "Red",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-07-11T18:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to a red alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-TC-1001279",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001279&eventtype=TC",
+          "updated": "2026-07-11T18:00:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to a red alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Guam, Northern Mariana Islands, Japan, Taiwan, China",
+        "region": null,
+        "lat": 28.7,
+        "lon": 120.4,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-TC-1001281",
+      "canonicalEventId": "OBS-tropical-cyclone-VNC-20260701T1800-n22e108",
+      "hazard": "tropical-cyclone",
+      "hazardLabel": "Tropical Cyclone",
+      "geography": {
+        "country": "Viet Nam, China, Laos",
+        "region": null,
+        "lat": 21.6,
+        "lon": 107.9,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-07-01T18:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-07-04T18:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001281&eventtype=TC",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-07-04T18:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-TC-1001281",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001281&eventtype=TC",
+          "updated": "2026-07-04T18:00:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Viet Nam, China, Laos",
+        "region": null,
+        "lat": 21.6,
+        "lon": 107.9,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-VO-1000144",
+      "canonicalEventId": "OBS-volcano-PHI-20260716T0159-n13e124",
+      "hazard": "volcano",
+      "hazardLabel": "Volcano",
+      "geography": {
+        "country": "Philippines",
+        "region": null,
+        "lat": 13.257,
+        "lon": 123.685,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-07-16T01:59:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-07-16T01:59:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1000144&eventtype=VO",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-07-16T01:59:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-VO-1000144",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1000144&eventtype=VO",
+          "updated": "2026-07-16T01:59:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Philippines",
+        "region": null,
+        "lat": 13.257,
+        "lon": 123.685,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-TC-1001294",
+      "canonicalEventId": "OBS-tropical-cyclone-CP-20260723T0600-n23e115",
+      "hazard": "tropical-cyclone",
+      "hazardLabel": "Tropical Cyclone",
+      "geography": {
+        "country": "China, Philippines",
+        "region": null,
+        "lat": 22.9,
+        "lon": 114.5,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-07-23T06:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-07-26T00:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001294&eventtype=TC",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-07-26T00:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-TC-1001294",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001294&eventtype=TC",
+          "updated": "2026-07-26T00:00:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "China, Philippines",
+        "region": null,
+        "lat": 22.9,
+        "lon": 114.5,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-FL-1104051",
+      "canonicalEventId": "OBS-flood-CHI-20260725T0100-n31e111",
+      "hazard": "flood",
+      "hazardLabel": "Flood",
+      "geography": {
+        "country": "China",
+        "region": null,
+        "lat": 30.8276,
+        "lon": 110.9725,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-07-25T01:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-07-31T01:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104051&eventtype=FL",
+      "severity": "Severe",
+      "alert": "Red",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-07-31T01:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to a red alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-FL-1104051",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104051&eventtype=FL",
+          "updated": "2026-07-31T01:00:00.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to a red alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "China",
+        "region": null,
+        "lat": 30.8276,
+        "lon": 110.9725,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-TC-1001297",
+      "canonicalEventId": "OBS-tropical-cyclone-MIJ-20260727T0000-n28e121",
+      "hazard": "tropical-cyclone",
+      "hazardLabel": "Tropical Cyclone",
+      "geography": {
+        "country": "Marshall Islands, Japan, China",
+        "region": null,
+        "lat": 27.9,
+        "lon": 120.6,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-07-27T00:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-08-09T12:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001297&eventtype=TC",
+      "severity": "Extreme",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-08-09T12:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-TC-1001297",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001297&eventtype=TC",
+          "updated": "2026-08-09T12:00:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Marshall Islands, Japan, China",
+        "region": null,
+        "lat": 27.9,
+        "lon": 120.6,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-FL-1104081",
+      "canonicalEventId": "OBS-flood-CHI-20260731T0100-n31e108",
+      "hazard": "flood",
+      "hazardLabel": "Flood",
+      "geography": {
+        "country": "China",
+        "region": null,
+        "lat": 31.2958,
+        "lon": 108.4812,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-07-31T01:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-27T01:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104081&eventtype=FL",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-27T01:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-FL-1104081",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104081&eventtype=FL",
+          "updated": "2026-09-27T01:00:00.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "China",
+        "region": null,
+        "lat": 31.2958,
+        "lon": 108.4812,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
       "eventId": "gdacs-FL-1104121",
       "canonicalEventId": "OBS-flood-IND-20260809T0100-n10e077",
       "hazard": "flood",
       "hazardLabel": "Flood",
       "geography": {
         "country": "India",
-        "region": "Flood in India",
-        "lat": 9.6287,
-        "lon": 76.6455,
+        "region": null,
+        "lat": 30.0203,
+        "lon": 79.0499,
         "locationPrecision": "regional"
       },
       "geometry": null,
@@ -30,7 +798,7 @@
       "displaced": null,
       "evacuated": null,
       "infrastructureImpact": null,
-      "impactLastUpdated": "2026-09-22T01:00:00.000Z",
+      "impactLastUpdated": "2026-09-28T01:00:00.000Z",
       "evidenceConfidence": "REPORTED",
       "significant": true,
       "significanceReason": "Raised to an orange alert by the issuing authority.",
@@ -41,7 +809,7 @@
           "id": "gdacs-FL-1104121",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104121&eventtype=FL",
-          "updated": "2026-09-22T01:00:00",
+          "updated": "2026-09-28T01:00:00.000Z",
           "locationPrecision": "regional"
         }
       ],
@@ -56,13 +824,164 @@
         "lon": 76.6455,
         "locationPrecision": "regional"
       },
-      "lastSeenAt": "2026-09-23T11:08:51.550Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
           "to": "2026-09-23T11:08:51.550Z",
           "fromScan": "scan-2026-09-23T11-08-51-550Z",
           "toScan": "scan-2026-09-23T11-08-51-550Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "derivedIdHistory": [
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "derivedId": "OBS-flood-IND-20260809T0100-n30e079",
+          "note": "Better evidence changed the id this would be generated under; the recorded id is unchanged."
+        }
+      ],
+      "revisions": [
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "impactLastUpdated",
+          "from": "2026-09-22T01:00:00.000Z",
+          "to": "2026-09-28T01:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-TC-1001305",
+      "canonicalEventId": "OBS-tropical-cyclone-JCN-20260818T1200-n24e117",
+      "hazard": "tropical-cyclone",
+      "hazardLabel": "Tropical Cyclone",
+      "geography": {
+        "country": "Japan, China, Northern Mariana Islands",
+        "region": null,
+        "lat": 23.8,
+        "lon": 117.4,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-08-18T12:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-03T00:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001305&eventtype=TC",
+      "severity": "Extreme",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-03T00:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-TC-1001305",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001305&eventtype=TC",
+          "updated": "2026-09-03T00:00:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Japan, China, Northern Mariana Islands",
+        "region": null,
+        "lat": 23.8,
+        "lon": 117.4,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-FL-1104123",
+      "canonicalEventId": "OBS-flood-CHI-20260822T0100-n25e117",
+      "hazard": "flood",
+      "hazardLabel": "Flood",
+      "geography": {
+        "country": "China",
+        "region": null,
+        "lat": 25.0767,
+        "lon": 117.0123,
+        "locationPrecision": "regional"
+      },
+      "geometry": null,
+      "onset": "2026-08-22T01:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-08-26T01:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104123&eventtype=FL",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-08-26T01:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-FL-1104123",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104123&eventtype=FL",
+          "updated": "2026-08-26T01:00:00.000Z",
+          "locationPrecision": "regional"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "China",
+        "region": null,
+        "lat": 25.0767,
+        "lon": 117.0123,
+        "locationPrecision": "regional"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ]
     },
@@ -73,18 +992,18 @@
       "hazardLabel": "Flood",
       "geography": {
         "country": "Nepal",
-        "region": "Bagmati Province · Rasuwagadhi · Bhote Koshi · Trishuli corridor",
-        "lat": 28.18,
-        "lon": 85.39,
+        "region": null,
+        "lat": 27.2953,
+        "lon": 85.3649,
         "locationPrecision": "regional"
       },
       "geometry": null,
       "onset": "2026-08-26T00:00:00.000Z",
       "end": null,
       "firstAuthoritativeReport": "2026-09-05T18:50:00.000Z",
-      "source": "GDACS verified snapshot",
+      "source": "GDACS",
       "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104124&eventtype=FL",
-      "severity": "Extreme",
+      "severity": "Severe",
       "alert": "Red",
       "alertBasis": null,
       "deaths": 955,
@@ -94,18 +1013,18 @@
       "displaced": 3458,
       "evacuated": null,
       "infrastructureImpact": null,
-      "impactLastUpdated": "2026-09-05T18:50:00.000Z",
-      "evidenceConfidence": "CONFIRMED",
+      "impactLastUpdated": "2026-09-01T14:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
       "significant": true,
-      "significanceReason": "Deaths reported (955).",
+      "significanceReason": "Raised to a red alert by the issuing authority.",
       "matchedPredictionIds": null,
       "predictionCoverageStatus": null,
       "evidence": [
         {
           "id": "gdacs-FL-1104124",
-          "source": "GDACS verified snapshot",
+          "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1104124&eventtype=FL",
-          "updated": "2026-09-05T18:50:00Z",
+          "updated": "2026-09-01T14:00:00.000Z",
           "locationPrecision": "regional"
         }
       ],
@@ -120,9 +1039,210 @@
         "lon": 85.39,
         "locationPrecision": "regional"
       },
-      "lastSeenAt": null,
-      "sightings": [],
-      "retainedSnapshotOnly": "Recorded from a verified fallback snapshot held in the application, which is served only when the live providers do not carry this event. It is evidence that the disaster happened, not evidence that a provider was carrying it at the time of this scan, so no sighting is recorded for it."
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "derivedIdHistory": [
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "derivedId": "OBS-flood-NEP-20260826T0100-n27e085",
+          "note": "Better evidence changed the id this would be generated under; the recorded id is unchanged."
+        }
+      ],
+      "revisions": [
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "severity",
+          "from": "Extreme",
+          "to": "Severe"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "deaths",
+          "from": 955,
+          "to": null,
+          "note": "No longer reported upstream; the recorded figure is kept."
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "displaced",
+          "from": 3458,
+          "to": null,
+          "note": "No longer reported upstream; the recorded figure is kept."
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "impactLastUpdated",
+          "from": "2026-09-05T18:50:00.000Z",
+          "to": "2026-09-01T14:00:00.000Z"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "evidenceConfidence",
+          "from": "CONFIRMED",
+          "to": "REPORTED"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "source",
+          "from": "GDACS verified snapshot",
+          "to": "GDACS"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "significanceReason",
+          "from": "Deaths reported (955).",
+          "to": "Raised to a red alert by the issuing authority."
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-VO-1000148",
+      "canonicalEventId": "OBS-volcano-IND-20260904T2100-s06e105",
+      "hazard": "volcano",
+      "hazardLabel": "Volcano",
+      "geography": {
+        "country": "Indonesia",
+        "region": null,
+        "lat": -6.1009,
+        "lon": 105.4233,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-09-04T21:00:00.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-04T21:00:00.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1000148&eventtype=VO",
+      "severity": "Moderate",
+      "alert": "Orange",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-04T21:00:00.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Raised to an orange alert by the issuing authority.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-VO-1000148",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1000148&eventtype=VO",
+          "updated": "2026-09-04T21:00:00.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Raised to an orange alert by the issuing authority.",
+      "geographyAtFirstRecord": {
+        "country": "Indonesia",
+        "region": null,
+        "lat": -6.1009,
+        "lon": 105.4233,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
+    },
+    {
+      "eventId": "gdacs-EQ-1566678",
+      "canonicalEventId": "OBS-earthquake-FIA-20260917T1419-n53w171",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "geography": {
+        "country": "Fox Islands, Aleutian Islands",
+        "region": null,
+        "lat": 52.8594,
+        "lon": -171.3756,
+        "locationPrecision": "incident"
+      },
+      "geometry": null,
+      "onset": "2026-09-17T14:19:52.000Z",
+      "end": null,
+      "firstAuthoritativeReport": "2026-09-17T14:19:52.000Z",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566678&eventtype=EQ",
+      "severity": "Informational",
+      "alert": "Green",
+      "alertBasis": "issued",
+      "deaths": null,
+      "injuries": null,
+      "missing": null,
+      "affected": null,
+      "displaced": null,
+      "evacuated": null,
+      "infrastructureImpact": null,
+      "impactLastUpdated": "2026-09-17T14:19:52.000Z",
+      "evidenceConfidence": "REPORTED",
+      "significant": true,
+      "significanceReason": "Earthquake of magnitude 6.5.",
+      "matchedPredictionIds": null,
+      "predictionCoverageStatus": null,
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1566678",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566678&eventtype=EQ",
+          "updated": "2026-09-17T14:19:52.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "mergeReasons": [],
+      "unattachedReason": null,
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "significanceAtEntry": "Earthquake of magnitude 6.5.",
+      "geographyAtFirstRecord": {
+        "country": "Fox Islands, Aleutian Islands",
+        "region": null,
+        "lat": 52.8594,
+        "lon": -171.3756,
+        "locationPrecision": "incident"
+      },
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ]
     },
     {
       "eventId": "usgs-aka2026slrbzq",
@@ -302,13 +1422,13 @@
       ]
     },
     {
-      "eventId": "usgs-us7000tiqc",
+      "eventId": "gdacs-EQ-1567112",
       "canonicalEventId": "OBS-earthquake-PNG-20260920T0917-s06e146",
       "hazard": "earthquake",
       "hazardLabel": "Earthquake",
       "geography": {
         "country": "Papua New Guinea",
-        "region": "49 km NNE of Kainantu, Papua New Guinea",
+        "region": null,
         "lat": -5.9021,
         "lon": 146.0922,
         "locationPrecision": "incident"
@@ -317,8 +1437,8 @@
       "onset": "2026-09-20T09:17:35.624Z",
       "end": null,
       "firstAuthoritativeReport": "2026-09-21T09:25:25.530Z",
-      "source": "USGS",
-      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tiqc",
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567112&eventtype=EQ",
       "severity": "Informational",
       "alert": "Green",
       "alertBasis": "issued",
@@ -329,7 +1449,7 @@
       "displaced": null,
       "evacuated": null,
       "infrastructureImpact": null,
-      "impactLastUpdated": "2026-09-21T09:25:25.530Z",
+      "impactLastUpdated": "2026-09-20T09:17:35.000Z",
       "evidenceConfidence": "REPORTED",
       "significant": true,
       "significanceReason": "Earthquake of magnitude 6.4.",
@@ -350,6 +1470,13 @@
           "updated": "2026-09-20T20:16:07.149657Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tiqc"
+        },
+        {
+          "id": "gdacs-EQ-1567112",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567112&eventtype=EQ",
+          "updated": "2026-09-20T09:17:35.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "mergeReasons": [],
@@ -363,7 +1490,7 @@
         "lon": 146.0922,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -388,6 +1515,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -399,6 +1532,46 @@
           "claim": "OUT-aftershock-usgs-us7000tiqc|Earthquake aftershock sequence|2026-09-20T09:17:35.624Z|2026-09-27T09:17:35.624Z|Papua New Guinea|49 km NNE of Kainantu, Papua New Guinea|-5.902|146.092|event|-",
           "subject": "usgs-us7000tiqc"
         }
+      ],
+      "matchedById": [
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "why": "Same earthquake reported 0 km and 0h apart, within the 100 km / 2h window for this hazard."
+        }
+      ],
+      "revisions": [
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "impactLastUpdated",
+          "from": "2026-09-21T09:25:25.530Z",
+          "to": "2026-09-20T09:17:35.000Z"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "source",
+          "from": "USGS",
+          "to": "GDACS"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "sourceUrl",
+          "from": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tiqc",
+          "to": "https://www.gdacs.org/report.aspx?eventid=1567112&eventtype=EQ"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "eventId",
+          "from": "usgs-us7000tiqc",
+          "to": "gdacs-EQ-1567112"
+        }
       ]
     },
     {
@@ -408,9 +1581,9 @@
       "hazardLabel": "Tropical Cyclone",
       "geography": {
         "country": "Mexico",
-        "region": "Tropical Cyclone POLO-26",
-        "lat": 18.7,
-        "lon": -112.5,
+        "region": null,
+        "lat": 30.5,
+        "lon": -108,
         "locationPrecision": "incident"
       },
       "geometry": null,
@@ -420,7 +1593,7 @@
       "source": "GDACS",
       "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001325&eventtype=TC",
       "severity": "Extreme",
-      "alert": "Green",
+      "alert": "Red",
       "alertBasis": "issued",
       "deaths": null,
       "injuries": null,
@@ -429,10 +1602,10 @@
       "displaced": null,
       "evacuated": null,
       "infrastructureImpact": null,
-      "impactLastUpdated": "2026-09-26T21:00:00.000Z",
+      "impactLastUpdated": "2026-09-30T03:00:00.000Z",
       "evidenceConfidence": "REPORTED",
       "significant": true,
-      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "significanceReason": "Raised to a red alert by the issuing authority.",
       "matchedPredictionIds": null,
       "predictionCoverageStatus": null,
       "evidence": [
@@ -440,8 +1613,16 @@
           "id": "gdacs-TC-1001325",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001325&eventtype=TC",
-          "updated": "2026-09-26T21:00:00",
+          "updated": "2026-09-30T03:00:00.000Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "eonet-EONET_24721",
+          "source": "NASA EONET",
+          "sourceUrl": "https://science.nasa.gov/earth/earth-observatory/explosive-intensification-for-hurricane-polo/",
+          "updated": "2026-09-30T00:00:00Z",
+          "locationPrecision": null,
+          "mergedUpstream": "gdacs-TC-1001325"
         }
       ],
       "mergeReasons": [],
@@ -455,7 +1636,7 @@
         "lon": -104.4,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -480,6 +1661,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "derivedIdHistory": [
@@ -526,6 +1713,11 @@
         {
           "at": "2026-09-26T22:33:51.225Z",
           "derivedId": "OBS-tropical-cyclone-MEX-20260921T0300-n19w112",
+          "note": "Better evidence changed the id this would be generated under; the recorded id is unchanged."
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "derivedId": "OBS-tropical-cyclone-MEX-20260921T0300-n31w108",
           "note": "Better evidence changed the id this would be generated under; the recorded id is unchanged."
         }
       ],
@@ -649,6 +1841,30 @@
           "field": "impactLastUpdated",
           "from": "2026-09-26T15:00:00.000Z",
           "to": "2026-09-26T21:00:00.000Z"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "alert",
+          "from": "Green",
+          "to": "Red"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "impactLastUpdated",
+          "from": "2026-09-26T21:00:00.000Z",
+          "to": "2026-09-30T03:00:00.000Z"
+        },
+        {
+          "at": "2026-10-01T01:59:50.023Z",
+          "observedAt": "2026-10-01T01:59:46.333Z",
+          "scanId": "scan-2026-10-01T01-59-46-333Z",
+          "field": "significanceReason",
+          "from": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+          "to": "Raised to a red alert by the issuing authority."
         }
       ]
     },
@@ -659,7 +1875,7 @@
       "hazardLabel": "Tropical Cyclone",
       "geography": {
         "country": "India",
-        "region": "Tropical Cyclone ONE-26",
+        "region": null,
         "lat": 18.1,
         "lon": 83.7,
         "locationPrecision": "incident"
@@ -691,7 +1907,7 @@
           "id": "gdacs-TC-1001326",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1001326&eventtype=TC",
-          "updated": "2026-09-24T00:00:00",
+          "updated": "2026-09-24T00:00:00.000Z",
           "locationPrecision": "incident"
         }
       ],
@@ -706,7 +1922,7 @@
         "lon": 83.7,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-25T07:24:32.347Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T20:02:54.928Z",
@@ -719,6 +1935,12 @@
           "to": "2026-09-25T07:24:32.347Z",
           "fromScan": "scan-2026-09-25T07-24-32-347Z",
           "toScan": "scan-2026-09-25T07-24-32-347Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "revisions": [
@@ -778,7 +2000,7 @@
           "id": "gdacs-EQ-1568087",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568087&eventtype=EQ",
-          "updated": "2026-09-25T21:23:03",
+          "updated": "2026-09-25T21:23:03.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txpi"
         },
@@ -827,7 +2049,7 @@
         "lon": 168.61,
         "locationPrecision": "incident"
       },
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -840,6 +2062,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -960,18 +2188,31 @@
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ti03",
           "updated": "2026-09-17T09:23:59.040Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1566624",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566624&eventtype=EQ",
+          "updated": "2026-09-17T08:28:25.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-24T04:02:40.085Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
           "to": "2026-09-24T04:02:40.085Z",
           "fromScan": "scan-2026-09-23T11-08-51-550Z",
           "toScan": "scan-2026-09-24T04-02-40-085Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -1355,18 +2596,31 @@
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ti5c",
           "updated": "2026-09-17T20:09:30.040Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1566714",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566714&eventtype=EQ",
+          "updated": "2026-09-17T19:17:33.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-24T18:54:47.250Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
           "to": "2026-09-24T18:54:47.250Z",
           "fromScan": "scan-2026-09-23T11-08-51-550Z",
           "toScan": "scan-2026-09-24T18-54-47-250Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -1411,18 +2665,31 @@
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ti5v",
           "updated": "2026-09-18T17:54:29.040Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1566727",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566727&eventtype=EQ",
+          "updated": "2026-09-17T20:23:46.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-24T18:54:47.250Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
           "to": "2026-09-24T18:54:47.250Z",
           "fromScan": "scan-2026-09-23T11-08-51-550Z",
           "toScan": "scan-2026-09-24T18-54-47-250Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -2660,12 +3927,19 @@
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ti9c",
           "updated": "2026-09-18T12:45:09.040Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1566811",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566811&eventtype=EQ",
+          "updated": "2026-09-18T12:20:56.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-25T07:24:32.347Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -2678,6 +3952,12 @@
           "to": "2026-09-25T07:24:32.347Z",
           "fromScan": "scan-2026-09-25T07-24-32-347Z",
           "toScan": "scan-2026-09-25T07-24-32-347Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -2936,12 +4216,19 @@
           "updated": "2026-09-19T17:04:11.517235Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tid2"
+        },
+        {
+          "id": "gdacs-EQ-1567010",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567010&eventtype=EQ",
+          "updated": "2026-09-18T16:37:26.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-25T13:27:37.746Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -2960,6 +4247,12 @@
           "to": "2026-09-25T13:27:37.746Z",
           "fromScan": "scan-2026-09-25T13-27-37-746Z",
           "toScan": "scan-2026-09-25T13-27-37-746Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -3910,12 +5203,19 @@
           "updated": "2026-09-20T06:43:35.755412Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tih8"
+        },
+        {
+          "id": "gdacs-EQ-1566936",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566936&eventtype=EQ",
+          "updated": "2026-09-19T04:18:35.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T01:19:16.103Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -3934,6 +5234,12 @@
           "to": "2026-09-26T01:19:16.103Z",
           "fromScan": "scan-2026-09-25T13-27-37-746Z",
           "toScan": "scan-2026-09-26T01-19-16-103Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -4045,12 +5351,19 @@
           "updated": "2026-09-20T06:45:20.724172Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tiib"
+        },
+        {
+          "id": "gdacs-EQ-1566960",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566960&eventtype=EQ",
+          "updated": "2026-09-19T07:44:25.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T07:19:59.697Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4075,6 +5388,12 @@
           "to": "2026-09-26T07:19:59.697Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-26T07-19-59-697Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -4383,12 +5702,19 @@
           "updated": "2026-09-20T20:10:20.316588Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tiju"
+        },
+        {
+          "id": "gdacs-EQ-1566999",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566999&eventtype=EQ",
+          "updated": "2026-09-19T13:56:00.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-26T12:50:22.124Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -4413,6 +5739,12 @@
           "to": "2026-09-26T12:50:22.124Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-26T12-50-22-124Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -5874,12 +7206,19 @@
           "updated": "2026-09-20T20:17:16.117536Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tirh"
+        },
+        {
+          "id": "gdacs-EQ-1567129",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567129&eventtype=EQ",
+          "updated": "2026-09-20T12:45:53.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -5904,6 +7243,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -6002,12 +7347,19 @@
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tirv",
           "updated": "2026-09-20T21:37:07.805Z",
           "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1567154",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567154&eventtype=EQ",
+          "updated": "2026-09-20T13:55:47.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6032,6 +7384,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -6850,12 +8208,19 @@
           "updated": "2026-09-21T06:18:01.418135Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tiur"
+        },
+        {
+          "id": "gdacs-EQ-1567198",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567198&eventtype=EQ",
+          "updated": "2026-09-21T01:41:36.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -6880,6 +8245,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -7262,12 +8633,19 @@
           "updated": "2026-09-21T13:58:31.183826Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us7000tiw4"
+        },
+        {
+          "id": "gdacs-EQ-1567247",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567247&eventtype=EQ",
+          "updated": "2026-09-21T07:31:07.000Z",
+          "locationPrecision": "incident"
         }
       ],
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -7292,6 +8670,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -8532,9 +9916,8 @@
           "id": "gdacs-EQ-1567442",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567442&eventtype=EQ",
-          "updated": "2026-09-22T03:36:25",
-          "locationPrecision": null,
-          "mergedUpstream": "usgs-us7000tj37"
+          "updated": "2026-09-22T03:36:25.000Z",
+          "locationPrecision": "incident"
         },
         {
           "id": "emsc-20260922_0000061",
@@ -8548,7 +9931,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8573,6 +9956,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -8940,9 +10329,8 @@
           "id": "gdacs-EQ-1567484",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567484&eventtype=EQ",
-          "updated": "2026-09-22T10:30:19",
-          "locationPrecision": null,
-          "mergedUpstream": "usgs-us7000tj4v"
+          "updated": "2026-09-22T10:30:19.000Z",
+          "locationPrecision": "incident"
         },
         {
           "id": "emsc-20260922_0000185",
@@ -8956,7 +10344,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -8981,6 +10369,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -9704,9 +11098,8 @@
           "id": "gdacs-EQ-1567592",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567592&eventtype=EQ",
-          "updated": "2026-09-23T02:02:43",
-          "locationPrecision": null,
-          "mergedUpstream": "usgs-us6000tx08"
+          "updated": "2026-09-23T02:02:43.000Z",
+          "locationPrecision": "incident"
         },
         {
           "id": "emsc-20260923_0000014",
@@ -9720,7 +11113,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T11:08:56.907Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T11:08:51.550Z",
@@ -9745,6 +11138,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -10562,9 +11961,8 @@
           "id": "gdacs-EQ-1567655",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567655&eventtype=EQ",
-          "updated": "2026-09-23T12:23:20",
-          "locationPrecision": null,
-          "mergedUpstream": "usgs-us6000tx31"
+          "updated": "2026-09-23T12:23:20.000Z",
+          "locationPrecision": "incident"
         },
         {
           "id": "emsc-20260923_0000141",
@@ -10578,7 +11976,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-23T16:30:28.985Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-23T16:30:23.730Z",
@@ -10603,6 +12001,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12009,9 +13413,8 @@
           "id": "gdacs-EQ-1567767",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567767&eventtype=EQ",
-          "updated": "2026-09-24T00:26:38",
-          "locationPrecision": null,
-          "mergedUpstream": "usgs-us6000tx7g"
+          "updated": "2026-09-24T00:26:38.000Z",
+          "locationPrecision": "incident"
         },
         {
           "id": "emsc-20260924_0000035",
@@ -12025,7 +13428,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12050,6 +13453,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12161,7 +13570,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12186,6 +13595,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12231,7 +13646,7 @@
           "id": "gdacs-EQ-1567771",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567771&eventtype=EQ",
-          "updated": "2026-09-24T03:30:26",
+          "updated": "2026-09-24T03:30:26.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000tx8q"
         },
@@ -12247,7 +13662,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12272,6 +13687,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12313,7 +13734,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T04:02:42.997Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T04:02:40.085Z",
@@ -12338,6 +13759,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12445,7 +13872,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T09:46:45.713Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T09:46:43.314Z",
@@ -12470,6 +13897,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12536,7 +13969,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T09:46:45.713Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T09:46:43.314Z",
@@ -12561,6 +13994,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12606,7 +14045,7 @@
           "id": "gdacs-EQ-1567834",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567834&eventtype=EQ",
-          "updated": "2026-09-24T12:29:58",
+          "updated": "2026-09-24T12:29:58.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txbm"
         },
@@ -12622,7 +14061,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T14:45:47.924Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T14:45:45.864Z",
@@ -12647,6 +14086,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12748,7 +14193,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T18:54:48.884Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -12773,6 +14218,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12818,7 +14269,7 @@
           "id": "gdacs-EQ-1567881",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567881&eventtype=EQ",
-          "updated": "2026-09-24T16:28:00",
+          "updated": "2026-09-24T16:28:00.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txcw"
         },
@@ -12834,7 +14285,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T18:54:48.884Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -12859,6 +14310,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -12900,7 +14357,7 @@
           "id": "gdacs-EQ-1567886",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567886&eventtype=EQ",
-          "updated": "2026-09-24T18:00:47",
+          "updated": "2026-09-24T18:00:47.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txf9"
         },
@@ -12916,7 +14373,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T18:54:48.884Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T18:54:47.250Z",
@@ -12941,6 +14398,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -13409,7 +14872,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13434,6 +14897,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -13479,7 +14948,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13504,6 +14973,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -13549,7 +15024,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13574,6 +15049,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -13619,7 +15100,7 @@
           "id": "gdacs-EQ-1567903",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567903&eventtype=EQ",
-          "updated": "2026-09-24T20:05:25",
+          "updated": "2026-09-24T20:05:25.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txg5"
         },
@@ -13635,7 +15116,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-24T22:09:10.267Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-24T22:09:07.794Z",
@@ -13660,6 +15141,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -13774,7 +15261,7 @@
           "id": "gdacs-EQ-1567923",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567923&eventtype=EQ",
-          "updated": "2026-09-24T22:22:59",
+          "updated": "2026-09-24T22:22:59.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txha"
         },
@@ -13790,7 +15277,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T01:17:05.209Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-25T01:17:02.559Z",
@@ -13815,6 +15302,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -13856,7 +15349,7 @@
           "id": "gdacs-EQ-1567922",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567922&eventtype=EQ",
-          "updated": "2026-09-24T23:30:28",
+          "updated": "2026-09-24T23:30:28.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txhp"
         },
@@ -13872,7 +15365,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T01:17:05.209Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-25T01:17:02.559Z",
@@ -13897,6 +15390,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -14569,7 +16068,7 @@
           "id": "gdacs-EQ-1568042",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568042&eventtype=EQ",
-          "updated": "2026-09-25T13:47:26",
+          "updated": "2026-09-25T13:47:26.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txkc"
         },
@@ -14585,7 +16084,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T18:22:06.154Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-25T18:22:03.139Z",
@@ -14598,6 +16097,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -14981,7 +16486,7 @@
           "id": "gdacs-EQ-1568076",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568076&eventtype=EQ",
-          "updated": "2026-09-25T19:39:29",
+          "updated": "2026-09-25T19:39:29.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txnq"
         },
@@ -14997,7 +16502,7 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-25T22:06:48.066Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-25T22:06:45.907Z",
@@ -15010,6 +16515,12 @@
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -15251,7 +16762,7 @@
           "id": "gdacs-EQ-1568138",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568138&eventtype=EQ",
-          "updated": "2026-09-26T05:50:48",
+          "updated": "2026-09-26T05:50:48.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txrf"
         },
@@ -15274,7 +16785,7 @@
           "id": "gdacs-EQ-1568145",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568145&eventtype=EQ",
-          "updated": "2026-09-26T07:08:02",
+          "updated": "2026-09-26T07:08:02.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txrn"
         },
@@ -15297,7 +16808,7 @@
           "id": "gdacs-EQ-1568144",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568144&eventtype=EQ",
-          "updated": "2026-09-26T07:22:12",
+          "updated": "2026-09-26T07:22:12.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txrq"
         },
@@ -15313,13 +16824,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T07:20:03.130Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T07:19:59.697Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T07-19-59-697Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -15361,7 +16878,7 @@
           "id": "gdacs-EQ-1568148",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568148&eventtype=EQ",
-          "updated": "2026-09-26T08:24:58",
+          "updated": "2026-09-26T08:24:58.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txrs"
         },
@@ -15384,7 +16901,7 @@
           "id": "gdacs-EQ-1568150",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568150&eventtype=EQ",
-          "updated": "2026-09-26T08:54:03",
+          "updated": "2026-09-26T08:54:03.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txrz"
         },
@@ -15407,7 +16924,7 @@
           "id": "gdacs-EQ-1568151",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568151&eventtype=EQ",
-          "updated": "2026-09-26T09:07:19",
+          "updated": "2026-09-26T09:07:19.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txs6"
         },
@@ -15445,7 +16962,7 @@
           "id": "gdacs-EQ-1568152",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568152&eventtype=EQ",
-          "updated": "2026-09-26T09:10:31",
+          "updated": "2026-09-26T09:10:31.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txs3"
         },
@@ -15468,7 +16985,7 @@
           "id": "gdacs-EQ-1568157",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568157&eventtype=EQ",
-          "updated": "2026-09-26T10:21:05",
+          "updated": "2026-09-26T10:21:05.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txse"
         },
@@ -15484,13 +17001,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T12:50:26.946Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T12:50:22.124Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T12-50-22-124Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -15816,7 +17339,7 @@
           "id": "gdacs-EQ-1568174",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568174&eventtype=EQ",
-          "updated": "2026-09-26T13:38:15",
+          "updated": "2026-09-26T13:38:15.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txt8"
         },
@@ -15832,13 +17355,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T16:58:07.357Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T16:58:04.455Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T16-58-04-455Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -15873,14 +17402,14 @@
           "id": "usgs-us6000txtc",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txtc",
-          "updated": "2026-09-26T18:40:01.040Z",
+          "updated": "2026-09-29T14:45:36.205Z",
           "locationPrecision": "incident"
         },
         {
           "id": "gdacs-EQ-1568187",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568187&eventtype=EQ",
-          "updated": "2026-09-26T14:08:17",
+          "updated": "2026-09-26T14:08:18.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txtc"
         },
@@ -15896,13 +17425,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T16:58:07.357Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T16:58:04.455Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T16-58-04-455Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -15916,6 +17451,10 @@
         },
         {
           "claim": "OUT-aftershock-usgs-us6000txtc|Earthquake aftershock sequence|2026-09-26T14:08:17.704Z|2026-10-03T14:08:17.704Z|Papua New Guinea|74 km ESE of Kokopo, Papua New Guinea|-4.695|152.838|event|-",
+          "subject": "usgs-us6000txtc"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txtc|Earthquake aftershock sequence|2026-09-26T14:08:18.875Z|2026-10-03T14:08:18.875Z|Papua New Guinea|72 km ESE of Kokopo, Papua New Guinea|-4.629|152.861|event|-",
           "subject": "usgs-us6000txtc"
         }
       ]
@@ -15941,14 +17480,14 @@
           "id": "usgs-us6000txtn",
           "source": "USGS",
           "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txtn",
-          "updated": "2026-09-26T15:20:48.040Z",
+          "updated": "2026-09-29T15:36:19.040Z",
           "locationPrecision": "incident"
         },
         {
           "id": "gdacs-EQ-1568194",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568194&eventtype=EQ",
-          "updated": "2026-09-26T15:01:36",
+          "updated": "2026-09-26T15:01:36.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txtn"
         },
@@ -15956,7 +17495,7 @@
           "id": "emsc-20260926_0000163",
           "source": "EMSC",
           "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000163",
-          "updated": "2026-09-26T17:27:23.61636Z",
+          "updated": "2026-09-30T06:51:14.452236Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txtn"
         },
@@ -15971,7 +17510,7 @@
           "id": "gdacs-EQ-1568205",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568205&eventtype=EQ",
-          "updated": "2026-09-26T16:06:48",
+          "updated": "2026-09-26T16:06:48.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txty"
         },
@@ -15979,7 +17518,7 @@
           "id": "emsc-20260926_0000186",
           "source": "EMSC",
           "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000186",
-          "updated": "2026-09-26T17:44:02.822863Z",
+          "updated": "2026-09-27T14:32:24.427362Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txty"
         }
@@ -15987,13 +17526,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T16:58:07.357Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T16:58:04.455Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T16-58-04-455Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -16028,7 +17573,7 @@
           "id": "gdacs-EQ-1568208",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568208&eventtype=EQ",
-          "updated": "2026-09-26T17:50:20",
+          "updated": "2026-09-26T17:50:20.000Z",
           "locationPrecision": "incident"
         },
         {
@@ -16043,7 +17588,7 @@
           "id": "emsc-20260926_0000189",
           "source": "EMSC",
           "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000189",
-          "updated": "2026-09-26T18:07:53.103582Z",
+          "updated": "2026-09-27T14:33:31.052432Z",
           "locationPrecision": null,
           "mergedUpstream": "gdacs-EQ-1568208"
         }
@@ -16051,13 +17596,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T19:42:19.258Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T19:42:17.756Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T19-42-17-756Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -16103,7 +17654,7 @@
           "id": "gdacs-EQ-1568210",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568210&eventtype=EQ",
-          "updated": "2026-09-26T18:25:23",
+          "updated": "2026-09-26T18:25:23.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txuf"
         },
@@ -16111,7 +17662,7 @@
           "id": "emsc-20260926_0000193",
           "source": "EMSC",
           "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000193",
-          "updated": "2026-09-26T18:47:56.920378Z",
+          "updated": "2026-09-27T14:33:50.680449Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txuf"
         }
@@ -16119,13 +17670,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T19:42:19.258Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T19:42:17.756Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T19-42-17-756Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -16283,7 +17840,7 @@
           "id": "gdacs-EQ-1568213",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568213&eventtype=EQ",
-          "updated": "2026-09-26T19:37:01",
+          "updated": "2026-09-26T19:37:01.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txur"
         },
@@ -16291,7 +17848,7 @@
           "id": "emsc-20260926_0000201",
           "source": "EMSC",
           "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000201",
-          "updated": "2026-09-26T19:54:54.761852Z",
+          "updated": "2026-09-27T14:34:31.040525Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txur"
         }
@@ -16299,13 +17856,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T22:33:51.225Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T22:33:49.613Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T22-33-49-613Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -16347,7 +17910,7 @@
           "id": "gdacs-EQ-1568225",
           "source": "GDACS",
           "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568225&eventtype=EQ",
-          "updated": "2026-09-26T21:49:27",
+          "updated": "2026-09-26T21:49:27.000Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txv7"
         },
@@ -16355,7 +17918,7 @@
           "id": "emsc-20260926_0000228",
           "source": "EMSC",
           "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260926_0000228",
-          "updated": "2026-09-26T22:07:13.131259Z",
+          "updated": "2026-09-27T14:35:32.858644Z",
           "locationPrecision": null,
           "mergedUpstream": "usgs-us6000txv7"
         }
@@ -16363,13 +17926,19 @@
       "significant": false,
       "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
       "firstRecordedAt": "2026-09-26T22:33:51.225Z",
-      "lastSeenAt": "2026-09-27T01:13:26.874Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
       "sightings": [
         {
           "from": "2026-09-26T22:33:49.613Z",
           "to": "2026-09-27T01:13:26.874Z",
           "fromScan": "scan-2026-09-26T22-33-49-613Z",
           "toScan": "scan-2026-09-27T01-13-26-874Z"
+        },
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
         }
       ],
       "keptFor": [
@@ -16386,9 +17955,1705 @@
           "subject": "usgs-us6000txtc"
         }
       ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-IND-20260915T1416-s08e129",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-15T14:16:11.000Z",
+      "end": null,
+      "geography": {
+        "country": "Indonesia",
+        "region": null,
+        "lat": -8.3244,
+        "lon": 129.2771,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566377&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1566377",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566377&eventtype=EQ",
+          "updated": "2026-09-15T14:16:11.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tgl2|Earthquake aftershock sequence|2026-09-11T11:56:23.115Z|2026-09-18T11:56:23.115Z|Timor Leste|253 km ENE of Lospalos, Timor Leste|-7.286|128.938|-|-",
+          "subject": "usgs-us7000tgl2"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000tgrk|Earthquake aftershock sequence|2026-09-11T21:23:55.907Z|2026-09-18T21:23:55.907Z|Indonesia|126 km NNE of Teluknaga, Indonesia|-4.983|106.874|-|-",
+          "subject": "usgs-us7000tgrk"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000thc6|Earthquake aftershock sequence|2026-09-14T09:27:38.536Z|2026-09-21T09:27:38.536Z|Indonesia|187 km SSW of Pelabuhanratu, Indonesia|-8.542|105.873|-|-",
+          "subject": "usgs-us7000thc6"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000thcs|Earthquake aftershock sequence|2026-09-14T10:58:03.047Z|2026-09-21T10:58:03.047Z|Indonesia|78 km NNE of Tobelo, Indonesia|2.422|128.170|-|-",
+          "subject": "usgs-us7000thcs"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-IND-20260915T1612-s04e102",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-15T16:12:49.000Z",
+      "end": null,
+      "geography": {
+        "country": "Indonesia",
+        "region": null,
+        "lat": -4.2614,
+        "lon": 102.0754,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566383&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1566383",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566383&eventtype=EQ",
+          "updated": "2026-09-15T16:12:49.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tgrk|Earthquake aftershock sequence|2026-09-11T21:23:55.907Z|2026-09-18T21:23:55.907Z|Indonesia|126 km NNE of Teluknaga, Indonesia|-4.983|106.874|-|-",
+          "subject": "usgs-us7000tgrk"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000thc6|Earthquake aftershock sequence|2026-09-14T09:27:38.536Z|2026-09-21T09:27:38.536Z|Indonesia|187 km SSW of Pelabuhanratu, Indonesia|-8.542|105.873|-|-",
+          "subject": "usgs-us7000thc6"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000thcs|Earthquake aftershock sequence|2026-09-14T10:58:03.047Z|2026-09-21T10:58:03.047Z|Indonesia|78 km NNE of Tobelo, Indonesia|2.422|128.170|-|-",
+          "subject": "usgs-us7000thcs"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NMS-20260917T0620-n01e126",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-17T06:20:48.000Z",
+      "end": null,
+      "geography": {
+        "country": "Northern Molucca Sea",
+        "region": null,
+        "lat": 1.3156,
+        "lon": 126.3092,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566609&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1566609",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566609&eventtype=EQ",
+          "updated": "2026-09-17T06:20:48.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000thcs|Earthquake aftershock sequence|2026-09-14T10:58:03.047Z|2026-09-21T10:58:03.047Z|Indonesia|78 km NNE of Tobelo, Indonesia|2.422|128.170|-|-",
+          "subject": "usgs-us7000thcs"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-SOJ-20260918T1436-s09e106",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-18T14:36:17.000Z",
+      "end": null,
+      "geography": {
+        "country": "South Of Java, Indonesia",
+        "region": null,
+        "lat": -8.5809,
+        "lon": 105.9112,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566830&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1566830",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1566830&eventtype=EQ",
+          "updated": "2026-09-18T14:36:17.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000thc6|Earthquake aftershock sequence|2026-09-14T09:27:38.536Z|2026-09-21T09:27:38.536Z|Indonesia|187 km SSW of Pelabuhanratu, Indonesia|-8.542|105.873|-|-",
+          "subject": "usgs-us7000thc6"
+        },
+        {
+          "claim": "OUT-aftershock-emsc-20260914_0000116|Earthquake aftershock sequence|2026-09-14T09:27:39.350Z|2026-09-21T09:27:39.350Z|-|SOUTH OF JAVA, INDONESIA|-8.500|105.814|-|-",
+          "subject": "emsc-20260914_0000116"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-IND-20260920T1539-s07e127",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-20T15:39:26.000Z",
+      "end": null,
+      "geography": {
+        "country": "Indonesia",
+        "region": null,
+        "lat": -6.9664,
+        "lon": 127.4259,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567149&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1567149",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567149&eventtype=EQ",
+          "updated": "2026-09-20T15:39:26.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000thc6|Earthquake aftershock sequence|2026-09-14T09:27:38.536Z|2026-09-21T09:27:38.536Z|Indonesia|187 km SSW of Pelabuhanratu, Indonesia|-8.542|105.873|-|-",
+          "subject": "usgs-us7000thc6"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000thcs|Earthquake aftershock sequence|2026-09-14T10:58:03.047Z|2026-09-21T10:58:03.047Z|Indonesia|78 km NNE of Tobelo, Indonesia|2.422|128.170|-|-",
+          "subject": "usgs-us7000thcs"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-KIR-20260921T2034-s29w176",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-21T20:34:32.000Z",
+      "end": null,
+      "geography": {
+        "country": "Kermadec Islands Region",
+        "region": null,
+        "lat": -28.701,
+        "lon": -176.4408,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568059&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1568059",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568059&eventtype=EQ",
+          "updated": "2026-09-21T20:34:32.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tigd|Earthquake aftershock sequence|2026-09-18T23:18:28.306Z|2026-09-25T23:18:28.306Z|-|Kermadec Islands region|-27.858|-177.229|-|-",
+          "subject": "usgs-us7000tigd"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-IND-20260922T2227-s07e105",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-22T22:27:39.000Z",
+      "end": null,
+      "geography": {
+        "country": "Indonesia",
+        "region": null,
+        "lat": -6.9129,
+        "lon": 105.4674,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567610&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1567610",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567610&eventtype=EQ",
+          "updated": "2026-09-22T22:27:39.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiur|Earthquake aftershock sequence|2026-09-21T01:41:36.315Z|2026-09-28T01:41:36.315Z|Indonesia|35 km NNE of Ruteng, Indonesia|-8.307|120.579|-|-",
+          "subject": "usgs-us7000tiur"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-SIR-20260923T1720-s15w175",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-23T17:20:32.000Z",
+      "end": null,
+      "geography": {
+        "country": "Samoa Islands Region",
+        "region": null,
+        "lat": -14.6397,
+        "lon": -175.0529,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567700&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1567700",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1567700&eventtype=EQ",
+          "updated": "2026-09-23T17:20:32.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000tx3m|Earthquake aftershock sequence|2026-09-23T14:41:02.650Z|2026-09-30T14:41:02.650Z|Tonga|180 km NW of Hihifo, Tonga|-14.937|-175.111|event|-",
+          "subject": "usgs-us6000tx3m"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-PNG-20260923T2231-s07e148",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-23T22:31:20.000Z",
+      "end": null,
+      "geography": {
+        "country": "Papua New Guinea",
+        "region": null,
+        "lat": -6.6396,
+        "lon": 148.2939,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568684&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1568684",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568684&eventtype=EQ",
+          "updated": "2026-09-23T22:31:20.000Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiqc|Earthquake aftershock sequence|2026-09-20T09:17:35.624Z|2026-09-27T09:17:35.624Z|Papua New Guinea|49 km NNE of Kainantu, Papua New Guinea|-5.902|146.092|-|-",
+          "subject": "usgs-us7000tiqc"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiqc|Earthquake aftershock sequence|2026-09-20T09:17:35.624Z|2026-09-27T09:17:35.624Z|Papua New Guinea|49 km NNE of Kainantu, Papua New Guinea|-5.902|146.092|event|-",
+          "subject": "usgs-us7000tiqc"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260925T2332-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-25T23:32:44.392Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "80 km ENE of Tadine, New Caledonia",
+        "lat": -21.2949,
+        "lon": 168.6129,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txuu",
+      "evidence": [
+        {
+          "id": "usgs-us6000txqf",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txqf",
+          "updated": "2026-09-25T23:50:33.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000txqi",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txqi",
+          "updated": "2026-09-26T23:44:50.671Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568101",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568101&eventtype=EQ",
+          "updated": "2026-09-25T23:39:41.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txqi"
+        },
+        {
+          "id": "usgs-us6000txqk",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txqk",
+          "updated": "2026-09-26T23:57:11.848Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568104",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568104&eventtype=EQ",
+          "updated": "2026-09-25T23:52:35.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txqk"
+        },
+        {
+          "id": "usgs-us6000txqu",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txqu",
+          "updated": "2026-09-26T01:22:16.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568108",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568108&eventtype=EQ",
+          "updated": "2026-09-26T01:10:19.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txqu"
+        },
+        {
+          "id": "usgs-us6000txuu",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txuu",
+          "updated": "2026-09-27T04:18:56.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568214",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568214&eventtype=EQ",
+          "updated": "2026-09-26T01:17:15.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txuu"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260926T1211-s21e168",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-26T12:11:01.897Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "83 km NE of Tadine, New Caledonia",
+        "lat": -21.0512,
+        "lon": 168.4849,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt9",
+      "evidence": [
+        {
+          "id": "usgs-us6000txsy",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txsy",
+          "updated": "2026-09-26T12:57:59.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568172",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568172&eventtype=EQ",
+          "updated": "2026-09-26T12:11:01.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txsy"
+        },
+        {
+          "id": "usgs-us6000txsz",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txsz",
+          "updated": "2026-09-26T12:46:36.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000txt0",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt0",
+          "updated": "2026-09-26T12:42:17.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568171",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568171&eventtype=EQ",
+          "updated": "2026-09-26T12:14:20.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt0"
+        },
+        {
+          "id": "usgs-us6000txt9",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txt9",
+          "updated": "2026-09-29T15:50:21.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568188",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568188&eventtype=EQ",
+          "updated": "2026-09-26T13:48:49.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txt9"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260927T0118-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-27T01:18:25.822Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "90 km ENE of Tadine, New Caledonia",
+        "lat": -21.2857,
+        "lon": 168.7073,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txw5",
+      "evidence": [
+        {
+          "id": "usgs-us6000txvu",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txvu",
+          "updated": "2026-09-27T01:31:08.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568237",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568237&eventtype=EQ",
+          "updated": "2026-09-27T01:18:25.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txvu"
+        },
+        {
+          "id": "emsc-20260927_0000016",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260927_0000016",
+          "updated": "2026-09-27T14:35:47.640118Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txvu"
+        },
+        {
+          "id": "usgs-us6000txw5",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000txw5",
+          "updated": "2026-09-27T02:38:54.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568249",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568249&eventtype=EQ",
+          "updated": "2026-09-27T02:22:10.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txw5"
+        },
+        {
+          "id": "emsc-20260927_0000028",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260927_0000028",
+          "updated": "2026-09-27T14:36:15.940486Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000txw5"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-XX-20260927T1006-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-27T10:06:53.740Z",
+      "end": null,
+      "geography": {
+        "country": null,
+        "region": "LOYALTY ISLANDS",
+        "lat": -21.142,
+        "lon": 168.57,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "EMSC",
+      "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260927_0000335",
+      "evidence": [
+        {
+          "id": "emsc-20260927_0000335",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260927_0000335",
+          "updated": "2026-09-28T07:32:53.708217Z",
+          "locationPrecision": "incident"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-IND-20260927T2114-s10e124",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-27T21:14:51.832Z",
+      "end": null,
+      "geography": {
+        "country": "Indonesia",
+        "region": "0 km ESE of Naisano Dua, Indonesia",
+        "lat": -9.5995,
+        "lon": 123.7756,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty0k",
+      "evidence": [
+        {
+          "id": "usgs-us6000ty0k",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty0k",
+          "updated": "2026-09-28T01:01:35.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568369",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568369&eventtype=EQ",
+          "updated": "2026-09-27T21:14:51.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty0k"
+        },
+        {
+          "id": "emsc-20260927_0000283",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260927_0000283",
+          "updated": "2026-09-28T11:51:00.977647Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty0k"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiur|Earthquake aftershock sequence|2026-09-21T01:41:36.315Z|2026-09-28T01:41:36.315Z|Indonesia|35 km NNE of Ruteng, Indonesia|-8.307|120.579|-|-",
+          "subject": "usgs-us7000tiur"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us7000tiur|Earthquake aftershock sequence|2026-09-21T01:41:36.315Z|2026-09-28T01:41:36.315Z|Indonesia|35 km NNE of Ruteng, Indonesia|-8.307|120.579|event|-",
+          "subject": "usgs-us7000tiur"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260928T0047-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-28T00:47:33.083Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "80 km E of Tadine, New Caledonia",
+        "lat": -21.4457,
+        "lon": 168.6452,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty1m",
+      "evidence": [
+        {
+          "id": "usgs-us6000ty1m",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty1m",
+          "updated": "2026-09-28T04:06:12.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568416",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568416&eventtype=EQ",
+          "updated": "2026-09-28T00:47:33.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty1m"
+        },
+        {
+          "id": "emsc-20260928_0000053",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000053",
+          "updated": "2026-09-28T04:06:20.655997Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty1m"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-XX-20260928T0315-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-28T03:15:52.970Z",
+      "end": null,
+      "geography": {
+        "country": null,
+        "region": "LOYALTY ISLANDS",
+        "lat": -20.995,
+        "lon": 168.549,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "EMSC",
+      "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000095",
+      "evidence": [
+        {
+          "id": "emsc-20260928_0000095",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000095",
+          "updated": "2026-09-28T07:23:40.29221Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000ty2b",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty2b",
+          "updated": "2026-09-28T05:26:14.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568412",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568412&eventtype=EQ",
+          "updated": "2026-09-28T03:25:06.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty2b"
+        },
+        {
+          "id": "emsc-20260928_0000043",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000043",
+          "updated": "2026-09-28T06:31:20.909893Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty2b"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260928T0528-s21e168",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-28T05:28:08.891Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "39 km ENE of Tadine, New Caledonia",
+        "lat": -21.3968,
+        "lon": 168.2294,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty36",
+      "evidence": [
+        {
+          "id": "usgs-us6000ty33",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty33",
+          "updated": "2026-09-28T05:48:28.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568429",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568429&eventtype=EQ",
+          "updated": "2026-09-28T05:28:08.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty33"
+        },
+        {
+          "id": "emsc-20260928_0000080",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000080",
+          "updated": "2026-09-28T06:34:49.482367Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty33"
+        },
+        {
+          "id": "usgs-us6000ty3a",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty3a",
+          "updated": "2026-09-28T06:35:18.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000ty36",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty36",
+          "updated": "2026-09-28T06:59:32.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568438",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568438&eventtype=EQ",
+          "updated": "2026-09-28T05:42:32.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty36"
+        },
+        {
+          "id": "emsc-20260928_0000088",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000088",
+          "updated": "2026-09-28T11:53:31.093505Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty36"
+        },
+        {
+          "id": "usgs-us6000ty38",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000ty38",
+          "updated": "2026-09-28T06:02:20.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568434",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568434&eventtype=EQ",
+          "updated": "2026-09-28T05:45:29.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty38"
+        },
+        {
+          "id": "emsc-20260928_0000081",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260928_0000081",
+          "updated": "2026-09-28T06:35:15.84789Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000ty38"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260929T0323-s21e168",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-29T03:23:54.418Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "76 km NE of Tadine, New Caledonia",
+        "lat": -21.0716,
+        "lon": 168.4092,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tya5",
+      "evidence": [
+        {
+          "id": "usgs-us6000tya5",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tya5",
+          "updated": "2026-09-29T04:14:01.080Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568564",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568564&eventtype=EQ",
+          "updated": "2026-09-29T03:23:54.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tya5"
+        },
+        {
+          "id": "emsc-20260929_0000040",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260929_0000040",
+          "updated": "2026-09-29T06:47:58.695717Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tya5"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260929T1042-s21e169",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-29T10:42:57.409Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "77 km ENE of Tadine, New Caledonia",
+        "lat": -21.3447,
+        "lon": 168.5924,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tybr",
+      "evidence": [
+        {
+          "id": "usgs-us6000tybr",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tybr",
+          "updated": "2026-09-29T10:59:19.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568597",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568597&eventtype=EQ",
+          "updated": "2026-09-29T10:42:57.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tybr"
+        },
+        {
+          "id": "emsc-20260929_0000133",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260929_0000133",
+          "updated": "2026-09-29T12:12:35.338354Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tybr"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-TON-20260929T1240-s21w174",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-29T12:40:35.064Z",
+      "end": null,
+      "geography": {
+        "country": "Tonga",
+        "region": "99 km SSE of Pangai, Tonga",
+        "lat": -20.6773,
+        "lon": -174.0813,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyc1",
+      "evidence": [
+        {
+          "id": "usgs-us6000tyc1",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyc1",
+          "updated": "2026-09-30T12:46:01.098Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568610",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568610&eventtype=EQ",
+          "updated": "2026-09-29T12:40:35.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyc1"
+        },
+        {
+          "id": "emsc-20260929_0000164",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260929_0000164",
+          "updated": "2026-09-30T06:42:33.599221Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyc1"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000tx3m|Earthquake aftershock sequence|2026-09-23T14:41:02.650Z|2026-09-30T14:41:02.650Z|Tonga|180 km NW of Hihifo, Tonga|-14.937|-175.111|event|-",
+          "subject": "usgs-us6000tx3m"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-SMR-20260929T1306-s35w016",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-29T13:06:09.000Z",
+      "end": null,
+      "geography": {
+        "country": "Southern Mid-Atlantic Ridge",
+        "region": null,
+        "lat": -35.2758,
+        "lon": -16.0771,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "GDACS",
+      "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568614&eventtype=EQ",
+      "evidence": [
+        {
+          "id": "gdacs-EQ-1568614",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568614&eventtype=EQ",
+          "updated": "2026-09-29T13:06:09.000Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "usgs-us6000tyc3",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyc3",
+          "updated": "2026-09-30T17:24:04.040Z",
+          "locationPrecision": null,
+          "mergedUpstream": "gdacs-EQ-1568614"
+        },
+        {
+          "id": "emsc-20260929_0000169",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260929_0000169",
+          "updated": "2026-09-30T14:49:53.382372Z",
+          "locationPrecision": null,
+          "mergedUpstream": "gdacs-EQ-1568614"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-gdacs-EQ-1568614|Earthquake aftershock sequence|2026-09-29T13:06:09.000Z|2026-10-06T13:06:09.000Z|Southern Mid-Atlantic Ridge|Earthquake in Southern Mid-Atlantic Ridge|-35.276|-16.077|event|-",
+          "subject": "gdacs-EQ-1568614"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-TON-20260929T1613-s19w174",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-29T16:13:02.568Z",
+      "end": null,
+      "geography": {
+        "country": "Tonga",
+        "region": "50 km N of Fangale’ounga, Tonga",
+        "lat": -19.2971,
+        "lon": -174.2536,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tycv",
+      "evidence": [
+        {
+          "id": "usgs-us6000tycv",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tycv",
+          "updated": "2026-09-30T14:20:29.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568655",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568655&eventtype=EQ",
+          "updated": "2026-09-29T16:13:02.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tycv"
+        },
+        {
+          "id": "emsc-20260929_0000239",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260929_0000239",
+          "updated": "2026-09-30T14:50:34.026162Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tycv"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000tx3m|Earthquake aftershock sequence|2026-09-23T14:41:02.650Z|2026-09-30T14:41:02.650Z|Tonga|180 km NW of Hihifo, Tonga|-14.937|-175.111|event|-",
+          "subject": "usgs-us6000tx3m"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260930T0117-s21e168",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-30T01:17:47.844Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "75 km NE of Tadine, New Caledonia",
+        "lat": -21.0085,
+        "lon": 168.3284,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tygq",
+      "evidence": [
+        {
+          "id": "usgs-us6000tygq",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tygq",
+          "updated": "2026-09-30T01:35:08.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568703",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568703&eventtype=EQ",
+          "updated": "2026-09-30T01:17:47.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tygq"
+        },
+        {
+          "id": "emsc-20260930_0000017",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260930_0000017",
+          "updated": "2026-09-30T06:47:22.554208Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tygq"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-JAP-20260930T0500-n24e123",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-30T05:00:24.971Z",
+      "end": null,
+      "geography": {
+        "country": "Japan",
+        "region": "74 km S of Yonakuni, Japan",
+        "lat": 23.8027,
+        "lon": 122.9149,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyhk",
+      "evidence": [
+        {
+          "id": "usgs-us6000tyhk",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyhk",
+          "updated": "2026-09-30T17:22:25.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568726",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568726&eventtype=EQ",
+          "updated": "2026-09-30T05:00:24.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyhk"
+        },
+        {
+          "id": "emsc-20260930_0000048",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260930_0000048",
+          "updated": "2026-09-30T06:49:26.936316Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyhk"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000tyhk|Earthquake aftershock sequence|2026-09-30T05:00:24.971Z|2026-10-07T05:00:24.971Z|Japan|74 km S of Yonakuni, Japan|23.803|122.915|event|-",
+          "subject": "usgs-us6000tyhk"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-NC-20260930T0650-s21e168",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-30T06:50:03.339Z",
+      "end": null,
+      "geography": {
+        "country": "New Caledonia",
+        "region": "83 km NE of Tadine, New Caledonia",
+        "lat": -20.988,
+        "lon": 168.4237,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyid",
+      "evidence": [
+        {
+          "id": "usgs-us6000tyid",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyid",
+          "updated": "2026-09-30T07:07:04.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568735",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568735&eventtype=EQ",
+          "updated": "2026-09-30T06:50:03.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyid"
+        },
+        {
+          "id": "emsc-20260930_0000060",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260930_0000060",
+          "updated": "2026-09-30T09:19:32.155941Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyid"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txpi|Earthquake aftershock sequence|2026-09-25T21:23:03.309Z|2026-10-02T21:23:03.309Z|New Caledonia|80 km ENE of Tadine, New Caledonia|-21.298|168.610|event|-",
+          "subject": "usgs-us6000txpi"
+        },
+        {
+          "claim": "OUT-aftershock-usgs-us6000txqi|Earthquake aftershock sequence|2026-09-25T23:39:41.392Z|2026-10-02T23:39:41.392Z|New Caledonia|61 km ENE of Tadine, New Caledonia|-21.375|168.445|event|-",
+          "subject": "usgs-us6000txqi"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-PNG-20260930T0815-s05e152",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-30T08:15:17.486Z",
+      "end": null,
+      "geography": {
+        "country": "Papua New Guinea",
+        "region": "121 km S of Kokopo, Papua New Guinea",
+        "lat": -5.435,
+        "lon": 152.1328,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyit",
+      "evidence": [
+        {
+          "id": "usgs-us6000tyit",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tyit",
+          "updated": "2026-09-30T08:31:11.040Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568740",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568740&eventtype=EQ",
+          "updated": "2026-09-30T08:15:17.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyit"
+        },
+        {
+          "id": "emsc-20260930_0000075",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260930_0000075",
+          "updated": "2026-09-30T09:20:14.477837Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tyit"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000txtc|Earthquake aftershock sequence|2026-09-26T14:08:17.704Z|2026-10-03T14:08:17.704Z|Papua New Guinea|74 km ESE of Kokopo, Papua New Guinea|-4.695|152.838|event|-",
+          "subject": "usgs-us6000txtc"
+        }
+      ]
+    },
+    {
+      "canonicalEventId": "OBS-earthquake-CR-20260930T2155-n10w087",
+      "hazard": "earthquake",
+      "hazardLabel": "Earthquake",
+      "onset": "2026-09-30T21:55:26.169Z",
+      "end": null,
+      "geography": {
+        "country": "Costa Rica",
+        "region": "94 km SW of Tamarindo, Costa Rica",
+        "lat": 9.7526,
+        "lon": -86.5063,
+        "locationPrecision": "incident"
+      },
+      "magnitude": null,
+      "source": "USGS",
+      "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tymj",
+      "evidence": [
+        {
+          "id": "usgs-us6000tymj",
+          "source": "USGS",
+          "sourceUrl": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tymj",
+          "updated": "2026-10-01T00:01:11.426Z",
+          "locationPrecision": "incident"
+        },
+        {
+          "id": "gdacs-EQ-1568826",
+          "source": "GDACS",
+          "sourceUrl": "https://www.gdacs.org/report.aspx?eventid=1568826&eventtype=EQ",
+          "updated": "2026-09-30T21:55:26.000Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tymj"
+        },
+        {
+          "id": "emsc-20260930_0000275",
+          "source": "EMSC",
+          "sourceUrl": "https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=20260930_0000275",
+          "updated": "2026-09-30T22:39:20.367911Z",
+          "locationPrecision": null,
+          "mergedUpstream": "usgs-us6000tymj"
+        }
+      ],
+      "significant": false,
+      "significanceReason": "No reported casualties, displacement or authority alert level that would make this a disaster rather than a hazard record.",
+      "firstRecordedAt": "2026-10-01T01:59:50.023Z",
+      "lastSeenAt": "2026-10-01T01:59:46.333Z",
+      "sightings": [
+        {
+          "from": "2026-10-01T01:59:46.333Z",
+          "to": "2026-10-01T01:59:46.333Z",
+          "fromScan": "scan-2026-10-01T01-59-46-333Z",
+          "toScan": "scan-2026-10-01T01-59-46-333Z"
+        }
+      ],
+      "keptFor": [
+        {
+          "claim": "OUT-aftershock-usgs-us6000tymj|Earthquake aftershock sequence|2026-09-30T21:55:26.169Z|2026-10-07T21:55:26.169Z|Costa Rica|94 km SW of Tamarindo, Costa Rica|9.753|-86.506|event|-",
+          "subject": "usgs-us6000tymj"
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-09-27T01:13:30.649Z",
+  "updatedAt": "2026-10-01T01:59:50.023Z",
   "method": {
     "canonicalisation": "Provider records are grouped into one disaster when they share a hazard family and fall inside that hazard’s matching window. Where either record is placed at an area centre, kilometres between them say nothing, so the match is by country and time instead.",
     "significance": "An event enters this ledger when deaths or missing are reported, at least 1,000 people are displaced, at least 10,000 affected, an authority raised a red or orange alert, ReliefWeb declared a disaster, or an earthquake reached magnitude 6. Each row states which of those applied.",
@@ -16401,22 +19666,22 @@
     "observationsOnly": "Only a record whose evidence state is an observation is eligible. A forecast is not one, and neither is an official warning: a warning says severe weather is expected, and recording one as a disaster that happened would inflate the recall denominator and manufacture false negatives against forecasts that had nothing to miss. Each run states how many records it set aside on that ground, under lastRun.providerRecordsNotObservations."
   },
   "lastRun": {
-    "at": "2026-09-27T01:13:30.649Z",
-    "providerRecordsEvaluated": 713,
+    "at": "2026-10-01T01:59:50.023Z",
+    "providerRecordsEvaluated": 1448,
     "providerRecordsNotObservations": {
-      "official-warning": 12
+      "official-warning": 61
     },
-    "canonicalEventsFound": 541,
-    "significant": 3,
-    "belowBarNotRecorded": 537,
-    "belowBarStillReconciled": 1,
-    "supportingObservationsKept": 0,
-    "sightingsWithheldFromRetainedSnapshots": 1,
-    "supportingObservationsHeld": 236,
-    "conditionalClaimsRead": 21,
+    "canonicalEventsFound": 1054,
+    "significant": 22,
+    "belowBarNotRecorded": 1032,
+    "belowBarStillReconciled": 0,
+    "supportingObservationsKept": 27,
+    "sightingsWithheldFromRetainedSnapshots": 0,
+    "supportingObservationsHeld": 263,
+    "conditionalClaimsRead": 25,
     "supersededThisRun": 0,
-    "reidentifiedThisRun": 0,
+    "reidentifiedThisRun": 3,
     "distinguishedFromCollidingIdThisRun": 0,
-    "belowSignificanceBar": 538
+    "belowSignificanceBar": 1032
   }
 }
