@@ -11048,6 +11048,211 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-03T00:17:51.855Z",
+      "sinceHours": 3.76,
+      "active": 47,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-239843b99a03debf2e89f255181a3d67fe9eec12-029-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-02T23:00:00.000Z",
+          "targetEnd": "2026-10-04T23:00:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f4113b70258c698e8212873a3c2c4c3f6ed85867-001-1",
+          "type": "Flood",
+          "title": "Flood risk in McDowell, West Virginia, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-02T22:41:00.000Z",
+          "targetEnd": "2026-10-05T22:41:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032543",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-02T00:00:00.000Z",
+          "targetEnd": "2026-10-05T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032541",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil — 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-02T00:00:00.000Z",
+          "targetEnd": "2026-10-05T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-03T00:00:00.000Z",
+          "targetEnd": "2026-10-08T00:00:00.000Z",
+          "provider": "nhc",
+          "from": "Watch",
+          "to": "Moderate"
+        }
+      ],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-03T00:00:00.000Z",
+          "targetEnd": "2026-10-08T00:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-07T18:00:00.000Z",
+          "toEnd": "2026-10-08T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep182026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Rachel — 5-day forecast",
+          "country": "Rachel (eastern Pacific system 3)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-02T21:00:00.000Z",
+          "targetEnd": "2026-10-07T21:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-07T15:00:00.000Z",
+          "toEnd": "2026-10-07T21:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032446",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Paraguay — 3-day forecast",
+          "country": "Paraguay",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-02T00:00:00.000Z",
+          "targetEnd": "2026-10-05T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-03T00:00:00.000Z",
+          "toEnd": "2026-10-05T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-5060da5893f76d393257f287dc88385584c4387a-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Columbia, Florida, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-02T20:26:00.000Z",
+          "targetEnd": "2026-10-05T20:26:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-21de8e68de320a417a4766b2a48848ac868ed16f-026-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Adak to Kiska Bering Side, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-02T11:45:00.000Z",
+          "targetEnd": "2026-10-04T11:45:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032539",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-02T00:00:00.000Z",
+          "targetEnd": "2026-10-05T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032537",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil — 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-02T00:00:00.000Z",
+          "targetEnd": "2026-10-05T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001323",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Storm Fay — 5-day forecast",
+          "country": "Tropical Cyclone FAY-26",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-29T21:00:00.000Z",
+          "targetEnd": "2026-10-04T21:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-aftershock-usgs-us6000txpi",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk 80 km ENE of Tadine, New Caledonia — 7-day forecast",
+          "country": "New Caledonia",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-09-25T21:23:03.309Z",
+          "targetEnd": "2026-10-02T21:23:03.309Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000txqi",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk 61 km ENE of Tadine, New Caledonia — 7-day forecast",
+          "country": "New Caledonia",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-09-25T23:39:41.392Z",
+          "targetEnd": "2026-10-02T23:39:41.392Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032473",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia — 3-day forecast",
+          "country": "Bolivia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-30T00:00:00.000Z",
+          "targetEnd": "2026-10-03T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -11062,27 +11267,49 @@
       "targetEnd": "2026-10-05T03:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-aftershock-usgs-us6000txpi": {
-      "id": "OUT-aftershock-usgs-us6000txpi",
-      "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk 80 km ENE of Tadine, New Caledonia — 7-day forecast",
-      "country": "New Caledonia",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-09-25T21:23:03.309Z",
-      "targetEnd": "2026-10-02T21:23:03.309Z",
-      "provider": "usgs"
+    "OUT-nhc-ep152026": {
+      "id": "OUT-nhc-ep152026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+      "country": "Nolo (central Pacific system 2)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-03T00:00:00.000Z",
+      "targetEnd": "2026-10-08T00:00:00.000Z",
+      "provider": "nhc"
     },
-    "OUT-0-5060da5893f76d393257f287dc88385584c4387a-001-1": {
-      "id": "OUT-0-5060da5893f76d393257f287dc88385584c4387a-001-1",
-      "type": "Flood",
-      "title": "Flood risk in Columbia, Florida, United States — 3-day forecast",
+    "OUT-0-239843b99a03debf2e89f255181a3d67fe9eec12-029-1": {
+      "id": "OUT-0-239843b99a03debf2e89f255181a3d67fe9eec12-029-1",
+      "type": "Storm Warning",
+      "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States — 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-02T20:26:00.000Z",
-      "targetEnd": "2026-10-05T20:26:00.000Z",
+      "targetStart": "2026-10-02T23:00:00.000Z",
+      "targetEnd": "2026-10-04T23:00:00.000Z",
       "provider": "nws"
+    },
+    "OUT-0-f4113b70258c698e8212873a3c2c4c3f6ed85867-001-1": {
+      "id": "OUT-0-f4113b70258c698e8212873a3c2c4c3f6ed85867-001-1",
+      "type": "Flood",
+      "title": "Flood risk in McDowell, West Virginia, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-02T22:41:00.000Z",
+      "targetEnd": "2026-10-05T22:41:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-nhc-ep182026": {
+      "id": "OUT-nhc-ep182026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Rachel — 5-day forecast",
+      "country": "Rachel (eastern Pacific system 3)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-02T21:00:00.000Z",
+      "targetEnd": "2026-10-07T21:00:00.000Z",
+      "provider": "nhc"
     },
     "OUT-usgs-volcano-311120": {
       "id": "OUT-usgs-volcano-311120",
@@ -11115,28 +11342,6 @@
       "rank": 2,
       "targetStart": "2026-10-02T16:05:00.000Z",
       "targetEnd": "2026-10-07T16:05:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-nhc-ep182026": {
-      "id": "OUT-nhc-ep182026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Rachel — 5-day forecast",
-      "country": "Rachel (eastern Pacific system 3)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-02T15:00:00.000Z",
-      "targetEnd": "2026-10-07T15:00:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-0-21de8e68de320a417a4766b2a48848ac868ed16f-026-1": {
-      "id": "OUT-0-21de8e68de320a417a4766b2a48848ac868ed16f-026-1",
-      "type": "Storm Warning",
-      "title": "Storm Warning risk in Adak to Kiska Bering Side, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-02T11:45:00.000Z",
-      "targetEnd": "2026-10-04T11:45:00.000Z",
       "provider": "nws"
     },
     "OUT-gdacs-DR-1018332": {
@@ -11227,33 +11432,11 @@
       "targetEnd": "2026-10-03T14:08:18.875Z",
       "provider": "usgs"
     },
-    "OUT-aftershock-usgs-us6000txqi": {
-      "id": "OUT-aftershock-usgs-us6000txqi",
-      "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk 61 km ENE of Tadine, New Caledonia — 7-day forecast",
-      "country": "New Caledonia",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-09-25T23:39:41.392Z",
-      "targetEnd": "2026-10-02T23:39:41.392Z",
-      "provider": "usgs"
-    },
-    "OUT-nhc-ep152026": {
-      "id": "OUT-nhc-ep152026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Storm Nolo — 5-day forecast",
-      "country": "Nolo (central Pacific system 2)",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-02T18:00:00.000Z",
-      "targetEnd": "2026-10-07T18:00:00.000Z",
-      "provider": "nhc"
-    },
     "OUT-gdacs-TC-1001332": {
       "id": "OUT-gdacs-TC-1001332",
       "type": "Tropical Cyclone",
       "title": "Storm risk from Typhoon Choi-wan — 5-day forecast",
-      "country": "Northern Mariana Islands, Guam, Russian Federation",
+      "country": "Northern Mariana Islands, Guam",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-02T18:00:00.000Z",
@@ -11348,11 +11531,22 @@
       "targetEnd": "2026-11-01T07:07:30.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032539": {
-      "id": "OUT-gdacs-WF-1032539",
+    "OUT-gdacs-WF-1032543": {
+      "id": "OUT-gdacs-WF-1032543",
       "type": "Wildfire",
       "title": "Wildfire risk in Indonesia — 3-day forecast",
       "country": "Indonesia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-02T00:00:00.000Z",
+      "targetEnd": "2026-10-05T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032541": {
+      "id": "OUT-gdacs-WF-1032541",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Brazil — 3-day forecast",
+      "country": "Brazil",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-02T00:00:00.000Z",
@@ -11364,17 +11558,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Australia — 3-day forecast",
       "country": "Australia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-02T00:00:00.000Z",
-      "targetEnd": "2026-10-05T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032537": {
-      "id": "OUT-gdacs-WF-1032537",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Brazil — 3-day forecast",
-      "country": "Brazil",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-02T00:00:00.000Z",
@@ -11419,6 +11602,17 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Tanzania — 3-day forecast",
       "country": "Tanzania",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-02T00:00:00.000Z",
+      "targetEnd": "2026-10-05T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032446": {
+      "id": "OUT-gdacs-WF-1032446",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Paraguay — 3-day forecast",
+      "country": "Paraguay",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-02T00:00:00.000Z",
@@ -11568,39 +11762,6 @@
       "targetEnd": "2026-10-03T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032446": {
-      "id": "OUT-gdacs-WF-1032446",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Paraguay — 3-day forecast",
-      "country": "Paraguay",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-09-30T00:00:00.000Z",
-      "targetEnd": "2026-10-03T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032473": {
-      "id": "OUT-gdacs-WF-1032473",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Bolivia — 3-day forecast",
-      "country": "Bolivia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-09-30T00:00:00.000Z",
-      "targetEnd": "2026-10-03T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-TC-1001323": {
-      "id": "OUT-gdacs-TC-1001323",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Storm Fay — 5-day forecast",
-      "country": "Tropical Cyclone FAY-26",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-09-29T21:00:00.000Z",
-      "targetEnd": "2026-10-04T21:00:00.000Z",
-      "provider": "gdacs"
-    },
     "OUT-gdacs-VO-1000150": {
       "id": "OUT-gdacs-VO-1000150",
       "type": "Volcano",
@@ -11613,10 +11774,10 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-02T20:31:58.778Z",
+  "updatedAt": "2026-10-03T00:17:51.855Z",
   "observedCadenceHours": {
-    "runs": 37,
-    "median": 4.91,
+    "runs": 38,
+    "median": 4.8,
     "min": 1.54,
     "max": 96.77
   }
