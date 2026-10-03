@@ -2721,6 +2721,86 @@
           "failureReason": null
         }
       ]
+    },
+    {
+      "scanId": "scan-2026-10-03T23-37-55-081Z",
+      "scanTimestamp": "2026-10-03T23:37:55.081Z",
+      "engineVersion": "scan-1.0.0",
+      "providerVersion": "1e84fa235c36",
+      "providers": [
+        {
+          "provider": "gdacs",
+          "status": "INCOMPLETE_SCAN",
+          "success": true,
+          "recordsEvaluated": 962,
+          "recordsServed": 852,
+          "dataFreshness": "2026-10-03T18:00:00.000Z",
+          "failureReason": "GDACS was not read in full for earthquake, wildfire: the search failed or every page asked for came back full."
+        },
+        {
+          "provider": "usgs",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 326,
+          "recordsServed": 305,
+          "dataFreshness": "2026-10-03T23:36:34.539Z",
+          "failureReason": null
+        },
+        {
+          "provider": "emsc",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 80,
+          "recordsServed": 15,
+          "dataFreshness": "2026-10-03T23:28:49.240Z",
+          "failureReason": null
+        },
+        {
+          "provider": "eonet",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 300,
+          "recordsServed": 287,
+          "dataFreshness": "2026-09-30T08:56:00.000Z",
+          "failureReason": null
+        },
+        {
+          "provider": "nhc",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 2,
+          "recordsServed": 2,
+          "dataFreshness": "2026-10-03T21:00:00.000Z",
+          "failureReason": null
+        },
+        {
+          "provider": "nws",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 19,
+          "recordsServed": 17,
+          "dataFreshness": "2026-10-03T22:42:25.000Z",
+          "failureReason": null
+        },
+        {
+          "provider": "reliefweb",
+          "status": "DATA_UNAVAILABLE",
+          "success": false,
+          "recordsEvaluated": 0,
+          "recordsServed": 0,
+          "dataFreshness": null,
+          "failureReason": "HTTP 406 — {\"error\":\"Blocked due to bot activity.\",\"info\":\"If you are a human, please contact hdx@un.org so that we can investigate why you encountered this problem.\"}"
+        },
+        {
+          "provider": "usgs_volcano",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 5,
+          "recordsServed": 5,
+          "dataFreshness": "2026-10-03T21:42:47.000Z",
+          "failureReason": null
+        }
+      ]
     }
   ],
   "engineVersion": "scan-1.0.0",
@@ -3268,74 +3348,74 @@
   },
   "providerVersionNote": "Each scan records the provider definitions in force when it ran, under providerVersions. A definition is never applied backwards: widening a provider’s scope or calling it exhaustive changes what future scans can establish, never what past ones did.",
   "aggregate": {
-    "scansRecorded": 34,
+    "scansRecorded": 35,
     "byProvider": {
       "gdacs": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
           "SCANNED": 21,
-          "INCOMPLETE_SCAN": 13
+          "INCOMPLETE_SCAN": 14
         },
-        "recordsEvaluated": 14610
+        "recordsEvaluated": 15572
       },
       "usgs": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
-          "SCANNED": 34
+          "SCANNED": 35
         },
-        "recordsEvaluated": 11527
+        "recordsEvaluated": 11853
       },
       "emsc": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
-          "SCANNED": 34
+          "SCANNED": 35
         },
-        "recordsEvaluated": 2720
+        "recordsEvaluated": 2800
       },
       "eonet": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
-          "SCANNED": 33,
+          "SCANNED": 34,
           "DATA_UNAVAILABLE": 1
         },
-        "recordsEvaluated": 9900
+        "recordsEvaluated": 10200
       },
       "nhc": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
-          "SCANNED": 34
+          "SCANNED": 35
         },
-        "recordsEvaluated": 123
+        "recordsEvaluated": 125
       },
       "nws": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
           "INCOMPLETE_SCAN": 22,
-          "SCANNED": 12
+          "SCANNED": 13
         },
-        "recordsEvaluated": 726
+        "recordsEvaluated": 745
       },
       "reliefweb": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
-          "DATA_UNAVAILABLE": 34
+          "DATA_UNAVAILABLE": 35
         },
         "recordsEvaluated": 0
       },
       "usgs_volcano": {
-        "scans": 34,
+        "scans": 35,
         "byStatus": {
-          "SCANNED": 34
+          "SCANNED": 35
         },
-        "recordsEvaluated": 146
+        "recordsEvaluated": 151
       }
     }
   },
   "retention": {
-    "detailedScansRetained": 34,
+    "detailedScansRetained": 35,
     "retainLimit": 2000,
     "detailFrom": "2026-09-23T11:08:51.550Z",
     "note": "Per-scan detail is held for the most recent 2000 scans. Coverage before detailFrom cannot be established from this ledger and must be reported as DATA_UNAVAILABLE, never as scanned or unscanned."
   },
-  "updatedAt": "2026-10-03T20:49:31.924Z"
+  "updatedAt": "2026-10-03T23:37:55.081Z"
 }
