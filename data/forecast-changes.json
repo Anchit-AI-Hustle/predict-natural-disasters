@@ -12720,30 +12720,352 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-04T12:03:19.883Z",
+      "sinceHours": 6.88,
+      "active": 43,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-ca1643a2a7e568575d7ee9cb20a812c3ef285e2e-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Okaloosa, Florida, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T11:52:00.000Z",
+          "targetEnd": "2026-10-07T11:52:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f3e73694ac60e7986ede99d048745755d31d3d35-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Apalachee Bay or Coastal Waters From Keaton Beach to Ochlockonee River Fl out to 20 Nm and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T11:41:00.000Z",
+          "targetEnd": "2026-10-06T11:41:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000tzid",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Volcano Islands, Japan region — 7-day forecast",
+          "country": "Japan region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T11:12:48.270Z",
+          "targetEnd": "2026-10-11T11:12:48.270Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-0-adae2a98718f4033f926a8ca68e6d87f6cc1d12f-001-1",
+          "type": "Extreme Heat",
+          "title": "Extreme Heat risk in Death Valley National Park, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T07:19:00.000Z",
+          "targetEnd": "2026-10-09T07:19:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-a2801106c8540993e90bd4b4ce050d593e7ee55b-001-1",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Sweetwater County/Rock Springs Blm/Flaming Gorge Nra and 3 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T07:01:00.000Z",
+          "targetEnd": "2026-10-07T07:01:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-nws-v1-3-13-6-1551638-1791072865432",
+          "type": "Local Area Emergency",
+          "title": "Local Area Emergency risk in Mono, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T00:14:26.000Z",
+          "targetEnd": "2026-10-07T00:14:26.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032561",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Australia — 3-day forecast",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032560",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032559",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
+          "country": "Papua New Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104122",
+          "type": "Flood",
+          "title": "Flood risk in Thailand — 3-day forecast",
+          "country": "Thailand",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-03T01:00:00.000Z",
+          "targetEnd": "2026-10-06T01:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T09:00:00.000Z",
+          "targetEnd": "2026-10-09T09:00:00.000Z",
+          "provider": "nhc",
+          "from": "High",
+          "to": "Moderate"
+        }
+      ],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep182026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Rachel — 5-day forecast",
+          "country": "Rachel (eastern Pacific system 3)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T09:00:00.000Z",
+          "targetEnd": "2026-10-09T09:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-09T03:00:00.000Z",
+          "toEnd": "2026-10-09T09:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T09:00:00.000Z",
+          "targetEnd": "2026-10-09T09:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-09T03:00:00.000Z",
+          "toEnd": "2026-10-09T09:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001332",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Choi-wan — 5-day forecast",
+          "country": "Guam, Northern Mariana Islands",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T06:00:00.000Z",
+          "targetEnd": "2026-10-09T06:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-09T00:00:00.000Z",
+          "toEnd": "2026-10-09T06:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032551",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil — 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-06T00:00:00.000Z",
+          "toEnd": "2026-10-07T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032527",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Papua New Guinea and Indonesia — 3-day forecast",
+          "country": "Papua New Guinea, Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-06T00:00:00.000Z",
+          "toEnd": "2026-10-07T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032505",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Tanzania — 3-day forecast",
+          "country": "Tanzania",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-06T00:00:00.000Z",
+          "toEnd": "2026-10-07T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032446",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Paraguay — 3-day forecast",
+          "country": "Paraguay",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T00:00:00.000Z",
+          "targetEnd": "2026-10-07T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-06T00:00:00.000Z",
+          "toEnd": "2026-10-07T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-a62971802eff2d6956d6517790e552607780737e-002-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Ashland and 1 nearby area, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T04:32:00.000Z",
+          "targetEnd": "2026-10-09T04:32:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f2393cd32cc7b9d048b863784cda329b43b22fe7-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Victoria, Texas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T02:44:00.000Z",
+          "targetEnd": "2026-10-07T02:44:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-nws-v1-3-13-6-1551659-1791078269480",
+          "type": "Local Area Emergency",
+          "title": "Local Area Emergency risk in Mono, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T01:44:30.000Z",
+          "targetEnd": "2026-10-07T01:44:30.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f805c03dd1b7f214ceaa7d47a2310bd10ebe15bf-001-1",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Gallatin National Forest and 1 nearby area, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T01:37:00.000Z",
+          "targetEnd": "2026-10-07T01:37:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032555",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-03T00:00:00.000Z",
+          "targetEnd": "2026-10-06T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032554",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
+          "country": "Papua New Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-03T00:00:00.000Z",
+          "targetEnd": "2026-10-06T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032553",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Australia — 3-day forecast",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-03T00:00:00.000Z",
+          "targetEnd": "2026-10-06T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-nhc-ep152026": {
-      "id": "OUT-nhc-ep152026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Nolo — 5-day forecast",
-      "country": "Nolo (central Pacific system 2)",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-04T03:00:00.000Z",
-      "targetEnd": "2026-10-09T03:00:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-0-a62971802eff2d6956d6517790e552607780737e-002-1": {
-      "id": "OUT-0-a62971802eff2d6956d6517790e552607780737e-002-1",
-      "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Ashland and 1 nearby area, United States — 5-day forecast",
+    "OUT-0-ca1643a2a7e568575d7ee9cb20a812c3ef285e2e-001-1": {
+      "id": "OUT-0-ca1643a2a7e568575d7ee9cb20a812c3ef285e2e-001-1",
+      "type": "Flood",
+      "title": "Flood risk in Okaloosa, Florida, United States — 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-04T04:32:00.000Z",
-      "targetEnd": "2026-10-09T04:32:00.000Z",
+      "targetStart": "2026-10-04T11:52:00.000Z",
+      "targetEnd": "2026-10-07T11:52:00.000Z",
       "provider": "nws"
+    },
+    "OUT-0-f3e73694ac60e7986ede99d048745755d31d3d35-001-1": {
+      "id": "OUT-0-f3e73694ac60e7986ede99d048745755d31d3d35-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Apalachee Bay or Coastal Waters From Keaton Beach to Ochlockonee River Fl out to 20 Nm and 1 nearby area, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-04T11:41:00.000Z",
+      "targetEnd": "2026-10-06T11:41:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-aftershock-usgs-us6000tzid": {
+      "id": "OUT-aftershock-usgs-us6000tzid",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Volcano Islands, Japan region — 7-day forecast",
+      "country": "Japan region",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-04T11:12:48.270Z",
+      "targetEnd": "2026-10-11T11:12:48.270Z",
+      "provider": "usgs"
     },
     "OUT-nhc-ep182026": {
       "id": "OUT-nhc-ep182026",
@@ -12752,41 +13074,52 @@
       "country": "Rachel (eastern Pacific system 3)",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-04T03:00:00.000Z",
-      "targetEnd": "2026-10-09T03:00:00.000Z",
+      "targetStart": "2026-10-04T09:00:00.000Z",
+      "targetEnd": "2026-10-09T09:00:00.000Z",
       "provider": "nhc"
     },
-    "OUT-0-f2393cd32cc7b9d048b863784cda329b43b22fe7-001-1": {
-      "id": "OUT-0-f2393cd32cc7b9d048b863784cda329b43b22fe7-001-1",
-      "type": "Flood",
-      "title": "Flood risk in Victoria, Texas, United States — 3-day forecast",
+    "OUT-nhc-ep152026": {
+      "id": "OUT-nhc-ep152026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+      "country": "Nolo (central Pacific system 2)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-04T09:00:00.000Z",
+      "targetEnd": "2026-10-09T09:00:00.000Z",
+      "provider": "nhc"
+    },
+    "OUT-0-adae2a98718f4033f926a8ca68e6d87f6cc1d12f-001-1": {
+      "id": "OUT-0-adae2a98718f4033f926a8ca68e6d87f6cc1d12f-001-1",
+      "type": "Extreme Heat",
+      "title": "Extreme Heat risk in Death Valley National Park, United States — 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-04T02:44:00.000Z",
-      "targetEnd": "2026-10-07T02:44:00.000Z",
+      "targetStart": "2026-10-04T07:19:00.000Z",
+      "targetEnd": "2026-10-09T07:19:00.000Z",
       "provider": "nws"
     },
-    "OUT-nws-v1-3-13-6-1551659-1791078269480": {
-      "id": "OUT-nws-v1-3-13-6-1551659-1791078269480",
+    "OUT-0-a2801106c8540993e90bd4b4ce050d593e7ee55b-001-1": {
+      "id": "OUT-0-a2801106c8540993e90bd4b4ce050d593e7ee55b-001-1",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Sweetwater County/Rock Springs Blm/Flaming Gorge Nra and 3 nearby areas, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-04T07:01:00.000Z",
+      "targetEnd": "2026-10-07T07:01:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-nws-v1-3-13-6-1551638-1791072865432": {
+      "id": "OUT-nws-v1-3-13-6-1551638-1791072865432",
       "type": "Local Area Emergency",
       "title": "Local Area Emergency risk in Mono, United States — 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-04T01:44:30.000Z",
-      "targetEnd": "2026-10-07T01:44:30.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-f805c03dd1b7f214ceaa7d47a2310bd10ebe15bf-001-1": {
-      "id": "OUT-0-f805c03dd1b7f214ceaa7d47a2310bd10ebe15bf-001-1",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Gallatin National Forest and 1 nearby area, United States — 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-04T01:37:00.000Z",
-      "targetEnd": "2026-10-07T01:37:00.000Z",
+      "targetStart": "2026-10-04T00:14:26.000Z",
+      "targetEnd": "2026-10-07T00:14:26.000Z",
       "provider": "nws"
     },
     "OUT-aftershock-usgs-us6000tzfg": {
@@ -12914,11 +13247,88 @@
       "id": "OUT-gdacs-TC-1001332",
       "type": "Tropical Cyclone",
       "title": "Storm risk from Typhoon Choi-wan — 5-day forecast",
-      "country": "Guam, Northern Mariana Islands, Russian Federation, United States",
+      "country": "Guam, Northern Mariana Islands",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T06:00:00.000Z",
+      "targetEnd": "2026-10-09T06:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032561": {
+      "id": "OUT-gdacs-WF-1032561",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Australia — 3-day forecast",
+      "country": "Australia",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-04T00:00:00.000Z",
-      "targetEnd": "2026-10-09T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032560": {
+      "id": "OUT-gdacs-WF-1032560",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Indonesia — 3-day forecast",
+      "country": "Indonesia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032559": {
+      "id": "OUT-gdacs-WF-1032559",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
+      "country": "Papua New Guinea",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032551": {
+      "id": "OUT-gdacs-WF-1032551",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Brazil — 3-day forecast",
+      "country": "Brazil",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032527": {
+      "id": "OUT-gdacs-WF-1032527",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Papua New Guinea and Indonesia — 3-day forecast",
+      "country": "Papua New Guinea, Indonesia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032505": {
+      "id": "OUT-gdacs-WF-1032505",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Tanzania — 3-day forecast",
+      "country": "Tanzania",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032446": {
+      "id": "OUT-gdacs-WF-1032446",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Paraguay — 3-day forecast",
+      "country": "Paraguay",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-04T00:00:00.000Z",
+      "targetEnd": "2026-10-07T00:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104207": {
@@ -12932,37 +13342,15 @@
       "targetEnd": "2026-10-06T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032555": {
-      "id": "OUT-gdacs-WF-1032555",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Indonesia — 3-day forecast",
-      "country": "Indonesia",
+    "OUT-gdacs-FL-1104122": {
+      "id": "OUT-gdacs-FL-1104122",
+      "type": "Flood",
+      "title": "Flood risk in Thailand — 3-day forecast",
+      "country": "Thailand",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032554": {
-      "id": "OUT-gdacs-WF-1032554",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
-      "country": "Papua New Guinea",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032553": {
-      "id": "OUT-gdacs-WF-1032553",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Australia — 3-day forecast",
-      "country": "Australia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
+      "targetStart": "2026-10-03T01:00:00.000Z",
+      "targetEnd": "2026-10-06T01:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032552": {
@@ -12970,50 +13358,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in The Democratic Republic of Congo — 3-day forecast",
       "country": "The Democratic Republic of Congo",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032551": {
-      "id": "OUT-gdacs-WF-1032551",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Brazil — 3-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032527": {
-      "id": "OUT-gdacs-WF-1032527",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Papua New Guinea and Indonesia — 3-day forecast",
-      "country": "Papua New Guinea, Indonesia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032505": {
-      "id": "OUT-gdacs-WF-1032505",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Tanzania — 3-day forecast",
-      "country": "Tanzania",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-03T00:00:00.000Z",
-      "targetEnd": "2026-10-06T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032446": {
-      "id": "OUT-gdacs-WF-1032446",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Paraguay — 3-day forecast",
-      "country": "Paraguay",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-03T00:00:00.000Z",
@@ -13119,22 +13463,22 @@
       "targetEnd": "2026-11-01T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032535": {
-      "id": "OUT-gdacs-WF-1032535",
+    "OUT-gdacs-WF-1032229": {
+      "id": "OUT-gdacs-WF-1032229",
       "type": "Wildfire",
-      "title": "Wildfire risk in Kazakhstan — 3-day forecast",
-      "country": "Kazakhstan",
+      "title": "Wildfire risk in Vanuatu — 3-day forecast",
+      "country": "Vanuatu",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-02T00:00:00.000Z",
       "targetEnd": "2026-10-05T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032229": {
-      "id": "OUT-gdacs-WF-1032229",
+    "OUT-gdacs-WF-1032535": {
+      "id": "OUT-gdacs-WF-1032535",
       "type": "Wildfire",
-      "title": "Wildfire risk in Vanuatu — 3-day forecast",
-      "country": "Vanuatu",
+      "title": "Wildfire risk in Kazakhstan — 3-day forecast",
+      "country": "Kazakhstan",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-02T00:00:00.000Z",
@@ -13164,10 +13508,10 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-04T05:10:37.416Z",
+  "updatedAt": "2026-10-04T12:03:19.883Z",
   "observedCadenceHours": {
-    "runs": 44,
-    "median": 4.8,
+    "runs": 45,
+    "median": 4.91,
     "min": 1.54,
     "max": 96.77
   }
