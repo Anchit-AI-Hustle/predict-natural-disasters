@@ -13031,30 +13031,179 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-04T17:22:21.932Z",
+      "sinceHours": 5.32,
+      "active": 42,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-43887a3511a715cc64f99b18d098ed671444ed92-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in North Mobile Bay and 2 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T17:06:00.000Z",
+          "targetEnd": "2026-10-06T17:06:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-b8c59f0f5c4cedebbe1984126b29da349c9bf519-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Jefferson, Louisiana and 1 nearby area, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T16:47:00.000Z",
+          "targetEnd": "2026-10-07T16:47:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-04T15:00:00.000Z",
+          "targetEnd": "2026-10-09T15:00:00.000Z",
+          "provider": "nhc",
+          "from": "Moderate",
+          "to": "High"
+        }
+      ],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep152026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+          "country": "Nolo (central Pacific system 2)",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-04T15:00:00.000Z",
+          "targetEnd": "2026-10-09T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-09T09:00:00.000Z",
+          "toEnd": "2026-10-09T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep182026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Rachel — 5-day forecast",
+          "country": "Rachel (eastern Pacific system 3)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T15:00:00.000Z",
+          "targetEnd": "2026-10-09T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-09T09:00:00.000Z",
+          "toEnd": "2026-10-09T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001332",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Super Typhoon Choi-wan — 5-day forecast",
+          "country": "Guam, Northern Mariana Islands",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-04T12:00:00.000Z",
+          "targetEnd": "2026-10-09T12:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-09T06:00:00.000Z",
+          "toEnd": "2026-10-09T12:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-ca1643a2a7e568575d7ee9cb20a812c3ef285e2e-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Okaloosa, Florida, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T11:52:00.000Z",
+          "targetEnd": "2026-10-07T11:52:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f3e73694ac60e7986ede99d048745755d31d3d35-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Apalachee Bay or Coastal Waters From Keaton Beach to Ochlockonee River Fl out to 20 Nm and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T11:41:00.000Z",
+          "targetEnd": "2026-10-06T11:41:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000tzfg",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk 80 km S of Banda Aceh, Indonesia — 7-day forecast",
+          "country": "Indonesia",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-03T23:37:35.621Z",
+          "targetEnd": "2026-10-10T23:37:35.621Z",
+          "provider": "usgs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-0-ca1643a2a7e568575d7ee9cb20a812c3ef285e2e-001-1": {
-      "id": "OUT-0-ca1643a2a7e568575d7ee9cb20a812c3ef285e2e-001-1",
-      "type": "Flood",
-      "title": "Flood risk in Okaloosa, Florida, United States — 3-day forecast",
+    "OUT-nhc-ep152026": {
+      "id": "OUT-nhc-ep152026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Nolo — 5-day forecast",
+      "country": "Nolo (central Pacific system 2)",
+      "alert": "High",
+      "rank": 3,
+      "targetStart": "2026-10-04T15:00:00.000Z",
+      "targetEnd": "2026-10-09T15:00:00.000Z",
+      "provider": "nhc"
+    },
+    "OUT-0-43887a3511a715cc64f99b18d098ed671444ed92-001-1": {
+      "id": "OUT-0-43887a3511a715cc64f99b18d098ed671444ed92-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in North Mobile Bay and 2 nearby areas, United States — 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-04T11:52:00.000Z",
-      "targetEnd": "2026-10-07T11:52:00.000Z",
+      "targetStart": "2026-10-04T17:06:00.000Z",
+      "targetEnd": "2026-10-06T17:06:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-f3e73694ac60e7986ede99d048745755d31d3d35-001-1": {
-      "id": "OUT-0-f3e73694ac60e7986ede99d048745755d31d3d35-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in Apalachee Bay or Coastal Waters From Keaton Beach to Ochlockonee River Fl out to 20 Nm and 1 nearby area, United States — 2-day forecast",
+    "OUT-0-b8c59f0f5c4cedebbe1984126b29da349c9bf519-001-1": {
+      "id": "OUT-0-b8c59f0f5c4cedebbe1984126b29da349c9bf519-001-1",
+      "type": "Flood",
+      "title": "Flood risk in Jefferson, Louisiana and 1 nearby area, United States — 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-04T11:41:00.000Z",
-      "targetEnd": "2026-10-06T11:41:00.000Z",
+      "targetStart": "2026-10-04T16:47:00.000Z",
+      "targetEnd": "2026-10-07T16:47:00.000Z",
       "provider": "nws"
+    },
+    "OUT-nhc-ep182026": {
+      "id": "OUT-nhc-ep182026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Rachel — 5-day forecast",
+      "country": "Rachel (eastern Pacific system 3)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-04T15:00:00.000Z",
+      "targetEnd": "2026-10-09T15:00:00.000Z",
+      "provider": "nhc"
     },
     "OUT-aftershock-usgs-us6000tzid": {
       "id": "OUT-aftershock-usgs-us6000tzid",
@@ -13066,28 +13215,6 @@
       "targetStart": "2026-10-04T11:12:48.270Z",
       "targetEnd": "2026-10-11T11:12:48.270Z",
       "provider": "usgs"
-    },
-    "OUT-nhc-ep182026": {
-      "id": "OUT-nhc-ep182026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Rachel — 5-day forecast",
-      "country": "Rachel (eastern Pacific system 3)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-04T09:00:00.000Z",
-      "targetEnd": "2026-10-09T09:00:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-nhc-ep152026": {
-      "id": "OUT-nhc-ep152026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Nolo — 5-day forecast",
-      "country": "Nolo (central Pacific system 2)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-04T09:00:00.000Z",
-      "targetEnd": "2026-10-09T09:00:00.000Z",
-      "provider": "nhc"
     },
     "OUT-0-adae2a98718f4033f926a8ca68e6d87f6cc1d12f-001-1": {
       "id": "OUT-0-adae2a98718f4033f926a8ca68e6d87f6cc1d12f-001-1",
@@ -13121,17 +13248,6 @@
       "targetStart": "2026-10-04T00:14:26.000Z",
       "targetEnd": "2026-10-07T00:14:26.000Z",
       "provider": "nws"
-    },
-    "OUT-aftershock-usgs-us6000tzfg": {
-      "id": "OUT-aftershock-usgs-us6000tzfg",
-      "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk 80 km S of Banda Aceh, Indonesia — 7-day forecast",
-      "country": "Indonesia",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-03T23:37:35.621Z",
-      "targetEnd": "2026-10-10T23:37:35.621Z",
-      "provider": "usgs"
     },
     "OUT-aftershock-usgs-us6000tzer": {
       "id": "OUT-aftershock-usgs-us6000tzer",
@@ -13246,12 +13362,12 @@
     "OUT-gdacs-TC-1001332": {
       "id": "OUT-gdacs-TC-1001332",
       "type": "Tropical Cyclone",
-      "title": "Storm risk from Typhoon Choi-wan — 5-day forecast",
+      "title": "Storm risk from Super Typhoon Choi-wan — 5-day forecast",
       "country": "Guam, Northern Mariana Islands",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-10-04T06:00:00.000Z",
-      "targetEnd": "2026-10-09T06:00:00.000Z",
+      "targetStart": "2026-10-04T12:00:00.000Z",
+      "targetEnd": "2026-10-09T12:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-WF-1032561": {
@@ -13508,9 +13624,9 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-04T12:03:19.883Z",
+  "updatedAt": "2026-10-04T17:22:21.932Z",
   "observedCadenceHours": {
-    "runs": 45,
+    "runs": 46,
     "median": 4.91,
     "min": 1.54,
     "max": 96.77
