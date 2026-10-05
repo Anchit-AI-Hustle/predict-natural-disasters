@@ -13420,20 +13420,116 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-05T00:35:33.540Z",
+      "sinceHours": 3.5,
+      "active": 43,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-417cd312658255572cd09a26f819a978f5d4093e-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in coastal waters from Fernandina Beach to St. Augustine FL out 20 nautical miles and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-05T00:17:00.000Z",
+          "targetEnd": "2026-10-07T00:17:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-48260962a27e0b33db705a662277137d319face4-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Burke, Georgia, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-05T00:17:00.000Z",
+          "targetEnd": "2026-10-08T00:17:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [],
+      "gone": [
+        {
+          "id": "OUT-0-6e9f2b4102f1f366fce3b121e9a4be413833827f-001-1",
+          "type": "Tornado",
+          "title": "Tornado risk in Baldwin, Alabama, United States — 24-hour forecast",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-04T21:02:00.000Z",
+          "targetEnd": "2026-10-05T21:02:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-d587cc3bd8d306fb90439557691a9dbc1c8bacf5-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Camden, Georgia, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T20:55:00.000Z",
+          "targetEnd": "2026-10-07T20:55:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-3ac51a0b70271b8843d069f2b64d6b3201e06d99-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Chandeleur Sound and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T20:48:00.000Z",
+          "targetEnd": "2026-10-06T20:48:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-nws-v1-3-13-6-1551638-1791072865432",
+          "type": "Local Area Emergency",
+          "title": "Local Area Emergency risk in Mono, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-04T00:14:26.000Z",
+          "targetEnd": "2026-10-07T00:14:26.000Z",
+          "provider": "nws"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-gdacs-WF-1032535",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Kazakhstan — 3-day forecast",
+          "country": "Kazakhstan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-02T00:00:00.000Z",
+          "targetEnd": "2026-10-05T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-VO-1000150",
+          "type": "Volcano",
+          "title": "Volcano risk in Italy — 7-day forecast",
+          "country": "Italy",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-09-27T22:00:00.000Z",
+          "targetEnd": "2026-10-04T22:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-0-6e9f2b4102f1f366fce3b121e9a4be413833827f-001-1": {
-      "id": "OUT-0-6e9f2b4102f1f366fce3b121e9a4be413833827f-001-1",
-      "type": "Tornado",
-      "title": "Tornado risk in Baldwin, Alabama, United States — 24-hour forecast",
-      "country": "United States",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-04T21:02:00.000Z",
-      "targetEnd": "2026-10-05T21:02:00.000Z",
-      "provider": "nws"
-    },
     "OUT-nhc-ep152026": {
       "id": "OUT-nhc-ep152026",
       "type": "Tropical Cyclone",
@@ -13445,6 +13541,28 @@
       "targetEnd": "2026-10-09T21:00:00.000Z",
       "provider": "nhc"
     },
+    "OUT-0-417cd312658255572cd09a26f819a978f5d4093e-001-1": {
+      "id": "OUT-0-417cd312658255572cd09a26f819a978f5d4093e-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in coastal waters from Fernandina Beach to St. Augustine FL out 20 nautical miles and 1 nearby area, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-05T00:17:00.000Z",
+      "targetEnd": "2026-10-07T00:17:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-48260962a27e0b33db705a662277137d319face4-001-1": {
+      "id": "OUT-0-48260962a27e0b33db705a662277137d319face4-001-1",
+      "type": "Flood",
+      "title": "Flood risk in Burke, Georgia, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-05T00:17:00.000Z",
+      "targetEnd": "2026-10-08T00:17:00.000Z",
+      "provider": "nws"
+    },
     "OUT-nhc-ep182026": {
       "id": "OUT-nhc-ep182026",
       "type": "Tropical Cyclone",
@@ -13455,28 +13573,6 @@
       "targetStart": "2026-10-04T21:00:00.000Z",
       "targetEnd": "2026-10-09T21:00:00.000Z",
       "provider": "nhc"
-    },
-    "OUT-0-d587cc3bd8d306fb90439557691a9dbc1c8bacf5-001-1": {
-      "id": "OUT-0-d587cc3bd8d306fb90439557691a9dbc1c8bacf5-001-1",
-      "type": "Flood",
-      "title": "Flood risk in Camden, Georgia, United States — 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-04T20:55:00.000Z",
-      "targetEnd": "2026-10-07T20:55:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-3ac51a0b70271b8843d069f2b64d6b3201e06d99-001-1": {
-      "id": "OUT-0-3ac51a0b70271b8843d069f2b64d6b3201e06d99-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in Chandeleur Sound and 1 nearby area, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-04T20:48:00.000Z",
-      "targetEnd": "2026-10-06T20:48:00.000Z",
-      "provider": "nws"
     },
     "OUT-usgs-volcano-311120": {
       "id": "OUT-usgs-volcano-311120",
@@ -13532,17 +13628,6 @@
       "targetStart": "2026-10-04T11:12:48.270Z",
       "targetEnd": "2026-10-11T11:12:48.270Z",
       "provider": "usgs"
-    },
-    "OUT-nws-v1-3-13-6-1551638-1791072865432": {
-      "id": "OUT-nws-v1-3-13-6-1551638-1791072865432",
-      "type": "Local Area Emergency",
-      "title": "Local Area Emergency risk in Mono, United States — 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-04T00:14:26.000Z",
-      "targetEnd": "2026-10-07T00:14:26.000Z",
-      "provider": "nws"
     },
     "OUT-aftershock-usgs-us6000tzer": {
       "id": "OUT-aftershock-usgs-us6000tzer",
@@ -13917,34 +14002,12 @@
       "targetStart": "2026-10-02T00:00:00.000Z",
       "targetEnd": "2026-11-01T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032535": {
-      "id": "OUT-gdacs-WF-1032535",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Kazakhstan — 3-day forecast",
-      "country": "Kazakhstan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-02T00:00:00.000Z",
-      "targetEnd": "2026-10-05T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-VO-1000150": {
-      "id": "OUT-gdacs-VO-1000150",
-      "type": "Volcano",
-      "title": "Volcano risk in Italy — 7-day forecast",
-      "country": "Italy",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-09-27T22:00:00.000Z",
-      "targetEnd": "2026-10-04T22:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-04T21:05:24.231Z",
+  "updatedAt": "2026-10-05T00:35:33.540Z",
   "observedCadenceHours": {
-    "runs": 47,
-    "median": 4.91,
+    "runs": 48,
+    "median": 4.8,
     "min": 1.54,
     "max": 96.77
   }
