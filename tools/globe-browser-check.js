@@ -82,6 +82,28 @@ const server = http.createServer(async (req, res) => {
   res.end(fs.readFileSync(file));
 });
 
+/* The globe's pixels. Read straight off the WebGL canvas, which works only
+   because desktops keep its drawing buffer; phones are given a viewer that
+   does not, so under PHONE=1 the same pixels come from a screenshot of the
+   canvas instead, and the checks below see what a reader would. */
+async function captureGlobe(page) {
+  if (!process.env.PHONE) return;
+  /* Only the canvas: the HUD, the toggle and the captions sit over it and
+     would otherwise be measured as the globe. */
+  await page.addStyleTag({ content: 'body *{visibility:hidden!important}.pnd-globe canvas{visibility:visible!important}' })
+    .then(h => page.evaluate(el => { el.id = 'pnd-shot-style'; }, h));
+  const shot = await page.locator('.pnd-globe canvas').first()
+    .screenshot({ type: 'png', timeout: 10000 }).catch(() => null);
+  await page.evaluate(() => { const st = document.getElementById('pnd-shot-style'); if (st) st.remove(); });
+  if (!shot) return;
+  await page.evaluate(async b64 => {
+    const im = new Image();
+    im.src = 'data:image/png;base64,' + b64;
+    await im.decode();
+    window.__pndShot = im;
+  }, shot.toString('base64'));
+}
+
 (async () => {
   await new Promise(r => server.listen(8099, r));
   /* Playwright finds its own browser; CHROMIUM overrides that where the
@@ -92,14 +114,28 @@ const server = http.createServer(async (req, res) => {
              '--ignore-gpu-blocklist', '--enable-webgl'] },
     process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}
   ));
-  const page = await browser.newPage();
+  /* PHONE=1 opens the pages as an iPhone would ask for them: its screen, its
+     user agent, touch. Chromium is still the engine, so this checks the
+     lighter viewer phones get rather than Safari itself. */
+  const page = process.env.PHONE
+    ? await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3,
+        isMobile: true, hasTouch: true,
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' })).newPage()
+    : await browser.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
 
   /* unpkg is blocked here, so the two CDN libraries are fulfilled from the
      real published packages instead of being faked. */
   const hits = [];
-  await page.route(/unpkg\.com\/cesium@/, route => {
+  let cdnDown = false;
+  /* Both hosts globe.js tries. BLOCK_FIRST_CDN=1 fails the first, as a
+     network or content blocker that refuses unpkg would. */
+  await page.route(/(unpkg\.com|cdn\.jsdelivr\.net\/npm)\/cesium@/, route => {
+    if (cdnDown || (process.env.BLOCK_FIRST_CDN && /unpkg\.com/.test(route.request().url()))) {
+      hits.push('cesium blocked: ' + route.request().url().split('/Build/Cesium/')[1]);
+      return route.abort();
+    }
     hits.push('cesium: ' + route.request().url().split('/Build/Cesium/')[1]);
     const rel = route.request().url().split('/Build/Cesium/')[1].split('?')[0];
     const f = path.join(CESIUM, rel);
@@ -169,9 +205,14 @@ const server = http.createServer(async (req, res) => {
     ['location-detail', q({ location: any.region || any.country })],
     ['region-detail',   q({ country: any.country, region: any.region || '' })]
   ];
+  /* A page vercel.json redirects away is never served, so it is not
+     checked: /home, /home-v2 and /home-v3 all land on /, which is. */
+  const redirected = new Set((JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8')).redirects || [])
+    .map(r => r.source.replace(/^\//, '').replace(/\.html$/, '')));
   const PAGES = process.env.PAGES
     ? process.env.PAGES.split(',').map(s => s.trim()).filter(Boolean)
-    : STANDALONE.split(',').concat(DETAIL.map(([n, s]) => n + '?' + s));
+    : STANDALONE.split(',').filter(n => !redirected.has(n))
+      .concat(DETAIL.map(([n, s]) => n + '?' + s));
 
   let failures = 0;
   for (const name of PAGES) {
@@ -184,6 +225,7 @@ const server = http.createServer(async (req, res) => {
        mirror to settle. */
     await page.waitForTimeout(7000);
 
+    await captureGlobe(page);
     const r = await page.evaluate(() => {
       const host = document.querySelector('.pnd-globe');
       const viewer = host && host.__pndViewer;
@@ -232,7 +274,7 @@ const server = http.createServer(async (req, res) => {
         try {
           const o = document.createElement('canvas');
           o.width = canvas.width; o.height = canvas.height;
-          o.getContext('2d').drawImage(canvas, 0, 0);
+          o.getContext('2d').drawImage(window.__pndShot || canvas, 0, 0, o.width, o.height);
           const d = o.getContext('2d').getImageData(0, 0, o.width, o.height).data;
           const lum = (x, y) => {
             const i = (y * o.width + x) * 4;
@@ -444,6 +486,7 @@ const server = http.createServer(async (req, res) => {
       return h && h.__pndViewer && getComputedStyle(h).display !== 'none';
     }, { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(6000);
+    await captureGlobe(page);
     const fb = await page.evaluate(() => {
       const host = document.querySelector('.pnd-globe');
       const v = host && host.__pndViewer;
@@ -451,7 +494,7 @@ const server = http.createServer(async (req, res) => {
       const cv = v.scene.canvas;
       const o = document.createElement('canvas');
       o.width = cv.width; o.height = cv.height;
-      o.getContext('2d').drawImage(cv, 0, 0);
+      o.getContext('2d').drawImage(window.__pndShot || cv, 0, 0, o.width, o.height);
       const d = o.getContext('2d').getImageData(0, 0, o.width, o.height).data;
       const cx = o.width / 2, cy = o.height / 2;
       const rad = Math.min(o.width, o.height) * 0.12;
@@ -476,6 +519,46 @@ const server = http.createServer(async (req, res) => {
   } catch (e) { fbNote = 'threw ' + e.message.slice(0, 60); }
   if (!fbOk) failures++;
   console.log((fbOk ? '  ok   ' : '  FAIL ') + 'esri-blocked'.padEnd(16) + ' ' + fbNote);
+
+  /* Both hosts for the 3D library down, in a fresh page that has never had
+     it: the reader is told, on the map, and Try again works once a host
+     answers. Before this the globe dropped back to flat in silence and a
+     second press of Globe reused the failed download. */
+  let cdnOk = false, cdnNote = 'not run';
+  try {
+    esriBlocked = false;
+    cdnDown = true;
+    /* The same page, so the same routes: a second page would reach the real
+       CDNs. Routing turns the browser cache off, so nothing is reused. */
+    const p2 = page;
+    await p2.goto('http://localhost:8099/' + PAGES[0], { waitUntil: 'load', timeout: 60000 });
+    await p2.waitForFunction(() => {
+      const n = document.querySelector('.pnd-globe-note');
+      return n && !n.hidden && /could not open/.test(n.textContent);
+    }, null, { timeout: 90000 });
+    const said = await p2.evaluate(() => ({
+      text: document.querySelector('.pnd-globe-note').textContent,
+      flat: document.querySelectorAll('.pnd-view-toggle button')[1].getAttribute('aria-pressed'),
+      globe: !!document.querySelector('.pnd-globe')
+    }));
+    await p2.locator('.pnd-globe-note').scrollIntoViewIfNeeded();
+    await p2.screenshot({ path: path.join(SHOTS, 'globe-cdn-down.png') });
+    cdnDown = false;
+    await p2.click('.pnd-globe-note button:not(.x)');
+    await p2.waitForFunction(() => {
+      const h = document.querySelector('.pnd-globe');
+      return h && h.__pndViewer && getComputedStyle(h).display !== 'none';
+    }, null, { timeout: 90000 });
+    const after = await p2.evaluate(() => ({
+      entities: document.querySelector('.pnd-globe').__pndViewer.entities.values.length,
+      noteHidden: document.querySelector('.pnd-globe-note').hidden
+    }));
+    cdnOk = said.flat === 'true' && !said.globe && after.entities > 0 && after.noteHidden;
+    cdnNote = 'told="' + said.text.slice(0, 70) + '" flat=' + said.flat + ' retryEntities=' + after.entities +
+      ' noteGone=' + after.noteHidden;
+  } catch (e) { cdnNote = 'threw: ' + e.message.slice(0, 120); }
+  if (!cdnOk) failures++;
+  console.log((cdnOk ? '  ok   ' : '  FAIL ') + 'cdn-down'.padEnd(16) + ' ' + cdnNote);
 
   console.log('\npages checked: ' + PAGES.length + ', failing: ' + failures);
   console.log('screenshots: ' + SHOTS);

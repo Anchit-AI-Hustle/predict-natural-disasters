@@ -338,7 +338,9 @@ test('the refresh job can write the ledger, and records before it warms', () => 
   // The first run on this workflow timed out at eight minutes inside the warm
   // step, and because the ledger ran after it the ledger never executed at all.
   // Recording is the durable part of the job and cannot depend on the slowest.
-  assert.ok(y.indexOf('record-outlooks.js') < y.indexOf("warm every event's enrichment record"),
+  const warmAt = y.indexOf('name: Refresh live feed and warm');
+  assert.ok(warmAt > 0, 'the warm step is missing, so the order below proves nothing');
+  assert.ok(y.indexOf('record-outlooks.js') < warmAt,
     'the ledger must be written before the enrichment warm, not after it');
   // A run slower than the five-minute schedule used to be killed by the next one.
   assert.match(y, /cancel-in-progress: false/,

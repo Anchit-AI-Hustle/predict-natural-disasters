@@ -26,7 +26,17 @@
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   var VERSION = '1.124.0';
-  var BASE = 'https://unpkg.com/cesium@' + VERSION + '/Build/Cesium/';
+  /* Two hosts for the same published build. A phone on a network or behind a
+     content blocker that refuses unpkg was left on the flat map with no word
+     of why; jsDelivr serves the identical npm package, so it is tried next. */
+  var BASES = [
+    'https://unpkg.com/cesium@' + VERSION + '/Build/Cesium/',
+    'https://cdn.jsdelivr.net/npm/cesium@' + VERSION + '/Build/Cesium/'
+  ];
+  var BASE = BASES[0];
+  /* A download that never finishes is reported rather than waited on for
+     ever: the reader is told, and can ask again. */
+  var LOAD_TIMEOUT_MS = 60000;
   var PREF = 'pnd_map_view';
 
   /* Re:Earth's terrain is CC BY 4.0, so the credit is a licence term rather
@@ -52,28 +62,63 @@
     } catch (e) { return false; }
   }
 
+  /* The promise is shared while a download is in flight, and forgotten when
+     it fails. It used to be kept either way, so one failed fetch - a dropped
+     connection on a phone, say - meant every later press of Globe got the
+     same rejection back without trying again, until the page was reloaded. */
   var loading = null;
+  function loadFrom(i) {
+    return new Promise(function (resolve, reject) {
+      var base = BASES[i], css = null, s = null, timer = null, done = false;
+      function finish(err) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (!err) { BASE = base; resolve(window.Cesium); return; }
+        try { if (css) css.remove(); if (s) s.remove(); } catch (e) { /* gone */ }
+        reject(err);
+      }
+      try {
+        window.CESIUM_BASE_URL = base;
+        css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = base + 'Widgets/widgets.css';
+        document.head.appendChild(css);
+        s = document.createElement('script');
+        s.src = base + 'Cesium.js';
+        s.async = true;
+        s.onload = function () {
+          finish(window.Cesium ? null : new Error('the 3D library downloaded but did not start'));
+        };
+        s.onerror = function () { finish(new Error('the 3D library could not be downloaded')); };
+        timer = setTimeout(function () {
+          finish(new Error('the 3D library took too long to download'));
+        }, LOAD_TIMEOUT_MS);
+        document.head.appendChild(s);
+      } catch (e) { finish(e); }
+    }).catch(function (err) {
+      if (window.Cesium) return window.Cesium;
+      if (i + 1 < BASES.length) return loadFrom(i + 1);
+      throw err;
+    });
+  }
   function loadCesium() {
     if (window.Cesium) return Promise.resolve(window.Cesium);
     if (loading) return loading;
-    loading = new Promise(function (resolve, reject) {
-      try {
-        window.CESIUM_BASE_URL = BASE;
-        var css = document.createElement('link');
-        css.rel = 'stylesheet';
-        css.href = BASE + 'Widgets/widgets.css';
-        document.head.appendChild(css);
-        var s = document.createElement('script');
-        s.src = BASE + 'Cesium.js';
-        s.async = true;
-        s.onload = function () {
-          window.Cesium ? resolve(window.Cesium) : reject(new Error('Cesium did not define itself'));
-        };
-        s.onerror = function () { reject(new Error('Cesium could not be fetched')); };
-        document.head.appendChild(s);
-      } catch (e) { reject(e); }
-    });
+    loading = loadFrom(0).catch(function (err) { loading = null; throw err; });
     return loading;
+  }
+
+  /* Phones and tablets get the lighter drawing setup from the start. iOS
+     Safari gives a page far less graphics memory than a desktop, and an
+     anti-aliased, preserved drawing buffer is the first thing that runs out. */
+  function lean() {
+    try {
+      var ua = navigator.userAgent || '';
+      return /iPhone|iPad|iPod|Android/i.test(ua) ||
+        (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ||
+        !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    } catch (e) { return false; }
   }
 
   /* What a page drew, read back off its Leaflet map. Only the public accessors
@@ -938,11 +983,24 @@
       requestRender();
     }
 
-    var promise = loadCesium().then(function (Cesium) {
-      if (disposed) return null;
-      /* No ion token is set anywhere: the imagery and terrain below are the
-         keyless pair gods-eye-view uses, so nothing here needs an account. */
-      viewer = new Cesium.Viewer(host, {
+    /* Told when a globe that did start stops working: iOS takes the WebGL
+       context back when it runs short of memory, and a shader the device
+       cannot compile stops Cesium's render loop. Either leaves a frozen or
+       blank panel, so the map page drops back to flat and says why. */
+    var failHandlers = [], failed = false;
+    function fail(reason) {
+      if (failed || disposed) return;
+      failed = true;
+      var err = new Error(reason);
+      failHandlers.forEach(function (f) { try { f(err); } catch (e) { /* the page's own handler */ } });
+    }
+
+    /* The viewer, at one of three levels. A desktop starts at 0. A phone
+       starts at 1: no multisampling and no preserved buffer, which is most
+       of what iOS runs out of. If that still throws, 2 asks for WebGL 1,
+       which some iOS releases manage when WebGL 2 initialisation fails. */
+    function makeViewer(Cesium, level) {
+      return new Cesium.Viewer(host, {
         timeline: false, animation: false, baseLayerPicker: false, geocoder: false,
         homeButton: false, sceneModePicker: false, navigationHelpButton: false,
         fullscreenButton: false, vrButton: false, selectionIndicator: false,
@@ -951,13 +1009,47 @@
            description, and with no info box and no click handler there was no
            way to read it: clicking a hazard on the globe did nothing at all,
            so a reader had to find the Flat button to learn what an event was. */
-        infoBox: true, selectionIndicator: true, baseLayer: false, msaaSamples: 4,
+        infoBox: true, selectionIndicator: true, baseLayer: false, msaaSamples: level ? 1 : 4,
         /* Draw only when something changes. A globe that re-renders sixty
            times a second while nobody touches it held the page's main thread
            and made every click on the page feel late. */
         requestRenderMode: true, maximumRenderTimeChange: Infinity,
-        contextOptions: { webgl: { preserveDrawingBuffer: true } }
+        /* Cesium's own error panel is replaced by the flat map and a sentence
+           saying what happened; see fail(). */
+        showRenderLoopErrors: false,
+        contextOptions: level === 2 ? { requestWebgl1: true, webgl: { alpha: false } }
+          : level === 1 ? { webgl: { alpha: false } }
+          : { webgl: { preserveDrawingBuffer: true } }
       });
+    }
+
+    var promise = loadCesium().then(function (Cesium) {
+      if (disposed) return null;
+      /* No ion token is set anywhere: the imagery and terrain below are the
+         keyless pair gods-eye-view uses, so nothing here needs an account. */
+      var level = lean() ? 1 : 0;
+      try { viewer = makeViewer(Cesium, level); }
+      catch (first) {
+        /* A failed construction can leave a half-built widget in the host. */
+        while (host.firstChild) host.removeChild(host.firstChild);
+        try { viewer = makeViewer(Cesium, 2); }
+        catch (second) {
+          while (host.firstChild) host.removeChild(host.firstChild);
+          throw new Error('this device could not start 3D graphics');
+        }
+      }
+      if (disposed) { try { viewer.destroy(); } catch (e) { /* gone */ } viewer = null; return null; }
+      try {
+        viewer.scene.renderError.addEventListener(function () {
+          fail('the 3D view stopped drawing on this device');
+        });
+      } catch (e) { /* older Scene */ }
+      try {
+        viewer.scene.canvas.addEventListener('webglcontextlost', function (ev) {
+          if (ev && ev.preventDefault) ev.preventDefault();
+          fail('this device ran short of graphics memory');
+        });
+      } catch (e) { /* stub canvas */ }
       dropIonLogo(viewer);
       /* The planet in black space, as the reference viewer shows it: no star
          field, no sun or moon, only the atmosphere's rim. */
@@ -1040,6 +1132,7 @@
 
     return {
       host: host, sync: sync, destroy: destroy, ready: promise,
+      onFail: function (f) { if (typeof f === 'function') failHandlers.push(f); },
       /* The flat map's own controls are hidden with it. They still drive
          the Leaflet map underneath, so leaving them up means a zoom button
          that visibly does nothing. */
@@ -1077,6 +1170,8 @@
   window.PNDGlobe = {
     mount: mount, readMarkers: readMarkers, webglOk: webglOk,
     mgrs: mgrs, dms: dms, magnitudeOf: magnitudeOf, PRESETS: PRESETS,
-    prefers: prefers, remember: remember, BASE: BASE, PREF: PREF
+    prefers: prefers, remember: remember, BASE: BASE, BASES: BASES, PREF: PREF,
+    /* For the tests, which drive the loader host by host. */
+    __loadCesium: loadCesium
   };
 })();

@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Fetch the live feed for the ledger
         env:
           BASE_URL: https://predict-natural-disasters.anchit-tandon.com
@@ -103,7 +103,16 @@ jobs:
           git commit -m "Record outlooks, coverage and observed disasters ($total outlooks, $scans scans, $obs disasters)"
           git push
 
-      - name: Refresh live feed and warm every event's enrichment record
+      # Warms the events a reader is most likely to open, not every one.
+      #
+      # Warming all of them - 1,513 on 3 October - took 14.5 of this job's
+      # 15 minutes, and each warmed record is only fresh for the endpoint's
+      # 5-minute cache plus 15 minutes stale, while this job runs every few
+      # hours. Nearly all of it expired unread, and at about 75 minutes a day
+      # it was what ran the private repository out of its 2,000 free Actions
+      # minutes on 27 September, failing every run, CI included, until the
+      # month turned. A record that is not warm is still built on request.
+      - name: Refresh live feed and warm the enrichment of the events most likely to be opened
         env:
           BASE_URL: https://predict-natural-disasters.anchit-tandon.com
         run: |
@@ -174,13 +183,24 @@ jobs:
                   print('::warning::enrichment warm failed for %s: %s' % (e.get('id'), ex))
                   return False
 
+          # Forecasts and the most serious official reports first, as the home,
+          # alerts and forecasts pages list them, then the newest of the rest.
+          SEVERITY = {'Red': 0, 'High': 0, 'Orange': 1, 'Moderate': 2, 'Yellow': 2, 'Green': 3, 'Low': 3}
+          WARM_LIMIT = 200
+          by_newest = sorted(events, key=lambda e: str(e.get('updated') or ''), reverse=True)
+          ranked = sorted(by_newest, key=lambda e: (
+              0 if e.get('forecast') else 1 if SEVERITY.get(e.get('alert'), 4) <= 1 else 2,
+              SEVERITY.get(e.get('alert'), 4)))
+          targets = ranked[:WARM_LIMIT]
+
           with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-              results = list(pool.map(warm, events))
+              results = list(pool.map(warm, targets))
 
           warmed = sum(results)
-          print('warmed %d/%d event enrichment records' % (warmed, len(events)))
+          print('warmed %d/%d enrichment records (the %d most likely to be opened, of %d events)'
+                % (warmed, len(targets), len(targets), len(events)))
           if warmed == 0:
               sys.exit('FAIL: /api/event-enrichment did not answer for any event')
-          if warmed < len(events) * 0.5:
-              sys.exit('FAIL: enrichment warmed for only %d of %d events' % (warmed, len(events)))
+          if warmed < len(targets) * 0.5:
+              sys.exit('FAIL: enrichment warmed for only %d of %d events' % (warmed, len(targets)))
           PY
