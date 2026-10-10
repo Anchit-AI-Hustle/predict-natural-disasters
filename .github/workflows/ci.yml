@@ -1,9 +1,21 @@
 name: CI
 
+# Once per change, not twice. Pushing to a branch with an open pull request
+# used to run this for the push and again for the pull request - the same
+# commit, the same tests - and at about four minutes a run that was two
+# thirds of the 2,021 Actions minutes September used, past the private
+# repository's free 2,000. Branches are tested through their pull request;
+# main is tested on every push to it.
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# A newer push to the same pull request makes the older run moot.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -13,8 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Install test dependencies

@@ -518,6 +518,15 @@
     '.pnd-view-toggle button[aria-pressed="true"]{background:#25e29c;color:#04120e}',
     '.pnd-view-toggle button:focus-visible{outline:2px solid #25e29c;outline-offset:-2px}',
     '.pnd-globe .cesium-widget-credits{font-size:10px;opacity:.75}',
+    /* Why the globe is not showing, or that it is on its way. Under the
+       toggle, so it reads as that button's answer. */
+    '.pnd-globe-note{position:absolute;top:122px;left:10px;z-index:1300;display:flex;align-items:center;',
+    'gap:8px;max-width:min(360px,calc(100% - 20px));padding:6px 8px 6px 10px;border-radius:8px;',
+    'border:1px solid #2c5c4c;background:rgba(4,18,14,.92);color:#e6f4ee;font:500 12px/1.35 system-ui,sans-serif}',
+    '.pnd-globe-note[hidden]{display:none}',
+    '.pnd-globe-note button{appearance:none;border:1px solid #25e29c;border-radius:6px;background:transparent;',
+    'color:#8ff0ca;font:600 11px/1 system-ui,sans-serif;padding:6px 8px;cursor:pointer;white-space:nowrap}',
+    '.pnd-globe-note button.x{border:0;color:#9db9ad;padding:4px 6px;font-size:14px}',
     /* Which picture is showing. Bottom-left, clear of the attribution on the
        right and above it on a phone, never catching the pointer. */
     '.pnd-imagery-note{position:absolute;left:8px;bottom:26px;z-index:1300;pointer-events:none;',
@@ -838,9 +847,12 @@
       var container = map.getContainer();
       if (!container || container.__pndGlobe) return;
       container.__pndGlobe = true;
-      if (!PNDGlobe.webglOk()) return;
+      /* Without WebGL the toggle is still offered, so a reader who expected
+         the globe can press it and be told why it is not there, rather than
+         finding a flat map and no explanation. */
+      var canGlobe = PNDGlobe.webglOk();
 
-      var handle = null, syncTimer = null;
+      var handle = null, syncTimer = null, loadingTimer = null;
 
       function resync() {
         if (!handle) return;
@@ -857,26 +869,80 @@
       }
 
       function show() {
+        if (!canGlobe) {
+          setPressed('flat');
+          say('This browser is not letting the page use 3D graphics (WebGL), so the globe cannot be shown. The flat map has everything the globe would.', false);
+          return;
+        }
         if (!handle) {
           handle = PNDGlobe.mount(map, container);
           if (!handle) return;
+          var mine = handle;
           if (typeof map.on === 'function') map.on('layeradd layerremove', resync);
-          handle.ready.then(function () {
+          /* Said only if the download is slow enough to notice. On a phone
+             the 3D library takes a while, and the flat map with nothing said
+             looked exactly like a globe that was never coming. */
+          clearTimeout(loadingTimer);
+          loadingTimer = setTimeout(function () {
+            if (handle === mine && !(mine.viewer && mine.viewer())) say('Loading the 3D globe\u2026', false, true);
+          }, 800);
+          if (typeof mine.onFail === 'function') mine.onFail(function (err) { if (handle === mine) fallBack(err); });
+          mine.ready.then(function (v) {
+            if (handle !== mine || !v) return;
+            clearTimeout(loadingTimer);
+            unsay();
             /* Revealed only now: until the viewer exists there is nothing to
                show, and the flat map underneath is the better thing to be
                looking at. */
-            if (PNDGlobe.prefers() !== 'flat') { handle.reveal(); noteView('globe'); }
+            if (PNDGlobe.prefers() !== 'flat') { mine.reveal(); noteView('globe'); }
             resync();
-          }).catch(function () {
-            /* Cesium never arrived. Drop back to the flat map rather than
-               leaving a dead panel over it. */
-            teardown();
-            setPressed('flat');
-            noteView('flat');
+          }).catch(function (err) {
+            /* Cesium never arrived, or the device could not start it. Drop
+               back to the flat map rather than leaving a dead panel over it,
+               and say so: it used to drop back silently, which on an iPhone
+               looked like a Globe button that did nothing. */
+            if (handle === mine) fallBack(err);
           });
         }
         if (handle.viewer && handle.viewer()) handle.reveal();
       }
+
+      function fallBack(err) {
+        /* Said only to a reader still asking for the globe: one who has
+           pressed Flat meanwhile is already looking at what they chose. */
+        var wanted = bGlobe.getAttribute('aria-pressed') === 'true';
+        clearTimeout(loadingTimer);
+        teardown();
+        setPressed('flat');
+        noteView('flat');
+        if (!wanted) return;
+        var why = err && err.message ? err.message : 'it could not be started';
+        say('The globe could not open: ' + why + '. Showing the flat map.', true);
+      }
+
+      /* One line under the toggle. Try again forgets the failed attempt, so a
+         dropped connection is not the last word until the page reloads. */
+      var note = document.createElement('div');
+      note.className = 'pnd-globe-note';
+      note.setAttribute('role', 'status');
+      note.setAttribute('aria-live', 'polite');
+      note.hidden = true;
+      var noteText = document.createElement('span');
+      var retry = document.createElement('button');
+      retry.type = 'button'; retry.textContent = 'Try again';
+      var closeNote = document.createElement('button');
+      closeNote.type = 'button'; closeNote.className = 'x'; closeNote.textContent = '\u00d7';
+      closeNote.setAttribute('aria-label', 'Dismiss');
+      note.appendChild(noteText); note.appendChild(retry); note.appendChild(closeNote);
+      retry.addEventListener('click', function () { unsay(); choose('globe', true); });
+      closeNote.addEventListener('click', unsay);
+      function say(text, canRetry, busy) {
+        noteText.textContent = text;
+        retry.hidden = !canRetry;
+        closeNote.hidden = !!busy;
+        note.hidden = false;
+      }
+      function unsay() { note.hidden = true; }
 
       function teardown() {
         if (!handle) return;
@@ -902,6 +968,7 @@
       bFlat.type = 'button'; bFlat.textContent = 'Flat';
       bar.appendChild(bGlobe); bar.appendChild(bFlat);
       container.appendChild(bar);
+      container.appendChild(note);
 
       function setPressed(view) {
         bGlobe.setAttribute('aria-pressed', String(view === 'globe'));
@@ -912,7 +979,7 @@
         if (persist) PNDGlobe.remember(view);
         setPressed(view);
         if (view === 'globe') show();
-        else if (handle) handle.hide();
+        else { clearTimeout(loadingTimer); unsay(); if (handle) handle.hide(); }
         noteView(view === 'globe' && handle && handle.viewer && handle.viewer() ? 'globe' : 'flat');
       }
 
@@ -921,7 +988,9 @@
 
       /* Cesium is megabytes, so a reader who has chosen Flat never downloads
          it; the globe is fetched on the first press instead. */
-      choose(PNDGlobe.prefers() === 'flat' ? 'flat' : 'globe', false);
+      /* With no WebGL the page opens on flat without a word: the reason is
+         given only to a reader who asks for the globe. */
+      choose(!canGlobe || PNDGlobe.prefers() === 'flat' ? 'flat' : 'globe', false);
     } catch (e) { /* the flat map is already up; leave it alone */ }
   }
 
