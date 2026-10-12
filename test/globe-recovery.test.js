@@ -233,3 +233,21 @@ test('a reader who switched to Flat while it loaded is not told it failed', asyn
   assert.equal(d.querySelector('.pnd-globe'), null);
   r.window.close();
 });
+
+/* Reported from the Globe Check: "Draw the Earth - Render error: Request has
+   failed." Cesium downloads data files from the CDN while it draws, and where
+   one is refused it stops, or - for the terrain-height table - never shows a
+   single hazard. tools/globe-browser-check.js with BLOCK_ASSETS=1 proves the
+   globe works with every one of them refused; these keep the causes out. */
+test('the globe does not create the star field, sun or moon it would have to download', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'globe.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const opts = src.slice(src.indexOf('new Cesium.Viewer('), src.indexOf('new Cesium.Viewer(') + 2500);
+  assert.match(opts, /skyBox:\s*false/);
+});
+
+test('nothing on the globe is clamped to the ground, which needs the terrain table', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'globe.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  assert.doesNotMatch(src, /CLAMP_TO_GROUND|RELATIVE_TO_GROUND/);
+  assert.match(src, /initializeTerrainHeights\(\)\)[\s\S]{0,80}\.then\(/, 'the terrain-table preload is not handled');
+  assert.match(src, /preloadIcrfFixed\([\s\S]{0,300}\.catch\(/, 'the Earth-orientation preload is not handled');
+});

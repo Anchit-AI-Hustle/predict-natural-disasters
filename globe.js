@@ -38,6 +38,9 @@
      ever: the reader is told, and can ask again. */
   var LOAD_TIMEOUT_MS = 60000;
   var PREF = 'pnd_map_view';
+  /* Markers sit this far above the ellipsoid: enough to clear it, far too
+     little to see. */
+  var MARK_HEIGHT_M = 100;
 
   /* Re:Earth's terrain is CC BY 4.0, so the credit is a licence term rather
      than a courtesy. */
@@ -920,7 +923,11 @@
           var p = pts[i];
           var e = {
             name: p.title || undefined,
-            position: C.Cartesian3.fromDegrees(p.lon, p.lat),
+            /* Just above the surface rather than clamped to it. The terrain
+               here is the plain ellipsoid, so clamping changed nothing on
+               screen, but it made Cesium download a table of terrain heights
+               while drawing, and a refused download stopped the globe. */
+            position: C.Cartesian3.fromDegrees(p.lon, p.lat, MARK_HEIGHT_M),
             point: {
               pixelSize: Math.max(6, Math.min(18, p.radius * 1.6)),
               color: C.Color.fromCssColorString(p.colour),
@@ -928,7 +935,6 @@
               outlineWidth: 2,
               /* Without this a marker on the far side of the planet shows
                  through it, which reads as a second event in the ocean. */
-              heightReference: C.HeightReference.CLAMP_TO_GROUND,
               disableDepthTestDistance: 0
             },
             description: p.html
@@ -947,7 +953,6 @@
               horizontalOrigin: C.HorizontalOrigin.LEFT,
               verticalOrigin: C.VerticalOrigin.BOTTOM,
               pixelOffset: new C.Cartesian2(17, -12),
-              heightReference: C.HeightReference.CLAMP_TO_GROUND,
               disableDepthTestDistance: Number.POSITIVE_INFINITY
             };
           }
@@ -958,6 +963,11 @@
             var fill = C.Color.fromCssColorString(p.colour);
             e.ellipse = {
               semiMajorAxis: Math.pow(2, mag) * 1000, semiMinorAxis: Math.pow(2, mag) * 1000,
+              /* An explicit height makes this an ordinary shape on the
+                 surface. Without one, over terrain, Cesium draws it as a
+                 ground-clamped shape, which needs the same terrain-height
+                 table as clamped markers. */
+              height: 0,
               material: fill && fill.withAlpha ? fill.withAlpha(0.28) : fill
             };
           }
@@ -968,8 +978,8 @@
                it - because declutter() already hides a tag on the far side. */
             if (brackets) {
               try {
-                bb = brackets.add({ position: C.Cartesian3.fromDegrees(p.lon, p.lat), image: RETICLE,
-                  width: 30, height: 30, show: false, heightReference: C.HeightReference.CLAMP_TO_GROUND,
+                bb = brackets.add({ position: C.Cartesian3.fromDegrees(p.lon, p.lat, MARK_HEIGHT_M), image: RETICLE,
+                  width: 30, height: 30, show: false,
                   disableDepthTestDistance: Number.POSITIVE_INFINITY });
               } catch (err) { bb = null; }
             }
@@ -995,6 +1005,45 @@
       failHandlers.forEach(function (f) { try { f(err); } catch (e) { /* the page's own handler */ } });
     }
 
+    /*
+     * Two data files Cesium fetches from the CDN whatever the page draws: a
+     * table of approximate terrain heights, requested as soon as entities can
+     * be shown, and the Earth-orientation table its sun and moon lighting
+     * reads on every frame. Neither is needed here - nothing is clamped to the
+     * ground, and without the table Cesium falls back to a simpler Earth
+     * rotation that is indistinguishable at this scale - but when either
+     * download was refused Cesium left the failure unhandled, and the page
+     * reported errors. Starting both here, with a handler attached, makes a
+     * refused download cost nothing.
+     */
+    function quietPreloads(Cesium) {
+      /* And the terrain table gates more than ground shapes: Cesium's entity
+         display shows nothing at all until it has loaded, so a refused or
+         stalled download left a globe with every hazard missing. It is only
+         read for shapes clamped to the ground, of which there are none, and
+         Cesium already uses its default heights for any entry the table
+         lacks - so if it has not arrived in a few seconds it is declared
+         empty, and the hazards draw. ApproximateTerrainHeights is internal to
+         Cesium (it is not in the published types); the asset-blocked run of
+         tools/globe-browser-check.js is what proves this still works. */
+      var ATH = Cesium.ApproximateTerrainHeights;
+      var settle = function () {
+        if (ATH && ATH._terrainHeights === undefined) { ATH._terrainHeights = {}; requestRender(); }
+      };
+      try {
+        var waited = setTimeout(settle, 8000);
+        Promise.resolve(Cesium.GroundPrimitive.initializeTerrainHeights())
+          .then(function () { clearTimeout(waited); }, function () { clearTimeout(waited); settle(); });
+      } catch (e) { /* older or stubbed Cesium */ }
+      try {
+        var now = Cesium.JulianDate.now();
+        Promise.resolve(Cesium.Transforms.preloadIcrfFixed(new Cesium.TimeInterval({
+          start: Cesium.JulianDate.addDays(now, -1, new Cesium.JulianDate()),
+          stop: Cesium.JulianDate.addDays(now, 1, new Cesium.JulianDate())
+        }))).catch(function () { /* Cesium falls back without it */ });
+      } catch (e) { /* older or stubbed Cesium */ }
+    }
+
     /* The viewer, at one of three levels. A desktop starts at 0. A phone
        starts at 1: no multisampling and no preserved buffer, which is most
        of what iOS runs out of. If that still throws, 2 asks for WebGL 1,
@@ -1017,6 +1066,13 @@
         /* Cesium's own error panel is replaced by the flat map and a sentence
            saying what happened; see fail(). */
         showRenderLoopErrors: false,
+        /* No star field, sun or moon at all. They were created and then
+           hidden, but creating them still downloads six star images, a moon
+           texture and an Earth-orientation table from the CDN while drawing;
+           where any of those requests is refused - a sandboxed page, a content
+           blocker, a dropped connection - Cesium stops with "Request has
+           failed" and the globe goes blank. */
+        skyBox: false,
         contextOptions: level === 2 ? { requestWebgl1: true, webgl: { alpha: false } }
           : level === 1 ? { webgl: { alpha: false } }
           : { webgl: { preserveDrawingBuffer: true } }
@@ -1027,6 +1083,7 @@
       if (disposed) return null;
       /* No ion token is set anywhere: the imagery and terrain below are the
          keyless pair gods-eye-view uses, so nothing here needs an account. */
+      quietPreloads(Cesium);
       var level = lean() ? 1 : 0;
       try { viewer = makeViewer(Cesium, level); }
       catch (first) {
