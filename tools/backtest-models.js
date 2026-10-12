@@ -107,11 +107,75 @@ function scores(t) {
   });
 }
 
-(async () => {
-  const clim = JSON.parse(fs.readFileSync(CLIM, 'utf8'));
-  const today = ymd(Date.now());
+/* The fire index needs this many days of unbroken measured weather before the
+   day it is scored on: the drought code takes weeks to forget its start-up
+   values, so a chain restarted the week before would score the start-up. */
+const FIRE_SPINUP = 30, FIRE_CHAIN = 60;
+
+/**
+ * Score one place: every day in the previous-runs archive, at every lead.
+ * arc is { now: {tmax, dew, rain, wind}, 3: {...}, 5: {...} }, each a map of
+ * day -> value; obs(day) gives what POWER measured, NaN where it has nothing.
+ * Adds to the tallies in T and returns how many days it scored.
+ */
+function scorePlace(p, arc, obs, T) {
+  let scored = 0;
+  const days = Object.keys(arc.now.tmax).sort();
+  for (const L of LEADS) {
+    for (const D of days) {
+      const issue = addDays(D, -L);
+      const lastMeasured = addDays(issue, -POWER_LAG);
+      // The correction, from the days the run would have had on the issue date.
+      const win = []; for (let k = 40; k >= 0; k--) win.push(addDays(lastMeasured, -k));
+      const bt = M.biasDelta(win, win.map(d => arc.now.tmax[d]), win.map(d => obs(d).tmax), M.MAX_SHIFT_C);
+      const rr = M.rainRatio(win, win.map(d => arc.now.rain[d]), win.map(d => obs(d).rain));
+      const f = arc[L], o = obs(D);
+      if (!f || !isFinite(o.tmax)) continue;
+      const doy = M.dayOfYear(D), m = M.monthOf(D) - 1;
+      // Heat
+      if (bt.delta !== null && isFinite(f.tmax[D])) {
+        const p95 = M.harmonicAt(p.heat.p95, doy);
+        tally(T['heat@' + L], f.tmax[D] - bt.delta >= p95, o.tmax >= p95); scored++;
+      }
+      // Rain
+      const one = p.rain.p99[m];
+      if (rr.ratio !== null && isFinite(f.rain[D]) && isFinite(o.rain) && one !== null) {
+        const thr = Math.max(one, 10);
+        tally(T['rain@' + L], f.rain[D] * rr.ratio >= thr, o.rain >= thr); scored++;
+      }
+      // Fire: codes from measured weather to the day before, then one day.
+      const p95f = p.fire.p95[m];
+      if (bt.delta !== null && p95f !== null && isFinite(f.tmax[D]) && isFinite(f.dew[D]) && isFinite(f.wind[D]) && isFinite(f.rain[D])) {
+        const chainDays = []; for (let k = FIRE_CHAIN; k >= 1; k--) chainDays.push(addDays(D, -k));
+        let st = M.FWI_START, clean = 0;
+        for (const d of chainDays) {
+          const w = obs(d), rh = M.rhFrom(w.tmax, w.dew);
+          if (![w.tmax, rh, w.wind, w.rain].every(isFinite)) { st = M.FWI_START; clean = 0; continue; }
+          st = M.fwiDay(st, { temp: w.tmax, rh, wind: w.wind, rain: w.rain }, M.monthOf(d), p.lat); clean++;
+        }
+        if (clean >= FIRE_SPINUP && [o.tmax, o.dew, o.wind, o.rain].every(isFinite)) {
+          const t = f.tmax[D] - bt.delta, dw = f.dew[D];
+          const fcDay = M.fwiDay(st, { temp: t, rh: M.rhFrom(t, dw), wind: f.wind[D], rain: f.rain[D] * (rr.ratio || 1) }, m + 1, p.lat);
+          const obDay = M.fwiDay(st, { temp: o.tmax, rh: M.rhFrom(o.tmax, o.dew), wind: o.wind, rain: o.rain }, m + 1, p.lat);
+          const thr = Math.max(p95f, M.FIRE_FLOOR);
+          tally(T['fire@' + L], fcDay.fwi >= thr, obDay.fwi >= thr); scored++;
+        }
+      }
+    }
+  }
+  return scored;
+}
+
+function blankTallies() {
   const T = {};
   for (const hz of ['heat', 'rain', 'fire']) for (const L of LEADS) T[hz + '@' + L] = blank();
+  return T;
+}
+
+async function main() {
+  const clim = JSON.parse(fs.readFileSync(CLIM, 'utf8'));
+  const today = ymd(Date.now());
+  const T = blankTallies();
   const skipped = [];
   let places = 0;
   const queue = clim.places.slice();
@@ -120,52 +184,9 @@ function scores(t) {
       const p = queue.shift();
       try {
         const arc = await archive(p);
-        const obs = await measured(p, addDays(today, -PAST - 30), today);
-        const days = Object.keys(arc.now).sort();
-        for (const L of LEADS) {
-          for (const D of days) {
-            const issue = addDays(D, -L);
-            const lastMeasured = addDays(issue, -POWER_LAG);
-            // The correction, from the 21 days the run would have had.
-            const win = []; for (let k = 40; k >= 0; k--) win.push(addDays(lastMeasured, -k));
-            const bt = M.biasDelta(win, win.map(d => arc.now.tmax[d]), win.map(d => obs(d).tmax), M.MAX_SHIFT_C);
-            const rr = M.rainRatio(win, win.map(d => arc.now.rain[d]), win.map(d => obs(d).rain));
-            const f = arc[L], o = obs(D);
-            if (!isFinite(o.tmax)) continue;
-            const doy = M.dayOfYear(D), m = M.monthOf(D) - 1;
-            // Heat
-            if (bt.delta !== null && isFinite(f.tmax[D])) {
-              const p95 = M.harmonicAt(p.heat.p95, doy);
-              tally(T['heat@' + L], f.tmax[D] - bt.delta >= p95, o.tmax >= p95);
-            }
-            // Rain
-            const one = p.rain.p99[m];
-            if (rr.ratio !== null && isFinite(f.rain[D]) && isFinite(o.rain) && one !== null) {
-              const thr = Math.max(one, 10);
-              tally(T['rain@' + L], f.rain[D] * rr.ratio >= thr, o.rain >= thr);
-            }
-            // Fire: codes from measured weather to the day before, then one day.
-            const p95f = p.fire.p95[m];
-            if (bt.delta !== null && p95f !== null && isFinite(f.tmax[D]) && isFinite(f.dew[D]) && isFinite(f.wind[D]) && isFinite(f.rain[D])) {
-              const chainDays = []; for (let k = 60; k >= 1; k--) chainDays.push(addDays(D, -k));
-              const wx = chainDays.map(d => { const w = obs(d); return { temp: w.tmax, rh: M.rhFrom(w.tmax, w.dew), wind: w.wind, rain: w.rain }; });
-              let st = M.FWI_START, ok = true;
-              for (let i = 0; i < chainDays.length; i++) {
-                const w = wx[i];
-                if (![w.temp, w.rh, w.wind, w.rain].every(isFinite)) { st = M.FWI_START; continue; }
-                st = M.fwiDay(st, w, M.monthOf(chainDays[i]), p.lat);
-              }
-              const t = f.tmax[D] - bt.delta, dw = f.dew[D];
-              const fcDay = M.fwiDay(st, { temp: t, rh: M.rhFrom(t, dw), wind: f.wind[D], rain: f.rain[D] * (rr.ratio || 1) }, m + 1, p.lat);
-              const obDay = [o.tmax, o.dew, o.wind, o.rain].every(isFinite)
-                ? M.fwiDay(st, { temp: o.tmax, rh: M.rhFrom(o.tmax, o.dew), wind: o.wind, rain: o.rain }, m + 1, p.lat) : null;
-              if (ok && obDay) {
-                const thr = Math.max(p95f, M.FIRE_FLOOR);
-                tally(T['fire@' + L], fcDay.fwi >= thr, obDay.fwi >= thr);
-              }
-            }
-          }
-        }
+        // Far enough back for the fire chain behind the oldest archived day.
+        const obs = await measured(p, addDays(today, -PAST - FIRE_CHAIN - 5), today);
+        if (scorePlace(p, arc, obs, T) === 0) throw new Error('no day could be scored');
         places++;
       } catch (e) { skipped.push({ id: p.id, why: e.message }); }
     }
@@ -175,14 +196,20 @@ function scores(t) {
     note: 'Hindcast by tools/backtest-models.js: forecasts Open-Meteo really issued 3 and 5 days ahead, corrected as the live run corrects them with only the measurements available at issue time, scored day by day against NASA POWER. It shows how the method behaves; it is not the record of published forecasts.',
     generatedAt: new Date().toISOString(), climatologyPeriod: clim.period, places, skipped,
     window: { from: addDays(today, -PAST), to: today, leadsDays: LEADS },
-    fireNote: 'Fire is scored with the index codes carried from measured weather to the day before and the forecast used for the day itself only.',
+    fireNote: 'Fire is scored with the index codes carried from at least ' + FIRE_SPINUP + ' days of measured weather to the day before, and the forecast used for the day itself only.',
     results: Object.fromEntries(Object.entries(T).map(([k, t]) => [k, scores(t)]))
   };
-  fs.writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n');
   console.log('backtest: ' + places + ' places, ' + skipped.length + ' skipped');
   for (const [k, r] of Object.entries(out.results)) {
     console.log(k.padEnd(8) + ' days ' + r.days + '  observed ' + r.observedRate + '  forecast ' + r.forecastRate +
       '  POD ' + r.pod + '  FAR ' + r.far + '  bias ' + r.frequencyBias + '  CSI ' + r.csi);
   }
   for (const s of skipped.slice(0, 10)) console.log('  skipped ' + s.id + ': ' + s.why);
-})().catch(e => { console.error(e); process.exit(1); });
+  /* Scores from a few places would be read as the method's scores. Refuse to
+     write them rather than publish a backtest of almost nothing. */
+  if (places < clim.places.length / 2) throw new Error('only ' + places + ' of ' + clim.places.length + ' places could be scored; not writing ' + OUT);
+  fs.writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n');
+}
+
+module.exports = { scorePlace, blankTallies, scores, daily, LEADS, POWER_LAG };
+if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });

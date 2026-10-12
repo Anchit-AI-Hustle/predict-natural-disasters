@@ -149,3 +149,55 @@ test('relative humidity from dew point', () => {
   near(M.rhFrom(20, 20), 100, 0.01, 'saturated');
   near(M.rhFrom(30, 10), 28.5, 1, '30 C with a 10 C dew point');
 });
+
+/* The backtest's scoring, on made-up weather where the right answer is known. */
+const BT = require('../tools/backtest-models.js');
+function synthetic(warmBy) {
+  const place = { lat: 40, heat: { p95: [30, 0, 0, 0, 0, 0, 0] }, rain: { p99: Array(12).fill(20) }, fire: { p95: Array(12).fill(25) } };
+  const truth = {};
+  for (let i = 0; i < 160; i++) {
+    const d = new Date(Date.UTC(2026, 2, 1) + i * 864e5).toISOString().slice(0, 10);
+    truth[d] = { tmax: 25 + 8 * Math.sin(i / 5), dew: 8, wind: 15, rain: i % 7 === 0 ? 30 : 0 };
+  }
+  const all = Object.keys(truth), recent = all.slice(-92);
+  const series = (key, shift) => Object.fromEntries(recent.map(d => [d, truth[d][key] + (key === 'tmax' ? shift : 0)]));
+  const run = shift => ({ tmax: series('tmax', shift), dew: series('dew', 0), rain: series('rain', 0), wind: series('wind', 0) });
+  const arc = { now: run(warmBy) };
+  for (const L of BT.LEADS) arc[L] = run(warmBy);
+  const obs = d => truth[d] || { tmax: NaN, dew: NaN, wind: NaN, rain: NaN };
+  return { place, arc, obs };
+}
+
+test('a perfect forecast scores perfectly in the backtest, every hazard and lead', () => {
+  const { place, arc, obs } = synthetic(0);
+  const T = BT.blankTallies();
+  assert.ok(BT.scorePlace(place, arc, obs, T) > 0, 'no day was scored');
+  for (const [k, t] of Object.entries(T)) {
+    const s = BT.scores(t);
+    assert.ok(s.days > 0, k + ' scored no days');
+    assert.equal(t.misses, 0, k + ' missed'); assert.equal(t.falseAlarms, 0, k + ' raised a false alarm');
+    if (!k.startsWith('fire')) assert.ok(t.hits > 0, k + ' had nothing to hit');
+  }
+});
+
+test('the backtest removes a steady warm bias before scoring, as the live run does', () => {
+  const { place, arc, obs } = synthetic(2);
+  const T = BT.blankTallies();
+  BT.scorePlace(place, arc, obs, T);
+  for (const L of BT.LEADS) {
+    const t = T['heat@' + L];
+    assert.ok(t.hits > 0); assert.equal(t.falseAlarms, 0, 'a 2 C warm forecast was not corrected');
+  }
+});
+
+test('the backtest scores nothing where nothing was measured, and fire needs a month of record first', () => {
+  const { place, arc } = synthetic(0);
+  const none = () => ({ tmax: NaN, dew: NaN, wind: NaN, rain: NaN });
+  assert.equal(BT.scorePlace(place, arc, none, BT.blankTallies()), 0);
+  // Measurements only from the archive's first day: too short a chain for fire on its early days.
+  const { obs } = synthetic(0), first = Object.keys(arc.now.tmax).sort()[0];
+  const T = BT.blankTallies();
+  BT.scorePlace(place, arc, d => d >= first ? obs(d) : none(), T);
+  const fireDays = BT.scores(T['fire@3']).days, heatDays = BT.scores(T['heat@3']).days;
+  assert.ok(fireDays < heatDays, 'fire was scored without a month of measured weather behind it');
+});

@@ -11,7 +11,7 @@
  * days of the year:
  *
  *   heat   daily maximum temperature above the place's own 95th percentile
- *          for that date, from 30 years of record (1991-2020);
+ *          for that date, from 30 years of record (1996-2025);
  *   rain   one-day or three-day rainfall above the place's 99th percentile
  *          for that month, the trigger for flash floods and landslides, made
  *          worse when the soil is already wetter than usual;
