@@ -136,7 +136,12 @@ async function captureGlobe(page) {
       hits.push('cesium blocked: ' + route.request().url().split('/Build/Cesium/')[1]);
       return route.abort();
     }
-    hits.push('cesium: ' + route.request().url().split('/Build/Cesium/')[1]);
+    /* BLOCK_ASSETS=1 refuses Cesium's own data files (star images, moon,
+       terrain heights, Earth-orientation tables), as a sandboxed page or a
+       content blocker does. The globe must not depend on any of them. */
+    const relPath = route.request().url().split('/Build/Cesium/')[1];
+    if (process.env.BLOCK_ASSETS && /^Assets\//.test(relPath)) { hits.push('asset blocked: ' + relPath); return route.abort(); }
+    hits.push('cesium: ' + relPath);
     const rel = route.request().url().split('/Build/Cesium/')[1].split('?')[0];
     const f = path.join(CESIUM, rel);
     if (!fs.existsSync(f)) return route.fulfill({ status: 404, body: '' });
@@ -453,20 +458,24 @@ async function captureGlobe(page) {
   if (target) {
     await page.mouse.click(box.x + target.x, box.y + target.y);
     await page.waitForTimeout(1200);
-    const info = await page.evaluate(() => {
+    const info = await page.evaluate(t => {
       const el = document.querySelector('.cesium-infoBox');
       const v = document.querySelector('.pnd-globe').__pndViewer;
-      return { visible: !!el && el.classList.contains('cesium-infoBox-visible'),
+      let picked = null;
+      try { const o = v.scene.pick(new window.Cesium.Cartesian2(t.x, t.y)); picked = o && o.id ? String(o.id.name || o.id.id).slice(0, 30) : String(o); } catch (e) { picked = 'pick threw: ' + e.message; }
+      return { selected: v.selectedEntity ? String(v.selectedEntity.name).slice(0, 30) : null, picked,
+        visible: !!el && el.classList.contains('cesium-infoBox-visible'),
         title: ((document.querySelector('.cesium-infoBox-title') || {}).textContent || '').trim(),
         names: v.entities.values.map(e => String(e.name || '').trim()) };
-    });
+    }, target);
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
     /* Not the entity aimed at: where hazards overlap Cesium picks whichever
        point is on top, which is its business. What matters is that the panel
        is headed by a hazard's name and not by a generated id. */
     readOk = info.visible && info.title.length > 0 && !uuid.test(info.title) &&
       info.names.indexOf(info.title) >= 0;
-    readNote = 'infoBox=' + info.visible + ' title=' + JSON.stringify(info.title.slice(0, 44));
+    readNote = 'infoBox=' + info.visible + ' title=' + JSON.stringify(info.title.slice(0, 44)) +
+      (readOk ? '' : ' selected=' + JSON.stringify(info.selected) + ' picked=' + JSON.stringify(info.picked));
   }
   if (!readOk) failures++;
   console.log((readOk ? '  ok   ' : '  FAIL ') + 'click'.padEnd(16) + ' ' + readNote);
@@ -560,6 +569,7 @@ async function captureGlobe(page) {
   if (!cdnOk) failures++;
   console.log((cdnOk ? '  ok   ' : '  FAIL ') + 'cdn-down'.padEnd(16) + ' ' + cdnNote);
 
+  if (process.env.BLOCK_ASSETS) console.log('assets refused: ' + [...new Set(hits.filter(h => /^asset blocked/.test(h)).map(h => h.slice(15)))].join(', '));
   console.log('\npages checked: ' + PAGES.length + ', failing: ' + failures);
   console.log('screenshots: ' + SHOTS);
 

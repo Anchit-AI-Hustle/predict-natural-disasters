@@ -306,8 +306,13 @@ test('globe.js only calls Cesium symbols that exist in the pinned version', () =
   /* Uppercase only: Cesium exports classes and namespaces in PascalCase, and
      the file also contains the CDN path 'Cesium.js', which is a filename
      rather than a symbol. */
+  /* Internal to Cesium, so absent from the published types the manifest is
+     built from, and used on purpose: globe.js says why at the point of use,
+     and the BLOCK_ASSETS run of tools/globe-browser-check.js fails if it
+     stops working. Anything else missing from the manifest is a mistake. */
+  const INTERNAL = ['ApproximateTerrainHeights'];
   for (const m of src.matchAll(/\bCesium\.([A-Z][\w$]*)/g)) {
-    if (!api.exports.includes(m[1])) unknown.push('Cesium.' + m[1]);
+    if (!api.exports.includes(m[1]) && !INTERNAL.includes(m[1])) unknown.push('Cesium.' + m[1]);
   }
   assert.ok(unknown.length > 0 || /Cesium\.[A-Z]/.test(src),
     'no Cesium symbols were found at all, so this test proves nothing');
