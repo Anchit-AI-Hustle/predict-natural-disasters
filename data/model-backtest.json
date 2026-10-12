@@ -1,0 +1,529 @@
+{
+ "note": "Hindcast by tools/backtest-models.js: forecasts Open-Meteo really issued 3 and 5 days ahead, corrected as the live run corrects them with only the measurements available at issue time, scored day by day against NASA POWER. It shows how the method behaves; it is not the record of published forecasts.",
+ "generatedAt": "2026-10-12T21:55:33.212Z",
+ "climatologyPeriod": "1996-2025",
+ "places": 0,
+ "skipped": [
+  {
+   "id": "mumbai-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "chennai-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "delhi-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "kolkata-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "ahmedabad-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "hyderabad-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "patna-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "lucknow-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "guwahati-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "jaipur-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "bhubaneswar-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "nagpur-in",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "dhaka-bd",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "karachi-pk",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "lahore-pk",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "chittagong-bd",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "kathmandu-np",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "colombo-lk",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "kabul-af",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "tehran-ir",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "baghdad-iq",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "riyadh-sa",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "muscat-om",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "dubai-ae",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "manila-ph",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "jakarta-id",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "ho-chi-minh-city-vn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "surabaya-id",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "bangkok-th",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "da-nang-vn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "hanoi-vn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "kuala-lumpur-my",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "yangon-mm",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "guangzhou-cn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "singapore-sg",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "shanghai-cn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "beijing-cn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "hong-kong-hk",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "chongqing-cn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "wuhan-cn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "taipei-tw",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "tokyo-jp",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "seoul-kr",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "sydney-au",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "osaka-jp",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "melbourne-au",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "brisbane-au",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "perth-au",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "cairo-eg",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "adelaide-au",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "auckland-nz",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "khartoum-sd",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "nairobi-ke",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "mogadishu-so",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "addis-ababa-et",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "accra-gh",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "kinshasa-cd",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "lagos-ng",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "dakar-sn",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "johannesburg-za",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "niamey-ne",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "cape-town-za",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "luanda-ao",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "maputo-mz",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "istanbul-tr",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "athens-gr",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "rome-it",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "antananarivo-mg",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "madrid-es",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "seville-es",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "lisbon-pt",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "marseille-fr",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "paris-fr",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "london-gb",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "berlin-de",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "warsaw-pl",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "bucharest-ro",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "kyiv-ua",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "moscow-ru",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "san-francisco-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "los-angeles-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "phoenix-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "las-vegas-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "denver-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "houston-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "dallas-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "new-orleans-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "miami-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "atlanta-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "chicago-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "new-york-us",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "toronto-ca",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "vancouver-island-ca",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "mexico-city-mx",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "monterrey-mx",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "guatemala-city-gt",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "port-au-prince-ht",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "havana-cu",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "bogot-co",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "caracas-ve",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "lima-pe",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "santiago-cl",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "quito-ec",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "buenos-aires-ar",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "rio-de-janeiro-br",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "s-o-paulo-br",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "manaus-br",
+   "why": "Invalid time value"
+  },
+  {
+   "id": "recife-br",
+   "why": "Invalid time value"
+  }
+ ],
+ "window": {
+  "from": "2026-07-12",
+  "to": "2026-10-12",
+  "leadsDays": [
+   3,
+   5
+  ]
+ },
+ "fireNote": "Fire is scored with the index codes carried from measured weather to the day before and the forecast used for the day itself only.",
+ "results": {
+  "heat@3": {
+   "hits": 0,
+   "misses": 0,
+   "falseAlarms": 0,
+   "correctNegatives": 0,
+   "days": 0,
+   "observedRate": null,
+   "forecastRate": null,
+   "pod": null,
+   "far": null,
+   "frequencyBias": null,
+   "csi": null
+  },
+  "heat@5": {
+   "hits": 0,
+   "misses": 0,
+   "falseAlarms": 0,
+   "correctNegatives": 0,
+   "days": 0,
+   "observedRate": null,
+   "forecastRate": null,
+   "pod": null,
+   "far": null,
+   "frequencyBias": null,
+   "csi": null
+  },
+  "rain@3": {
+   "hits": 0,
+   "misses": 0,
+   "falseAlarms": 0,
+   "correctNegatives": 0,
+   "days": 0,
+   "observedRate": null,
+   "forecastRate": null,
+   "pod": null,
+   "far": null,
+   "frequencyBias": null,
+   "csi": null
+  },
+  "rain@5": {
+   "hits": 0,
+   "misses": 0,
+   "falseAlarms": 0,
+   "correctNegatives": 0,
+   "days": 0,
+   "observedRate": null,
+   "forecastRate": null,
+   "pod": null,
+   "far": null,
+   "frequencyBias": null,
+   "csi": null
+  },
+  "fire@3": {
+   "hits": 0,
+   "misses": 0,
+   "falseAlarms": 0,
+   "correctNegatives": 0,
+   "days": 0,
+   "observedRate": null,
+   "forecastRate": null,
+   "pod": null,
+   "far": null,
+   "frequencyBias": null,
+   "csi": null
+  },
+  "fire@5": {
+   "hits": 0,
+   "misses": 0,
+   "falseAlarms": 0,
+   "correctNegatives": 0,
+   "days": 0,
+   "observedRate": null,
+   "forecastRate": null,
+   "pod": null,
+   "far": null,
+   "frequencyBias": null,
+   "csi": null
+  }
+ }
+}
