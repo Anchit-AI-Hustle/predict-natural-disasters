@@ -104,7 +104,7 @@ function outlook(place, f, ctx) {
   const why = {
     heat: 'Forecast daily highs, corrected by ' + ctx.deltaT.toFixed(1) + ' °C for the difference between the forecast service and the 30-year record, reach this place\'s 95th percentile for the time of year on ' + f.days + ' days in a row' + (f.severe ? ', and its 99th on at least one' : '') + '.',
     rain: 'Forecast rain, scaled by ' + ctx.rainRatio.toFixed(2) + ' to match the 30-year record, reaches this place\'s 99th percentile for the month.' +
-      (isFinite(ctx.soil.p) ? ' The topsoil was wetter than ' + Math.round(ctx.soil.p * 100) + '% of the same month in 1991-2020 when last measured (' + fmtDay(ctx.soil.day) + ')' + (f.severe ? ', so more of the rain is likely to run off.' : '.') : ' How wet the soil is now could not be measured.'),
+      (isFinite(ctx.soil.p) ? ' The topsoil was wetter than ' + Math.round(ctx.soil.p * 100) + '% of the same month in ' + ctx.period + ' when last measured (' + fmtDay(ctx.soil.day) + ')' + (f.severe ? ', so more of the rain is likely to run off.' : '.') : ' How wet the soil is now could not be measured.'),
     fire: 'The Fire Weather Index, computed from the last ' + PAST + ' days of measured weather and the corrected forecast, reaches the "very high" class and this place\'s 95th percentile for the month on ' + f.days + ' days in a row. Fire also needs fuel and a spark, which no weather index can see.'
   }[f.hazard];
   return {
@@ -120,7 +120,7 @@ function outlook(place, f, ctx) {
     forecast: true, forecastKind: 'model-advance', forecastScope: 'event', precision: 'city',
     confidence: f.severe ? 'Higher: past this place\'s 99th percentile, or on already-wet ground' : 'Moderate: past this place\'s 95th percentile',
     details: 'Our own forecast, made before the period it covers. ' + why + ' ' + days.join('. ') + '.',
-    evidence: 'Open-Meteo forecast issued for ' + ctx.runDay + ', compared with NASA POWER daily records for ' + where + ', 1991-2020. Bias measured over ' + ctx.overlap + ' shared days.',
+    evidence: 'Open-Meteo forecast issued for ' + ctx.runDay + ', compared with NASA POWER daily records for ' + where + ', ' + ctx.period + '. Bias measured over ' + ctx.overlap + ' shared days.',
     verificationRule: 'Checked against the ' + H.what + ' NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.',
     sourceUrl: '/accuracy',
     model: { hazard: f.hazard, days: f.detail, peak: f.peak, severe: f.severe, placeId: place.id, geonameId: place.geonameId,
@@ -129,7 +129,7 @@ function outlook(place, f, ctx) {
   };
 }
 
-async function runPlace(place, fc, runAt) {
+async function runPlace(place, fc, runAt, period) {
   const today = ymd(runAt);
   const days = fc.time;
   const ref = await recent(place, days[0], today);
@@ -166,7 +166,7 @@ async function runPlace(place, fc, runAt) {
        already fallen counts towards a total that ends in the window. */
     .concat(M.rainModel(place, days, series.map(s => s.rain), soil.p).filter(r => r.start >= first && r.start <= last))
     .concat(M.fireModel(place, aDays, ahead.map(i => fwi[i])));
-  const ctx = { runAt, runDay: today, deltaT: bt.delta, deltaDew: bd.delta, rainRatio: rr.ratio, windRatio, overlap: bt.n, soil };
+  const ctx = { runAt, runDay: today, period, deltaT: bt.delta, deltaDew: bd.delta, rainRatio: rr.ratio, windRatio, overlap: bt.n, soil };
   return { outlooks: flagged.map(f => outlook(place, f, ctx)), overlap: bt.n };
 }
 
@@ -184,7 +184,7 @@ async function runPlace(place, fc, runAt) {
     for (let i = 0; i < batch.length; i += 6) {
       await Promise.all(batch.slice(i, i + 6).map(async (p, k) => {
         try {
-          const r = await runPlace(p, daily[i + k], runAt);
+          const r = await runPlace(p, daily[i + k], runAt, clim.period);
           if (r.skipped) skipped.push({ id: p.id, why: r.skipped });
           else { checked.push(p.id); outlooks.push(...r.outlooks); }
         } catch (e) { skipped.push({ id: p.id, why: e.message }); }
