@@ -1,0 +1,77 @@
+name: Forecast models
+
+# Builds the 30-year climatology the forecast models judge each place
+# against, scores the method on forecasts that were really issued 3 and 5
+# days ahead, and does a trial run of the coming week. Nothing here is
+# published to the site: the trial run's forecasts go to a scratch file,
+# and only the climatology and the backtest scores are committed, so they
+# can be reviewed before the models are wired into the refresh job.
+#
+# Runs on any pull request that changes the models, and by hand.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'forecast-models.js'
+      - 'tools/build-climatology.js'
+      - 'tools/run-models.js'
+      - 'tools/backtest-models.js'
+      - '.github/workflows/forecast-models.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forecast-models-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The branch itself, not the merge commit, so the results can be
+          # committed back to it.
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Build the climatology (NASA POWER, 1996-2025)
+        run: node tools/build-climatology.js data/climatology.json
+
+      - name: Backtest on forecasts issued 3 and 5 days ahead
+        run: node tools/backtest-models.js data/climatology.json data/model-backtest.json
+
+      - name: Trial run of the coming week (not published)
+        run: node tools/run-models.js data/climatology.json /tmp/model-outlooks.json /tmp/model-runs.json
+
+      - name: Write the scores to the job summary
+        run: |
+          node -e '
+            const b = require("./data/model-backtest.json");
+            const o = require("/tmp/model-outlooks.json");
+            const rows = Object.entries(b.results).map(([k, r]) =>
+              `| ${k} | ${r.days} | ${r.observedRate} | ${r.forecastRate} | ${r.pod} | ${r.far} | ${r.frequencyBias} | ${r.csi} |`);
+            const byHazard = {};
+            o.outlooks.forEach(x => { byHazard[x.model.hazard] = (byHazard[x.model.hazard] || 0) + 1; });
+            console.log([
+              "## Backtest (" + b.places + " places, " + b.window.from + " to " + b.window.to + ")",
+              "", "| hazard@lead | days | observed | forecast | POD | FAR | bias | CSI |", "|---|---|---|---|---|---|---|---|",
+              ...rows, "", b.fireNote, "",
+              "## Trial run", "", o.checked + " of " + o.places + " places checked, " + o.outlooks.length + " forecasts: " + JSON.stringify(byHazard),
+              ...o.skipped.slice(0, 20).map(s => "- skipped " + s.id + ": " + s.why)
+            ].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the climatology and the scores
+        run: |
+          set -euo pipefail
+          git add data/climatology.json data/model-backtest.json
+          if git diff --cached --quiet; then echo "unchanged"; exit 0; fi
+          git config user.name "forecast-models"
+          git config user.email "noreply@anthropic.com"
+          git commit -m "Climatology and backtest scores for the forecast models"
+          git push
