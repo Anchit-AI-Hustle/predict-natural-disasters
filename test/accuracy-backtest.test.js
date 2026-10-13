@@ -1,0 +1,104 @@
+'use strict';
+/**
+ * The track record publishes the forecast models' backtest, and only what it
+ * can show: each hazard at 3 and 5 days, how many days were scored, how often
+ * the model caught the days that came, against what chance would have caught
+ * issuing the same number of warnings, and the limits in plain words. It
+ * never says the models predict disasters, and with no usable scores it says
+ * "Not yet available" rather than printing a number.
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { renderPage, closeAllWindows } = require('./render.js');
+const BV = require('../backtest-view.js');
+
+test.after(closeAllWindows);
+
+const ROOT = path.join(__dirname, '..');
+const REAL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'model-backtest.json'), 'utf8'));
+
+function openWith(body, status) {
+  return renderPage('accuracy.html', {
+    mock: {},
+    waitFor: d => {
+      const s = d.getElementById('btStatus');
+      return !!s && s.dataset.state && s.dataset.state !== 'loading';
+    },
+    beforeParse(w) {
+      const real = w.fetch;
+      w.fetch = async (input) => {
+        const url = String(input && input.url ? input.url : input);
+        if (url.includes('model-backtest.json') && body !== undefined) {
+          return { ok: (status || 200) < 400, status: status || 200, headers: { get: () => null },
+            json: async () => (typeof body === 'string' ? JSON.parse(body) : body),
+            text: async () => (typeof body === 'string' ? body : JSON.stringify(body)) };
+        }
+        return real(input);
+      };
+    }
+  });
+}
+const pct = v => Math.round(v * 100) + '%';
+
+test('the rows come from the counts, with the chance baseline worked out the same way', () => {
+  const rows = BV.rows(REAL);
+  assert.equal(rows.length, 6);
+  const h3 = rows.find(r => r.hazard === 'heat' && r.lead === 3);
+  const t = REAL.results['heat@3'];
+  assert.equal(h3.days, t.days);
+  assert.equal(h3.caught, t.hits / (t.hits + t.misses));
+  assert.equal(h3.caughtByChance, (t.hits + t.falseAlarms) / t.days, 'chance catches days at the rate warnings are issued');
+  assert.equal(h3.rightWhenWarned, t.hits / (t.hits + t.falseAlarms));
+  assert.equal(h3.rightByChance, (t.hits + t.misses) / t.days, 'chance is right as often as the event happens');
+});
+
+test('unusable scores give no rows at all', () => {
+  assert.equal(BV.rows(null), null);
+  assert.equal(BV.rows({}), null);
+  const nulls = JSON.parse(JSON.stringify(REAL));
+  for (const k of Object.keys(nulls.results)) Object.assign(nulls.results[k], { days: 0, hits: 0, misses: 0, falseAlarms: 0, correctNegatives: 0 });
+  assert.equal(BV.rows(nulls), null, 'an all-null backtest was turned into rows');
+});
+
+test('the track record shows the real backtest: both horizons, sample sizes and the chance baseline', async () => {
+  const r = await openWith(undefined);
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const d = r.document;
+  assert.equal(d.getElementById('btStatus').dataset.state, 'ready');
+  const rows = [...d.querySelectorAll('#btRows tr')];
+  assert.equal(rows.length, 6, 'one row per hazard and horizon');
+  const all = rows.map(tr => tr.textContent).join('\n');
+  assert.match(all, /3 days/); assert.match(all, /5 days/);
+  const t = REAL.results['heat@3'];
+  const heat3 = rows.find(tr => /Extreme heat/.test(tr.textContent) && /3 days/.test(tr.textContent)).textContent;
+  assert.ok(heat3.includes(t.days.toLocaleString('en-GB')), 'sample size missing: ' + heat3);
+  assert.ok(heat3.includes(pct(t.hits / (t.hits + t.misses))), 'hit rate missing: ' + heat3);
+  assert.ok(heat3.includes(pct((t.hits + t.falseAlarms) / t.days)), 'chance baseline missing: ' + heat3);
+  const section = d.getElementById('backtest').textContent;
+  assert.match(section, /experimental/i);
+  assert.ok(section.includes(String(REAL.places)), 'number of places missing');
+  assert.match(section, /not disasters|does not forecast disasters|not whether a disaster/i, 'the limit that this is weather, not disasters, is missing');
+  assert.ok(d.querySelectorAll('#btLimits li').length >= 4, 'the plain-language limits are missing');
+  assert.doesNotMatch(section, /predicts? (natural )?disasters|predicted the disaster|accurately predict/i);
+  r.close();
+});
+
+for (const [name, body, status] of [
+  ['missing', '{"error":"not found"}', 404],
+  ['empty', {}, 200],
+  ['all-null', (() => { const n = JSON.parse(JSON.stringify(REAL)); for (const k of Object.keys(n.results)) Object.assign(n.results[k], { days: 0, hits: 0, misses: 0, falseAlarms: 0, correctNegatives: 0 }); return n; })(), 200],
+  ['not JSON', 'not json', 200]
+]) {
+  test('with ' + name + ' backtest data the section says "Not yet available" and shows no figures', async () => {
+    const r = await openWith(body, status);
+    assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+    const d = r.document;
+    assert.equal(d.getElementById('btStatus').dataset.state, 'empty');
+    assert.match(d.getElementById('btStatus').textContent, /Not yet available/);
+    assert.equal(d.querySelectorAll('#btRows tr').length, 0);
+    assert.doesNotMatch(d.getElementById('backtest').textContent, /\d+%/, 'a percentage was shown without data');
+    r.close();
+  });
+}
