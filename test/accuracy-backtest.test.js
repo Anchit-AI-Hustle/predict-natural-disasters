@@ -102,3 +102,34 @@ for (const [name, body, status] of [
     r.close();
   });
 }
+
+test('the test period is shown as plain dates, not as a midnight shifted into a time zone', async () => {
+  /* The defect: "12 Jul 2026, 5:30 AM India Standard Time (IST)" for a
+     window that is a run of whole days. West of UTC it read as the day
+     before. */
+  const r = await openWith(undefined);
+  const s = r.document.getElementById('btStatus').textContent;
+  const day = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  assert.ok(s.includes(day(REAL.window.from)) && s.includes(day(REAL.window.to)), s);
+  assert.doesNotMatch(s, /\d{1,2}:\d{2}|\bAM\b|\bPM\b|IST|UTC|Standard Time/, 'a time or time zone was shown: ' + s);
+  r.close();
+});
+
+test('on a phone each row stacks as labelled lines instead of a sideways-scrolling table', async () => {
+  /* At 390px the eight columns scrolled 640px sideways inside their box,
+     so a phone showed the hazard and the sample size and none of the
+     results. Every cell carries its column name, and below 700px the
+     rows become cards that print it. */
+  const r = await openWith(undefined);
+  const d = r.document;
+  const heads = [...d.querySelectorAll('#btTable thead th')].map(th => th.textContent);
+  for (const tr of d.querySelectorAll('#btRows tr')) {
+    assert.deepEqual([...tr.children].map(td => td.dataset.label), heads, 'a cell does not carry its column name');
+  }
+  const css = [...d.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const m = css.match(/@media\s*\(max-width:\s*700px\)\s*\{([^@]*#btTable[^@]*)\}/);
+  assert.ok(m, 'no narrow-screen layout for the backtest table');
+  assert.match(m[1], /#btTable\s+thead\s*\{[^}]*display:\s*none/, 'the header row should give way to the labels');
+  assert.match(m[1], /#btTable\s+td::before\s*\{[^}]*content:\s*attr\(data-label\)/, 'the labels are not printed');
+  r.close();
+});
