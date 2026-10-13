@@ -119,7 +119,8 @@ jobs:
           # would have been 288 deployments a day against a limit of 100. At
           # hourly it is at most 24, so the saving it existed for is gone.
           git commit -m "Record outlooks, coverage and observed disasters ($total outlooks, $scans scans, $obs disasters)"
-          git push
+          # Rebases onto anything merged while this ran, instead of failing on it.
+          bash tools/push-with-retry.sh "${GITHUB_REF_NAME}"
 
       # Warms the events a reader is most likely to open, not every one.
       #
