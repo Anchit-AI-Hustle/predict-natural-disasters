@@ -2,7 +2,7 @@
  * The 3D globe, on every map in the app.
  *
  * Adapted from bilawalsidhu/gods-eye-view (MIT, Copyright (c) 2026 Bilawal
- * Sidhu) — its viewer configuration, its keyless imagery and terrain choices,
+ * Sidhu) - its viewer configuration, its keyless imagery and terrain choices,
  * and the decision to run Cesium with no ion token at all. That project is a
  * real-time viewer built on CesiumJS 1.124; this takes its globe and feeds it
  * this site's hazard records.
@@ -10,7 +10,7 @@
  * Two constraints shaped how it is wired in.
  *
  * Every page here builds its own Leaflet map and adds its own markers, with
- * its own colours, radii, popups and click handlers — sixteen pages of it. So
+ * its own colours, radii, popups and click handlers - sixteen pages of it. So
  * the globe does not replace that code and does not ask each page to call it.
  * It mirrors the Leaflet map it is given: whatever a page draws, the globe
  * shows, and a page that changes its markers gets a globe that follows without
@@ -19,7 +19,7 @@
  * And Cesium is megabytes. Loading it up front would leave a blank panel on a
  * disaster site while it downloads, so the Leaflet map renders first and the
  * globe swaps in when it is ready. If WebGL is unavailable, the CDN is
- * unreachable, or anything throws, the flat map simply stays — a map that
+ * unreachable, or anything throws, the flat map simply stays - a map that
  * works beats a globe that might.
  */
 (function () {
@@ -125,7 +125,7 @@
   }
 
   /* What a page drew, read back off its Leaflet map. Only the public accessors
-     are used — eachLayer, getLatLng, getPopup — so this does not depend on
+     are used - eachLayer, getLatLng, getPopup - so this does not depend on
      Leaflet internals that can change between releases. */
   function readMarkers(map) {
     var out = [];
@@ -140,13 +140,13 @@
         /* The basemap draws every country's name as a marker, and a marker
            has a position like any other. Mirrored blindly they became green
            points, so the globe showed an event in the middle of Canada and
-           Brazil that does not exist — the worst thing a hazard map can do.
+           Brazil that does not exist - the worst thing a hazard map can do.
 
            Excluded on being non-interactive, which the labels are and no
            page's event marker is, plus the label pane by name. The first
            version of this rejected any layer carrying a pane at all, which
            looked equivalent and was catastrophic: every real Leaflet marker
-           inherits a default pane — markerPane or overlayPane — so it threw
+           inherits a default pane - markerPane or overlayPane - so it threw
            away every hazard and left the globe empty. The unit test missed it
            because its fixtures were bare objects with no Leaflet defaults. */
         var labelPane = (window.PNDMap && window.PNDMap.LABEL_PANE) || 'pndLabels';
@@ -280,7 +280,7 @@
    * Nothing used to, so Cesium's default view applied: a fixed distance that
    * takes no account of the panel's shape or of what the reader was looking
    * at. On the live map that put the north pole 45 pixels above the top of a
-   * 504-pixel canvas — the globe was cut off — and aimed the camera at the
+   * 504-pixel canvas - the globe was cut off - and aimed the camera at the
    * eastern United States while the page was set to India.
    */
   function fitHeight(scene) {
@@ -300,6 +300,13 @@
     return R / Math.sin(half) - R;
   }
 
+  /* How close and how far the camera may go. A kilometre above the ground
+     still shows a town; three times the whole-Earth view keeps the planet a
+     clear disc in the panel. Cesium's own limits are a metre and infinity,
+     which let a reader fly into the ground or lose the Earth as a dot. */
+  var MIN_HEIGHT = 1000;
+  function maxHeight(scene) { return 3 * fitHeight(scene); }
+
   /* Where the flat map is looking, as one comparable string, or '' before
      it has been given a view. */
   function viewKey(map) {
@@ -314,12 +321,16 @@
   function frame(Cesium, viewer, map, fly) {
     if (!viewer || viewer.isDestroyed()) return;
     /* A viewer without these is not one this can aim, and failing to aim is
-       no reason to take the whole globe down with it — that is exactly what
+       no reason to take the whole globe down with it - that is exactly what
        happened the first time, when a stub lacking a camera turned every
        mount into no globe at all. The browser check asserts the aim, so a
        camera that quietly goes unframed is still caught where it matters. */
     if (!viewer.scene || !viewer.camera || typeof viewer.camera.setView !== 'function') return;
     var fit = fitHeight(viewer.scene);
+    try {
+      var ctl = viewer.scene.screenSpaceCameraController;
+      if (ctl) ctl.maximumZoomDistance = 3 * fit;
+    } catch (e) { /* older Scene */ }
     var lat = 20, lon = 0, zoom = 2;
     try {
       var c = map && map.getCenter && map.getCenter();
@@ -527,14 +538,34 @@
     '.pnd-hud-bar button[aria-pressed="true"]{border-color:#7fd3ff;background:rgba(127,211,255,.16);color:#fff}',
     '.pnd-hud-bar button:focus-visible{outline:2px solid #7fd3ff;outline-offset:1px}',
     '.pnd-hud-bar .sep{width:1px;background:rgba(214,236,255,.25);margin:2px 3px}',
-    '@media (max-width:720px){.pnd-hud-bar{top:44px;bottom:auto}.pnd-hud-title small,.pnd-hud-mgrs{display:none}}',
+    /* Zoom buttons bottom right, clear of the looks bar, the key and the
+       Globe/Flat switch on the left. */
+    '.pnd-hud-zoom{position:absolute;right:12px;bottom:30px;display:flex;flex-direction:column;gap:4px;pointer-events:auto}',
+    '.pnd-hud-zoom button{appearance:none;width:36px;height:36px;padding:0;display:flex;align-items:center;',
+    'justify-content:center;font:600 20px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0;',
+    'color:#d6ecff;background:rgba(0,0,0,.62);border:1px solid rgba(214,236,255,.3);border-radius:8px;',
+    'cursor:pointer;touch-action:manipulation}',
+    '.pnd-hud-zoom button:hover{background:rgba(127,211,255,.18);color:#fff}',
+    '.pnd-hud-zoom button:focus-visible{outline:2px solid #7fd3ff;outline-offset:1px}',
+    '.pnd-hud-hint{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);padding:6px 10px;',
+    'border-radius:6px;background:rgba(0,0,0,.72);white-space:nowrap;opacity:0;transition:opacity .3s ease}',
+    '.pnd-hud-hint[data-shown]{opacity:1}',
+    '.pnd-globe:focus-visible{outline:2px solid #7fd3ff;outline-offset:-2px}',
+    /* The flat map's caption of which picture is showing sits bottom left
+       and runs to several lines. While the globe shows, it stays clear of the
+       zoom buttons, and of the looks bar where that is along the bottom. */
+    '[data-pnd-globe]>.pnd-imagery-note{max-width:min(420px,calc(100% - 72px))}',
+    '@media (min-width:721px){[data-pnd-globe]>.pnd-imagery-note{max-width:max(160px,min(420px,calc(50% - 205px)))}}',
+    '@media (max-width:720px){.pnd-hud-bar{top:44px;bottom:auto}.pnd-hud-title small,.pnd-hud-mgrs{display:none}',
+    '.pnd-hud-hint{top:50%;bottom:auto;transform:translate(-50%,-50%);white-space:normal;text-align:center;',
+    'width:max-content;max-width:calc(100% - 120px)}}',
     /* A phone's map is about 370 x 300: one line of read-out, the looks
        under it, and nothing over the Globe/Flat switch at 84px. */
     '@media (max-width:560px){.pnd-hud{font-size:10px}.pnd-hud-title,.pnd-hud-pos,.pnd-hud-alt{display:none}',
     '.pnd-hud-rec{left:12px;right:12px;top:8px;text-align:left;display:flex;justify-content:space-between}',
     '.pnd-hud-bar{top:28px;left:8px;right:8px;transform:none;max-width:none;padding:3px;gap:2px}',
     '.pnd-hud-bar button{padding:4px 6px}}',
-    '@media (prefers-reduced-motion:reduce){.pnd-hud-rec b::before{animation:none}}'
+    '@media (prefers-reduced-motion:reduce){.pnd-hud-rec b::before{animation:none}.pnd-hud-hint{transition:none}}'
   ].join('');
 
   function hudStyle() {
@@ -567,7 +598,7 @@
     host.setAttribute('aria-hidden', 'true');
     /* Hidden until the viewer exists. It used to be appended visible and
        opaque, so a multi-megabyte download covered the already-rendered flat
-       map with a blank dark panel for its whole duration — and a stalled CDN
+       map with a blank dark panel for its whole duration - and a stalled CDN
        left it there. The promised fallback has to actually be visible while
        the globe is on its way. */
     host.style.cssText =
@@ -575,7 +606,7 @@
          it at the overlay level, under the marker pane, so rotating the globe
          left the flat markers hanging over it; 900 cleared the panes but not
          .leaflet-top/.leaflet-bottom, which Leaflet's own stylesheet puts at
-         1000 — a browser screenshot showed the zoom and layers controls
+         1000 - a browser screenshot showed the zoom and layers controls
          floating on the globe. The pane list is not the whole stacking order. */
       'position:absolute;inset:0;z-index:1200;background:#04120e;display:none';
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
@@ -730,7 +761,7 @@
         try {
           var cv = viewer.scene.canvas, base = cv && cv.getBoundingClientRect ? cv.getBoundingClientRect() : null;
           if (!base) return out;
-          var sel = '.pnd-hud-bar,.pnd-hud-rec,.pnd-hud-title,.pnd-view-toggle,.pnd-key,.pnd-imagery-note';
+          var sel = '.pnd-hud-bar,.pnd-hud-rec,.pnd-hud-title,.pnd-hud-zoom,.pnd-view-toggle,.pnd-key,.pnd-imagery-note';
           var els = container.querySelectorAll(sel);
           for (var i = 0; i < els.length; i++) {
             var b = els[i].getBoundingClientRect();
@@ -844,6 +875,257 @@
       look(PRESETS.some(function (p) { return p.key === saved; }) ? saved : 'normal');
     }
 
+    /*
+     * Zooming the globe, by every route a reader tries first.
+     *
+     * Cesium zooms on the mouse wheel, a touchscreen pinch and a right-drag,
+     * and on nothing else. A trackpad pinch is none of those: Chrome, Edge and
+     * Firefox send it as a wheel event with ctrlKey set, which Cesium listens
+     * for, cancels and maps to nothing, so a pinch moved neither the globe nor
+     * the page. Safari sends gesture events, which Cesium does not listen for
+     * at all. There were no zoom buttons either (the flat map's are hidden
+     * while the globe shows), no keys, no limit on how far the camera could
+     * go, and nothing on screen said how any of it worked.
+     */
+    function controls(Cesium) {
+      var cam = viewer.camera, ctl = viewer.scene.screenSpaceCameraController;
+      var T = Cesium.CameraEventType;
+      /* The wheel and the trackpad are handled below rather than by Cesium.
+         Measured in Chromium against Cesium 1.124, its wheel zoom is
+         lopsided: inertia carried one notch in to half the height, one notch
+         out moved the camera a tenth, and low down a notch out could carry
+         on inward. Cesium keeps the touchscreen pinch and the right-drag,
+         which behave. */
+      if (ctl && T) {
+        ctl.zoomEventTypes = [T.PINCH, T.RIGHT_DRAG];
+        ctl.minimumZoomDistance = MIN_HEIGHT;
+        ctl.maximumZoomDistance = maxHeight(viewer.scene);
+      }
+      function limits() {
+        var lo = ctl && isFinite(ctl.minimumZoomDistance) ? ctl.minimumZoomDistance : MIN_HEIGHT;
+        var hi = ctl && isFinite(ctl.maximumZoomDistance) ? ctl.maximumZoomDistance : maxHeight(viewer.scene);
+        return [lo, hi];
+      }
+      function clamp(h) { var l = limits(); return Math.max(l[0], Math.min(l[1], h)); }
+      function height() {
+        var c = cam.positionCartographic;
+        return c && isFinite(c.height) ? c.height : NaN;
+      }
+      function still() {
+        try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+      }
+
+      /* A button press: a short flight to half or double the height, with the
+         camera turned the way it was. Quick presses add up rather than each
+         starting from wherever the last flight had got to. */
+      var aim = null;
+      function step(factor) {
+        var c = cam.positionCartographic;
+        if (!c || !isFinite(c.height)) return;
+        var target = clamp((aim !== null ? aim : c.height) * factor);
+        try { cam.cancelFlight(); } catch (e) { /* no flight */ }
+        if (Math.abs(target - c.height) < 1) { aim = null; return; }
+        aim = target;
+        cam.flyTo({
+          destination: Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, target),
+          orientation: { heading: cam.heading, pitch: cam.pitch, roll: cam.roll },
+          duration: still() ? 0 : 0.35,
+          complete: function () { aim = null; requestRender(); },
+          cancel: function () { aim = null; }
+        });
+        requestRender();
+      }
+      function reset() {
+        aim = null;
+        try { cam.cancelFlight(); } catch (e) { /* no flight */ }
+        frame(Cesium, viewer, map, true);
+        followed = viewKey(map);
+        requestRender();
+      }
+      /* Zoom by a scale (2 is twice as close) about a point on the canvas:
+         the camera moves along the line to the ground under the pointer, so
+         that spot stays under the pointer, as on the flat map. Over empty
+         space, or where that would cross a limit, it moves straight in or out
+         along the way it is facing. */
+      function zoomAt(x, y, scale) {
+        var h = height();
+        if (!isFinite(h) || !(scale > 0)) return;
+        var l = limits(), want = Math.max(l[0], Math.min(l[1], h / scale));
+        if (Math.abs(want - h) < 0.5) return;
+        var a = 1 - want / h, ground = null, C3 = Cesium.Cartesian3;
+        try { if (isFinite(x) && isFinite(y)) ground = cam.pickEllipsoid(new Cesium.Cartesian2(x, y)); }
+        catch (e) { ground = null; }
+        if (ground) {
+          var to = C3.subtract(ground, cam.position, new C3());
+          var d = C3.magnitude(to);
+          C3.normalize(to, to);
+          cam.move(to, a * d);
+          var after = height();
+          if (!(after >= l[0] && after <= l[1])) { cam.move(to, -a * d); ground = null; }
+        }
+        if (!ground) {
+          if (want < h) cam.zoomIn(h - want); else cam.zoomOut(want - h);
+        }
+        requestRender();
+      }
+      function canvasPoint(ev) {
+        var r = host.getBoundingClientRect();
+        return [ev.clientX - r.left, ev.clientY - r.top];
+      }
+      /* Any flight - a button's, a reset, or the page sending the globe to
+         an event - gives way to the reader's own wheel or pinch. */
+      function stopFlight() {
+        aim = null;
+        try { cam.cancelFlight(); } catch (e) { /* no flight */ }
+      }
+
+      var group = document.createElement('div');
+      group.className = 'pnd-hud-zoom';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', 'Zoom');
+      [['in', 'Zoom in', '+'], ['out', 'Zoom out', '−'],
+        ['reset', 'Reset view', '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" ' +
+          'stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.2 8 2.8l6 5.4M4 7v6.3h8V7"/></svg>']
+      ].forEach(function (b) {
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.setAttribute('data-zoom', b[0]);
+        el.setAttribute('aria-label', b[1]);
+        el.title = b[1];
+        el.innerHTML = b[2];
+        el.addEventListener('click', function () {
+          dismiss();
+          if (b[0] === 'in') step(0.5); else if (b[0] === 'out') step(2); else reset();
+        });
+        group.appendChild(el);
+      });
+      var hud = host.querySelector('.pnd-hud') || host;
+      hud.appendChild(group);
+
+      /* Said once, when the globe first shows, and gone at the first touch. */
+      var coarse = false;
+      try { coarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches; } catch (e) { /* no media queries */ }
+      var hint = document.createElement('div');
+      hint.className = 'pnd-hud-hint';
+      hint.setAttribute('role', 'note');
+      hint.textContent = (coarse ? 'Pinch to zoom' : 'Scroll or pinch to zoom') + ' · Drag to turn';
+      hud.appendChild(hint);
+      var hintTimer = null, hinted = false;
+      function dismiss() {
+        if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+        hint.removeAttribute('data-shown');
+      }
+      state.hint = function () {
+        if (hinted) return;
+        hinted = true;
+        hint.setAttribute('data-shown', '');
+        hintTimer = setTimeout(dismiss, 6000);
+      };
+
+      /* Keys, once the globe has focus: + and - zoom, 0 goes back. Ctrl or
+         Command with them is the browser's own page zoom, left alone. */
+      if (!host.hasAttribute('tabindex')) host.setAttribute('tabindex', '0');
+      host.setAttribute('role', 'region');
+      host.setAttribute('aria-label', '3D globe. Scroll or pinch to zoom, drag to turn. ' +
+        'Plus and minus keys zoom, 0 resets the view.');
+      host.addEventListener('keydown', function (ev) {
+        if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+        var k = ev.key;
+        if (k === '+' || k === '=') step(0.5);
+        else if (k === '-' || k === '_') step(2);
+        else if (k === '0') reset();
+        else return;
+        dismiss();
+        ev.preventDefault();
+      });
+
+      /*
+       * The wheel. A mouse notch (about 100 pixels) zooms one step, twice as
+       * close or twice as far, the same amount both ways, gliding over a few
+       * frames rather than jumping. A trackpad's two-finger scroll arrives
+       * as many small deltas and zooms more gently per pixel. A trackpad
+       * pinch arrives as Ctrl + wheel and follows the fingers exactly:
+       * Chrome reports a pinch of scale s as deltaY = -100 ln(s).
+       */
+      var gesture = null, lastPinch = -Infinity, fingers = 0;
+      /* The glide is timed by the clock, not by frames: a slow phone drawing
+         ten frames a second still finishes it in about a quarter second. */
+      var pending = 0, anchor = [NaN, NaN], frameAsked = 0, lastTick = 0;
+      var later = window.requestAnimationFrame
+        ? function (f) { return window.requestAnimationFrame(f); }
+        : function (f) { return setTimeout(f, 16); };
+      function glide() {
+        frameAsked = 0;
+        var t = Date.now(), dt = Math.max(1, t - lastTick);
+        lastTick = t;
+        var part = still() || Math.abs(pending) < 0.02 ? pending : pending * (1 - Math.exp(-dt / 80));
+        pending -= part;
+        zoomAt(anchor[0], anchor[1], Math.pow(2, part));
+        if (pending) frameAsked = later(glide);
+      }
+      host.addEventListener('wheel', function (ev) {
+        dismiss();
+        if (ev.ctrlKey && gesture) {
+          /* Safari's gesture already has this pinch. */
+          if (ev.cancelable) ev.preventDefault();
+          ev.stopPropagation();
+          return;
+        }
+        /* A page scroll already under way carries on over the globe. */
+        /* A sideways swipe is not a zoom: it scrolls the looks bar, or the
+           page, as it would anywhere else. */
+        if (!ev.ctrlKey && Math.abs(ev.deltaX || 0) >= Math.abs(ev.deltaY || 0)) return;
+        var scrolling = shared('pageScrolling', null);
+        if (!ev.ctrlKey && typeof scrolling === 'function' && scrolling(ev)) { ev.stopPropagation(); return; }
+        if (ev.cancelable) ev.preventDefault();
+        ev.stopPropagation();
+        stopFlight();
+        var px = ev.deltaY * (ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? 800 : 1);
+        anchor = canvasPoint(ev);
+        if (ev.ctrlKey) {
+          lastPinch = Date.now();
+          zoomAt(anchor[0], anchor[1], Math.exp(-px / 100));
+          return;
+        }
+        pending += -px / (Math.abs(px) >= 50 ? 100 : 250);
+        if (!frameAsked) { lastTick = Date.now(); frameAsked = later(glide); }
+      }, { passive: false, capture: true });
+      host.addEventListener('pointerdown', dismiss, { passive: true, capture: true });
+
+      /* Safari's pinch. On an iPhone or iPad the same events come with
+         fingers on the screen, and Cesium's own touch pinch has those. */
+      function count(ev) { fingers = ev.touches ? ev.touches.length : 0; if (fingers) dismiss(); }
+      ['touchstart', 'touchend', 'touchcancel'].forEach(function (type) {
+        host.addEventListener(type, count, { passive: true, capture: true });
+      });
+      host.addEventListener('gesturestart', function (ev) {
+        if (fingers || Date.now() - lastPinch < 300) return;
+        if (ev.cancelable) ev.preventDefault();
+        stopFlight();
+        gesture = { h: height() };
+        dismiss();
+      });
+      host.addEventListener('gesturechange', function (ev) {
+        if (!gesture) return;
+        if (ev.cancelable) ev.preventDefault();
+        var h = height(), p = canvasPoint(ev);
+        if (ev.scale > 0 && isFinite(gesture.h) && h > 0) zoomAt(p[0], p[1], h / (gesture.h / ev.scale));
+      });
+      host.addEventListener('gestureend', function (ev) {
+        if (!gesture) return;
+        if (ev.cancelable) ev.preventDefault();
+        gesture = null;
+      });
+    }
+
+    /* Marks the container while the globe shows. The caption narrows then
+       (see HUD_CSS), so the key, which sits above the caption, is told to
+       measure it again. */
+    function marked(on) {
+      if (on) container.setAttribute('data-pnd-globe', ''); else container.removeAttribute('data-pnd-globe');
+      try { container.dispatchEvent(new CustomEvent('pnd-caption')); } catch (e) { /* old browser */ }
+    }
+
     function setControls(display) {
       try {
         var bars = container.querySelectorAll('.leaflet-control-container');
@@ -882,7 +1164,7 @@
       if (state.clock) clearInterval(state.clock);
       state.animated = false;
       try { if (viewer && !viewer.isDestroyed()) viewer.destroy(); } catch (e) { /* gone */ }
-      try { host.remove(); } catch (e) { /* gone */ }
+      try { host.remove(); marked(false); } catch (e) { /* gone */ }
     }
 
     function sync() {
@@ -1122,6 +1404,7 @@
       viewer.scene.skyAtmosphere.brightnessShift = -0.08;
       entities = viewer.entities;
       try { buildHud(Cesium); } catch (e) { /* the globe works without its HUD */ }
+      try { controls(Cesium); } catch (e) { /* Cesium's own wheel and drag still work */ }
       /* Hung off the host so the globe can be inspected from outside the
          closure. Nothing in the app reads it; it exists because the one
          defect that emptied this globe entirely was invisible to every
@@ -1196,6 +1479,7 @@
       reveal: function () {
         if (disposed || !viewer) return;
         host.style.display = '';
+        marked(true);
         setControls('none');
         /* Framed only now. While the host is display:none its canvas has no
            width, so a fit computed at creation divides by a zero-sized panel
@@ -1211,6 +1495,7 @@
             if (reannounce) reannounce();
             if (state.where) state.where();
             if (state.animate) state.animate(state.animated);
+            if (state.hint) state.hint();
             requestRender();
             return;
           }
@@ -1219,7 +1504,7 @@
       },
       /* An animated look stops asking for frames by itself once hidden, and
          picks up again on the next reveal. */
-      hide: function () { host.style.display = 'none'; setControls(''); },
+      hide: function () { host.style.display = 'none'; marked(false); setControls(''); },
       viewer: function () { return viewer; }
     };
   }

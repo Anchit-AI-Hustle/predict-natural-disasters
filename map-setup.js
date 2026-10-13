@@ -27,7 +27,7 @@
  *
  * Every map page's script starts `const map = L.map('map')`, so a library
  * that never arrives throws on the first statement and takes the rest of the
- * page with it — the feed request, the list of hazards, the filters. Measured
+ * page with it - the feed request, the list of hazards, the filters. Measured
  * in Chromium with that request blocked, /alerts showed 5 of its 25 records
  * and sat on "Loading…" for ever. The library is now served from this origin
  * rather than a CDN, which removes the likeliest cause, but a script can
@@ -36,7 +36,7 @@
  *
  * So a stand-in is installed: it answers every call, does nothing, and puts
  * an honest line in each map panel saying the map could not be loaded. It is
- * never a silent pretence that there is a map — an empty panel claiming
+ * never a silent pretence that there is a map - an empty panel claiming
  * nothing is nearby would be worse than no panel at all.
  */
 (function () {
@@ -532,17 +532,7 @@
     '.pnd-imagery-note{position:absolute;left:8px;bottom:26px;z-index:1300;pointer-events:none;',
     'max-width:min(420px,calc(100% - 16px));padding:5px 8px;border-radius:6px;',
     'background:rgba(4,18,14,.86);color:#e6f4ee;font:500 11px/1.35 system-ui,sans-serif}',
-    '.pnd-imagery-note[hidden]{display:none}',
-    /* The wheel hint, shown only when a reader tries the plain wheel over
-       the map. Above the panes, below the controls, and never in the way
-       of a pointer. */
-    '.pnd-wheel-hint{position:absolute;inset:auto 0 0 0;z-index:1200;pointer-events:none;',
-    'display:flex;align-items:center;justify-content:center;',
-    'padding:10px 12px;margin:0;background:rgba(3,18,14,.86);color:#eaf7f1;',
-    'font:700 12px/1.3 system-ui,sans-serif;text-align:center;',
-    'opacity:0;transition:opacity .16s ease}',
-    '.pnd-wheel-hint[data-shown]{opacity:1}',
-    '@media (prefers-reduced-motion:reduce){.pnd-wheel-hint{transition:none}}'
+    '.pnd-imagery-note[hidden]{display:none}'
   ].join('');
 
   function injectStyle() {
@@ -995,74 +985,127 @@
   }
 
   /*
-   * The wheel, the way every other map on the web handles it.
+   * Zooming: the scroll wheel, a trackpad pinch and Safari's pinch.
    *
-   * A map inside a scrolling page has to answer two things at once: the wheel
-   * is how a reader moves down the page, and it is also how a reader zooms a
-   * map. Taking it for zoom traps the page; ignoring it makes the map feel
-   * dead. The settled convention - Google Maps, Mapbox and Leaflet's own
-   * documentation all do this - is that the modifier key decides: plain wheel
-   * scrolls the page, Ctrl (or Command) plus wheel zooms the map, and the map
-   * says so the first time a reader tries the plain wheel over it.
+   * The scroll wheel zooms, as readers expect of a map. This used to need
+   * Ctrl or Command held down, so that a reader scrolling down the page was
+   * not stopped dead by the map; readers found that confusing and asked for
+   * plain scroll and pinch. What is kept from it is the one case that
+   * matters: a page scroll already under way that runs over a map keeps
+   * scrolling the page. A scroll that starts on the map zooms it.
    *
-   * This replaces a click-to-arm behaviour, which had the same intent and was
-   * not a convention anybody arrives knowing: the wheel did nothing until the
-   * map had been clicked, and clicking a map is how you open an event.
+   * A trackpad pinch arrives as a wheel event with ctrlKey set (Chrome, Edge,
+   * Firefox). Leaflet's wheel handler treats it like a mouse wheel, divides it
+   * down and animates it in steps, so a whole pinch moved the map a fraction
+   * of a level. It is handled here instead, so the map follows the fingers:
+   * Chrome reports a pinch of scale s as deltaY = -100 ln(s), and the zoom
+   * moves by log2(s). Safari sends its own gesture events with the scale on
+   * them, which Leaflet does not listen for at all.
    *
-   * A trackpad pinch arrives as a wheel event with ctrlKey set, so pinch to
-   * zoom works on a laptop without any extra handling. Dragging, two-finger
-   * pinch on a touchscreen, double-click zoom, keyboard arrows and the zoom
-   * buttons are Leaflet's own and are deliberately left alone.
+   * Dragging, the touchscreen pinch, double-click, the +/- buttons and the
+   * keyboard are Leaflet's own and are left alone.
    */
-  var HINT_CLASS = 'pnd-wheel-hint';
-  function wheelGesture(map, container) {
-    if (!container || !container.addEventListener || typeof map.scrollWheelZoom !== 'object') return;
-    /* Leaflet's own handler stays off until a modifier is actually held. */
-    try { map.scrollWheelZoom.disable(); } catch (e) { /* stub */ }
+  var PAGE_SCROLL_GAP_MS = 500;
+  var PINCH_LEVELS_PER_PX = 1 / (100 * Math.LN2);
+  var lastPageWheel = -Infinity, lastPageScroll = -Infinity;
+  function now() {
+    return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+  }
+  function overMap(t) {
+    return !!(t && t.closest && t.closest('.leaflet-container,.pnd-globe,[data-pnd-zoom]'));
+  }
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('wheel', function (ev) {
+      if (!ev.ctrlKey && !ev.metaKey && !overMap(ev.target)) lastPageWheel = now();
+    }, { passive: true, capture: true });
+    /* The document itself scrolling, by any means. */
+    window.addEventListener('scroll', function () { lastPageScroll = now(); }, { passive: true });
+  }
+  /*
+   * Whether this wheel event over a map belongs to a page scroll that was
+   * already going on. While it does, the scroll carries on through. Three
+   * signs, because none is enough alone:
+   *  - the browser has already scrolled the page with it: Chrome and Edge
+   *    make the rest of a scroll that began off the map non-cancelable, and
+   *    when the page is busy the map can arrive under the pointer before the
+   *    event is even delivered;
+   *  - a wheel turned off the map moments ago;
+   *  - the page scrolled moments before this event was made.
+   */
+  function pageScrolling(ev) {
+    if (!ev || ev.ctrlKey || ev.metaKey) return false;
+    var t = now(), made = ev.timeStamp;
+    if (!(made > 0) || made > t + 1000) made = t;
+    if (ev.cancelable === false || t - lastPageWheel < PAGE_SCROLL_GAP_MS || lastPageScroll > made - PAGE_SCROLL_GAP_MS) {
+      lastPageWheel = t;
+      return true;
+    }
+    return false;
+  }
+  function wheelPixels(ev) {
+    return ev.deltaY * (ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? 800 : 1);
+  }
 
-    var hint = null, hideTimer = null;
-    function say(text) {
-      if (!document || !document.createElement) return;
-      if (!hint) {
-        hint = document.createElement('div');
-        hint.className = HINT_CLASS;
-        hint.setAttribute('role', 'status');
-        container.appendChild(hint);
-      }
-      hint.textContent = text;
-      hint.setAttribute('data-shown', '1');
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(function () { if (hint) hint.removeAttribute('data-shown'); }, 1600);
+  function wheelGesture(map, container) {
+    if (!container || !container.addEventListener) return;
+    var gesture = null, lastPinch = -Infinity, fingers = 0;
+    container.setAttribute('data-pnd-zoom', '');
+    /* The globe sits inside this container and handles its own zoom: an
+       event over it is not for the hidden flat map underneath. */
+    function onGlobe(ev) {
+      return !!(ev.target && ev.target.closest && ev.target.closest('.pnd-globe'));
+    }
+
+    function zoomAround(ev, z) {
+      if (typeof map.setZoomAround !== 'function' || !isFinite(z)) return;
+      var at = null;
+      try { at = map.mouseEventToContainerPoint(ev); } catch (e) { at = null; }
+      try { map.setZoomAround(at || map.getCenter(), z, { animate: false }); } catch (e) { /* no view yet */ }
     }
 
     container.addEventListener('wheel', function (ev) {
-      var zooming = ev.ctrlKey || ev.metaKey;
-      try {
-        if (zooming) {
-          if (!map.scrollWheelZoom.enabled()) map.scrollWheelZoom.enable();
-          /* Without this the browser zooms the whole page instead. */
-          if (ev.cancelable) ev.preventDefault();
-        } else {
-          if (map.scrollWheelZoom.enabled()) map.scrollWheelZoom.disable();
-          say(WHEEL_HINT);
-        }
-      } catch (e) { /* a stub map has no handler to toggle */ }
+      if (onGlobe(ev)) return;
+      if (ev.ctrlKey || ev.metaKey) {
+        /* Without preventDefault the browser zooms the whole page; without
+           stopPropagation Leaflet zooms a second time in its own steps. */
+        if (ev.cancelable) ev.preventDefault();
+        ev.stopPropagation();
+        lastPinch = now();
+        if (gesture) return;
+        zoomAround(ev, map.getZoom() - wheelPixels(ev) * PINCH_LEVELS_PER_PX);
+        return;
+      }
+      /* Kept from Leaflet, and from preventing the page scroll. */
+      if (pageScrolling(ev)) ev.stopPropagation();
     }, { passive: false, capture: true });
 
-    /* Leaving the map must not leave the handler armed for the next page
-       scroll that happens to pass over it. */
-    container.addEventListener('mouseleave', function () {
-      try { map.scrollWheelZoom.disable(); } catch (e) {}
-      if (hint) hint.removeAttribute('data-shown');
+    /* Fingers on a touchscreen: Leaflet's own touch zoom has those, and iOS
+       sends the gesture events below for them as well. */
+    function count(ev) { fingers = ev.touches ? ev.touches.length : 0; }
+    ['touchstart', 'touchend', 'touchcancel'].forEach(function (type) {
+      container.addEventListener(type, count, { passive: true, capture: true });
+    });
+
+    container.addEventListener('gesturestart', function (ev) {
+      if (fingers || now() - lastPinch < 300 || onGlobe(ev)) return;
+      if (ev.cancelable) ev.preventDefault();
+      gesture = { zoom: map.getZoom() };
+    });
+    container.addEventListener('gesturechange', function (ev) {
+      if (!gesture) return;
+      if (ev.cancelable) ev.preventDefault();
+      if (ev.scale > 0) zoomAround(ev, gesture.zoom + Math.log(ev.scale) / Math.LN2);
+    });
+    container.addEventListener('gestureend', function (ev) {
+      if (!gesture) return;
+      if (ev.cancelable) ev.preventDefault();
+      gesture = null;
     });
 
     /* Reachable without a pointer at all: Leaflet gives a focused map arrow
        keys and +/-, and the container needs to be focusable for that. */
     if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '0');
   }
-  var WHEEL_HINT = (typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform || ''))
-    ? 'Use ⌘ + scroll to zoom the map'
-    : 'Use Ctrl + scroll to zoom the map';
 
   var base = L.map;
   if (base.__pndMapSetup) return;
@@ -1071,10 +1114,8 @@
     var opts = {};
     for (var k in (options || {})) if (Object.prototype.hasOwnProperty.call(options, k)) opts[k] = options[k];
 
-    // A page that deliberately asks for wheel zoom keeps it; otherwise the
-    // wheel must not steal the page scroll out from under the reader.
-    var explicitWheel = options && Object.prototype.hasOwnProperty.call(options, 'scrollWheelZoom');
-    if (!explicitWheel) opts.scrollWheelZoom = false;
+    // A page that turns the wheel off keeps it off, pinch included.
+    var noWheel = !!options && options.scrollWheelZoom === false;
     // Whole-number zooms cannot land on "the world exactly fills the panel".
     if (!('zoomSnap' in opts)) opts.zoomSnap = 0;
     // Copies of the world either side are what made three Americas.
@@ -1102,7 +1143,7 @@
         ro.observe(container);
       }
 
-      if (!explicitWheel) wheelGesture(map, container);
+      if (!noWheel) wheelGesture(map, container);
     } catch (e) { /* a map stub without an event bus still returns a usable map */ }
 
     return map;
@@ -1155,6 +1196,8 @@
 
   window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD,
     riskMarker: riskMarker,
+    /* The globe lets a page scroll carry on over it, by the same rule. */
+    pageScrolling: pageScrolling,
     /* Published so the globe can exclude exactly this pane rather than
        guessing at the name or rejecting every layer that has one. */
     LABEL_PANE: LABEL_PANE,
