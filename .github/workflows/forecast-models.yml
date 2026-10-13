@@ -88,4 +88,5 @@ jobs:
           git config user.name "forecast-models"
           git config user.email "noreply@anthropic.com"
           git commit -m "Climatology and backtest scores for the forecast models"
-          git push
+          # Rebases onto anything merged while this ran, instead of failing on it.
+          bash tools/push-with-retry.sh "${GITHUB_REF_NAME}"
