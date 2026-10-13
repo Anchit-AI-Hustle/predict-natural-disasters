@@ -19,13 +19,21 @@ name: Refresh disaster intelligence
 # feed from the upstream sources whenever its shared copy is more than 30
 # seconds old, and this job's ?cron=<time> is never served a copy. What this job adds is the
 # written record — which outlook existed when, and what changed since.
+#
+# Minute 17, not minute 0: GitHub's documentation says scheduled runs can be
+# delayed under load, that the start of every hour is a high-load time, and
+# that some queued jobs may then be dropped. At minute 0 this job ran every
+# four to seven hours instead of hourly.
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+  # Reading the previous run's outcome and opening an issue when it fails.
+  actions: read
+  issues: write
 
 concurrency:
   group: disaster-refresh
@@ -44,6 +52,16 @@ jobs:
           set -euo pipefail
           curl --fail --silent --show-error --retry 2 --retry-delay 3 --max-time 60 \
             "$BASE_URL/api/events?cron=$(date +%s)" -o /tmp/events.json
+
+      # A 200 with no events would otherwise be recorded as a scan that found
+      # nothing, which reads as "no forecast missed anything".
+      - name: Check the feed has events
+        id: feed
+        run: |
+          if ! node tools/refresh-alert.js check /tmp/events.json; then
+            echo "empty=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
 
       # A forecast recomputed on every request cannot be graded. The ledger is
       # append-only and lives in git, so what was forecast and when is auditable
@@ -204,3 +222,13 @@ jobs:
           if warmed < len(targets) * 0.5:
               sys.exit('FAIL: enrichment warmed for only %d of %d events' % (warmed, len(targets)))
           PY
+
+      # Nobody noticed two weeks of failed runs. An empty feed opens an issue
+      # at once; any other failure only when the run before also failed. An
+      # open issue gets a comment rather than a duplicate.
+      - name: Open an issue if the feed is empty or the job failed twice in a row
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_FILE: refresh-disaster-data.yml
+        run: node tools/refresh-alert.js alert ${{ steps.feed.outputs.empty == 'true' && 'empty' || 'failed' }}
