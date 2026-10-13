@@ -93,6 +93,12 @@ const LEAFLET_STUB = `
       return Array.isArray(c) ? { lat: +c[0], lng: +c[1] } : { lat: +c.lat, lng: +(c.lng !== undefined ? c.lng : c.lon) };
     };
     m.getZoom = function(){ return m.__view ? m.__view.zoom : 3; };
+    /* What a pinch drives: a zoom about the point under the fingers. */
+    m.setZoomAround = function(p, z){
+      m.__around = p;
+      m.__view = { center: m.__view ? m.__view.center : [20, 0], zoom: z };
+      m.fire('moveend'); return m; };
+    m.mouseEventToContainerPoint = function(e){ return { x: e.clientX || 0, y: e.clientY || 0 }; };
     m.on = function(name, fn){
       String(name).split(' ').forEach(function(n){ (handlers[n] = handlers[n] || []).push(fn); });
       return m; };
@@ -181,13 +187,30 @@ const CESIUM_STUB = `
       /* Faithful enough for the code paths that read it. The camera and the
          canvas were missing, so the framing the globe does on every mount
          threw, the mount was abandoned, and the tests reported no globe. */
+      /* Where the camera is, kept in step with every way of moving it, so a
+         test can read the height a zoom left it at. */
+      function placed(cam, d) {
+        if (d && isFinite(d.height)) cam.positionCartographic.height = d.height;
+      }
       this.camera = {
         frustum: { fov: Math.PI / 3, aspectRatio: 2 },
         positionWC: { x: 0, y: 0, z: 0 },
-        setView: function (o) { this.__view = o; },
-        flyTo: function (o) { this.__view = o; this.__flew = (this.__flew || 0) + 1; }
+        positionCartographic: { longitude: 0, latitude: 0, height: 20000000 },
+        heading: 0, pitch: -Math.PI / 2, roll: 0,
+        setView: function (o) { this.__view = o; placed(this, o.destination); },
+        flyTo: function (o) { this.__view = o; this.__flew = (this.__flew || 0) + 1; placed(this, o.destination);
+          if (o.complete) o.complete(); },
+        cancelFlight: function () {},
+        /* Nothing under the pointer in a stub, so a zoom goes straight in. */
+        pickEllipsoid: function () { return undefined; },
+        move: function () {},
+        zoomIn: function (a) { this.positionCartographic.height -= a; },
+        zoomOut: function (a) { this.positionCartographic.height += a; }
       };
+      /* Cesium's defaults: wheel, pinch and right-drag zoom, no limits. */
       this.scene = { skyAtmosphere: {}, globe: {}, camera: this.camera,
+        screenSpaceCameraController: { zoomEventTypes: [1, 3, 4], minimumZoomDistance: 1, maximumZoomDistance: Infinity },
+        requestRender: function () {},
         canvas: { clientWidth: 800, clientHeight: 400, width: 800, height: 400 } };
       /* Every layer, in the order it went on, not just the last one. The
          globe now stacks the painted world, the satellite imagery and the
@@ -206,7 +229,11 @@ const CESIUM_STUB = `
       this.destroy = function(){ destroyed = true; };
       window.__pndViewers.push(this);
     },
-    Cartesian3: { fromDegrees: function(lon, lat){ return { lon: lon, lat: lat }; } },
+    Cartesian3: { fromDegrees: function(lon, lat, h){ return { lon: lon, lat: lat, height: h }; },
+      fromRadians: function(lon, lat, h){ return { lon: lon * 180 / Math.PI, lat: lat * 180 / Math.PI, height: h }; } },
+    Cartesian2: function(x, y){ this.x = x; this.y = y; },
+    CameraEventType: { LEFT_DRAG: 0, RIGHT_DRAG: 1, MIDDLE_DRAG: 2, WHEEL: 3, PINCH: 4 },
+    KeyboardEventModifier: { SHIFT: 0, CTRL: 1, ALT: 2 },
     Color: { fromCssColorString: function(c){ return { css: c }; } },
     HeightReference: { CLAMP_TO_GROUND: 'clamp' },
     Ellipsoid: { WGS84: 'wgs84' },

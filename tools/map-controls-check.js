@@ -19,8 +19,8 @@
  *   - the default base layer is the clear map, which fetches no imagery,
  *     and Satellite and Political are both offered beside it;
  *   - the key to the marks, where a map has any, is reachable too;
- *   - the plain wheel does not take the page scroll, and Ctrl/Command plus
- *     wheel does zoom the map;
+ *   - the wheel and a trackpad pinch (Ctrl + wheel) zoom the map and do not
+ *     zoom the page (tools/zoom-browser-check.js measures the zoom itself);
  *   - the controls sit inside the map panel.
  *
  * Usage, with Playwright and a Chromium available:
@@ -168,16 +168,15 @@ const server = http.createServer(async (req, res) => {
       if (found.maps) {
         const wheel = await pg.evaluate(() => {
           const el = document.querySelector('.leaflet-container');
-          const fire = over => el.dispatchEvent(new WheelEvent('wheel',
-            Object.assign({ bubbles: true, cancelable: true, deltaY: -120 }, over)));
-          const before = document.documentElement.scrollTop;
-          fire({});
-          const hint = el.querySelector('.pnd-wheel-hint');
-          const plainHinted = !!(hint && hint.hasAttribute('data-shown') && /scroll to zoom/i.test(hint.textContent));
-          fire({ ctrlKey: true });
-          return { plainHinted, scrolledAway: document.documentElement.scrollTop !== before };
+          const fire = over => {
+            const ev = new WheelEvent('wheel', Object.assign({ bubbles: true, cancelable: true, deltaY: -120 }, over));
+            el.dispatchEvent(ev);
+            return ev.defaultPrevented;
+          };
+          return { zoomable: el.hasAttribute('data-pnd-zoom'), pinchHeld: fire({ ctrlKey: true }) };
         });
-        if (!wheel.plainHinted) problems.push('a plain wheel over the map says nothing about how to zoom');
+        if (!wheel.zoomable) problems.push('the map has no wheel and pinch zoom');
+        if (!wheel.pinchHeld) problems.push('a trackpad pinch over the map zooms the whole page');
       }
 
       const label = page + ' @ ' + width;

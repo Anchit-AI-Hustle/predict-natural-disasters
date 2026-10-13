@@ -2,10 +2,8 @@
 /**
  * Map interaction.
  *
- * Leaflet turns scroll-wheel zoom on by default, so a reader scrolling down a
- * page with a tall map stops dead over it and starts zooming instead. The wheel
- * must engage only once they have actually reached for the map, while drag,
- * pinch, double-click and the +/- control stay available throughout.
+ * Scroll, pinch, drag, double-click and the +/- control all work on the map;
+ * how the wheel and pinch behave is tested in zoom.test.js.
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -38,55 +36,6 @@ test('every page that builds a map loads the shared setup, after Leaflet', () =>
 
 /** The maps a page built, as recorded by the harness's Leaflet stub. */
 const mapsOf = r => r.window.__pndMaps || [];
-
-test('a plain wheel scrolls the page and the modifier zooms the map', async () => {
-  /* A map inside a scrolling page has to share the wheel with the page. The
-     settled convention everywhere else on the web is that the modifier key
-     decides, and the map says so the first time a reader tries the plain
-     wheel over it. This replaced a click-to-arm behaviour with the same
-     intent that nobody arrives knowing - and clicking a map is how you open
-     an event. */
-  for (const page of ['index.html', 'live-map.html', 'event-detail.html']) {
-    const r = await renderPage(page, {
-      search: page === 'event-detail.html' ? '?id=ND-001' : '',
-      timeoutMs: 3000, waitFor: doc => (doc.defaultView.__pndMaps || []).length > 0
-    });
-    const win = r.window;
-    const maps = mapsOf(r);
-    assert.ok(maps.length, page + ' built no map');
-    for (const map of maps) {
-      const el = map.getContainer();
-      const wheel = over => el.dispatchEvent(new win.WheelEvent('wheel',
-        Object.assign({ bubbles: true, cancelable: true, deltaY: -120 }, over)));
-
-      assert.equal(map.scrollWheelZoom.enabled(), false, page + ': wheel captured on load');
-
-      wheel({});
-      assert.equal(map.scrollWheelZoom.enabled(), false,
-        page + ': a plain wheel took the page scroll');
-      const hint = el.querySelector('.pnd-wheel-hint');
-      assert.ok(hint && /scroll to zoom/i.test(hint.textContent),
-        page + ': nothing told the reader how to zoom');
-      assert.ok(hint.hasAttribute('data-shown'), page + ': the hint was not shown');
-
-      wheel({ ctrlKey: true });
-      assert.equal(map.scrollWheelZoom.enabled(), true,
-        page + ': Ctrl + wheel did not zoom the map');
-
-      // A trackpad pinch arrives as ctrl + wheel, and Command is the Mac key.
-      wheel({});
-      assert.equal(map.scrollWheelZoom.enabled(), false, page + ': the wheel stayed armed');
-      wheel({ metaKey: true });
-      assert.equal(map.scrollWheelZoom.enabled(), true,
-        page + ': Command + wheel did not zoom the map');
-
-      el.dispatchEvent(new win.MouseEvent('mouseleave', { bubbles: false }));
-      assert.equal(map.scrollWheelZoom.enabled(), false,
-        page + ': the wheel stayed armed after the pointer left');
-    }
-    r.close();
-  }
-});
 
 test('the clear map opens; satellite and political stay one click away', () => {
   /* Satellite opened for a while, and a reader could not make out the map at
@@ -211,7 +160,7 @@ test('the guard leaves dragging, pinch and the zoom control alone', () => {
   assert.match(src, /scrollWheelZoom/, 'the guard does not touch the wheel at all');
 });
 
-test('the map is reachable by keyboard, so the wheel can be engaged without a mouse', async () => {
+test('the map is reachable by keyboard, so it can be zoomed without a mouse', async () => {
   const r = await renderPage('live-map.html', {
     timeoutMs: 3000, waitFor: doc => (doc.defaultView.__pndMaps || []).length > 0
   });
