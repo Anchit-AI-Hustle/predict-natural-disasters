@@ -31,8 +31,9 @@ if (!eventsPath || !ledgerPath) {
   process.exit(2);
 }
 
-const feed = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
-const events = Array.isArray(feed.events) ? feed.events : [];
+const G = require('./io-guard.js');
+const feed = G.readFeed(eventsPath);
+const events = feed.events;
 /* Which scan's snapshot this forecast was derived from.
  *
  * A continuation outlook is derived from a hazard in this very feed, so the
@@ -41,11 +42,7 @@ const events = Array.isArray(feed.events) ? feed.events : [];
  * source from a later observation of the same disaster. */
 const sourceScanId = ((feed.meta || {}).scan || {}).scanId || null;
 
-let ledger = [];
-try {
-  const raw = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-  if (Array.isArray(raw)) ledger = raw;
-} catch (e) { /* first run: start empty */ }
+const ledger = G.readLedger(ledgerPath, Array.isArray, () => []);
 
 /**
  * An outlook is identified by every term it is graded on, not by its id and
@@ -156,6 +153,9 @@ const next = ledger.concat(added)
   .sort((a, b) => String(a.targetStart).localeCompare(String(b.targetStart))
     || String(a.id).localeCompare(String(b.id)));
 
-fs.writeFileSync(ledgerPath, JSON.stringify(next, null, 2) + '\n');
+// Append-only: the result holds every earlier row, and every new one is gradeable.
+G.writeChecked(ledgerPath, next, v => (v.length < ledger.length + added.length ? ['rows went missing'] : [])
+  .concat(added.map(r => G.missingKeys(r, ['id', 'type', 'targetStart', 'targetEnd'])).filter(m => m.length)
+    .map(m => 'a new row is missing ' + m.join(', '))));
 console.log('ledger: recorded ' + added.length + ' new outlook(s), ' + next.length + ' total');
 for (const a of added) console.log('  + ' + a.id + ' ' + a.targetStart + ' → ' + a.targetEnd);

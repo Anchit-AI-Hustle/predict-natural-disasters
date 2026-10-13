@@ -53,10 +53,13 @@ function outlook(over) {
     targetStart: WINDOW_START, targetEnd: WINDOW_END
   }, over || {});
 }
+const OBS = { id: 'us-obs', title: 'M 4.8 - observed', type: 'Earthquake', source: 'USGS', lat: 1, lon: 2, updated: '2026-09-20T00:00:00Z' };
 function run(dir, events, sources) {
   const feed = path.join(dir, 'events.json');
   const log = path.join(dir, 'changes.json');
-  fs.writeFileSync(feed, JSON.stringify({ events, meta: { sources: sources || {} } }));
+  /* One observation rides along: it is not a forecast, so it changes nothing
+     here, and a feed with no events at all is refused as an outage. */
+  fs.writeFileSync(feed, JSON.stringify({ events: events.concat([OBS]), meta: { sources: sources || {} } }));
   execFileSync(process.execPath, [TOOL, feed, log], { encoding: 'utf8' });
   return JSON.parse(fs.readFileSync(log, 'utf8'));
 }
@@ -329,7 +332,8 @@ test('a snapshot written before providers existed is not accused of vanishing', 
       targetStart: '2026-09-18T00:00:00Z', targetEnd: '2099-01-01T00:00:00Z' } }
   }));
   const feed = path.join(d, 'events.json');
-  fs.writeFileSync(feed, JSON.stringify({ events: [], meta: { sources: { gdacs: { ok: false } } } }));
+  /* No outlooks, but not an empty feed: an empty one is refused as an outage. */
+  fs.writeFileSync(feed, JSON.stringify({ events: [{ id: 'us-obs', title: 'M 4.8 - observed', type: 'Earthquake', source: 'USGS', lat: 1, lon: 2, updated: '2026-09-20T00:00:00Z' }], meta: { sources: { gdacs: { ok: false } } } }));
   execFileSync(process.execPath, [TOOL, feed, log]);
   const last = JSON.parse(fs.readFileSync(log, 'utf8')).runs.slice(-1)[0];
   assert.deepEqual(last.gone.map(x => x.id), [],
@@ -350,7 +354,8 @@ test('a legacy entry is still a withdrawal when everything is up', () => {
       targetEnd: '2099-01-01T00:00:00Z' } }
   }));
   const feed = path.join(d, 'events.json');
-  fs.writeFileSync(feed, JSON.stringify({ events: [], meta: { sources: { gdacs: { ok: true } } } }));
+  /* No outlooks, but not an empty feed: an empty one is refused as an outage. */
+  fs.writeFileSync(feed, JSON.stringify({ events: [{ id: 'us-obs', title: 'M 4.8 - observed', type: 'Earthquake', source: 'USGS', lat: 1, lon: 2, updated: '2026-09-20T00:00:00Z' }], meta: { sources: { gdacs: { ok: true } } } }));
   execFileSync(process.execPath, [TOOL, feed, log]);
   const last = JSON.parse(fs.readFileSync(log, 'utf8')).runs.slice(-1)[0];
   assert.deepEqual(last.gone.map(x => x.id), ['OUT-legacy']);

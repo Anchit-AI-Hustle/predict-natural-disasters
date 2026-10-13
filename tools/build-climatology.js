@@ -31,6 +31,7 @@
 const fs = require('fs');
 const path = require('path');
 const M = require(path.join(__dirname, '..', 'forecast-models.js'));
+const G = require(path.join(__dirname, 'io-guard.js'));
 
 const OUT = process.argv[2] || path.join(__dirname, '..', 'data', 'climatology.json');
 /* The most recent thirty complete years. The WMO's 1991-2020 normal is a
@@ -156,8 +157,11 @@ function climatology(p, h) {
     harmonics: M.HARMONICS,
     places, skipped
   };
+  console.log('\n' + places.length + ' places built, ' + skipped.length + ' skipped');
+  for (const s of skipped) console.log('  skipped: ' + s);
+  const problems = G.climatologyProblems(out, PLACES.length);
+  if (problems.length) throw new Error('not writing ' + OUT + ': ' + problems.slice(0, 10).join('; '));
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(out) + '\n');
-  console.log('\n' + places.length + ' places written to ' + OUT + ', ' + skipped.length + ' skipped');
-  for (const s of skipped) console.log('  skipped: ' + s);
+  console.log('written to ' + OUT);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -33,18 +33,15 @@ if (!eventsPath || !ledgerPath) {
   process.exit(2);
 }
 
-const feed = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
+const G = require('./io-guard.js');
+const feed = G.readFeed(eventsPath);
 const scan = (feed.meta || {}).scan;
-if (!scan || !Array.isArray(scan.providers)) {
-  console.error('the feed carries no scan record; nothing to write');
+if (!scan || !Array.isArray(scan.providers) || !scan.providers.length || !scan.scanId) {
+  console.error('the feed carries no scan record, or one that evaluated no provider; nothing to write');
   process.exit(1);
 }
 
-let ledger = { schemaVersion: 1, scans: [] };
-try {
-  const raw = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-  if (raw && Array.isArray(raw.scans)) ledger = raw;
-} catch (e) { /* first run: start empty */ }
+const ledger = G.readLedger(ledgerPath, raw => !!raw && Array.isArray(raw.scans), () => ({ schemaVersion: 1, scans: [] }));
 
 if (ledger.scans.some(s => s.scanId === scan.scanId)) {
   console.log('scan ledger: ' + scan.scanId + ' already recorded (' + ledger.scans.length + ' scans)');
@@ -140,7 +137,10 @@ ledger.retention = {
 };
 ledger.updatedAt = scan.scanTimestamp;
 
-fs.writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + '\n');
+G.writeChecked(ledgerPath, ledger, v => {
+  const last = v.scans[v.scans.length - 1];
+  return last ? G.missingKeys(last, ['scanId', 'scanTimestamp', 'providerVersion']).map(k => 'the new scan has no ' + k) : ['no scans'];
+});
 const counts = scan.providers.reduce((m, p) => { m[p.status] = (m[p.status] || 0) + 1; return m; }, {});
 console.log('scan ledger: recorded ' + scan.scanId + ' — ' +
   Object.keys(counts).map(k => counts[k] + ' ' + k).join(', ') +

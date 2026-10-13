@@ -28,6 +28,7 @@
 const fs = require('fs');
 const path = require('path');
 const M = require(path.join(__dirname, '..', 'forecast-models.js'));
+const G = require(path.join(__dirname, 'io-guard.js'));
 
 const ROOT = path.join(__dirname, '..');
 const CLIM = process.argv[2] || path.join(ROOT, 'data', 'climatology.json');
@@ -196,14 +197,16 @@ async function runPlace(place, fc, runAt, period) {
     generatedAt: runAt, period: clim.period, places: places.length, checked: checked.length,
     skipped, outlooks
   };
+  console.log('models: ' + checked.length + '/' + places.length + ' places checked, ' + outlooks.length + ' forecast(s), ' + skipped.length + ' skipped');
+  for (const o of outlooks) console.log('  + ' + o.id + '  ' + o.alert + '  ' + o.title);
+  for (const s of skipped) console.log('  skipped ' + s.id + ': ' + s.why);
+  // A run that checked few places would publish its silence as "no hazard".
+  const problems = G.modelRunProblems(out);
+  if (problems.length) throw new Error('not writing ' + OUT + ': ' + problems.slice(0, 10).join('; '));
   fs.writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n');
   let runs = [];
   try { runs = JSON.parse(fs.readFileSync(RUNS, 'utf8')); if (!Array.isArray(runs)) runs = []; } catch (e) { runs = []; }
   runs.push({ at: runAt, checked, skipped: skipped.map(s => s.id), leadDays: [LEAD_MIN, LEAD_MAX],
     outlooks: outlooks.map(o => o.id) });
   fs.writeFileSync(RUNS, JSON.stringify(runs.slice(-MAX_RUNS_KEPT)) + '\n');
-  console.log('models: ' + checked.length + '/' + places.length + ' places checked, ' + outlooks.length + ' forecast(s), ' + skipped.length + ' skipped');
-  for (const o of outlooks) console.log('  + ' + o.id + '  ' + o.alert + '  ' + o.title);
-  for (const s of skipped) console.log('  skipped ' + s.id + ': ' + s.why);
-  if (!checked.length) process.exit(1);
 })().catch(e => { console.error(e); process.exit(1); });
