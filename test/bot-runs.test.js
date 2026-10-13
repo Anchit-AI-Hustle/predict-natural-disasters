@@ -27,7 +27,7 @@ function steps(y) {
 
 test('the forecast-model workflow commits only when started by hand on main', () => {
   const y = read('forecast-models.yml');
-  const pushing = steps(y).filter(s => /git push/.test(s));
+  const pushing = steps(y).filter(s => /git push|push-with-retry\.sh/.test(s));
   assert.equal(pushing.length, 1, 'expected exactly one step that pushes');
   assert.match(pushing[0], /if: github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/,
     'the commit step must not run on pull requests or on other branches');
@@ -46,7 +46,7 @@ test('pull-request runs keep their results as an artifact instead', () => {
 test('no workflow that pushes commits runs on pull requests', () => {
   for (const f of files) {
     const y = read(f);
-    const pushes = steps(y).filter(s => /git push/.test(s));
+    const pushes = steps(y).filter(s => /git push|push-with-retry\.sh/.test(s));
     const onPr = /\n\s+pull_request(_target)?:/.test(y.slice(0, y.indexOf('\njobs:')));
     for (const s of pushes) {
       assert.ok(!onPr || /if: .*github\.event_name == 'workflow_dispatch'/.test(s),
