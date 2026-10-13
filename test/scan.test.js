@@ -31,6 +31,9 @@ const STATUSES = ['SCANNED', 'INCOMPLETE_SCAN', 'NOT_SCANNED', 'DATA_UNAVAILABLE
 
 /* ------------------------------------------------- the scan record itself */
 
+/* The feed always carries events; one that does not is refused as an outage. */
+const OBS = { id: 'us-obs', title: 'M 4.8 - observed', type: 'Earthquake', source: 'USGS', lat: 1, lon: 2, updated: '2026-09-20T00:00:00Z' };
+
 test('every run says what it examined, how completely, and with what engine', async () => {
   const { meta } = await feed();
   const s = meta.scan;
@@ -151,7 +154,7 @@ test('the coverage ledger records a scan and never rewrites one', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pnd-scan-'));
   const eventsPath = path.join(dir, 'events.json');
   const ledgerPath = path.join(dir, 'scan-ledger.json');
-  fs.writeFileSync(eventsPath, JSON.stringify({ meta }));
+  fs.writeFileSync(eventsPath, JSON.stringify({ events: [OBS], meta }));
   fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, scans: [] }));
   const run = () => require('node:child_process').execFileSync(process.execPath,
     [path.join(ROOT, 'tools', 'record-scan.js'), eventsPath, ledgerPath], { stdio: 'pipe' }).toString();
@@ -201,7 +204,7 @@ test('a changed provider definition is a new version, not a rewrite', async () =
   const ledgerPath = path.join(dir, 'scan-ledger.json');
   fs.writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: 1, scans: [] }));
   const run = m => {
-    fs.writeFileSync(eventsPath, JSON.stringify({ meta: m }));
+    fs.writeFileSync(eventsPath, JSON.stringify({ events: [OBS], meta: m }));
     require('node:child_process').execFileSync(process.execPath,
       [path.join(ROOT, 'tools', 'record-scan.js'), eventsPath, ledgerPath], { stdio: 'pipe' });
     return JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
@@ -245,7 +248,7 @@ test('trimming old detail never improves the totals', async () => {
     const m = JSON.parse(JSON.stringify(meta));
     m.scan.scanId = 'scan-test-' + i;
     m.scan.scanTimestamp = new Date(Date.parse(meta.scan.scanTimestamp) + i * 3600e3).toISOString();
-    fs.writeFileSync(eventsPath, JSON.stringify({ meta: m }));
+    fs.writeFileSync(eventsPath, JSON.stringify({ events: [OBS], meta: m }));
     require('node:child_process').execFileSync(process.execPath,
       [path.join(ROOT, 'tools', 'record-scan.js'), eventsPath, ledgerPath],
       { stdio: 'pipe', env: Object.assign({}, process.env, { SCAN_RETAIN: '2' }) });

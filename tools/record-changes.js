@@ -26,14 +26,12 @@ if (!eventsPath || !changesPath) {
   process.exit(2);
 }
 
-const feed = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
-const events = Array.isArray(feed.events) ? feed.events : [];
+const G = require('./io-guard.js');
+const feed = G.readFeed(eventsPath);
+const events = feed.events;
 
-let log = { schemaVersion: 1, runs: [], snapshot: {} };
-try {
-  const raw = JSON.parse(fs.readFileSync(changesPath, 'utf8'));
-  if (raw && Array.isArray(raw.runs)) log = raw;
-} catch (e) { /* first run: start empty */ }
+const log = G.readLedger(changesPath, raw => !!raw && Array.isArray(raw.runs) && (raw.snapshot === undefined || (!!raw.snapshot && typeof raw.snapshot === 'object')),
+  () => ({ schemaVersion: 1, runs: [], snapshot: {} }));
 
 /* Which upstreams were unreachable on this run. /api/events deliberately
    returns a partial feed when a provider is down — ReliefWeb has been
@@ -180,7 +178,8 @@ if (gaps.length) {
   };
 }
 
-fs.writeFileSync(changesPath, JSON.stringify(log, null, 2) + '\n');
+G.writeChecked(changesPath, log, v => (Array.isArray(v.runs) && v.runs.length ? [] : ['no runs recorded'])
+  .concat(v.snapshot && typeof v.snapshot === 'object' ? [] : ['no snapshot']));
 const moved = run.added.length + raised.length + lowered.length +
   windowMoved.length + run.gone.length + run.expired.length;
 console.log('changes: ' + (first ? 'baseline snapshot, ' : '') + moved + ' change(s) across ' +

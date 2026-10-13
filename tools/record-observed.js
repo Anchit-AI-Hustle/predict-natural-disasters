@@ -45,8 +45,9 @@ if (!eventsPath || !ledgerPath) {
   process.exit(2);
 }
 
-const feed = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
-const events = Array.isArray(feed.events) ? feed.events : [];
+const G = require('./io-guard.js');
+const feed = G.readFeed(eventsPath);
+const events = feed.events;
 const now = new Date().toISOString();
 /* When the providers were actually read, and which scan that was. Everything
    about what was OBSERVED is dated from here; only the ledger's own
@@ -56,11 +57,8 @@ const scan = (feed.meta && feed.meta.scan) || {};
 const scanId = scan.scanId || null;
 const observedAt = scan.scanTimestamp || feed.generatedAt || now;
 
-let ledger = { schemaVersion: 1, events: [] };
-try {
-  const raw = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-  if (raw && Array.isArray(raw.events)) ledger = raw;
-} catch (e) { /* first run */ }
+const ledger = G.readLedger(ledgerPath, raw => !!raw && !Array.isArray(raw) && Array.isArray(raw.events),
+  () => ({ schemaVersion: 1, events: [] }));
 
 /*
  * Only observations, and a warning is not one.
@@ -738,7 +736,8 @@ ledger.lastRun = {
   belowSignificanceBar: canonical.length - significant.length
 };
 
-fs.writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + '\n');
+G.writeChecked(ledgerPath, ledger, v => (Array.isArray(v.events) ? [] : ['no events list'])
+  .concat(v.events.filter(e => G.missingKeys(e, ['eventId']).length).length ? ['a disaster with no eventId'] : []));
 console.log('observed ledger: ' + added + ' new, ' + updated + ' seen again, ' + changes +
   ' figure(s) revised, ' + reidentified + ' re-identified, ' + distinguished +
   ' id collision(s) distinguished, ' + superseded + ' superseded, ' + supportingKept +

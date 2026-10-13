@@ -31,6 +31,7 @@
 const fs = require('fs');
 const path = require('path');
 const M = require(path.join(__dirname, '..', 'forecast-models.js'));
+const G = require(path.join(__dirname, 'io-guard.js'));
 
 const ROOT = path.join(__dirname, '..');
 const CLIM = process.argv[2] || path.join(ROOT, 'data', 'climatology.json');
@@ -208,6 +209,8 @@ async function main() {
   /* Scores from a few places would be read as the method's scores. Refuse to
      write them rather than publish a backtest of almost nothing. */
   if (places < clim.places.length / 2) throw new Error('only ' + places + ' of ' + clim.places.length + ' places could be scored; not writing ' + OUT);
+  const problems = G.backtestProblems(out);
+  if (problems.length) throw new Error('not writing ' + OUT + ': ' + problems.join('; '));
   fs.writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n');
 }
 
