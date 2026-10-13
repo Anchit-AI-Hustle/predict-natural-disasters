@@ -8,6 +8,14 @@ name: Forecast models
 # can be reviewed before the models are wired into the refresh job.
 #
 # Runs on any pull request that changes the models, and by hand.
+#
+# A pull-request run keeps its results as an artifact and in the job summary,
+# and commits nothing. It used to commit them back to the PR branch, and
+# GitHub holds pull_request runs set off by a GITHUB_TOKEN push for a
+# maintainer's approval: CI #323 and #325 and this workflow's #2 and #4 sat
+# in action_required for 43 to 58 minutes and were closed as failed when the
+# PR merged, without running a job. Only a run started by hand on main
+# commits; a push to main by the GITHUB_TOKEN starts no workflow at all.
 on:
   workflow_dispatch:
   pull_request:
@@ -31,10 +39,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-        with:
-          # The branch itself, not the merge commit, so the results can be
-          # committed back to it.
-          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
@@ -66,7 +70,17 @@ jobs:
             ].join("\n"));
           ' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Keep the climatology and the scores with the run
+        uses: actions/upload-artifact@v6
+        with:
+          name: forecast-models
+          path: |
+            data/climatology.json
+            data/model-backtest.json
+          retention-days: 30
+
       - name: Commit the climatology and the scores
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
           git add data/climatology.json data/model-backtest.json
