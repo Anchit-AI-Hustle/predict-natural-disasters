@@ -426,7 +426,29 @@ const PND={
     const H=typeof PNDHazards!=='undefined'?PNDHazards:null,R=typeof PNDAlertRules!=='undefined'?PNDAlertRules:null;if(!H||!R)return;
     if(typeof PNDAlerts!=='undefined'&&PNDAlerts.isOn())return;
     let seen={};try{seen=JSON.parse(localStorage.getItem('pnd_notified')||'{}')}catch(e){seen={}}const now=Date.now();
-    R.alertsFor(events,this.savedLocations(),H,now).forEach(a=>{if(!seen[a.key]||now-seen[a.key]>21600000){new Notification(a.title,{body:a.body,tag:a.tag});seen[a.key]=now}});
+    R.alertsFor(events,this.savedLocations(),H,now).forEach(a=>{if(!seen[a.key]||now-seen[a.key]>21600000){try{const n=new Notification(a.title,{body:a.body,tag:a.tag});if(n&&typeof window!=='undefined'){n.onclick=()=>{window.focus();if(a.url)window.location.href=a.url}}}catch(err){}seen[a.key]=now}});
+    /* Notifications for major global events: severe disasters, M6.5+ quakes, Red alerts, tsunamis */
+    (events||[]).forEach(e=>{
+      if(!e||e.forecast||e.isForecast||e.live===false||e.cached)return;
+      const t=Date.parse(e.updated||e.startedAt||e.issuedAt||'');
+      if(!Number.isFinite(t)||now-t>72*3600e3)return;
+      const isRed=e.alert==='Red'&&e.sourceType==='official';
+      const isM65=e.type==='Earthquake'&&Number(e.magnitude)>=6.5;
+      const isTsunami=/tsunami/i.test(e.type||e.title||'');
+      const isSevereCyclone=/cyclone|typhoon|hurricane/i.test(e.type||'')&&(/cat(egory)?\s*[345]|severe|super/i.test(e.severity||e.title||'')||e.alert==='Red');
+      if(!isRed&&!isM65&&!isTsunami&&!isSevereCyclone)return;
+      const mKey='major-'+e.id+'|'+(e.alert||'').toLowerCase();
+      if(seen[mKey]&&now-seen[mKey]<=21600000)return;
+      const mTag='pnd-major-'+String(e.id);
+      let mTitle='Major Alert: '+(e.type||'Disaster');
+      if(isM65)mTitle='Major Earthquake M'+e.magnitude+(e.country?' ('+e.country+')':'');
+      else if(isTsunami)mTitle='Tsunami Alert'+(e.country?' ('+e.country+')':'');
+      else if(isSevereCyclone)mTitle='Severe Storm Alert: '+(e.title||e.type);
+      else if(isRed)mTitle='Red Alert: '+(e.type||'Disaster')+(e.country?' ('+e.country+')':'');
+      const mBody=(e.title||e.type)+' · '+(e.alert?e.alert+' alert · ':'')+(e.source||'Official agency');
+      try{const n=new Notification(mTitle,{body:mBody,tag:mTag});if(n&&typeof window!=='undefined'){n.onclick=()=>{window.focus();window.location.href=PND.eventUrl?PND.eventUrl(e):'/alerts/'+encodeURIComponent(e.id)}}}catch(err){}
+      seen[mKey]=now;
+    });
     try{localStorage.setItem('pnd_notified',JSON.stringify(seen))}catch(e){}},
   /* Five destinations, each a question a reader arrives with: what is
      happening and where (Map), what has been reported or warned (Alerts &

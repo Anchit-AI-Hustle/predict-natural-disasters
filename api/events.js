@@ -24,6 +24,9 @@ try { OUTLOOK_LEDGER = require('../data/outlook-ledger.json'); } catch (e) { OUT
 let FORECAST_CHANGES;
 try { FORECAST_CHANGES = require('../data/forecast-changes.json'); }
 catch (e) { FORECAST_CHANGES = null; }
+let MODEL_OUTLOOKS;
+try { MODEL_OUTLOOKS = require('../data/model-outlooks.json'); }
+catch (e) { MODEL_OUTLOOKS = null; }
 
 /* A bound against a runaway upstream, not a quota. At 24 it was the latter:
    measured on the live feed of 26 September 2026, 40 active official signals
@@ -2069,6 +2072,22 @@ async function handler(req, res) {
       sourceUrl: e.sourceUrl || '',
       verificationRule: 'We check this against aftershocks and any further damage reported in the 7 days. We do not claim to have predicted the main earthquake.'
     });
+  }
+
+  // (c) Advance predictive model outlooks from data/model-outlooks.json
+  if (MODEL_OUTLOOKS && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
+    for (const mo of MODEL_OUTLOOKS.outlooks) {
+      if (!mo || !mo.targetEnd) continue;
+      const endMs = Date.parse(mo.targetEnd);
+      if (Number.isFinite(endMs) && endMs > now.getTime()) {
+        outlooks.push(Object.assign({}, mo, {
+          updated: mo.updated || mo.issuedAt || new Date(now).toISOString(),
+          precision: mo.precision || 'regional',
+          forecastScope: mo.forecastScope || 'regional',
+          issuedAtBasis: mo.issuedAtBasis || 'Timestamp of the numerical weather prediction model run, issued before the target window.'
+        }));
+      }
+    }
   }
 
   outlooks.forEach(push);
