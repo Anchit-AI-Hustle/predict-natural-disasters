@@ -18167,207 +18167,789 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-15T04:37:21.293Z",
+      "sinceHours": 4.7,
+      "active": 60,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-94f47aa060989cf80d95af156e3e0d4701ca8d5a-001-3",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Northern El Paso County/Monument Ridge/Rampart Range Below 7500 Ft and 3 nearby areas, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T04:31:00.000Z",
+          "targetEnd": "2026-10-20T04:31:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-93a14a46ebeadac015984249d149c905de7ce242-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Glasscock, Texas and 3 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T04:25:00.000Z",
+          "targetEnd": "2026-10-18T04:25:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-1185dfce34547dae38cfbeaf84e743b82d8fc73b-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Hughes, Oklahoma and 3 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T04:24:00.000Z",
+          "targetEnd": "2026-10-17T04:24:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-285448d49c8bcd0ef5f1a25a1507491d9d3cfcdd-004-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Cape Suckling to Cape Cleare from 15 to 75 nautical miles, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-14T23:36:00.000Z",
+          "targetEnd": "2026-10-16T23:36:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032811",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mozambique — 3-day forecast",
+          "country": "Mozambique",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032766",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Tanzania — 3-day forecast",
+          "country": "Tanzania",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032785",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Botswana — 3-day forecast",
+          "country": "Botswana",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032774",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil — 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032788",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Zambia — 3-day forecast",
+          "country": "Zambia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032814",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
+          "country": "Papua New Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032793",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria — 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032747",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep202026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Storm Simon — 5-day forecast",
+          "country": "Simon (eastern Pacific system 5)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T03:00:00.000Z",
+          "targetEnd": "2026-10-20T03:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-19T21:00:00.000Z",
+          "toEnd": "2026-10-20T03:00:00.000Z"
+        },
+        {
+          "id": "OUT-usgs-volcano-332010",
+          "type": "Volcano",
+          "title": "Volcano risk in Hawaii, United States — 7-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T02:18:23.000Z",
+          "targetEnd": "2026-10-22T02:18:23.000Z",
+          "provider": "usgs_volcano",
+          "fromEnd": "2026-10-21T20:06:00.000Z",
+          "toEnd": "2026-10-22T02:18:23.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001338",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Cyclone 29 — 5-day forecast",
+          "country": "Guam",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T00:00:00.000Z",
+          "targetEnd": "2026-10-20T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-19T18:00:00.000Z",
+          "toEnd": "2026-10-20T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep212026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Storm Trudy — 5-day forecast",
+          "country": "Trudy (eastern Pacific system 1)",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-15T03:00:00.000Z",
+          "targetEnd": "2026-10-20T03:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-19T21:00:00.000Z",
+          "toEnd": "2026-10-20T03:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104231",
+          "type": "Flood",
+          "title": "Flood risk in Libya — 3-day forecast",
+          "country": "Libya",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-15T01:00:00.000Z",
+          "targetEnd": "2026-10-18T01:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-17T11:00:23.000Z",
+          "toEnd": "2026-10-18T01:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001336",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Cyclone 28 — 5-day forecast",
+          "country": "Tropical Cyclone TWENTYEIGHT-26",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-15T00:00:00.000Z",
+          "targetEnd": "2026-10-20T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-19T18:00:00.000Z",
+          "toEnd": "2026-10-20T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "model-heat-mumbai-in-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Mumbai, 15 Oct to 16 Oct",
+          "country": "India",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-16T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-mumbai-in-2026-10-19",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Mumbai, 19 Oct to 21 Oct",
+          "country": "India",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-19T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-kolkata-in-2026-10-17",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Kolkata, 17 Oct to 19 Oct",
+          "country": "India",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-17T00:00:00Z",
+          "targetEnd": "2026-10-19T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-karachi-pk-2026-10-18",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Karachi, 18 Oct to 21 Oct",
+          "country": "Pakistan",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-18T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-fire-karachi-pk-2026-10-20",
+          "type": "Wildfire",
+          "title": "Wildfire weather forecast for Karachi, 20 Oct to 21 Oct",
+          "country": "Pakistan",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-20T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-dhaka-bd-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Dhaka, 15 Oct to 21 Oct",
+          "country": "Bangladesh",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-chittagong-bd-2026-10-17",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Chittagong, 17 Oct to 21 Oct",
+          "country": "Bangladesh",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-17T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-baghdad-iq-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Baghdad, 15 Oct to 16 Oct",
+          "country": "Iraq",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-16T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-mogadishu-so-2026-10-20",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Mogadishu, 20 Oct to 21 Oct",
+          "country": "Somalia",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-20T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-mogadishu-so-2026-10-15",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Mogadishu, 15 Oct to 16 Oct",
+          "country": "Somalia",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-16T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-mogadishu-so-2026-10-19",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Mogadishu, 19 Oct to 21 Oct",
+          "country": "Somalia",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-19T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-niamey-ne-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Niamey, 15 Oct to 21 Oct",
+          "country": "Niger",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-antananarivo-mg-2026-10-20",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Antananarivo, 20 Oct to 21 Oct",
+          "country": "Madagascar",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-20T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-las-vegas-us-2026-10-21",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Las Vegas, 21 Oct to 22 Oct",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-21T00:00:00Z",
+          "targetEnd": "2026-10-22T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-new-orleans-us-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for New Orleans, 15 Oct to 17 Oct",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-17T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-fire-new-orleans-us-2026-10-17",
+          "type": "Wildfire",
+          "title": "Wildfire weather forecast for New Orleans, 17 Oct to 19 Oct",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-17T00:00:00Z",
+          "targetEnd": "2026-10-19T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-miami-us-2026-10-16",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Miami, 16 Oct to 17 Oct",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-16T00:00:00Z",
+          "targetEnd": "2026-10-17T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-lima-pe-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Lima, 15 Oct to 21 Oct",
+          "country": "Peru",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "OUT-0-7114e658557210e6ba847d9abb58b1a72f741f54-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Foard, Texas and 2 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-14T23:49:00.000Z",
+          "targetEnd": "2026-10-16T23:49:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-285448d49c8bcd0ef5f1a25a1507491d9d3cfcdd-002-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Cape Suckling to Gravel Point out to 15 nautical miles, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-14T23:36:00.000Z",
+          "targetEnd": "2026-10-16T23:36:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-88bcd79c39e993aefbb95ffa64e25feda7597169-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Blaine, Oklahoma and 3 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-14T23:32:00.000Z",
+          "targetEnd": "2026-10-17T23:32:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "model-heat-tehran-ir-2026-10-16",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Tehran, 16 Oct to 17 Oct",
+          "country": "Iran",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T00:00:00Z",
+          "targetEnd": "2026-10-17T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-manila-ph-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Manila, 15 Oct to 18 Oct",
+          "country": "Philippines",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-18T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-beijing-cn-2026-10-17",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Beijing, 17 Oct to 19 Oct",
+          "country": "China",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T00:00:00Z",
+          "targetEnd": "2026-10-19T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-wuhan-cn-2026-10-17",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Wuhan, 17 Oct",
+          "country": "China",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T00:00:00Z",
+          "targetEnd": "2026-10-17T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-addis-ababa-et-2026-10-20",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Addis Ababa, 20 Oct to 21 Oct",
+          "country": "Ethiopia",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-20T00:00:00Z",
+          "targetEnd": "2026-10-21T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-dakar-sn-2026-10-18",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Dakar, 18 Oct to 19 Oct",
+          "country": "Senegal",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-18T00:00:00Z",
+          "targetEnd": "2026-10-19T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-lagos-ng-2026-10-19",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Lagos, 19 Oct to 20 Oct",
+          "country": "Nigeria",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-19T00:00:00Z",
+          "targetEnd": "2026-10-20T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-marseille-fr-2026-10-19",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Marseille, 19 Oct to 22 Oct",
+          "country": "France",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-19T00:00:00Z",
+          "targetEnd": "2026-10-22T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-moscow-ru-2026-10-16",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Moscow, 16 Oct to 18 Oct",
+          "country": "Russia",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T00:00:00Z",
+          "targetEnd": "2026-10-18T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-toronto-ca-2026-10-16",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Toronto, 16 Oct to 18 Oct",
+          "country": "Canada",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T00:00:00Z",
+          "targetEnd": "2026-10-18T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-miami-us-2026-10-18",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Miami, 18 Oct to 22 Oct",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-18T00:00:00Z",
+          "targetEnd": "2026-10-22T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-havana-cu-2026-10-20",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Havana, 20 Oct",
+          "country": "Cuba",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-20T00:00:00Z",
+          "targetEnd": "2026-10-20T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-heat-recife-br-2026-10-15",
+          "type": "Extreme Heat",
+          "title": "Extreme heat forecast for Recife, 15 Oct to 18 Oct",
+          "country": "Brazil",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T00:00:00Z",
+          "targetEnd": "2026-10-18T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "model-rain-manaus-br-2026-10-19",
+          "type": "Flood",
+          "title": "Heavy rain and flooding forecast for Manaus, 19 Oct",
+          "country": "Brazil",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-19T00:00:00Z",
+          "targetEnd": "2026-10-19T23:59:59Z",
+          "provider": ""
+        },
+        {
+          "id": "OUT-gdacs-WF-1032578",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032517",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil — 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032780",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
+          "country": "Papua New Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032679",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mozambique — 3-day forecast",
+          "country": "Mozambique",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032667",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Tanzania — 3-day forecast",
+          "country": "Tanzania",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032717",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Zambia — 3-day forecast",
+          "country": "Zambia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032819",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria — 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032816",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Botswana — 3-day forecast",
+          "country": "Botswana",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-gdacs-FL-1104220",
+          "type": "Flood",
+          "title": "Flood risk in Italy — 3-day forecast",
+          "country": "Italy",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T01:00:00.000Z",
+          "targetEnd": "2026-10-15T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104216",
+          "type": "Flood",
+          "title": "Flood risk in Brazil — 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T01:00:00.000Z",
+          "targetEnd": "2026-10-15T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104099",
+          "type": "Flood",
+          "title": "Flood risk in Mexico — 3-day forecast",
+          "country": "Mexico",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T01:00:00.000Z",
+          "targetEnd": "2026-10-15T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032632",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Pacific Ocean — 3-day forecast",
+          "country": "Forest fires in ",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T00:00:00.000Z",
+          "targetEnd": "2026-10-15T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032741",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar — 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T00:00:00.000Z",
+          "targetEnd": "2026-10-15T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032663",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mongolia — 3-day forecast",
+          "country": "Mongolia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T00:00:00.000Z",
+          "targetEnd": "2026-10-15T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032683",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Russian Federation — 3-day forecast",
+          "country": "Russian Federation",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-12T00:00:00.000Z",
+          "targetEnd": "2026-10-15T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "model-heat-mumbai-in-2026-10-15": {
-      "id": "model-heat-mumbai-in-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Mumbai, 15 Oct to 16 Oct",
-      "country": "India",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-16T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-mumbai-in-2026-10-19": {
-      "id": "model-heat-mumbai-in-2026-10-19",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Mumbai, 19 Oct to 21 Oct",
-      "country": "India",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-19T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-kolkata-in-2026-10-17": {
-      "id": "model-heat-kolkata-in-2026-10-17",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Kolkata, 17 Oct to 19 Oct",
-      "country": "India",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-17T00:00:00Z",
-      "targetEnd": "2026-10-19T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-karachi-pk-2026-10-18": {
-      "id": "model-heat-karachi-pk-2026-10-18",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Karachi, 18 Oct to 21 Oct",
-      "country": "Pakistan",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-18T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-fire-karachi-pk-2026-10-20": {
-      "id": "model-fire-karachi-pk-2026-10-20",
-      "type": "Wildfire",
-      "title": "Wildfire weather forecast for Karachi, 20 Oct to 21 Oct",
-      "country": "Pakistan",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-20T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-dhaka-bd-2026-10-15": {
-      "id": "model-heat-dhaka-bd-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Dhaka, 15 Oct to 21 Oct",
-      "country": "Bangladesh",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-chittagong-bd-2026-10-17": {
-      "id": "model-heat-chittagong-bd-2026-10-17",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Chittagong, 17 Oct to 21 Oct",
-      "country": "Bangladesh",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-17T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-baghdad-iq-2026-10-15": {
-      "id": "model-heat-baghdad-iq-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Baghdad, 15 Oct to 16 Oct",
-      "country": "Iraq",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-16T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-mogadishu-so-2026-10-20": {
-      "id": "model-heat-mogadishu-so-2026-10-20",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Mogadishu, 20 Oct to 21 Oct",
-      "country": "Somalia",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-20T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-mogadishu-so-2026-10-15": {
-      "id": "model-rain-mogadishu-so-2026-10-15",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Mogadishu, 15 Oct to 16 Oct",
-      "country": "Somalia",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-16T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-mogadishu-so-2026-10-19": {
-      "id": "model-rain-mogadishu-so-2026-10-19",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Mogadishu, 19 Oct to 21 Oct",
-      "country": "Somalia",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-19T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-niamey-ne-2026-10-15": {
-      "id": "model-heat-niamey-ne-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Niamey, 15 Oct to 21 Oct",
-      "country": "Niger",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-antananarivo-mg-2026-10-20": {
-      "id": "model-heat-antananarivo-mg-2026-10-20",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Antananarivo, 20 Oct to 21 Oct",
-      "country": "Madagascar",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-20T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-las-vegas-us-2026-10-21": {
-      "id": "model-rain-las-vegas-us-2026-10-21",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Las Vegas, 21 Oct to 22 Oct",
-      "country": "United States",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-21T00:00:00Z",
-      "targetEnd": "2026-10-22T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-new-orleans-us-2026-10-15": {
-      "id": "model-heat-new-orleans-us-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for New Orleans, 15 Oct to 17 Oct",
-      "country": "United States",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-17T23:59:59Z",
-      "provider": ""
-    },
-    "model-fire-new-orleans-us-2026-10-17": {
-      "id": "model-fire-new-orleans-us-2026-10-17",
-      "type": "Wildfire",
-      "title": "Wildfire weather forecast for New Orleans, 17 Oct to 19 Oct",
-      "country": "United States",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-17T00:00:00Z",
-      "targetEnd": "2026-10-19T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-miami-us-2026-10-16": {
-      "id": "model-heat-miami-us-2026-10-16",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Miami, 16 Oct to 17 Oct",
-      "country": "United States",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-16T00:00:00Z",
-      "targetEnd": "2026-10-17T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-lima-pe-2026-10-15": {
-      "id": "model-heat-lima-pe-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Lima, 15 Oct to 21 Oct",
-      "country": "Peru",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
     "OUT-aftershock-gdacs-EQ-1571305": {
       "id": "OUT-aftershock-gdacs-EQ-1571305",
       "type": "Earthquake aftershock sequence",
@@ -18412,203 +18994,49 @@
       "targetEnd": "2026-10-16T17:56:06.036Z",
       "provider": "usgs"
     },
-    "OUT-0-7114e658557210e6ba847d9abb58b1a72f741f54-001-1": {
-      "id": "OUT-0-7114e658557210e6ba847d9abb58b1a72f741f54-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in Foard, Texas and 2 nearby areas, United States — 2-day forecast",
+    "OUT-0-94f47aa060989cf80d95af156e3e0d4701ca8d5a-001-3": {
+      "id": "OUT-0-94f47aa060989cf80d95af156e3e0d4701ca8d5a-001-3",
+      "type": "Extreme Cold",
+      "title": "Extreme Cold risk in Northern El Paso County/Monument Ridge/Rampart Range Below 7500 Ft and 3 nearby areas, United States — 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-14T23:49:00.000Z",
-      "targetEnd": "2026-10-16T23:49:00.000Z",
+      "targetStart": "2026-10-15T04:31:00.000Z",
+      "targetEnd": "2026-10-20T04:31:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-285448d49c8bcd0ef5f1a25a1507491d9d3cfcdd-002-1": {
-      "id": "OUT-0-285448d49c8bcd0ef5f1a25a1507491d9d3cfcdd-002-1",
-      "type": "Storm Warning",
-      "title": "Storm Warning risk in Cape Suckling to Gravel Point out to 15 nautical miles, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-14T23:36:00.000Z",
-      "targetEnd": "2026-10-16T23:36:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-88bcd79c39e993aefbb95ffa64e25feda7597169-001-1": {
-      "id": "OUT-0-88bcd79c39e993aefbb95ffa64e25feda7597169-001-1",
+    "OUT-0-93a14a46ebeadac015984249d149c905de7ce242-001-1": {
+      "id": "OUT-0-93a14a46ebeadac015984249d149c905de7ce242-001-1",
       "type": "Flood",
-      "title": "Flood risk in Blaine, Oklahoma and 3 nearby areas, United States — 3-day forecast",
+      "title": "Flood risk in Glasscock, Texas and 3 nearby areas, United States — 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-14T23:32:00.000Z",
-      "targetEnd": "2026-10-17T23:32:00.000Z",
+      "targetStart": "2026-10-15T04:25:00.000Z",
+      "targetEnd": "2026-10-18T04:25:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-1185dfce34547dae38cfbeaf84e743b82d8fc73b-001-1": {
+      "id": "OUT-0-1185dfce34547dae38cfbeaf84e743b82d8fc73b-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Hughes, Oklahoma and 3 nearby areas, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-15T04:24:00.000Z",
+      "targetEnd": "2026-10-17T04:24:00.000Z",
       "provider": "nws"
     },
     "OUT-nhc-ep202026": {
       "id": "OUT-nhc-ep202026",
       "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Simon — 5-day forecast",
+      "title": "Storm risk from Tropical Storm Simon — 5-day forecast",
       "country": "Simon (eastern Pacific system 5)",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-14T21:00:00.000Z",
-      "targetEnd": "2026-10-19T21:00:00.000Z",
+      "targetStart": "2026-10-15T03:00:00.000Z",
+      "targetEnd": "2026-10-20T03:00:00.000Z",
       "provider": "nhc"
-    },
-    "model-heat-tehran-ir-2026-10-16": {
-      "id": "model-heat-tehran-ir-2026-10-16",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Tehran, 16 Oct to 17 Oct",
-      "country": "Iran",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T00:00:00Z",
-      "targetEnd": "2026-10-17T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-manila-ph-2026-10-15": {
-      "id": "model-heat-manila-ph-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Manila, 15 Oct to 18 Oct",
-      "country": "Philippines",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-18T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-beijing-cn-2026-10-17": {
-      "id": "model-rain-beijing-cn-2026-10-17",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Beijing, 17 Oct to 19 Oct",
-      "country": "China",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-17T00:00:00Z",
-      "targetEnd": "2026-10-19T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-wuhan-cn-2026-10-17": {
-      "id": "model-rain-wuhan-cn-2026-10-17",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Wuhan, 17 Oct",
-      "country": "China",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-17T00:00:00Z",
-      "targetEnd": "2026-10-17T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-addis-ababa-et-2026-10-20": {
-      "id": "model-heat-addis-ababa-et-2026-10-20",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Addis Ababa, 20 Oct to 21 Oct",
-      "country": "Ethiopia",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-20T00:00:00Z",
-      "targetEnd": "2026-10-21T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-dakar-sn-2026-10-18": {
-      "id": "model-heat-dakar-sn-2026-10-18",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Dakar, 18 Oct to 19 Oct",
-      "country": "Senegal",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-18T00:00:00Z",
-      "targetEnd": "2026-10-19T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-lagos-ng-2026-10-19": {
-      "id": "model-heat-lagos-ng-2026-10-19",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Lagos, 19 Oct to 20 Oct",
-      "country": "Nigeria",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-19T00:00:00Z",
-      "targetEnd": "2026-10-20T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-marseille-fr-2026-10-19": {
-      "id": "model-rain-marseille-fr-2026-10-19",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Marseille, 19 Oct to 22 Oct",
-      "country": "France",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-19T00:00:00Z",
-      "targetEnd": "2026-10-22T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-moscow-ru-2026-10-16": {
-      "id": "model-heat-moscow-ru-2026-10-16",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Moscow, 16 Oct to 18 Oct",
-      "country": "Russia",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T00:00:00Z",
-      "targetEnd": "2026-10-18T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-toronto-ca-2026-10-16": {
-      "id": "model-rain-toronto-ca-2026-10-16",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Toronto, 16 Oct to 18 Oct",
-      "country": "Canada",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T00:00:00Z",
-      "targetEnd": "2026-10-18T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-miami-us-2026-10-18": {
-      "id": "model-rain-miami-us-2026-10-18",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Miami, 18 Oct to 22 Oct",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-18T00:00:00Z",
-      "targetEnd": "2026-10-22T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-havana-cu-2026-10-20": {
-      "id": "model-rain-havana-cu-2026-10-20",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Havana, 20 Oct",
-      "country": "Cuba",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-20T00:00:00Z",
-      "targetEnd": "2026-10-20T23:59:59Z",
-      "provider": ""
-    },
-    "model-heat-recife-br-2026-10-15": {
-      "id": "model-heat-recife-br-2026-10-15",
-      "type": "Extreme Heat",
-      "title": "Extreme heat forecast for Recife, 15 Oct to 18 Oct",
-      "country": "Brazil",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-15T00:00:00Z",
-      "targetEnd": "2026-10-18T23:59:59Z",
-      "provider": ""
-    },
-    "model-rain-manaus-br-2026-10-19": {
-      "id": "model-rain-manaus-br-2026-10-19",
-      "type": "Flood",
-      "title": "Heavy rain and flooding forecast for Manaus, 19 Oct",
-      "country": "Brazil",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-19T00:00:00Z",
-      "targetEnd": "2026-10-19T23:59:59Z",
-      "provider": ""
     },
     "OUT-usgs-volcano-332010": {
       "id": "OUT-usgs-volcano-332010",
@@ -18617,8 +19045,8 @@
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-14T20:06:00.000Z",
-      "targetEnd": "2026-10-21T20:06:00.000Z",
+      "targetStart": "2026-10-15T02:18:23.000Z",
+      "targetEnd": "2026-10-22T02:18:23.000Z",
       "provider": "usgs_volcano"
     },
     "OUT-gdacs-TC-1001338": {
@@ -18628,9 +19056,20 @@
       "country": "Guam",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-14T18:00:00.000Z",
-      "targetEnd": "2026-10-19T18:00:00.000Z",
+      "targetStart": "2026-10-15T00:00:00.000Z",
+      "targetEnd": "2026-10-20T00:00:00.000Z",
       "provider": "gdacs"
+    },
+    "OUT-0-285448d49c8bcd0ef5f1a25a1507491d9d3cfcdd-004-1": {
+      "id": "OUT-0-285448d49c8bcd0ef5f1a25a1507491d9d3cfcdd-004-1",
+      "type": "Storm Warning",
+      "title": "Storm Warning risk in Cape Suckling to Cape Cleare from 15 to 75 nautical miles, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-14T23:36:00.000Z",
+      "targetEnd": "2026-10-16T23:36:00.000Z",
+      "provider": "nws"
     },
     "OUT-aftershock-gdacs-EQ-1571524": {
       "id": "OUT-aftershock-gdacs-EQ-1571524",
@@ -18826,20 +19265,9 @@
       "country": "Trudy (eastern Pacific system 1)",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-10-14T21:00:00.000Z",
-      "targetEnd": "2026-10-19T21:00:00.000Z",
+      "targetStart": "2026-10-15T03:00:00.000Z",
+      "targetEnd": "2026-10-20T03:00:00.000Z",
       "provider": "nhc"
-    },
-    "OUT-gdacs-TC-1001336": {
-      "id": "OUT-gdacs-TC-1001336",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Cyclone 28 — 5-day forecast",
-      "country": "Tropical Cyclone TWENTYEIGHT-26",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T18:00:00.000Z",
-      "targetEnd": "2026-10-19T18:00:00.000Z",
-      "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104231": {
       "id": "OUT-gdacs-FL-1104231",
@@ -18848,8 +19276,19 @@
       "country": "Libya",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-10-14T11:00:23.000Z",
-      "targetEnd": "2026-10-17T11:00:23.000Z",
+      "targetStart": "2026-10-15T01:00:00.000Z",
+      "targetEnd": "2026-10-18T01:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-TC-1001336": {
+      "id": "OUT-gdacs-TC-1001336",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Tropical Cyclone 28 — 5-day forecast",
+      "country": "Tropical Cyclone TWENTYEIGHT-26",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-15T00:00:00.000Z",
+      "targetEnd": "2026-10-20T00:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104230": {
@@ -18857,28 +19296,6 @@
       "type": "Flood",
       "title": "Flood risk in Türkiye — 3-day forecast",
       "country": "Türkiye",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T01:00:00.000Z",
-      "targetEnd": "2026-10-17T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104217": {
-      "id": "OUT-gdacs-FL-1104217",
-      "type": "Flood",
-      "title": "Flood risk in Chile — 3-day forecast",
-      "country": "Chile",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T01:00:00.000Z",
-      "targetEnd": "2026-10-17T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104218": {
-      "id": "OUT-gdacs-FL-1104218",
-      "type": "Flood",
-      "title": "Flood risk in Argentina — 3-day forecast",
-      "country": "Argentina",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-14T01:00:00.000Z",
@@ -18907,6 +19324,28 @@
       "targetEnd": "2026-10-17T01:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-FL-1104217": {
+      "id": "OUT-gdacs-FL-1104217",
+      "type": "Flood",
+      "title": "Flood risk in Chile — 3-day forecast",
+      "country": "Chile",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-14T01:00:00.000Z",
+      "targetEnd": "2026-10-17T01:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-FL-1104218": {
+      "id": "OUT-gdacs-FL-1104218",
+      "type": "Flood",
+      "title": "Flood risk in Argentina — 3-day forecast",
+      "country": "Argentina",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-14T01:00:00.000Z",
+      "targetEnd": "2026-10-17T01:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-WF-1032806": {
       "id": "OUT-gdacs-WF-1032806",
       "type": "Wildfire",
@@ -18929,41 +19368,8 @@
       "targetEnd": "2026-10-17T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032578": {
-      "id": "OUT-gdacs-WF-1032578",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Indonesia — 3-day forecast",
-      "country": "Indonesia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T00:00:00.000Z",
-      "targetEnd": "2026-10-17T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032517": {
-      "id": "OUT-gdacs-WF-1032517",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Brazil — 3-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T00:00:00.000Z",
-      "targetEnd": "2026-10-17T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032780": {
-      "id": "OUT-gdacs-WF-1032780",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
-      "country": "Papua New Guinea",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T00:00:00.000Z",
-      "targetEnd": "2026-10-17T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032679": {
-      "id": "OUT-gdacs-WF-1032679",
+    "OUT-gdacs-WF-1032811": {
+      "id": "OUT-gdacs-WF-1032811",
       "type": "Wildfire",
       "title": "Wildfire risk in Mozambique — 3-day forecast",
       "country": "Mozambique",
@@ -18973,8 +19379,19 @@
       "targetEnd": "2026-10-17T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032667": {
-      "id": "OUT-gdacs-WF-1032667",
+    "OUT-gdacs-WF-1032753": {
+      "id": "OUT-gdacs-WF-1032753",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Mongolia and China — 3-day forecast",
+      "country": "Mongolia, China",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-14T00:00:00.000Z",
+      "targetEnd": "2026-10-17T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032766": {
+      "id": "OUT-gdacs-WF-1032766",
       "type": "Wildfire",
       "title": "Wildfire risk in Tanzania — 3-day forecast",
       "country": "Tanzania",
@@ -18984,8 +19401,30 @@
       "targetEnd": "2026-10-17T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032717": {
-      "id": "OUT-gdacs-WF-1032717",
+    "OUT-gdacs-WF-1032785": {
+      "id": "OUT-gdacs-WF-1032785",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Botswana — 3-day forecast",
+      "country": "Botswana",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-14T00:00:00.000Z",
+      "targetEnd": "2026-10-17T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032774": {
+      "id": "OUT-gdacs-WF-1032774",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Brazil — 3-day forecast",
+      "country": "Brazil",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-14T00:00:00.000Z",
+      "targetEnd": "2026-10-17T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032788": {
+      "id": "OUT-gdacs-WF-1032788",
       "type": "Wildfire",
       "title": "Wildfire risk in Zambia — 3-day forecast",
       "country": "Zambia",
@@ -18995,11 +19434,11 @@
       "targetEnd": "2026-10-17T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032819": {
-      "id": "OUT-gdacs-WF-1032819",
+    "OUT-gdacs-WF-1032814": {
+      "id": "OUT-gdacs-WF-1032814",
       "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria — 3-day forecast",
-      "country": "Nigeria",
+      "title": "Wildfire risk in Papua New Guinea — 3-day forecast",
+      "country": "Papua New Guinea",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-14T00:00:00.000Z",
@@ -19017,22 +19456,22 @@
       "targetEnd": "2026-10-17T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032816": {
-      "id": "OUT-gdacs-WF-1032816",
+    "OUT-gdacs-WF-1032793": {
+      "id": "OUT-gdacs-WF-1032793",
       "type": "Wildfire",
-      "title": "Wildfire risk in Botswana — 3-day forecast",
-      "country": "Botswana",
+      "title": "Wildfire risk in Nigeria — 3-day forecast",
+      "country": "Nigeria",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-14T00:00:00.000Z",
       "targetEnd": "2026-10-17T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032753": {
-      "id": "OUT-gdacs-WF-1032753",
+    "OUT-gdacs-WF-1032747": {
+      "id": "OUT-gdacs-WF-1032747",
       "type": "Wildfire",
-      "title": "Wildfire risk in Mongolia and China — 3-day forecast",
-      "country": "Mongolia, China",
+      "title": "Wildfire risk in Indonesia — 3-day forecast",
+      "country": "Indonesia",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-14T00:00:00.000Z",
@@ -19081,39 +19520,6 @@
       "rank": 1,
       "targetStart": "2026-10-13T00:00:00.000Z",
       "targetEnd": "2026-10-16T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104220": {
-      "id": "OUT-gdacs-FL-1104220",
-      "type": "Flood",
-      "title": "Flood risk in Italy — 3-day forecast",
-      "country": "Italy",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T01:00:00.000Z",
-      "targetEnd": "2026-10-15T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104216": {
-      "id": "OUT-gdacs-FL-1104216",
-      "type": "Flood",
-      "title": "Flood risk in Brazil — 3-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T01:00:00.000Z",
-      "targetEnd": "2026-10-15T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104099": {
-      "id": "OUT-gdacs-FL-1104099",
-      "type": "Flood",
-      "title": "Flood risk in Mexico — 3-day forecast",
-      "country": "Mexico",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T01:00:00.000Z",
-      "targetEnd": "2026-10-15T01:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-DR-1018431": {
@@ -19203,56 +19609,12 @@
       "targetStart": "2026-10-12T00:00:00.000Z",
       "targetEnd": "2026-11-11T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032632": {
-      "id": "OUT-gdacs-WF-1032632",
-      "type": "Wildfire",
-      "title": "Wildfire risk in South Pacific Ocean — 3-day forecast",
-      "country": "Forest fires in ",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T00:00:00.000Z",
-      "targetEnd": "2026-10-15T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032741": {
-      "id": "OUT-gdacs-WF-1032741",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Madagascar — 3-day forecast",
-      "country": "Madagascar",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T00:00:00.000Z",
-      "targetEnd": "2026-10-15T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032663": {
-      "id": "OUT-gdacs-WF-1032663",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Mongolia — 3-day forecast",
-      "country": "Mongolia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T00:00:00.000Z",
-      "targetEnd": "2026-10-15T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032683": {
-      "id": "OUT-gdacs-WF-1032683",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Russian Federation — 3-day forecast",
-      "country": "Russian Federation",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-12T00:00:00.000Z",
-      "targetEnd": "2026-10-15T00:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-14T23:55:05.483Z",
+  "updatedAt": "2026-10-15T04:37:21.293Z",
   "observedCadenceHours": {
-    "runs": 59,
-    "median": 4.94,
+    "runs": 60,
+    "median": 4.91,
     "min": 1.54,
     "max": 189.21
   }
