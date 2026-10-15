@@ -1043,6 +1043,12 @@ function wantsSummary(req) {
   return v === '1' || v === 'true';
 }
 
+function isCron(req) {
+  const v = (req && req.query && req.query.cron) ||
+    (req && req.url && new URL(req.url, 'http://x').searchParams.get('cron'));
+  return !!v;
+}
+
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
@@ -2075,7 +2081,7 @@ async function handler(req, res) {
   }
 
   // (c) Advance predictive model outlooks from data/model-outlooks.json
-  if (MODEL_OUTLOOKS && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
+  if (!isCron(req) && MODEL_OUTLOOKS && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
     for (const mo of MODEL_OUTLOOKS.outlooks) {
       if (!mo || !mo.targetEnd) continue;
       const endMs = Date.parse(mo.targetEnd);
