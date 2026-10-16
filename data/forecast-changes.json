@@ -20955,6 +20955,115 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-16T00:27:28.037Z",
+      "sinceHours": 2.18,
+      "active": 62,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-6aebc78f158e657655f60133c67674f4e71efb63-003-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Kingsbury and 9 nearby areas, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T00:26:00.000Z",
+          "targetEnd": "2026-10-21T00:26:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-0f220e54326fcc97941e9cb47ada4a00be4c9302-005-1",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Flaxman Island to Demarcation Point out to 15 nautical miles, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T23:48:00.000Z",
+          "targetEnd": "2026-10-18T23:48:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-25f5385cd20fe2206e48c8b684f2305219788c77-001-1",
+          "type": "Red Flag Warning",
+          "title": "Red Flag Warning risk in Lake Casitas and 1 nearby area, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T20:16:00.000Z",
+          "targetEnd": "2026-10-18T20:16:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-93e8d3f8c51856bca9d4ed2270bae866a987774c-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Val Verde, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T20:05:00.000Z",
+          "targetEnd": "2026-10-18T20:05:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep212026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+          "country": "Trudy (eastern Pacific system 1)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T00:00:00.000Z",
+          "targetEnd": "2026-10-21T00:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-20T21:00:00.000Z",
+          "toEnd": "2026-10-21T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-a002ea6fcbe0438402cc08621cf77b717f5856a7-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Nolan, Texas and 1 nearby area, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T20:59:00.000Z",
+          "targetEnd": "2026-10-18T20:59:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-25f5385cd20fe2206e48c8b684f2305219788c77-002-1",
+          "type": "Red Flag Warning",
+          "title": "Red Flag Warning risk in Santa Lucia Mountains, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T20:16:00.000Z",
+          "targetEnd": "2026-10-18T20:16:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-e2ce8dbbb7caaeeeb8a4a89ca4db0070bc245d1f-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Towner and 4 nearby areas, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-15T19:19:00.000Z",
+          "targetEnd": "2026-10-20T19:19:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -21002,6 +21111,17 @@
       "targetEnd": "2026-10-16T17:56:06.036Z",
       "provider": "usgs"
     },
+    "OUT-0-6aebc78f158e657655f60133c67674f4e71efb63-003-1": {
+      "id": "OUT-0-6aebc78f158e657655f60133c67674f4e71efb63-003-1",
+      "type": "Extreme Cold",
+      "title": "Extreme Cold risk in Kingsbury and 9 nearby areas, United States — 5-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T00:26:00.000Z",
+      "targetEnd": "2026-10-21T00:26:00.000Z",
+      "provider": "nws"
+    },
     "OUT-nhc-ep212026": {
       "id": "OUT-nhc-ep212026",
       "type": "Tropical Cyclone",
@@ -21009,9 +21129,20 @@
       "country": "Trudy (eastern Pacific system 1)",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-15T21:00:00.000Z",
-      "targetEnd": "2026-10-20T21:00:00.000Z",
+      "targetStart": "2026-10-16T00:00:00.000Z",
+      "targetEnd": "2026-10-21T00:00:00.000Z",
       "provider": "nhc"
+    },
+    "OUT-0-0f220e54326fcc97941e9cb47ada4a00be4c9302-005-1": {
+      "id": "OUT-0-0f220e54326fcc97941e9cb47ada4a00be4c9302-005-1",
+      "type": "Heavy Freezing Spray Warning",
+      "title": "Heavy Freezing Spray Warning risk in Flaxman Island to Demarcation Point out to 15 nautical miles, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-15T23:48:00.000Z",
+      "targetEnd": "2026-10-18T23:48:00.000Z",
+      "provider": "nws"
     },
     "OUT-nhc-ep202026": {
       "id": "OUT-nhc-ep202026",
@@ -21024,21 +21155,10 @@
       "targetEnd": "2026-10-20T21:00:00.000Z",
       "provider": "nhc"
     },
-    "OUT-0-a002ea6fcbe0438402cc08621cf77b717f5856a7-001-1": {
-      "id": "OUT-0-a002ea6fcbe0438402cc08621cf77b717f5856a7-001-1",
-      "type": "Flood",
-      "title": "Flood risk in Nolan, Texas and 1 nearby area, United States — 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-15T20:59:00.000Z",
-      "targetEnd": "2026-10-18T20:59:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-25f5385cd20fe2206e48c8b684f2305219788c77-002-1": {
-      "id": "OUT-0-25f5385cd20fe2206e48c8b684f2305219788c77-002-1",
+    "OUT-0-25f5385cd20fe2206e48c8b684f2305219788c77-001-1": {
+      "id": "OUT-0-25f5385cd20fe2206e48c8b684f2305219788c77-001-1",
       "type": "Red Flag Warning",
-      "title": "Red Flag Warning risk in Santa Lucia Mountains, United States — 3-day forecast",
+      "title": "Red Flag Warning risk in Lake Casitas and 1 nearby area, United States — 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
@@ -21057,15 +21177,15 @@
       "targetEnd": "2026-10-22T20:10:46.000Z",
       "provider": "usgs_volcano"
     },
-    "OUT-0-e2ce8dbbb7caaeeeb8a4a89ca4db0070bc245d1f-001-1": {
-      "id": "OUT-0-e2ce8dbbb7caaeeeb8a4a89ca4db0070bc245d1f-001-1",
-      "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Towner and 4 nearby areas, United States — 5-day forecast",
+    "OUT-0-93e8d3f8c51856bca9d4ed2270bae866a987774c-001-1": {
+      "id": "OUT-0-93e8d3f8c51856bca9d4ed2270bae866a987774c-001-1",
+      "type": "Flood",
+      "title": "Flood risk in Val Verde, United States — 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-15T19:19:00.000Z",
-      "targetEnd": "2026-10-20T19:19:00.000Z",
+      "targetStart": "2026-10-15T20:05:00.000Z",
+      "targetEnd": "2026-10-18T20:05:00.000Z",
       "provider": "nws"
     },
     "OUT-gdacs-TC-1001338": {
@@ -21288,22 +21408,22 @@
       "targetEnd": "2026-10-18T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032823": {
-      "id": "OUT-gdacs-WF-1032823",
+    "OUT-gdacs-WF-1032820": {
+      "id": "OUT-gdacs-WF-1032820",
       "type": "Wildfire",
-      "title": "Wildfire risk in China — 3-day forecast",
-      "country": "China",
+      "title": "Wildfire risk in Brazil — 3-day forecast",
+      "country": "Brazil",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-15T00:00:00.000Z",
       "targetEnd": "2026-10-18T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032820": {
-      "id": "OUT-gdacs-WF-1032820",
+    "OUT-gdacs-WF-1032823": {
+      "id": "OUT-gdacs-WF-1032823",
       "type": "Wildfire",
-      "title": "Wildfire risk in Brazil — 3-day forecast",
-      "country": "Brazil",
+      "title": "Wildfire risk in China — 3-day forecast",
+      "country": "China",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-15T00:00:00.000Z",
@@ -21376,22 +21496,22 @@
       "targetEnd": "2026-10-18T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032837": {
-      "id": "OUT-gdacs-WF-1032837",
+    "OUT-gdacs-WF-1032724": {
+      "id": "OUT-gdacs-WF-1032724",
       "type": "Wildfire",
-      "title": "Wildfire risk in The Democratic Republic of Congo — 3-day forecast",
-      "country": "The Democratic Republic of Congo",
+      "title": "Wildfire risk in Peru — 3-day forecast",
+      "country": "Peru",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-15T00:00:00.000Z",
       "targetEnd": "2026-10-18T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032724": {
-      "id": "OUT-gdacs-WF-1032724",
+    "OUT-gdacs-WF-1032837": {
+      "id": "OUT-gdacs-WF-1032837",
       "type": "Wildfire",
-      "title": "Wildfire risk in Peru — 3-day forecast",
-      "country": "Peru",
+      "title": "Wildfire risk in The Democratic Republic of Congo — 3-day forecast",
+      "country": "The Democratic Republic of Congo",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-15T00:00:00.000Z",
@@ -21630,9 +21750,9 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-15T22:16:38.661Z",
+  "updatedAt": "2026-10-16T00:27:28.037Z",
   "observedCadenceHours": {
-    "runs": 64,
+    "runs": 65,
     "median": 4.91,
     "min": 1.54,
     "max": 189.21
