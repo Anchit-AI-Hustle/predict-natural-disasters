@@ -22591,9 +22591,218 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-16T22:50:55.928Z",
+      "sinceHours": 2.89,
+      "active": 59,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-03f61ee0109d981a89ba3836d4c84d86cd1d7ea1-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Hartford, Connecticut and 4 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T22:41:00.000Z",
+          "targetEnd": "2026-10-18T22:41:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-bff0403f88af8c84b38cda13c7eab16e3cbe5220-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Arthur and 3 nearby areas, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T22:01:00.000Z",
+          "targetEnd": "2026-10-21T22:01:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-26b913b2029babcc0badbd23a5bea62d86323f19-001-2",
+          "type": "Flood",
+          "title": "Flood risk in Guam and 3 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T21:26:00.000Z",
+          "targetEnd": "2026-10-19T21:26:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [
+        {
+          "id": "OUT-gdacs-TC-1001338",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Champi — 5-day forecast",
+          "country": "Guam",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-16T18:00:00.000Z",
+          "targetEnd": "2026-10-21T18:00:00.000Z",
+          "provider": "gdacs",
+          "from": "Moderate",
+          "to": "High"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001339",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Cyclone 1 — 5-day forecast",
+          "country": "Cook Islands",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T18:00:00.000Z",
+          "targetEnd": "2026-10-21T18:00:00.000Z",
+          "provider": "gdacs",
+          "from": "Watch",
+          "to": "Moderate"
+        }
+      ],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-TC-1001338",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Champi — 5-day forecast",
+          "country": "Guam",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-16T18:00:00.000Z",
+          "targetEnd": "2026-10-21T18:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-21T12:00:00.000Z",
+          "toEnd": "2026-10-21T18:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep212026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+          "country": "Trudy (eastern Pacific system 1)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T21:00:00.000Z",
+          "targetEnd": "2026-10-21T21:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-21T18:35:00.000Z",
+          "toEnd": "2026-10-21T21:00:00.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep202026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Potential Tropical Cyclone Simon — 5-day forecast",
+          "country": "Simon (eastern Pacific system 5)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T21:00:00.000Z",
+          "targetEnd": "2026-10-21T21:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-21T15:00:00.000Z",
+          "toEnd": "2026-10-21T21:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001339",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Cyclone 1 — 5-day forecast",
+          "country": "Cook Islands",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T18:00:00.000Z",
+          "targetEnd": "2026-10-21T18:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-21T06:00:00.000Z",
+          "toEnd": "2026-10-21T18:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-24d8f1bf359c11b269c0d96f2d1201c561dda55a-002-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Delaware Bay waters north of East Point NJ to Slaughter Beach DE and 7 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T19:52:00.000Z",
+          "targetEnd": "2026-10-18T19:52:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-2d79c727f6a70451ce4e5f9a75634f362e011af4-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Menominee and 14 nearby areas, United States — 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T18:50:00.000Z",
+          "targetEnd": "2026-10-21T18:50:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-97338fb0294bf0fa13c04c4db17a4aef48f59f9f-003-2",
+          "type": "Storm Watch",
+          "title": "Storm Watch risk in waters from Oregon Inlet to Cape Hatteras NC from 20 to 60 nautical miles and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T18:29:00.000Z",
+          "targetEnd": "2026-10-18T18:29:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-636d680993824d35d6ba06fa83752bc6c292e6ca-001-1",
+          "type": "Dust Storm",
+          "title": "Dust Storm risk in Pinal, Arizona, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T18:23:00.000Z",
+          "targetEnd": "2026-10-18T18:23:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-FL-1103888",
+          "type": "Flood",
+          "title": "Flood risk in United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-16T01:00:00.000Z",
+          "targetEnd": "2026-10-19T01:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-aftershock-usgs-us6000u19w",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk 12 km W of Río Grande, Panama — 7-day forecast",
+          "country": "Panama",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-09T20:25:40.656Z",
+          "targetEnd": "2026-10-16T20:25:40.656Z",
+          "provider": "usgs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
+    "OUT-gdacs-TC-1001338": {
+      "id": "OUT-gdacs-TC-1001338",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Typhoon Champi — 5-day forecast",
+      "country": "Guam",
+      "alert": "High",
+      "rank": 3,
+      "targetStart": "2026-10-16T18:00:00.000Z",
+      "targetEnd": "2026-10-21T18:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-aftershock-usgs-us6000u2mq": {
       "id": "OUT-aftershock-usgs-us6000u2mq",
       "type": "Earthquake aftershock sequence",
@@ -22627,16 +22836,60 @@
       "targetEnd": "2026-10-20T05:44:46.000Z",
       "provider": "gdacs"
     },
-    "OUT-aftershock-usgs-us6000u19w": {
-      "id": "OUT-aftershock-usgs-us6000u19w",
-      "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk 12 km W of Río Grande, Panama — 7-day forecast",
-      "country": "Panama",
-      "alert": "High",
-      "rank": 3,
-      "targetStart": "2026-10-09T20:25:40.656Z",
-      "targetEnd": "2026-10-16T20:25:40.656Z",
-      "provider": "usgs"
+    "OUT-0-03f61ee0109d981a89ba3836d4c84d86cd1d7ea1-001-1": {
+      "id": "OUT-0-03f61ee0109d981a89ba3836d4c84d86cd1d7ea1-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Hartford, Connecticut and 4 nearby areas, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T22:41:00.000Z",
+      "targetEnd": "2026-10-18T22:41:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-bff0403f88af8c84b38cda13c7eab16e3cbe5220-001-1": {
+      "id": "OUT-0-bff0403f88af8c84b38cda13c7eab16e3cbe5220-001-1",
+      "type": "Extreme Cold",
+      "title": "Extreme Cold risk in Arthur and 3 nearby areas, United States — 5-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T22:01:00.000Z",
+      "targetEnd": "2026-10-21T22:01:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-26b913b2029babcc0badbd23a5bea62d86323f19-001-2": {
+      "id": "OUT-0-26b913b2029babcc0badbd23a5bea62d86323f19-001-2",
+      "type": "Flood",
+      "title": "Flood risk in Guam and 3 nearby areas, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T21:26:00.000Z",
+      "targetEnd": "2026-10-19T21:26:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-nhc-ep212026": {
+      "id": "OUT-nhc-ep212026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+      "country": "Trudy (eastern Pacific system 1)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T21:00:00.000Z",
+      "targetEnd": "2026-10-21T21:00:00.000Z",
+      "provider": "nhc"
+    },
+    "OUT-nhc-ep202026": {
+      "id": "OUT-nhc-ep202026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Potential Tropical Cyclone Simon — 5-day forecast",
+      "country": "Simon (eastern Pacific system 5)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T21:00:00.000Z",
+      "targetEnd": "2026-10-21T21:00:00.000Z",
+      "provider": "nhc"
     },
     "OUT-usgs-volcano-332010": {
       "id": "OUT-usgs-volcano-332010",
@@ -22649,81 +22902,15 @@
       "targetEnd": "2026-10-23T19:54:02.000Z",
       "provider": "usgs_volcano"
     },
-    "OUT-0-24d8f1bf359c11b269c0d96f2d1201c561dda55a-002-1": {
-      "id": "OUT-0-24d8f1bf359c11b269c0d96f2d1201c561dda55a-002-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in Delaware Bay waters north of East Point NJ to Slaughter Beach DE and 7 nearby areas, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T19:52:00.000Z",
-      "targetEnd": "2026-10-18T19:52:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-2d79c727f6a70451ce4e5f9a75634f362e011af4-001-1": {
-      "id": "OUT-0-2d79c727f6a70451ce4e5f9a75634f362e011af4-001-1",
-      "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Menominee and 14 nearby areas, United States — 5-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T18:50:00.000Z",
-      "targetEnd": "2026-10-21T18:50:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-nhc-ep212026": {
-      "id": "OUT-nhc-ep212026",
+    "OUT-gdacs-TC-1001339": {
+      "id": "OUT-gdacs-TC-1001339",
       "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Trudy — 5-day forecast",
-      "country": "Trudy (eastern Pacific system 1)",
+      "title": "Storm risk from Tropical Cyclone 1 — 5-day forecast",
+      "country": "Cook Islands",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-16T18:35:00.000Z",
-      "targetEnd": "2026-10-21T18:35:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-0-97338fb0294bf0fa13c04c4db17a4aef48f59f9f-003-2": {
-      "id": "OUT-0-97338fb0294bf0fa13c04c4db17a4aef48f59f9f-003-2",
-      "type": "Storm Watch",
-      "title": "Storm Watch risk in waters from Oregon Inlet to Cape Hatteras NC from 20 to 60 nautical miles and 1 nearby area, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T18:29:00.000Z",
-      "targetEnd": "2026-10-18T18:29:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-636d680993824d35d6ba06fa83752bc6c292e6ca-001-1": {
-      "id": "OUT-0-636d680993824d35d6ba06fa83752bc6c292e6ca-001-1",
-      "type": "Dust Storm",
-      "title": "Dust Storm risk in Pinal, Arizona, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T18:23:00.000Z",
-      "targetEnd": "2026-10-18T18:23:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-nhc-ep202026": {
-      "id": "OUT-nhc-ep202026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Storm Simon — 5-day forecast",
-      "country": "Simon (eastern Pacific system 5)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T15:00:00.000Z",
-      "targetEnd": "2026-10-21T15:00:00.000Z",
-      "provider": "nhc"
-    },
-    "OUT-gdacs-TC-1001338": {
-      "id": "OUT-gdacs-TC-1001338",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Storm Champi — 5-day forecast",
-      "country": "Guam",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T12:00:00.000Z",
-      "targetEnd": "2026-10-21T12:00:00.000Z",
+      "targetStart": "2026-10-16T18:00:00.000Z",
+      "targetEnd": "2026-10-21T18:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-aftershock-usgs-aka2026ukynnb": {
@@ -22858,33 +23045,11 @@
       "targetEnd": "2026-10-17T04:14:01.786Z",
       "provider": "usgs"
     },
-    "OUT-gdacs-TC-1001339": {
-      "id": "OUT-gdacs-TC-1001339",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Cyclone 1 — 5-day forecast",
-      "country": "Cook Islands, French Polynesia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-16T06:00:00.000Z",
-      "targetEnd": "2026-10-21T06:00:00.000Z",
-      "provider": "gdacs"
-    },
     "OUT-gdacs-FL-1104230": {
       "id": "OUT-gdacs-FL-1104230",
       "type": "Flood",
       "title": "Flood risk in Türkiye — 3-day forecast",
       "country": "Türkiye",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-16T01:00:00.000Z",
-      "targetEnd": "2026-10-19T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1103888": {
-      "id": "OUT-gdacs-FL-1103888",
-      "type": "Flood",
-      "title": "Flood risk in United States — 3-day forecast",
-      "country": "United States",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-16T01:00:00.000Z",
@@ -23277,10 +23442,10 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-16T19:57:23.640Z",
+  "updatedAt": "2026-10-16T22:50:55.928Z",
   "observedCadenceHours": {
-    "runs": 69,
-    "median": 4.94,
+    "runs": 70,
+    "median": 4.91,
     "min": 1.54,
     "max": 189.21
   }
