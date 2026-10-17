@@ -1568,58 +1568,112 @@ async function handler(req, res) {
   })());
 
   // 6. ReliefWeb (UN OCHA) - currently listed humanitarian disasters.
-  //    The v2 API needs an appname approved by ReliefWeb, so read the public
-  //    disasters feed instead: no credential, no setup.
+  //    With RELIEFWEB_APPNAME set to an appname ReliefWeb has approved, read
+  //    the v2 API (apidoc.reliefweb.int): disasters with status "current".
+  //    ("alert" is a disaster expected, and this provider reports ones that
+  //    have happened.) Without one, or if the API fails, read the public
+  //    disasters feeds, which since October 2026 answer HTTP 406 to servers.
   //
-  //    The feed carries no coordinates, so each record is placed at its
+  //    Neither carries coordinates, so each record is placed at its
   //    country's location via Open-Meteo's key-less geocoder and flagged
   //    precision:'country' - this is a country-level humanitarian record, not
   //    an incident position, and the UI says so. A record whose country cannot
   //    be resolved is left out rather than placed somewhere plausible.
   jobs.push((async () => {
-    // The exact feed path is not documented, and a Drupal miss can answer 200
-    // with an HTML page, so try each candidate and require it to parse into
-    // items before accepting it. `endpoint` records which one answered.
-    const feeds = [
-      'https://reliefweb.int/disasters/rss.xml?view=ongoing',
-      'https://reliefweb.int/disasters/rss.xml',
-      'https://reliefweb.int/disasters/feed'
-    ];
-    let xml = '', endpoint = '', lastError = 'no candidate feed returned items';
-    for (const url of feeds) {
+    const appname = String(process.env.RELIEFWEB_APPNAME || '').trim();
+    const RW_API = 'https://api.reliefweb.int/v2/disasters';
+    const HINT = 'Set RELIEFWEB_APPNAME to an appname ReliefWeb has approved (apidoc.reliefweb.int) to read its API.';
+    /* The appname is configuration, not for the page: never echoed back. */
+    const quiet = m => (appname ? String(m).split(appname).join('[appname]') : String(m));
+    let items = null, via = '', endpoint = '', apiError, withoutDateOrLink = 0;
+
+    if (appname) {
       try {
-        const body = await timedFetch(url, {
-          text: true, headers: { accept: 'application/rss+xml, application/xml' }
-        });
-        if (/<item[\s>]/i.test(body)) { xml = body; endpoint = url; break; }
-        lastError = 'no <item> elements at ' + url;
+        const fields = ['name', 'status', 'date.changed', 'date.created', 'date.event', 'url', 'url_alias',
+          'primary_country.name', 'primary_type.name', 'description'];
+        const q = ['appname=' + encodeURIComponent(appname), 'filter[field]=status', 'filter[value]=current',
+          'sort[]=date.changed:desc', 'limit=40'].concat(fields.map(f => 'fields[include][]=' + f)).join('&');
+        const j = await timedFetch(RW_API + '?' + q);
+        if (!j || !Array.isArray(j.data)) throw new Error('no data array in the answer');
+        const first = v => (Array.isArray(v) ? v[0] : v) || {};
+        items = [];
+        for (const d of j.data) {
+          const f = (d && d.fields) || {};
+          const title = String(f.name || '').trim();
+          const country = String(first(f.primary_country).name || '').trim();
+          if (!title || !country) continue;
+          const date = f.date || {};
+          const published = date.changed || date.created || date.event || '';
+          const link = /^https:\/\/reliefweb\.int\//.test(f.url_alias || '') ? f.url_alias : (f.url || '');
+          /* Nothing to date it by, or to send a reader to: left out, and counted. */
+          if (!published || !link || isNaN(Date.parse(published))) { withoutDateOrLink++; continue; }
+          items.push({
+            title, link, country,
+            hazard: String(first(f.primary_type).name || '').trim() || title.slice(title.indexOf(':') + 1).trim(),
+            published,
+            summary: String(f.description || '').replace(/[#*_>`\[\]]+/g, ' ').replace(/\(https?:[^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400)
+          });
+        }
+        via = 'api'; endpoint = RW_API;
       } catch (e) {
-        lastError = String(e.message || e);
+        items = null;
+        apiError = quiet(e.message || e) + '. Check that RELIEFWEB_APPNAME is an appname ReliefWeb has approved.';
       }
     }
-    if (!xml) { mark('reliefweb', false, { error: lastError, tried: feeds.length }); return; }
+
+    if (!items) {
+      // The exact feed path is not documented, and a Drupal miss can answer 200
+      // with an HTML page, so try each candidate and require it to parse into
+      // items before accepting it. `endpoint` records which one answered.
+      const feeds = [
+        'https://reliefweb.int/disasters/rss.xml?view=ongoing',
+        'https://reliefweb.int/disasters/rss.xml',
+        'https://reliefweb.int/disasters/feed'
+      ];
+      let xml = '', lastError = 'no candidate feed returned items';
+      for (const url of feeds) {
+        try {
+          const body = await timedFetch(url, {
+            text: true, headers: { accept: 'application/rss+xml, application/xml' }
+          });
+          if (/<item[\s>]/i.test(body)) { xml = body; endpoint = url; break; }
+          lastError = 'no <item> elements at ' + url;
+        } catch (e) {
+          lastError = String(e.message || e);
+        }
+      }
+      if (!xml) {
+        mark('reliefweb', false, { error: lastError, tried: feeds.length, apiError, hint: appname ? undefined : HINT });
+        return;
+      }
+      try {
+        items = [];
+        for (const m of String(xml).matchAll(/<item[\s>]([\s\S]*?)<\/item>/gi)) {
+          const b = m[1];
+          const title = tag('title', b);
+          const link = tag('link', b) || tag('guid', b);
+          if (!title || !link) continue;
+          // "Nepal: Floods and Landslides - Sep 2026"
+          const split = title.indexOf(':');
+          const country = split > 0 ? title.slice(0, split).trim() : '';
+          const rest = split > 0 ? title.slice(split + 1) : title;
+          if (!country) continue;
+          items.push({
+            title, link, country,
+            hazard: rest.replace(/\s*-\s*[A-Za-z]{3}\s*\d{4}\s*$/, '').trim(),
+            published: tag('pubDate', b) || '',
+            summary: tag('description', b).slice(0, 400)
+          });
+          if (items.length >= 40) break;
+        }
+        via = 'feed';
+      } catch (e) {
+        mark('reliefweb', false, { error: String(e.message || e), apiError });
+        return;
+      }
+    }
 
     try {
-      const items = [];
-      for (const m of String(xml).matchAll(/<item[\s>]([\s\S]*?)<\/item>/gi)) {
-        const b = m[1];
-        const title = tag('title', b);
-        const link = tag('link', b) || tag('guid', b);
-        if (!title || !link) continue;
-        // "Nepal: Floods and Landslides - Sep 2026"
-        const split = title.indexOf(':');
-        const country = split > 0 ? title.slice(0, split).trim() : '';
-        const rest = split > 0 ? title.slice(split + 1) : title;
-        if (!country) continue;
-        items.push({
-          title, link, country,
-          hazard: rest.replace(/\s*-\s*[A-Za-z]{3}\s*\d{4}\s*$/, '').trim(),
-          published: tag('pubDate', b) || '',
-          summary: tag('description', b).slice(0, 400)
-        });
-        if (items.length >= 40) break;
-      }
-
       // One geocode per distinct country, capped and run in parallel.
       const countries = [...new Set(items.map(i => i.country))].slice(0, 12);
       const located = new Map();
@@ -1657,9 +1711,10 @@ async function handler(req, res) {
         });
         n++;
       }
-      mark('reliefweb', true, { records: n, unplacedCountries: unplaced, endpoint });
+      mark('reliefweb', true, { records: n, unplacedCountries: unplaced, endpoint, via, apiError,
+        withoutDateOrLink: via === 'api' ? withoutDateOrLink : undefined });
     } catch (e) {
-      mark('reliefweb', false, { error: String(e.message || e) });
+      mark('reliefweb', false, { error: String(e.message || e), apiError });
     }
   })());
 
@@ -2622,7 +2677,8 @@ async function handler(req, res) {
         completeness: PROVIDERS[key].completeness,
         completenessBasis: PROVIDERS[key].completenessBasis,
         recordsObservations: PROVIDERS[key].recordsObservations,
-        endpoint: PROVIDERS[key].endpoint,
+        /* ReliefWeb answers from its API or its feed: name the one that did. */
+        endpoint: key === 'reliefweb' && s && s.via === 'api' ? s.endpoint : PROVIDERS[key].endpoint,
         status: st.status,
         success: !!(s && s.ok),
         failureReason: st.reason || null,
