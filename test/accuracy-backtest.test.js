@@ -85,6 +85,40 @@ test('the track record shows the real backtest: both horizons, sample sizes and 
   r.close();
 });
 
+test('the heat limit describes the line the backtest tested, with the rates it measured', async () => {
+  const limits = async body => { const r = await openWith(body); const t = [...r.document.querySelectorAll('#btLimits li')].map(li => li.textContent).find(x => /heat line/i.test(x)); r.close(); return t; };
+  const counts = (h, m, f, c) => ({ days: h + m + f + c, hits: h, misses: m, falseAlarms: f, correctNegatives: c });
+  const base = JSON.parse(JSON.stringify(REAL));
+  delete base.heatLine; delete base.results['heatUnshifted@3']; delete base.results['heatUnshifted@5'];
+  /* A backtest of the plain 30-year line: no trend is claimed. */
+  base.results['heat@3'] = counts(60, 40, 50, 850);
+  let t = await limits(base);
+  assert.ok(t, 'no heat limit');
+  assert.doesNotMatch(t, /trend/i, 'a trend was claimed for a backtest that did not use one: ' + t);
+  assert.match(t, /10% of the days tested/, t);
+  /* A backtest of the trend-shifted line, scored beside the plain one. */
+  const shifted = JSON.parse(JSON.stringify(base));
+  shifted.heatLine = 'trend';
+  shifted.results['heatUnshifted@3'] = counts(90, 50, 60, 800);
+  t = await limits(shifted);
+  assert.match(t, /own temperature trend/, t);
+  assert.match(t, /up where it has warmed and down where it has cooled/, t);
+  assert.match(t, /on 10% of the days tested/, t);
+  assert.match(t, /14% for the line without the trend/, t);
+  assert.match(t, /not the 5%/, t);
+  /* Without the plain line's scores the comparison is left out, not made up. */
+  delete shifted.results['heatUnshifted@3'];
+  t = await limits(shifted);
+  assert.match(t, /own temperature trend/, t);
+  assert.doesNotMatch(t, /without the trend/, t);
+  assert.match(t, /of the days tested, not the 5%/, t);
+  /* A season that crosses the line about as often as it should is not called hotter. */
+  shifted.results['heat@3'] = counts(30, 20, 40, 910);
+  t = await limits(shifted);
+  assert.match(t, /on 5% of the days tested, about the 5% the name suggests/, t);
+  assert.doesNotMatch(t, /hotter than the trend|Even so/, t);
+});
+
 for (const [name, body, status] of [
   ['missing', '{"error":"not found"}', 404],
   ['empty', {}, 200],

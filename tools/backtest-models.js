@@ -201,6 +201,9 @@ async function main() {
     note: 'Hindcast by tools/backtest-models.js: forecasts Open-Meteo really issued 3 and 5 days ahead, corrected as the live run corrects them with only the measurements available at issue time, scored day by day against NASA POWER. It shows how the method behaves; it is not the record of published forecasts.',
     generatedAt: new Date().toISOString(), climatologyPeriod: clim.period, places, skipped,
     window: { from: addDays(today, -PAST), to: today, leadsDays: LEADS },
+    /* The heat line scored as heat@: the 30-year line moved by each place's
+       own trend. heatUnshifted@ scores the line without it, for comparison. */
+    heatLine: 'trend',
     fireNote: 'Fire is scored with the index codes carried from at least ' + FIRE_SPINUP + ' days of measured weather to the day before, and the forecast used for the day itself only.',
     results: Object.fromEntries(Object.entries(T).map(([k, t]) => [k, scores(t)]))
   };
