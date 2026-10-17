@@ -1,4 +1,5 @@
 'use strict';
+const { queryOf } = require('./_lib/http.js');
 /**
  * Per-event enrichment: everything a disaster detail page needs beyond the raw
  * feed record — when/where it started, who is exposed, live news coverage,
@@ -428,14 +429,9 @@ function hazardPlaybook(type) {
 
 /* ------------------------------------------------------------- the handler */
 
+/* From req.url, never Vercel's url.parse()-based req.query; see _lib/http.js. */
 function readQuery(req) {
-  if (req && req.query && typeof req.query === 'object') return req.query;
-  try {
-    const u = new URL(req.url, 'https://local');
-    const out = {};
-    u.searchParams.forEach((v, k) => { out[k] = v; });
-    return out;
-  } catch (e) { return {}; }
+  return queryOf(req);
 }
 
 async function handler(req, res) {

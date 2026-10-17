@@ -1,6 +1,30 @@
 'use strict';
 /* Small request helpers shared by the alert functions. */
 
+/*
+ * Query parameters, read from req.url with the WHATWG URL API.
+ *
+ * Never from req.query: Vercel's Node runtime defines it as a lazy property
+ * whose first read parses req.url with the deprecated url.parse()
+ * (@vercel/node-bridge, helpers.js, getQueryParser), which logged DEP0169 on
+ * /api/events and /api/event-enrichment. A plain query object is used only
+ * for keys the URL does not carry, as tests and internal calls pass one, and
+ * only when it is a plain value, so the runtime's getter is never run.
+ */
+function queryOf(req) {
+  const out = {};
+  if (!req) return out;
+  if (typeof req.url === 'string') {
+    try { new URL(req.url, 'http://local').searchParams.forEach((v, k) => { if (!(k in out)) out[k] = v; }); }
+    catch (e) { /* not a URL; nothing to read */ }
+  }
+  const d = Object.getOwnPropertyDescriptor(req, 'query');
+  if (d && 'value' in d && d.value && typeof d.value === 'object') {
+    for (const k of Object.keys(d.value)) if (!(k in out)) out[k] = d.value[k];
+  }
+  return out;
+}
+
 /** The raw request body as a string, whether or not the runtime parsed it. */
 async function rawBody(req) {
   if (Buffer.isBuffer(req.rawBody)) return req.rawBody.toString('utf8');
@@ -43,4 +67,4 @@ function send(res, status, body) {
   res.status(status).json(body);
 }
 
-module.exports = { rawBody, jsonBody, header, send };
+module.exports = { queryOf, rawBody, jsonBody, header, send };
