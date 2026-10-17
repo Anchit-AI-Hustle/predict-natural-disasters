@@ -135,8 +135,12 @@ function scorePlace(p, arc, obs, T) {
       const doy = M.dayOfYear(D), m = M.monthOf(D) - 1;
       // Heat
       if (bt.delta !== null && isFinite(f.tmax[D])) {
-        const p95 = M.harmonicAt(p.heat.p95, doy);
+        /* Moved to the day's climate, for the forecast and the observation alike. */
+        const p95 = M.heatLines(p, D).p95;
         tally(T['heat@' + L], f.tmax[D] - bt.delta >= p95, o.tmax >= p95); scored++;
+        /* And the line as it was before that correction, kept for comparison. */
+        const raw = M.harmonicAt(p.heat.p95, doy);
+        if (T['heatUnshifted@' + L]) tally(T['heatUnshifted@' + L], f.tmax[D] - bt.delta >= raw, o.tmax >= raw);
       }
       // Rain
       const one = p.rain.p99[m];
@@ -169,7 +173,7 @@ function scorePlace(p, arc, obs, T) {
 
 function blankTallies() {
   const T = {};
-  for (const hz of ['heat', 'rain', 'fire']) for (const L of LEADS) T[hz + '@' + L] = blank();
+  for (const hz of ['heat', 'rain', 'fire', 'heatUnshifted']) for (const L of LEADS) T[hz + '@' + L] = blank();
   return T;
 }
 

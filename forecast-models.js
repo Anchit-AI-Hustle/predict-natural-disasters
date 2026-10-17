@@ -357,6 +357,50 @@
     return out;
   }
 
+  /*
+   * Warming since the middle of the record.
+   *
+   * The heat line is a place's 95th percentile over 1996-2025, a record
+   * whose middle is 2011. Applied to 2026 it was crossed on 14% of the days
+   * tested instead of about 5%: the climate it was drawn from is fifteen
+   * years cooler than the one it is applied to. So each place's own warming
+   * trend is fitted from that record alone - the median of the slopes
+   * between every pair of yearly means (Theil-Sen), which one freak year
+   * cannot drag - and the line is moved by it to the date it is used on.
+   * Yearly means, not the hottest days: the whole distribution is shifted,
+   * which is the usual first correction for a warming record. Only years
+   * with nearly every day measured count, and twenty of them are needed.
+   */
+  var MAX_HEAT_SHIFT_C = 2.5, TREND_MIN_YEARS = 20, YEAR_MIN_DAYS = 350;
+  function warmingTrend(days, tmax) {
+    var by = {};
+    for (var i = 0; i < days.length; i++) {
+      if (!isFinite(tmax[i])) continue;
+      var y = +days[i].slice(0, 4);
+      (by[y] = by[y] || []).push(tmax[i]);
+    }
+    var pts = Object.keys(by).filter(function (y) { return by[y].length >= YEAR_MIN_DAYS; })
+      .map(function (y) { return [+y + 0.5, mean(by[y])]; });
+    if (pts.length < TREND_MIN_YEARS) return null;
+    var slopes = [];
+    for (var a = 0; a < pts.length; a++) for (var b = a + 1; b < pts.length; b++) slopes.push((pts[b][1] - pts[a][1]) / (pts[b][0] - pts[a][0]));
+    var ref = mean(pts.map(function (p) { return p[0]; }));
+    return { perYear: round(quantile(slopes, 0.5), 4), refYear: round(ref, 2), years: pts.length };
+  }
+  /** How far the heat line moves for this date, in °C; 0 with no trend. */
+  function heatShift(clim, ymd) {
+    var t = clim && clim.heat && clim.heat.trend;
+    if (!t || !isFinite(t.perYear) || !isFinite(t.refYear)) return 0;
+    var when = +ymd.slice(0, 4) + (dayOfYear(ymd) - 0.5) / 365.25;
+    var s = t.perYear * (when - t.refYear);
+    return Math.max(-MAX_HEAT_SHIFT_C, Math.min(MAX_HEAT_SHIFT_C, s));
+  }
+  /** The heat lines for one date, moved to that date's climate. */
+  function heatLines(clim, ymd) {
+    var doy = dayOfYear(ymd), s = heatShift(clim, ymd);
+    return { p95: harmonicAt(clim.heat.p95, doy) + s, p99: clim.heat.p99 ? harmonicAt(clim.heat.p99, doy) + s : NaN, shift: s };
+  }
+
   var HEAT_MIN_DAYS = 2;
   /**
    * Heat: days whose forecast maximum, corrected to the climatology's scale,
@@ -364,8 +408,9 @@
    * make an outlook; a day above the 99th makes it severe.
    */
   function heatModel(clim, days, tmaxCorrected) {
-    var p95 = days.map(function (d) { return harmonicAt(clim.heat.p95, dayOfYear(d)); });
-    var p99 = days.map(function (d) { return harmonicAt(clim.heat.p99, dayOfYear(d)); });
+    var lines = days.map(function (d) { return heatLines(clim, d); });
+    var p95 = lines.map(function (l) { return l.p95; });
+    var p99 = lines.map(function (l) { return l.p99; });
     var flags = days.map(function (d, i) { return isFinite(tmaxCorrected[i]) && tmaxCorrected[i] >= p95[i]; });
     return runs(flags).filter(function (r) { return r[1] - r[0] + 1 >= HEAT_MIN_DAYS; }).map(function (r) {
       var idx = []; for (var i = r[0]; i <= r[1]; i++) idx.push(i);
@@ -451,6 +496,7 @@
     RJ_GENERIC: RJ_GENERIC, rjExpected: rjExpected, rjProbability: rjProbability,
     MIN_OVERLAP: MIN_OVERLAP, BIAS_WINDOW: BIAS_WINDOW, MAX_SHIFT_C: MAX_SHIFT_C, biasDelta: biasDelta, rainRatio: rainRatio,
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
+    warmingTrend: warmingTrend, heatShift: heatShift, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
     HEAT_MIN_DAYS: HEAT_MIN_DAYS, FIRE_MIN_DAYS: FIRE_MIN_DAYS, FIRE_FLOOR: FIRE_FLOOR,
     percentileOf: percentileOf, round: round, mean: mean
   };

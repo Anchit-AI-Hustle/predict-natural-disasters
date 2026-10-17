@@ -12,7 +12,8 @@
  *
  *   heat   the 90th, 95th and 99th percentiles of daily maximum temperature
  *          for each day of the year, over a 15-day window, fitted with an
- *          annual cycle (forecast-models.js says why);
+ *          annual cycle (forecast-models.js says why), and the record's own
+ *          warming trend, which moves those lines to the year they are used in;
  *   rain   the 99th percentile of daily rain and of three-day totals, by month;
  *   soil   deciles of surface soil wetness by month, to say how wet the ground
  *          is now compared with usual;
@@ -123,7 +124,10 @@ function climatology(p, h) {
   return Object.assign({}, p, {
     id: (p.name + '-' + p.countryCode).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     days: h.days.length, missingDays: missing,
-    heat: { p90: p90.coef, p95: p95.coef, p99: p99.coef, fitRms: { p90: p90.rms, p95: p95.rms, p99: p99.rms } },
+    /* trend: the record's own warming, so the line can be moved to the year
+       it is used in (forecast-models.js, warmingTrend). */
+    heat: { p90: p90.coef, p95: p95.coef, p99: p99.coef, fitRms: { p90: p90.rms, p95: p95.rms, p99: p99.rms },
+      trend: M.warmingTrend(h.days, h.tmax) },
     rain: { p99: M.monthlyPercentiles(h.days, h.rain, 0.99), p99x3: M.monthlyPercentiles(h.days, r3, 0.99) },
     soil: { deciles },
     fire: { p90: M.monthlyPercentiles(h.days, fwiVals, 0.90), p95: M.monthlyPercentiles(h.days, fwiVals, 0.95) }
@@ -140,7 +144,8 @@ function climatology(p, h) {
       if (h.days.length < 365 * 29) { skipped.push(name + ': only ' + h.days.length + ' days of history'); continue; }
       const c = climatology(loc, h);
       places.push(c);
-      console.log('ok  ' + c.id.padEnd(22) + ' p95 rms ' + c.heat.fitRms.p95 + '  rain p99 Jul ' + c.rain.p99[6] + '  fire p95 Jul ' + c.fire.p95[6]);
+      console.log('ok  ' + c.id.padEnd(22) + ' p95 rms ' + c.heat.fitRms.p95 + '  trend ' + (c.heat.trend ? c.heat.trend.perYear + ' C/yr' : 'none') +
+        '  rain p99 Jul ' + c.rain.p99[6] + '  fire p95 Jul ' + c.fire.p95[6]);
     } catch (e) {
       skipped.push(name + ' (' + cc + '): ' + e.message);
       console.log('skip ' + name + ': ' + e.message);

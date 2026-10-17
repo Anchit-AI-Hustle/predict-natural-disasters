@@ -201,3 +201,72 @@ test('the backtest scores nothing where nothing was measured, and fire needs a m
   const fireDays = BT.scores(T['fire@3']).days, heatDays = BT.scores(T['heat@3']).days;
   assert.ok(fireDays < heatDays, 'fire was scored without a month of measured weather behind it');
 });
+
+/* ------------------------------------------------ warming since the record */
+/*
+ * The heat line is each place's 95th percentile of 1996-2025, a record whose
+ * middle is 2011. Over 12 Jul to 12 Oct 2026 it was crossed on 14% of days
+ * tested, not 5%: the climate the line was drawn from is fifteen years cooler
+ * than the one it is applied to. The record's own warming trend, fitted to
+ * 1996-2025 alone, moves the line to the year it is used in.
+ */
+function warmingRecord(perYear, years) {
+  const days = [], tmax = [];
+  for (let y = 1996; y < 1996 + years; y++) {
+    for (let d = 0; d < 365; d++) {
+      const t = Date.UTC(y, 0, 1) + d * 864e5;
+      days.push(new Date(t).toISOString().slice(0, 10));
+      /* A seasonal cycle, a steady trend, and day-to-day noise that repeats each year. */
+      tmax.push(25 + 8 * Math.sin(2 * Math.PI * d / 365) + perYear * (y + d / 365 - 2011) + 3 * Math.sin(d * 1.7));
+    }
+  }
+  return { days, tmax };
+}
+
+test('the warming trend is fitted from the record alone, robustly', () => {
+  const r = warmingRecord(0.04, 30);
+  const t = M.warmingTrend(r.days, r.tmax);
+  near(t.perYear, 0.04, 0.003, 'trend per year');
+  near(t.refYear, 2011, 0.01, 'middle of the record');
+  assert.equal(t.years, 30);
+  /* One freak year does not drag a median-of-slopes fit. */
+  const bad = r.tmax.slice(); for (let i = 0; i < 365; i++) bad[i] += 6;
+  near(M.warmingTrend(r.days, bad).perYear, 0.04, 0.006, 'trend with one outlier year');
+  /* Too short a record gives no trend rather than a guess. */
+  const short = warmingRecord(0.04, 15);
+  assert.equal(M.warmingTrend(short.days, short.tmax), null);
+  /* A year with weeks missing is not a year. */
+  const gappy = r.tmax.slice(); for (let i = 0; i < 365 * 30; i++) if (i % 365 < 40) gappy[i] = NaN;
+  assert.equal(M.warmingTrend(r.days, gappy), null, 'years with 40 days missing were averaged');
+});
+
+test('the heat line moves by the trend to the year it is used in, within bounds', () => {
+  const C = { heat: { trend: { perYear: 0.04, refYear: 2011 } } };
+  near(M.heatShift(C, '2026-07-02'), 0.04 * (2026 + 182.5 / 365 - 2011), 0.005, 'shift in July 2026');
+  assert.equal(M.heatShift({ heat: {} }, '2026-07-02'), 0, 'no trend, no shift');
+  assert.equal(M.heatShift({ heat: { trend: { perYear: 1, refYear: 2011 } } }, '2026-07-02'), M.MAX_HEAT_SHIFT_C);
+  assert.equal(M.heatShift({ heat: { trend: { perYear: -1, refYear: 2011 } } }, '2026-07-02'), -M.MAX_HEAT_SHIFT_C);
+});
+
+test('the heat model judges the coming week against the shifted line', () => {
+  const C = flatClimate();
+  /* 41 °C is past a 40 °C line, but not past one moved up by about 1.5 °C. */
+  assert.equal(M.heatModel(C, week, [41, 41, 30, 30, 30, 30, 30]).length, 1);
+  C.heat.trend = { perYear: 0.1, refYear: 2011 };
+  assert.deepEqual(M.heatModel(C, week, [41, 41, 30, 30, 30, 30, 30]), [], 'the shift was ignored');
+  const out = M.heatModel(C, week, [42, 42, 30, 30, 30, 30, 30]);
+  assert.equal(out.length, 1);
+  near(out[0].detail[0].p95, 40 + M.heatShift(C, '2026-06-01'), 0.05, 'the recorded line is the shifted one');
+});
+
+test('the backtest moves the line for the forecast and the observation alike', () => {
+  const { place, arc, obs } = synthetic(0);
+  const plain = BT.blankTallies(); BT.scorePlace(place, arc, obs, plain);
+  const warmed = Object.assign({}, place, { heat: Object.assign({}, place.heat, { trend: { perYear: 0.1, refYear: 2011 } }) });
+  const moved = BT.blankTallies(); BT.scorePlace(warmed, arc, obs, moved);
+  for (const L of BT.LEADS) {
+    const a = plain['heat@' + L], b = moved['heat@' + L];
+    assert.ok(b.hits + b.misses < a.hits + a.misses, 'a higher line was crossed as often');
+    assert.equal(b.misses + b.falseAlarms, 0, 'forecast and observation were judged against different lines');
+  }
+});
