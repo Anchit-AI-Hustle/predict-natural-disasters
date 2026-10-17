@@ -108,12 +108,19 @@ jobs:
   publish:
     # Publishes only from main, on the schedule or by hand. Never from a
     # pull request: a GITHUB_TOKEN push to a PR branch holds its runs for
-    # approval (see the top of this file).
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    # approval (see the top of this file). Started by hand, it waits for the
+    # models job and checks out main again, so it runs on the climatology
+    # that job has just committed. On the schedule the models job is skipped.
+    needs: models
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && needs.models.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main
       - uses: actions/setup-node@v5
         with:
           node-version: '22'

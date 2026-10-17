@@ -270,3 +270,76 @@ test('the backtest moves the line for the forecast and the observation alike', (
     assert.equal(b.misses + b.falseAlarms, 0, 'forecast and observation were judged against different lines');
   }
 });
+
+/* --------------------------------------------- grading published forecasts */
+/*
+ * Model forecasts are published on /forecasts. Each is graded once its days
+ * have been measured, by the rule it carries: correct if the line was crossed
+ * on at least one day of its window, a false alarm if not. A crossing the
+ * models were watching for and did not forecast is a miss. "Crossing" is the
+ * models' own event, read off the measurements: two hot days in a row past
+ * the heat line, a day or three days of rain past the rain line, two days in
+ * a row of fire weather.
+ */
+const heatPlace = () => Object.assign(flatClimate(), { id: 'x-city' });
+const days10 = Array.from({ length: 10 }, (_, i) => '2026-06-' + String(i + 1).padStart(2, '0'));
+
+test('observed events are the models\' own events, found in the measurements', () => {
+  const C = heatPlace();
+  const tmax = [30, 41, 41, 30, 41, 30, 30, 30, 42, 42];
+  const ev = M.observedEvents(C, days10, { tmax, rain: Array(10).fill(0), fwi: Array(10).fill(0) });
+  assert.deepEqual([...ev.heat].sort(), ['2026-06-02', '2026-06-03', '2026-06-09', '2026-06-10'], 'a lone hot day counted, or a pair was lost');
+  assert.equal(ev.rain.size, 0);
+  const wet = M.observedEvents(C, days10, { tmax: Array(10).fill(30), rain: [0, 60, 0, 0, 0, 0, 0, 0, 0, 0], fwi: Array(10).fill(0) });
+  assert.deepEqual([...wet.rain], ['2026-06-02']);
+});
+
+test('a published forecast is graded by its own window, and waits until every day is measured', () => {
+  const ledger = [
+    { id: 'hit', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-04T23:59:59Z' },
+    { id: 'false', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-05T00:00:00Z', targetEnd: '2026-06-07T23:59:59Z' },
+    { id: 'open', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-06-05T20:00:00Z', targetStart: '2026-06-09T00:00:00Z', targetEnd: '2026-06-12T23:59:59Z' },
+    { id: 'blind', model: { hazard: 'rain', placeId: 'nowhere' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-02T23:59:59Z' }
+  ];
+  const observed = { 'x-city': { from: '2026-06-01', through: '2026-06-10', heat: new Set(['2026-06-02', '2026-06-03', '2026-06-09', '2026-06-10']), rain: new Set(), fire: new Set() } };
+  const g = M.gradePublished(ledger, observed, []);
+  const v = Object.fromEntries(g.outlooks.map(o => [o.id, o.verdict]));
+  assert.deepEqual(v, { hit: 'correct', false: 'false alarm', open: 'pending', blind: 'pending' });
+  assert.deepEqual(g.outlooks.find(o => o.id === 'hit').crossed, ['2026-06-02', '2026-06-03']);
+  assert.equal(g.counts.correct, 1); assert.equal(g.counts.falseAlarms, 1); assert.equal(g.counts.pending, 2);
+});
+
+test('a crossing the models were watching and did not forecast is a miss; one they were not watching is not', () => {
+  const observed = { 'x-city': { from: '2026-06-01', through: '2026-06-10', heat: new Set(['2026-06-02', '2026-06-03', '2026-06-09', '2026-06-10']), rain: new Set(), fire: new Set() } };
+  const ledger = [{ id: 'hit', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-03T23:59:59Z' }];
+  /* One run on 31 May watched days 1 to 7 ahead: 1 to 7 June. 9 and 10 June were never watched. */
+  const runs = [{ at: '2026-05-31T20:00:00Z', checked: ['x-city'], leadDays: [1, 7] }];
+  let g = M.gradePublished(ledger, observed, runs);
+  assert.deepEqual(g.misses, [], 'an unwatched crossing was counted as a miss, or a forecast one');
+  /* A second run on 3 June watched 4 to 10 June: 9 and 10 June are now misses. */
+  runs.push({ at: '2026-06-03T20:00:00Z', checked: ['x-city'], leadDays: [1, 7] });
+  g = M.gradePublished(ledger, observed, runs);
+  assert.deepEqual(g.misses.map(m => m.day), ['2026-06-09', '2026-06-10']);
+  assert.equal(g.misses[0].hazard, 'heat'); assert.equal(g.counts.missedDays, 2);
+  /* A place a run skipped is not watched by it. */
+  g = M.gradePublished(ledger, observed, [{ at: '2026-06-03T20:00:00Z', checked: [], leadDays: [1, 7] }]);
+  assert.deepEqual(g.misses, []);
+});
+
+test('a window with an unmeasured day stays pending, and an unmeasured day is never a miss', () => {
+  const measured = new Set(['2026-06-01', '2026-06-02', '2026-06-04', '2026-06-05']); // 3 June missing
+  const observed = { 'x-city': { measured, heat: new Set(), rain: new Set(), fire: new Set(['2026-06-03']) } };
+  const ledger = [{ id: 'gap', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-04T23:59:59Z' }];
+  const g = M.gradePublished(ledger, observed, [{ at: '2026-05-31T20:00:00Z', checked: ['x-city'], leadDays: [1, 7] }]);
+  assert.equal(g.outlooks[0].verdict, 'pending', 'a window with a day nobody measured was graded a false alarm');
+  assert.deepEqual(g.misses, []);
+});
+
+test('the heat explanation says which way the line moved, and says nothing for no move', () => {
+  assert.equal(M.heatShiftText(0.43), ' That line is moved up 0.4 °C for the warming this place\'s record shows since its middle year.');
+  assert.equal(M.heatShiftText(-0.31), ' That line is moved down 0.3 °C for the cooling this place\'s record shows since its middle year.');
+  /* A move that rounds to 0.0 °C is not worth a sentence, and never reads "-0.0". */
+  for (const s of [0, 0.04, -0.04, NaN, undefined, null]) assert.equal(M.heatShiftText(s), '', String(s));
+  assert.doesNotMatch(require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'tools', 'run-models.js'), 'utf8'),
+    /moved up ' \+/, 'run-models.js still builds its own "moved up" sentence');
+});

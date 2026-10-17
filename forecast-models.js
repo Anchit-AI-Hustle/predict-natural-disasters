@@ -395,6 +395,12 @@
     var s = t.perYear * (when - t.refYear);
     return Math.max(-MAX_HEAT_SHIFT_C, Math.min(MAX_HEAT_SHIFT_C, s));
   }
+  /** The sentence that explains a trend shift, or nothing for one under 0.05 °C. */
+  function heatShiftText(shift) {
+    if (!isFinite(shift) || Math.abs(shift) < 0.05) return '';
+    return ' That line is moved ' + (shift > 0 ? 'up ' : 'down ') + Math.abs(shift).toFixed(1) + ' \u00b0C for the ' +
+      (shift > 0 ? 'warming' : 'cooling') + ' this place\'s record shows since its middle year.';
+  }
   /** The heat lines for one date, moved to that date's climate. */
   function heatLines(clim, ymd) {
     var doy = dayOfYear(ymd), s = heatShift(clim, ymd);
@@ -589,7 +595,7 @@
     RJ_GENERIC: RJ_GENERIC, rjExpected: rjExpected, rjProbability: rjProbability,
     MIN_OVERLAP: MIN_OVERLAP, BIAS_WINDOW: BIAS_WINDOW, MAX_SHIFT_C: MAX_SHIFT_C, biasDelta: biasDelta, rainRatio: rainRatio,
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
-    warmingTrend: warmingTrend, heatShift: heatShift, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
+    warmingTrend: warmingTrend, heatShift: heatShift, heatShiftText: heatShiftText, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
     observedEvents: observedEvents, gradePublished: gradePublished, windowDays: windowDays,
     HEAT_MIN_DAYS: HEAT_MIN_DAYS, FIRE_MIN_DAYS: FIRE_MIN_DAYS, FIRE_FLOOR: FIRE_FLOOR,
     percentileOf: percentileOf, round: round, mean: mean
