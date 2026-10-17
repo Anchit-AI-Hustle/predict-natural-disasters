@@ -239,6 +239,29 @@ const FIXTURES = {
     <item><title>Floods displace thousands in Bagmati province</title><link>https://www.reuters.com/world/asia-pacific/nepal-floods-2026</link><pubDate>Sun, 14 Sep 2026 03:00:00 GMT</pubDate><description>Duplicate of the Google News item.</description></item>
   </channel></rss>`,
 
+  /* ReliefWeb's v2 disasters API, the fields the handler asks for
+     (apidoc.reliefweb.int, disasters fields table). The API is read only
+     with an approved appname; without one it answers 403. */
+  reliefwebDisastersApi: {
+    totalCount: 4, count: 4,
+    data: [
+      { id: 52001, fields: { name: 'Nepal: Floods and Landslides - Sep 2026', status: 'current', glide: 'FL-2026-000167-NPL',
+        date: { event: '2026-09-01T00:00:00+00:00', changed: '2026-09-13T08:00:00+00:00' },
+        url: 'https://reliefweb.int/node/52001', url_alias: 'https://reliefweb.int/disaster/fl-2026-000167-npl',
+        primary_country: { name: 'Nepal', iso3: 'npl' }, primary_type: { name: 'Flood' },
+        description: 'Heavy monsoon rainfall has caused widespread flooding.' } },
+      { id: 52002, fields: { name: 'Philippines: Tropical Cyclone - Sep 2026', status: 'current',
+        date: { event: '2026-09-12T00:00:00+00:00', changed: '2026-09-14T08:00:00+00:00' },
+        url: 'https://reliefweb.int/node/52002', url_alias: 'https://reliefweb.int/disaster/tc-2026-000200-phl',
+        primary_country: { name: 'Philippines', iso3: 'phl' }, primary_type: { name: 'Tropical Cyclone' },
+        description: 'An active tropical cyclone is approaching.' } },
+      { id: 52003, fields: { name: 'Atlantis: Mystery Event - Sep 2026', status: 'current',
+        date: { changed: '2026-09-13T08:00:00+00:00' }, url: 'https://reliefweb.int/node/52003',
+        primary_country: { name: 'Atlantis' }, primary_type: { name: 'Other' } } },
+      /* No date and no link: nothing to date it by or to send a reader to. */
+      { id: 52004, fields: { name: 'Nepal: Earthquake - Sep 2026', status: 'current', primary_country: { name: 'Nepal' } } }
+    ]
+  },
   reliefwebReports: {
     data: [
       { id: 4200001, fields: { title: 'Nepal: Floods and Landslides Situation Report No. 4', url: 'https://reliefweb.int/report/nepal/sitrep-4', source: [{ shortname: 'OCHA', name: 'UN Office for the Coordination of Humanitarian Affairs' }], date: { created: '2026-09-13T12:00:00+00:00' }, body: 'Humanitarian partners scaled up water and sanitation support.' } },
@@ -295,6 +318,7 @@ function failure(status) {
  *   youtubeVariant: which youtubeHtml* fixture the search page should return
  *   volcanoNoticeMismatch: notice describes volcanoes other than the one asked for
  *   reliefwebEmptyUntil: only the candidate feed URL containing this returns items
+ *   reliefwebApiStatus: the HTTP status the ReliefWeb API answers with instead of data
  */
 function makeFetch(opts) {
   const o = opts || {};
@@ -341,6 +365,21 @@ function makeFetch(opts) {
         return { ok: false, status: 400, text: async () => '{"detail":"Invalid parameter"}', json: async () => ({}) };
       }
       return route('nws', FIXTURES.nws);
+    }
+    if (u.includes('api.reliefweb.int/v2/reports')) {
+      if (o.reliefwebApiStatus) {
+        const t = '{"status":' + o.reliefwebApiStatus + ',"error":{"type":"AccessDeniedHttpException","message":"You are not using an approved appname."}}';
+        return { ok: false, status: o.reliefwebApiStatus, text: async () => t, json: async () => JSON.parse(t) };
+      }
+      return route('reliefweb_api', FIXTURES.reliefwebReports);
+    }
+    if (u.includes('api.reliefweb.int/v2/disasters')) {
+      /* What the API says to an appname it has not approved. */
+      if (o.reliefwebApiStatus) {
+        const t = '{"status":' + o.reliefwebApiStatus + ',"error":{"type":"AccessDeniedHttpException","message":"You are not using an approved appname."}}';
+        return { ok: false, status: o.reliefwebApiStatus, text: async () => t, json: async () => JSON.parse(t) };
+      }
+      return route('reliefweb_api', FIXTURES.reliefwebDisastersApi);
     }
     if (u.includes('reliefweb.int/disasters')) {
       // Mimic a Drupal miss: 200 with an HTML page and no <item> elements.

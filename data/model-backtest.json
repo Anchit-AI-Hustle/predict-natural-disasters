@@ -1,113 +1,123 @@
 {
  "note": "Hindcast by tools/backtest-models.js: forecasts Open-Meteo really issued 3 and 5 days ahead, corrected as the live run corrects them with only the measurements available at issue time, scored day by day against NASA POWER. It shows how the method behaves; it is not the record of published forecasts.",
- "generatedAt": "2026-10-12T22:09:33.035Z",
+ "generatedAt": "2026-10-17T15:48:18.633Z",
  "climatologyPeriod": "1996-2025",
- "places": 104,
- "skipped": [
-  {
-   "id": "moscow-ru",
-   "why": "HTTP 429 {\"reason\":\"Minutely API request limit exceeded. Please try again in one minute.\",\"error\":true}"
-  },
-  {
-   "id": "los-angeles-us",
-   "why": "HTTP 429 {\"reason\":\"Minutely API request limit exceeded. Please try again in one minute.\",\"error\":true}"
-  },
-  {
-   "id": "kyiv-ua",
-   "why": "fetch failed"
-  },
-  {
-   "id": "paris-fr",
-   "why": "fetch failed"
-  }
- ],
+ "places": 108,
+ "skipped": [],
  "window": {
-  "from": "2026-07-12",
-  "to": "2026-10-12",
+  "from": "2026-07-17",
+  "to": "2026-10-17",
   "leadsDays": [
    3,
    5
   ]
  },
+ "heatLine": "trend",
  "fireNote": "Fire is scored with the index codes carried from at least 30 days of measured weather to the day before, and the forecast used for the day itself only.",
  "results": {
   "heat@3": {
-   "hits": 540,
-   "misses": 386,
-   "falseAlarms": 553,
-   "correctNegatives": 5000,
-   "days": 6479,
-   "observedRate": 0.143,
-   "forecastRate": 0.169,
-   "pod": 0.583,
-   "far": 0.506,
-   "frequencyBias": 1.18,
-   "csi": 0.365
+   "hits": 422,
+   "misses": 295,
+   "falseAlarms": 525,
+   "correctNegatives": 5515,
+   "days": 6757,
+   "observedRate": 0.106,
+   "forecastRate": 0.14,
+   "pod": 0.589,
+   "far": 0.554,
+   "frequencyBias": 1.321,
+   "csi": 0.34
   },
   "heat@5": {
-   "hits": 477,
-   "misses": 427,
-   "falseAlarms": 566,
-   "correctNegatives": 4825,
-   "days": 6295,
-   "observedRate": 0.144,
-   "forecastRate": 0.166,
-   "pod": 0.528,
-   "far": 0.543,
-   "frequencyBias": 1.154,
-   "csi": 0.324
+   "hits": 375,
+   "misses": 325,
+   "falseAlarms": 534,
+   "correctNegatives": 5328,
+   "days": 6562,
+   "observedRate": 0.107,
+   "forecastRate": 0.139,
+   "pod": 0.536,
+   "far": 0.587,
+   "frequencyBias": 1.299,
+   "csi": 0.304
   },
   "rain@3": {
-   "hits": 37,
-   "misses": 102,
-   "falseAlarms": 94,
-   "correctNegatives": 7047,
-   "days": 7280,
+   "hits": 41,
+   "misses": 105,
+   "falseAlarms": 97,
+   "correctNegatives": 7317,
+   "days": 7560,
    "observedRate": 0.019,
    "forecastRate": 0.018,
-   "pod": 0.266,
-   "far": 0.718,
-   "frequencyBias": 0.942,
-   "csi": 0.159
+   "pod": 0.281,
+   "far": 0.703,
+   "frequencyBias": 0.945,
+   "csi": 0.169
   },
   "rain@5": {
-   "hits": 21,
-   "misses": 113,
-   "falseAlarms": 77,
-   "correctNegatives": 6861,
-   "days": 7072,
-   "observedRate": 0.019,
-   "forecastRate": 0.014,
-   "pod": 0.157,
-   "far": 0.786,
-   "frequencyBias": 0.731,
-   "csi": 0.1
+   "hits": 26,
+   "misses": 118,
+   "falseAlarms": 86,
+   "correctNegatives": 7114,
+   "days": 7344,
+   "observedRate": 0.02,
+   "forecastRate": 0.015,
+   "pod": 0.181,
+   "far": 0.768,
+   "frequencyBias": 0.778,
+   "csi": 0.113
   },
   "fire@3": {
-   "hits": 57,
-   "misses": 91,
-   "falseAlarms": 46,
-   "correctNegatives": 6285,
-   "days": 6479,
+   "hits": 60,
+   "misses": 96,
+   "falseAlarms": 41,
+   "correctNegatives": 6560,
+   "days": 6757,
    "observedRate": 0.023,
-   "forecastRate": 0.016,
+   "forecastRate": 0.015,
    "pod": 0.385,
-   "far": 0.447,
-   "frequencyBias": 0.696,
-   "csi": 0.294
+   "far": 0.406,
+   "frequencyBias": 0.647,
+   "csi": 0.305
   },
   "fire@5": {
-   "hits": 54,
-   "misses": 87,
-   "falseAlarms": 35,
-   "correctNegatives": 6119,
-   "days": 6295,
+   "hits": 57,
+   "misses": 90,
+   "falseAlarms": 30,
+   "correctNegatives": 6385,
+   "days": 6562,
    "observedRate": 0.022,
-   "forecastRate": 0.014,
-   "pod": 0.383,
-   "far": 0.393,
-   "frequencyBias": 0.631,
-   "csi": 0.307
+   "forecastRate": 0.013,
+   "pod": 0.388,
+   "far": 0.345,
+   "frequencyBias": 0.592,
+   "csi": 0.322
+  },
+  "heatUnshifted@3": {
+   "hits": 569,
+   "misses": 391,
+   "falseAlarms": 544,
+   "correctNegatives": 5253,
+   "days": 6757,
+   "observedRate": 0.142,
+   "forecastRate": 0.165,
+   "pod": 0.593,
+   "far": 0.489,
+   "frequencyBias": 1.159,
+   "csi": 0.378
+  },
+  "heatUnshifted@5": {
+   "hits": 507,
+   "misses": 430,
+   "falseAlarms": 562,
+   "correctNegatives": 5063,
+   "days": 6562,
+   "observedRate": 0.143,
+   "forecastRate": 0.163,
+   "pod": 0.541,
+   "far": 0.526,
+   "frequencyBias": 1.141,
+   "csi": 0.338
   }
  }
 }

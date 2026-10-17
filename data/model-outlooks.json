@@ -1,13 +1,13 @@
 {
  "note": "Forecasts made in advance by tools/run-models.js from data/climatology.json. Replaced on every run; the ledger keeps every one ever issued.",
- "generatedAt": "2026-10-14T20:58:34.582Z",
+ "generatedAt": "2026-10-17T15:49:18.199Z",
  "period": "1996-2025",
  "places": 108,
  "checked": 95,
  "skipped": [
   {
    "id": "nagpur-in",
-   "why": "the forecast service and the 30-year record differ here by 3.3 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.4 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "lahore-pk",
@@ -15,11 +15,11 @@
   },
   {
    "id": "jakarta-id",
-   "why": "the forecast service and the 30-year record differ here by 3.7 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.6 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "taipei-tw",
-   "why": "the forecast service and the 30-year record differ here by 3.5 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.4 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "accra-gh",
@@ -27,244 +27,52 @@
   },
   {
    "id": "johannesburg-za",
-   "why": "the forecast service and the 30-year record differ here by -4.1 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by -4.0 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "cape-town-za",
-   "why": "the forecast service and the 30-year record differ here by 5.0 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 4.2 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "lisbon-pt",
-   "why": "the forecast service and the 30-year record differ here by 4.7 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 4.4 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "denver-us",
-   "why": "the forecast service and the 30-year record differ here by 4.8 °C on average over the last 21 days, more than a correction can be trusted to bridge"
-  },
-  {
-   "id": "vancouver-island-ca",
-   "why": "the forecast service and the 30-year record differ here by -3.1 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 5.0 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "monterrey-mx",
-   "why": "the forecast service and the 30-year record differ here by 5.9 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 5.4 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "port-au-prince-ht",
    "why": "the forecast service and the 30-year record differ here by 3.7 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
+   "id": "vancouver-island-ca",
+   "why": "the forecast service and the 30-year record differ here by -3.1 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+  },
+  {
    "id": "santiago-cl",
-   "why": "the forecast service and the 30-year record differ here by 3.0 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.2 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   }
  ],
  "outlooks": [
   {
-   "id": "model-heat-mumbai-in-2026-10-15",
+   "id": "model-heat-dhaka-bd-2026-10-18",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Mumbai, 15 Oct to 16 Oct",
-   "country": "India",
-   "admin1": "Maharashtra",
-   "region": "Mumbai, Maharashtra, India",
-   "lat": 19.0728,
-   "lon": 72.8826,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-16T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. 15 Oct: 34.8 °C against a usual worst of 33.4 °C. 16 Oct: 34.6 °C against a usual worst of 33.4 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Mumbai, Maharashtra, India, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 34.8,
-      "p95": 33.4,
-      "p99": 34.4
-     },
-     {
-      "day": "2026-10-16",
-      "value": 34.6,
-      "p95": 33.4,
-      "p99": 34.5
-     }
-    ],
-    "peak": 34.8,
-    "severe": true,
-    "placeId": "mumbai-in",
-    "geonameId": 1275339,
-    "bias": {
-     "tmax": 2,
-     "dew": -1.47,
-     "rainRatio": 1.27,
-     "windRatio": 1.11,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.71,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-mumbai-in-2026-10-19",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Mumbai, 19 Oct to 21 Oct",
-   "country": "India",
-   "admin1": "Maharashtra",
-   "region": "Mumbai, Maharashtra, India",
-   "lat": 19.0728,
-   "lon": 72.8826,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-19T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row, and its 99th on at least one. 19 Oct: 35 °C against a usual worst of 33.5 °C. 20 Oct: 34.4 °C against a usual worst of 33.6 °C. 21 Oct: 35.4 °C against a usual worst of 33.6 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Mumbai, Maharashtra, India, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-19",
-      "value": 35,
-      "p95": 33.5,
-      "p99": 34.5
-     },
-     {
-      "day": "2026-10-20",
-      "value": 34.4,
-      "p95": 33.6,
-      "p99": 34.6
-     },
-     {
-      "day": "2026-10-21",
-      "value": 35.4,
-      "p95": 33.6,
-      "p99": 34.6
-     }
-    ],
-    "peak": 35.4,
-    "severe": true,
-    "placeId": "mumbai-in",
-    "geonameId": 1275339,
-    "bias": {
-     "tmax": 2,
-     "dew": -1.47,
-     "rainRatio": 1.27,
-     "windRatio": 1.11,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.71,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-kolkata-in-2026-10-17",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Kolkata, 17 Oct to 19 Oct",
-   "country": "India",
-   "admin1": "West Bengal",
-   "region": "Kolkata, West Bengal, India",
-   "lat": 22.5626,
-   "lon": 88.363,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-17T00:00:00Z",
-   "targetEnd": "2026-10-19T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row, and its 99th on at least one. 17 Oct: 32.2 °C against a usual worst of 31.9 °C. 18 Oct: 32.2 °C against a usual worst of 31.8 °C. 19 Oct: 32.4 °C against a usual worst of 31.7 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Kolkata, West Bengal, India, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-17",
-      "value": 32.2,
-      "p95": 31.9,
-      "p99": 32.4
-     },
-     {
-      "day": "2026-10-18",
-      "value": 32.2,
-      "p95": 31.8,
-      "p99": 32.4
-     },
-     {
-      "day": "2026-10-19",
-      "value": 32.4,
-      "p95": 31.7,
-      "p99": 32.3
-     }
-    ],
-    "peak": 32.4,
-    "severe": true,
-    "placeId": "kolkata-in",
-    "geonameId": 1275004,
-    "bias": {
-     "tmax": 0.97,
-     "dew": -0.66,
-     "rainRatio": 0.72,
-     "windRatio": 1.45,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.76,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-karachi-pk-2026-10-18",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Karachi, 18 Oct to 21 Oct",
-   "country": "Pakistan",
-   "admin1": "Sindh",
-   "region": "Karachi, Sindh, Pakistan",
-   "lat": 24.8608,
-   "lon": 67.0104,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
+   "title": "Extreme heat forecast for Dhaka, 18 Oct to 21 Oct",
+   "country": "Bangladesh",
+   "admin1": "Dhaka Division",
+   "region": "Dhaka, Dhaka Division, Bangladesh",
+   "lat": 23.7104,
+   "lon": 90.4074,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
    "targetStart": "2026-10-18T00:00:00Z",
    "targetEnd": "2026-10-21T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
@@ -272,1059 +80,1159 @@
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 4 days in a row, and its 99th on at least one. 18 Oct: 35.8 °C against a usual worst of 35.8 °C. 19 Oct: 36.1 °C against a usual worst of 35.7 °C. 20 Oct: 37.2 °C against a usual worst of 35.7 °C. 21 Oct: 37.7 °C against a usual worst of 35.6 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Karachi, Sindh, Pakistan, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.8 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 4 days in a row. That line is moved down 0.3 °C for the cooling this place's record shows since its middle year. 18 Oct: 32.7 °C against a usual worst of 31.6 °C. 19 Oct: 32.5 °C against a usual worst of 31.6 °C. 20 Oct: 31.9 °C against a usual worst of 31.5 °C. 21 Oct: 32.4 °C against a usual worst of 31.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Dhaka, Dhaka Division, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
       "day": "2026-10-18",
-      "value": 35.8,
-      "p95": 35.8,
-      "p99": 37.1
+      "value": 32.7,
+      "p95": 31.6,
+      "p99": 32.7,
+      "shift": -0.29
      },
      {
       "day": "2026-10-19",
-      "value": 36.1,
-      "p95": 35.7,
-      "p99": 37
+      "value": 32.5,
+      "p95": 31.6,
+      "p99": 32.7,
+      "shift": -0.29
      },
      {
       "day": "2026-10-20",
-      "value": 37.2,
-      "p95": 35.7,
-      "p99": 37
-     },
-     {
-      "day": "2026-10-21",
-      "value": 37.7,
-      "p95": 35.6,
-      "p99": 36.9
-     }
-    ],
-    "peak": 37.7,
-    "severe": true,
-    "placeId": "karachi-pk",
-    "geonameId": 1174872,
-    "bias": {
-     "tmax": -0.03,
-     "dew": 0.11,
-     "rainRatio": 1,
-     "windRatio": 1.39,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.5,
-     "value": 0.26,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-fire-karachi-pk-2026-10-20",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Wildfire",
-   "title": "Wildfire weather forecast for Karachi, 20 Oct to 21 Oct",
-   "country": "Pakistan",
-   "admin1": "Sindh",
-   "region": "Karachi, Sindh, Pakistan",
-   "lat": 24.8608,
-   "lon": 67.0104,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-20T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. The Fire Weather Index, computed from the last 60 days of measured weather and the corrected forecast, reaches the \"very high\" class and this place's 95th percentile for the month on 2 days in a row. Fire also needs fuel and a spark, which no weather index can see. 20 Oct: index 51.4 (very extreme) against a usual worst of 48.97. 21 Oct: index 56.5 (very extreme) against a usual worst of 48.97.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Karachi, Sindh, Pakistan, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the Fire Weather Index NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "fire",
-    "days": [
-     {
-      "day": "2026-10-20",
-      "value": 51.4,
-      "p95": 48.97,
-      "level": "very extreme"
-     },
-     {
-      "day": "2026-10-21",
-      "value": 56.5,
-      "p95": 48.97,
-      "level": "very extreme"
-     }
-    ],
-    "peak": 56.5,
-    "severe": true,
-    "placeId": "karachi-pk",
-    "geonameId": 1174872,
-    "bias": {
-     "tmax": -0.03,
-     "dew": 0.11,
-     "rainRatio": 1,
-     "windRatio": 1.39,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.5,
-     "value": 0.26,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-dhaka-bd-2026-10-15",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Dhaka, 15 Oct to 21 Oct",
-   "country": "Bangladesh",
-   "admin1": "Dhaka Division",
-   "region": "Dhaka, Dhaka Division, Bangladesh",
-   "lat": 23.7104,
-   "lon": 90.4074,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. 15 Oct: 33.9 °C against a usual worst of 32.1 °C. 16 Oct: 33.5 °C against a usual worst of 32 °C. 17 Oct: 33.4 °C against a usual worst of 32 °C. 18 Oct: 33.1 °C against a usual worst of 31.9 °C. 19 Oct: 33 °C against a usual worst of 31.9 °C. 20 Oct: 32.2 °C against a usual worst of 31.8 °C. 21 Oct: 32.4 °C against a usual worst of 31.8 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Dhaka, Dhaka Division, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 33.9,
-      "p95": 32.1,
-      "p99": 33.1
-     },
-     {
-      "day": "2026-10-16",
-      "value": 33.5,
-      "p95": 32,
-      "p99": 33.1
-     },
-     {
-      "day": "2026-10-17",
-      "value": 33.4,
-      "p95": 32,
-      "p99": 33
-     },
-     {
-      "day": "2026-10-18",
-      "value": 33.1,
-      "p95": 31.9,
-      "p99": 33
-     },
-     {
-      "day": "2026-10-19",
-      "value": 33,
-      "p95": 31.9,
-      "p99": 32.9
-     },
-     {
-      "day": "2026-10-20",
-      "value": 32.2,
-      "p95": 31.8,
-      "p99": 32.9
+      "value": 31.9,
+      "p95": 31.5,
+      "p99": 32.6,
+      "shift": -0.29
      },
      {
       "day": "2026-10-21",
       "value": 32.4,
-      "p95": 31.8,
-      "p99": 32.8
+      "p95": 31.5,
+      "p99": 32.5,
+      "shift": -0.29
      }
     ],
-    "peak": 33.9,
-    "severe": true,
+    "peak": 32.7,
+    "severe": false,
     "placeId": "dhaka-bd",
     "geonameId": 1185241,
     "bias": {
-     "tmax": 1.38,
-     "dew": -1.15,
-     "rainRatio": 0.72,
+     "tmax": 1.82,
+     "dew": -1.28,
+     "rainRatio": 0.73,
      "windRatio": 1.26,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
-     "value": 0.61,
-     "day": "2026-10-11"
+     "value": 0.59,
+     "day": "2026-10-14"
     }
    }
   },
   {
-   "id": "model-heat-chittagong-bd-2026-10-17",
+   "id": "model-heat-chittagong-bd-2026-10-18",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Chittagong, 17 Oct to 21 Oct",
+   "title": "Extreme heat forecast for Chittagong, 18 Oct to 24 Oct",
    "country": "Bangladesh",
    "admin1": "Chittagong",
    "region": "Chittagong, Bangladesh",
    "lat": 22.3384,
    "lon": 91.8317,
    "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-17T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-18T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 5 days in a row, and its 99th on at least one. 17 Oct: 32.7 °C against a usual worst of 32 °C. 18 Oct: 33.3 °C against a usual worst of 32 °C. 19 Oct: 33.4 °C against a usual worst of 32 °C. 20 Oct: 33.1 °C against a usual worst of 31.9 °C. 21 Oct: 33.4 °C against a usual worst of 31.9 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Chittagong, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.5 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved down 0.2 °C for the cooling this place's record shows since its middle year. 18 Oct: 33.4 °C against a usual worst of 31.8 °C. 19 Oct: 33.6 °C against a usual worst of 31.8 °C. 20 Oct: 33.5 °C against a usual worst of 31.7 °C. 21 Oct: 33.9 °C against a usual worst of 31.7 °C. 22 Oct: 33.8 °C against a usual worst of 31.6 °C. 23 Oct: 32.9 °C against a usual worst of 31.6 °C. 24 Oct: 32.6 °C against a usual worst of 31.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Chittagong, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
-      "day": "2026-10-17",
-      "value": 32.7,
-      "p95": 32,
-      "p99": 32.9
-     },
-     {
       "day": "2026-10-18",
-      "value": 33.3,
-      "p95": 32,
-      "p99": 32.9
+      "value": 33.4,
+      "p95": 31.8,
+      "p99": 32.7,
+      "shift": -0.2
      },
      {
       "day": "2026-10-19",
-      "value": 33.4,
-      "p95": 32,
-      "p99": 32.8
+      "value": 33.6,
+      "p95": 31.8,
+      "p99": 32.6,
+      "shift": -0.2
      },
      {
       "day": "2026-10-20",
-      "value": 33.1,
-      "p95": 31.9,
-      "p99": 32.8
+      "value": 33.5,
+      "p95": 31.7,
+      "p99": 32.6,
+      "shift": -0.2
      },
      {
       "day": "2026-10-21",
-      "value": 33.4,
-      "p95": 31.9,
-      "p99": 32.7
+      "value": 33.9,
+      "p95": 31.7,
+      "p99": 32.5,
+      "shift": -0.2
+     },
+     {
+      "day": "2026-10-22",
+      "value": 33.8,
+      "p95": 31.6,
+      "p99": 32.5,
+      "shift": -0.2
+     },
+     {
+      "day": "2026-10-23",
+      "value": 32.9,
+      "p95": 31.6,
+      "p99": 32.4,
+      "shift": -0.2
+     },
+     {
+      "day": "2026-10-24",
+      "value": 32.6,
+      "p95": 31.5,
+      "p99": 32.4,
+      "shift": -0.2
      }
     ],
-    "peak": 33.4,
+    "peak": 33.9,
     "severe": true,
     "placeId": "chittagong-bd",
     "geonameId": 1205733,
     "bias": {
-     "tmax": -0.58,
-     "dew": 0.1,
-     "rainRatio": 0.57,
-     "windRatio": 1.23,
+     "tmax": -0.54,
+     "dew": 0.19,
+     "rainRatio": 0.63,
+     "windRatio": 1.24,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
-     "value": 0.69,
-     "day": "2026-10-11"
+     "value": 0.76,
+     "day": "2026-10-14"
     }
    }
   },
   {
-   "id": "model-heat-baghdad-iq-2026-10-15",
+   "id": "model-heat-manila-ph-2026-10-18",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Baghdad, 15 Oct to 16 Oct",
-   "country": "Iraq",
-   "admin1": "Baghdad",
-   "region": "Baghdad, Iraq",
-   "lat": 33.3406,
-   "lon": 44.4009,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-16T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -1.9 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. 15 Oct: 41.8 °C against a usual worst of 40 °C. 16 Oct: 40.7 °C against a usual worst of 39.7 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Baghdad, Iraq, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 41.8,
-      "p95": 40,
-      "p99": 41.3
-     },
-     {
-      "day": "2026-10-16",
-      "value": 40.7,
-      "p95": 39.7,
-      "p99": 41.1
-     }
-    ],
-    "peak": 41.8,
-    "severe": true,
-    "placeId": "baghdad-iq",
-    "geonameId": 98182,
-    "bias": {
-     "tmax": -1.86,
-     "dew": 3.44,
-     "rainRatio": 1,
-     "windRatio": 2,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.8,
-     "value": 0.2,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-tehran-ir-2026-10-16",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Tehran, 16 Oct to 17 Oct",
-   "country": "Iran",
-   "admin1": "Tehran",
-   "region": "Tehran, Iran",
-   "lat": 35.6944,
-   "lon": 51.4215,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-16T00:00:00Z",
-   "targetEnd": "2026-10-17T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. 16 Oct: 30.6 °C against a usual worst of 29.9 °C. 17 Oct: 30.6 °C against a usual worst of 29.7 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Tehran, Iran, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-16",
-      "value": 30.6,
-      "p95": 29.9,
-      "p99": 31.3
-     },
-     {
-      "day": "2026-10-17",
-      "value": 30.6,
-      "p95": 29.7,
-      "p99": 31.1
-     }
-    ],
-    "peak": 30.6,
-    "severe": false,
-    "placeId": "tehran-ir",
-    "geonameId": 112931,
-    "bias": {
-     "tmax": 0.44,
-     "dew": 0.73,
-     "rainRatio": 1,
-     "windRatio": 1.63,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.1,
-     "value": 0.21,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-manila-ph-2026-10-15",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Manila, 15 Oct to 18 Oct",
+   "title": "Extreme heat forecast for Manila, 18 Oct to 20 Oct",
    "country": "Philippines",
    "admin1": "National Capital Region",
    "region": "Manila, National Capital Region, Philippines",
    "lat": 14.6042,
    "lon": 120.9822,
    "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-18T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 4 days in a row. 15 Oct: 31.4 °C against a usual worst of 31.3 °C. 16 Oct: 31.8 °C against a usual worst of 31.2 °C. 17 Oct: 31.6 °C against a usual worst of 31.2 °C. 18 Oct: 31.5 °C against a usual worst of 31.2 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Manila, National Capital Region, Philippines, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 31.4,
-      "p95": 31.3,
-      "p99": 32.1
-     },
-     {
-      "day": "2026-10-16",
-      "value": 31.8,
-      "p95": 31.2,
-      "p99": 32
-     },
-     {
-      "day": "2026-10-17",
-      "value": 31.6,
-      "p95": 31.2,
-      "p99": 32
-     },
-     {
-      "day": "2026-10-18",
-      "value": 31.5,
-      "p95": 31.2,
-      "p99": 32
-     }
-    ],
-    "peak": 31.8,
-    "severe": false,
-    "placeId": "manila-ph",
-    "geonameId": 1701668,
-    "bias": {
-     "tmax": 2.38,
-     "dew": -0.37,
-     "rainRatio": 1.35,
-     "windRatio": 0.84,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.1,
-     "value": 0.91,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-beijing-cn-2026-10-17",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Beijing, 17 Oct to 19 Oct",
-   "country": "China",
-   "admin1": "Beijing Municipality",
-   "region": "Beijing, Beijing Municipality, China",
-   "lat": 39.9075,
-   "lon": 116.3972,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-17T00:00:00Z",
-   "targetEnd": "2026-10-19T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.33 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (11 Oct). 17 Oct: 50.5 mm (59.4 mm over three days) against a usual worst of 19.29 mm in a day and 35.45 mm over three days. 18 Oct: 0 mm (59.4 mm over three days) against a usual worst of 19.29 mm in a day and 35.45 mm over three days. 19 Oct: 0 mm (50.5 mm over three days) against a usual worst of 19.29 mm in a day and 35.45 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Beijing, Beijing Municipality, China, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-17",
-      "value": 50.5,
-      "threeDay": 59.4,
-      "p99": 19.29,
-      "p99x3": 35.45
-     },
-     {
-      "day": "2026-10-18",
-      "value": 0,
-      "threeDay": 59.4,
-      "p99": 19.29,
-      "p99x3": 35.45
-     },
-     {
-      "day": "2026-10-19",
-      "value": 0,
-      "threeDay": 50.5,
-      "p99": 19.29,
-      "p99x3": 35.45
-     }
-    ],
-    "peak": 50.5,
-    "severe": false,
-    "placeId": "beijing-cn",
-    "geonameId": 1816670,
-    "bias": {
-     "tmax": 1.02,
-     "dew": 1.13,
-     "rainRatio": 1.33,
-     "windRatio": 1.23,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.27,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-wuhan-cn-2026-10-17",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Wuhan, 17 Oct",
-   "country": "China",
-   "admin1": "Hubei",
-   "region": "Wuhan, Hubei, China",
-   "lat": 30.5833,
-   "lon": 114.2667,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-17T00:00:00Z",
-   "targetEnd": "2026-10-17T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.30 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (11 Oct). 17 Oct: 32.3 mm (44.1 mm over three days) against a usual worst of 27.1 mm in a day and 58.25 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Wuhan, Hubei, China, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-17",
-      "value": 32.3,
-      "threeDay": 44.1,
-      "p99": 27.1,
-      "p99x3": 58.25
-     }
-    ],
-    "peak": 32.3,
-    "severe": false,
-    "placeId": "wuhan-cn",
-    "geonameId": 1791247,
-    "bias": {
-     "tmax": -1.11,
-     "dew": 0.57,
-     "rainRatio": 1.3,
-     "windRatio": 1.35,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.41,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-addis-ababa-et-2026-10-20",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Addis Ababa, 20 Oct to 21 Oct",
-   "country": "Ethiopia",
-   "admin1": "Addis Ababa",
-   "region": "Addis Ababa, Ethiopia",
-   "lat": 9.025,
-   "lon": 38.7469,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-20T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. 20 Oct: 25.2 °C against a usual worst of 25 °C. 21 Oct: 25.4 °C against a usual worst of 25.1 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Addis Ababa, Ethiopia, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-20",
-      "value": 25.2,
-      "p95": 25,
-      "p99": 26.4
-     },
-     {
-      "day": "2026-10-21",
-      "value": 25.4,
-      "p95": 25.1,
-      "p99": 26.4
-     }
-    ],
-    "peak": 25.4,
-    "severe": false,
-    "placeId": "addis-ababa-et",
-    "geonameId": 344979,
-    "bias": {
-     "tmax": -2.38,
-     "dew": -0.17,
-     "rainRatio": 1,
-     "windRatio": 1.31,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.38,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-mogadishu-so-2026-10-20",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Mogadishu, 20 Oct to 21 Oct",
-   "country": "Somalia",
-   "admin1": "Banaadir",
-   "region": "Mogadishu, Banaadir, Somalia",
-   "lat": 2.0371,
-   "lon": 45.3438,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-20T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.7 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. 20 Oct: 29.9 °C against a usual worst of 28.9 °C. 21 Oct: 30.5 °C against a usual worst of 28.9 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Mogadishu, Banaadir, Somalia, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-20",
-      "value": 29.9,
-      "p95": 28.9,
-      "p99": 29.3
-     },
-     {
-      "day": "2026-10-21",
-      "value": 30.5,
-      "p95": 28.9,
-      "p99": 29.3
-     }
-    ],
-    "peak": 30.5,
-    "severe": true,
-    "placeId": "mogadishu-so",
-    "geonameId": 53654,
-    "bias": {
-     "tmax": 1.67,
-     "dew": -0.71,
-     "rainRatio": 1.45,
-     "windRatio": 1.34,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.9,
-     "value": 0.49,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-mogadishu-so-2026-10-15",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Mogadishu, 15 Oct to 16 Oct",
-   "country": "Somalia",
-   "admin1": "Banaadir",
-   "region": "Mogadishu, Banaadir, Somalia",
-   "lat": 2.0371,
-   "lon": 45.3438,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-16T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.45 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 90% of the same month in 1996-2025 when last measured (11 Oct), so more of the rain is likely to run off. 15 Oct: 24.2 mm (44.5 mm over three days) against a usual worst of 22.54 mm in a day and 47.28 mm over three days. 16 Oct: 8.1 mm (47.3 mm over three days) against a usual worst of 22.54 mm in a day and 47.28 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Mogadishu, Banaadir, Somalia, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 24.2,
-      "threeDay": 44.5,
-      "p99": 22.54,
-      "p99x3": 47.28
-     },
-     {
-      "day": "2026-10-16",
-      "value": 8.1,
-      "threeDay": 47.3,
-      "p99": 22.54,
-      "p99x3": 47.28
-     }
-    ],
-    "peak": 24.2,
-    "severe": true,
-    "placeId": "mogadishu-so",
-    "geonameId": 53654,
-    "bias": {
-     "tmax": 1.67,
-     "dew": -0.71,
-     "rainRatio": 1.45,
-     "windRatio": 1.34,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.9,
-     "value": 0.49,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-mogadishu-so-2026-10-19",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Mogadishu, 19 Oct to 21 Oct",
-   "country": "Somalia",
-   "admin1": "Banaadir",
-   "region": "Mogadishu, Banaadir, Somalia",
-   "lat": 2.0371,
-   "lon": 45.3438,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-19T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.45 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 90% of the same month in 1996-2025 when last measured (11 Oct), so more of the rain is likely to run off. 19 Oct: 36.1 mm (48.8 mm over three days) against a usual worst of 22.54 mm in a day and 47.28 mm over three days. 20 Oct: 12.2 mm (57.6 mm over three days) against a usual worst of 22.54 mm in a day and 47.28 mm over three days. 21 Oct: 3.5 mm (51.7 mm over three days) against a usual worst of 22.54 mm in a day and 47.28 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Mogadishu, Banaadir, Somalia, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-19",
-      "value": 36.1,
-      "threeDay": 48.8,
-      "p99": 22.54,
-      "p99x3": 47.28
-     },
-     {
-      "day": "2026-10-20",
-      "value": 12.2,
-      "threeDay": 57.6,
-      "p99": 22.54,
-      "p99x3": 47.28
-     },
-     {
-      "day": "2026-10-21",
-      "value": 3.5,
-      "threeDay": 51.7,
-      "p99": 22.54,
-      "p99x3": 47.28
-     }
-    ],
-    "peak": 36.1,
-    "severe": true,
-    "placeId": "mogadishu-so",
-    "geonameId": 53654,
-    "bias": {
-     "tmax": 1.67,
-     "dew": -0.71,
-     "rainRatio": 1.45,
-     "windRatio": 1.34,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.9,
-     "value": 0.49,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-niamey-ne-2026-10-15",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Niamey, 15 Oct to 21 Oct",
-   "country": "Niger",
-   "admin1": "Niamey",
-   "region": "Niamey, Niger",
-   "lat": 13.5137,
-   "lon": 2.1098,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. 15 Oct: 40.3 °C against a usual worst of 38.8 °C. 16 Oct: 40.8 °C against a usual worst of 38.8 °C. 17 Oct: 40.9 °C against a usual worst of 38.8 °C. 18 Oct: 40.5 °C against a usual worst of 38.9 °C. 19 Oct: 40.3 °C against a usual worst of 38.9 °C. 20 Oct: 42 °C against a usual worst of 38.9 °C. 21 Oct: 41.8 °C against a usual worst of 39 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Niamey, Niger, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 40.3,
-      "p95": 38.8,
-      "p99": 39.6
-     },
-     {
-      "day": "2026-10-16",
-      "value": 40.8,
-      "p95": 38.8,
-      "p99": 39.6
-     },
-     {
-      "day": "2026-10-17",
-      "value": 40.9,
-      "p95": 38.8,
-      "p99": 39.6
-     },
-     {
-      "day": "2026-10-18",
-      "value": 40.5,
-      "p95": 38.9,
-      "p99": 39.7
-     },
-     {
-      "day": "2026-10-19",
-      "value": 40.3,
-      "p95": 38.9,
-      "p99": 39.7
-     },
-     {
-      "day": "2026-10-20",
-      "value": 42,
-      "p95": 38.9,
-      "p99": 39.7
-     },
-     {
-      "day": "2026-10-21",
-      "value": 41.8,
-      "p95": 39,
-      "p99": 39.7
-     }
-    ],
-    "peak": 42,
-    "severe": true,
-    "placeId": "niamey-ne",
-    "geonameId": 2440485,
-    "bias": {
-     "tmax": -2.22,
-     "dew": 2.63,
-     "rainRatio": 0.73,
-     "windRatio": 1.23,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.17,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-dakar-sn-2026-10-18",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Dakar, 18 Oct to 19 Oct",
-   "country": "Senegal",
-   "admin1": "Dakar",
-   "region": "Dakar, Senegal",
-   "lat": 14.6937,
-   "lon": -17.4441,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
    "targetStart": "2026-10-18T00:00:00Z",
-   "targetEnd": "2026-10-19T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. 18 Oct: 30.7 °C against a usual worst of 30.6 °C. 19 Oct: 31.1 °C against a usual worst of 30.7 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Dakar, Senegal, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-18",
-      "value": 30.7,
-      "p95": 30.6,
-      "p99": 31.2
-     },
-     {
-      "day": "2026-10-19",
-      "value": 31.1,
-      "p95": 30.7,
-      "p99": 31.2
-     }
-    ],
-    "peak": 31.1,
-    "severe": false,
-    "placeId": "dakar-sn",
-    "geonameId": 2253354,
-    "bias": {
-     "tmax": 1.06,
-     "dew": -0.46,
-     "rainRatio": 1.17,
-     "windRatio": 1.23,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.63,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-lagos-ng-2026-10-19",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Lagos, 19 Oct to 20 Oct",
-   "country": "Nigeria",
-   "admin1": "Lagos",
-   "region": "Lagos, Nigeria",
-   "lat": 6.4541,
-   "lon": 3.3947,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-19T00:00:00Z",
    "targetEnd": "2026-10-20T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. 19 Oct: 29.9 °C against a usual worst of 29.6 °C. 20 Oct: 29.6 °C against a usual worst of 29.6 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Lagos, Nigeria, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row. That line is moved up 0.5 °C for the warming this place's record shows since its middle year. 18 Oct: 32.4 °C against a usual worst of 31.6 °C. 19 Oct: 31.9 °C against a usual worst of 31.6 °C. 20 Oct: 31.6 °C against a usual worst of 31.6 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Manila, National Capital Region, Philippines, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-18",
+      "value": 32.4,
+      "p95": 31.6,
+      "p99": 32.4,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-19",
+      "value": 31.9,
+      "p95": 31.6,
+      "p99": 32.4,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-20",
+      "value": 31.6,
+      "p95": 31.6,
+      "p99": 32.4,
+      "shift": 0.47
+     }
+    ],
+    "peak": 32.4,
+    "severe": false,
+    "placeId": "manila-ph",
+    "geonameId": 1701668,
+    "bias": {
+     "tmax": 2.63,
+     "dew": -0.47,
+     "rainRatio": 1.75,
+     "windRatio": 0.89,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.1,
+     "value": 0.9,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-hanoi-vn-2026-10-19",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Hanoi, 19 Oct to 21 Oct",
+   "country": "Vietnam",
+   "admin1": "Hanoi",
+   "region": "Hanoi, Vietnam",
+   "lat": 21.0245,
+   "lon": 105.8412,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-19T00:00:00Z",
+   "targetEnd": "2026-10-21T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row. 19 Oct: 31.3 °C against a usual worst of 31 °C. 20 Oct: 31.1 °C against a usual worst of 30.9 °C. 21 Oct: 31.1 °C against a usual worst of 30.9 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Hanoi, Vietnam, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
       "day": "2026-10-19",
-      "value": 29.9,
-      "p95": 29.6,
-      "p99": 30
+      "value": 31.3,
+      "p95": 31,
+      "p99": 31.8,
+      "shift": -0.02
      },
      {
       "day": "2026-10-20",
-      "value": 29.6,
-      "p95": 29.6,
-      "p99": 30.1
+      "value": 31.1,
+      "p95": 30.9,
+      "p99": 31.7,
+      "shift": -0.02
+     },
+     {
+      "day": "2026-10-21",
+      "value": 31.1,
+      "p95": 30.9,
+      "p99": 31.7,
+      "shift": -0.02
      }
     ],
-    "peak": 29.9,
+    "peak": 31.3,
     "severe": false,
+    "placeId": "hanoi-vn",
+    "geonameId": 1581130,
+    "bias": {
+     "tmax": 1.05,
+     "dew": -0.38,
+     "rainRatio": 2,
+     "windRatio": 0.91,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.6,
+     "value": 0.81,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-hanoi-vn-2026-10-23",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Hanoi, 23 Oct to 24 Oct",
+   "country": "Vietnam",
+   "admin1": "Hanoi",
+   "region": "Hanoi, Vietnam",
+   "lat": 21.0245,
+   "lon": 105.8412,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-23T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 41% of the days this model flagged did cross the line (11% would by chance), and it flagged 54% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. 23 Oct: 31.2 °C against a usual worst of 30.7 °C. 24 Oct: 31.3 °C against a usual worst of 30.7 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Hanoi, Vietnam, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-23",
+      "value": 31.2,
+      "p95": 30.7,
+      "p99": 31.6,
+      "shift": -0.02
+     },
+     {
+      "day": "2026-10-24",
+      "value": 31.3,
+      "p95": 30.7,
+      "p99": 31.5,
+      "shift": -0.02
+     }
+    ],
+    "peak": 31.3,
+    "severe": false,
+    "placeId": "hanoi-vn",
+    "geonameId": 1581130,
+    "bias": {
+     "tmax": 1.05,
+     "dew": -0.38,
+     "rainRatio": 2,
+     "windRatio": 0.91,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.6,
+     "value": 0.81,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-singapore-sg-2026-10-22",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Singapore, 22 Oct to 23 Oct",
+   "country": "Singapore",
+   "admin1": "",
+   "region": "Singapore, Singapore",
+   "lat": 1.3667,
+   "lon": 103.8,
+   "alert": "High",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-22T00:00:00Z",
+   "targetEnd": "2026-10-23T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 41% of the days this model flagged did cross the line (11% would by chance), and it flagged 54% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved up 0.5 °C for the warming this place's record shows since its middle year. 22 Oct: 32.9 °C against a usual worst of 31.9 °C. 23 Oct: 33.2 °C against a usual worst of 31.9 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Singapore, Singapore, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-22",
+      "value": 32.9,
+      "p95": 31.9,
+      "p99": 32.5,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-23",
+      "value": 33.2,
+      "p95": 31.9,
+      "p99": 32.4,
+      "shift": 0.47
+     }
+    ],
+    "peak": 33.2,
+    "severe": true,
+    "placeId": "singapore-sg",
+    "geonameId": 1880251,
+    "bias": {
+     "tmax": 1.2,
+     "dew": -0.57,
+     "rainRatio": 0.77,
+     "windRatio": 1.25,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.67,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-hong-kong-hk-2026-10-21",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Hong Kong, 21 Oct to 24 Oct",
+   "admin1": "",
+   "region": "Hong Kong, undefined",
+   "lat": 22.25,
+   "lon": 114.1667,
+   "alert": "High",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-21T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 4 days in a row, and its 99th on at least one. That line is moved up 0.5 °C for the warming this place's record shows since its middle year. 21 Oct: 32.6 °C against a usual worst of 30.8 °C. 22 Oct: 31.2 °C against a usual worst of 30.8 °C. 23 Oct: 31.3 °C against a usual worst of 30.7 °C. 24 Oct: 31.9 °C against a usual worst of 30.6 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Hong Kong, undefined, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-21",
+      "value": 32.6,
+      "p95": 30.8,
+      "p99": 31.6,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-22",
+      "value": 31.2,
+      "p95": 30.8,
+      "p99": 31.5,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-23",
+      "value": 31.3,
+      "p95": 30.7,
+      "p99": 31.5,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-24",
+      "value": 31.9,
+      "p95": 30.6,
+      "p99": 31.4,
+      "shift": 0.47
+     }
+    ],
+    "peak": 32.6,
+    "severe": true,
+    "placeId": "hong-kong-hk",
+    "geonameId": 1819730,
+    "bias": {
+     "tmax": 1.22,
+     "dew": -1.49,
+     "rainRatio": 1.42,
+     "windRatio": 1.08,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.2,
+     "value": 0.64,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-rain-seoul-kr-2026-10-18",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Seoul, 18 Oct to 20 Oct",
+   "country": "South Korea",
+   "admin1": "Seoul",
+   "region": "Seoul, South Korea",
+   "lat": 37.566,
+   "lon": 126.9784,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-18T00:00:00Z",
+   "targetEnd": "2026-10-20T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (14 Oct). 18 Oct: 65.6 mm (74.8 mm over three days) against a usual worst of 34.22 mm in a day and 62.43 mm over three days. 19 Oct: 0 mm (74.8 mm over three days) against a usual worst of 34.22 mm in a day and 62.43 mm over three days. 20 Oct: 0.4 mm (66 mm over three days) against a usual worst of 34.22 mm in a day and 62.43 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Seoul, South Korea, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-10-18",
+      "value": 65.6,
+      "threeDay": 74.8,
+      "p99": 34.22,
+      "p99x3": 62.43
+     },
+     {
+      "day": "2026-10-19",
+      "value": 0,
+      "threeDay": 74.8,
+      "p99": 34.22,
+      "p99x3": 62.43
+     },
+     {
+      "day": "2026-10-20",
+      "value": 0.4,
+      "threeDay": 66,
+      "p99": 34.22,
+      "p99x3": 62.43
+     }
+    ],
+    "peak": 65.6,
+    "severe": false,
+    "placeId": "seoul-kr",
+    "geonameId": 1835848,
+    "bias": {
+     "tmax": -0.06,
+     "dew": -0.18,
+     "rainRatio": 2,
+     "windRatio": 1.83,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.64,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-rain-wuhan-cn-2026-10-18",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Wuhan, 18 Oct",
+   "country": "China",
+   "admin1": "Hubei",
+   "region": "Wuhan, Hubei, China",
+   "lat": 30.5833,
+   "lon": 114.2667,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-18T00:00:00Z",
+   "targetEnd": "2026-10-18T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 0.98 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (14 Oct). 18 Oct: 29 mm (44.5 mm over three days) against a usual worst of 27.1 mm in a day and 58.25 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Wuhan, Hubei, China, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-10-18",
+      "value": 29,
+      "threeDay": 44.5,
+      "p99": 27.1,
+      "p99x3": 58.25
+     }
+    ],
+    "peak": 29,
+    "severe": false,
+    "placeId": "wuhan-cn",
+    "geonameId": 1791247,
+    "bias": {
+     "tmax": -1.18,
+     "dew": 0.49,
+     "rainRatio": 0.98,
+     "windRatio": 1.35,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.4,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-rain-brisbane-au-2026-10-23",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Brisbane, 23 Oct",
+   "country": "Australia",
+   "admin1": "Queensland",
+   "region": "Brisbane, Queensland, Australia",
+   "lat": -27.4679,
+   "lon": 153.0281,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-23T00:00:00Z",
+   "targetEnd": "2026-10-23T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 0.87 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 20% of the same month in 1996-2025 when last measured (14 Oct). 23 Oct: 37.5 mm (56.1 mm over three days) against a usual worst of 34.18 mm in a day and 59.12 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Brisbane, Queensland, Australia, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-10-23",
+      "value": 37.5,
+      "threeDay": 56.1,
+      "p99": 34.18,
+      "p99x3": 59.12
+     }
+    ],
+    "peak": 37.5,
+    "severe": false,
+    "placeId": "brisbane-au",
+    "geonameId": 2174003,
+    "bias": {
+     "tmax": 1.2,
+     "dew": 0.09,
+     "rainRatio": 0.87,
+     "windRatio": 1.39,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.2,
+     "value": 0.41,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-melbourne-au-2026-10-22",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Melbourne, 22 Oct to 23 Oct",
+   "country": "Australia",
+   "admin1": "Victoria",
+   "region": "Melbourne, Victoria, Australia",
+   "lat": -37.814,
+   "lon": 144.9633,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-22T00:00:00Z",
+   "targetEnd": "2026-10-23T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 41% of the days this model flagged did cross the line (11% would by chance), and it flagged 54% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.9 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.3 °C for the warming this place's record shows since its middle year. 22 Oct: 28.5 °C against a usual worst of 26.7 °C. 23 Oct: 28.4 °C against a usual worst of 26.8 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Melbourne, Victoria, Australia, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-22",
+      "value": 28.5,
+      "p95": 26.7,
+      "p99": 29.3,
+      "shift": 0.33
+     },
+     {
+      "day": "2026-10-23",
+      "value": 28.4,
+      "p95": 26.8,
+      "p99": 29.4,
+      "shift": 0.33
+     }
+    ],
+    "peak": 28.5,
+    "severe": false,
+    "placeId": "melbourne-au",
+    "geonameId": 2158177,
+    "bias": {
+     "tmax": 0.94,
+     "dew": 0.14,
+     "rainRatio": 0.72,
+     "windRatio": 1.4,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.46,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-nairobi-ke-2026-10-22",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Nairobi, 22 Oct to 23 Oct",
+   "country": "Kenya",
+   "admin1": "Nairobi County",
+   "region": "Nairobi, Nairobi County, Kenya",
+   "lat": -1.2833,
+   "lon": 36.8167,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-22T00:00:00Z",
+   "targetEnd": "2026-10-23T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 41% of the days this model flagged did cross the line (11% would by chance), and it flagged 54% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.5 °C for the warming this place's record shows since its middle year. 22 Oct: 31.8 °C against a usual worst of 31.7 °C. 23 Oct: 32.1 °C against a usual worst of 31.6 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Nairobi, Nairobi County, Kenya, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-22",
+      "value": 31.8,
+      "p95": 31.7,
+      "p99": 32.6,
+      "shift": 0.47
+     },
+     {
+      "day": "2026-10-23",
+      "value": 32.1,
+      "p95": 31.6,
+      "p99": 32.5,
+      "shift": 0.47
+     }
+    ],
+    "peak": 32.1,
+    "severe": false,
+    "placeId": "nairobi-ke",
+    "geonameId": 184745,
+    "bias": {
+     "tmax": -2.56,
+     "dew": 0.14,
+     "rainRatio": 0.5,
+     "windRatio": 1.88,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.3,
+     "value": 0.34,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-addis-ababa-et-2026-10-21",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Addis Ababa, 21 Oct to 24 Oct",
+   "country": "Ethiopia",
+   "admin1": "Addis Ababa",
+   "region": "Addis Ababa, Ethiopia",
+   "lat": 9.025,
+   "lon": 38.7469,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-21T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 4 days in a row. That line is moved up 0.1 °C for the warming this place's record shows since its middle year. 21 Oct: 25.3 °C against a usual worst of 25.2 °C. 22 Oct: 25.4 °C against a usual worst of 25.2 °C. 23 Oct: 25.6 °C against a usual worst of 25.3 °C. 24 Oct: 25.3 °C against a usual worst of 25.3 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Addis Ababa, Ethiopia, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-21",
+      "value": 25.3,
+      "p95": 25.2,
+      "p99": 26.6,
+      "shift": 0.13
+     },
+     {
+      "day": "2026-10-22",
+      "value": 25.4,
+      "p95": 25.2,
+      "p99": 26.6,
+      "shift": 0.13
+     },
+     {
+      "day": "2026-10-23",
+      "value": 25.6,
+      "p95": 25.3,
+      "p99": 26.6,
+      "shift": 0.13
+     },
+     {
+      "day": "2026-10-24",
+      "value": 25.3,
+      "p95": 25.3,
+      "p99": 26.7,
+      "shift": 0.13
+     }
+    ],
+    "peak": 25.6,
+    "severe": false,
+    "placeId": "addis-ababa-et",
+    "geonameId": 344979,
+    "bias": {
+     "tmax": -2.25,
+     "dew": -0.3,
+     "rainRatio": 1,
+     "windRatio": 1.31,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.39,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-lagos-ng-2026-10-20",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Lagos, 20 Oct to 21 Oct",
+   "country": "Nigeria",
+   "admin1": "Lagos",
+   "region": "Lagos, Nigeria",
+   "lat": 6.4541,
+   "lon": 3.3947,
+   "alert": "High",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-20T00:00:00Z",
+   "targetEnd": "2026-10-21T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved up 0.2 °C for the warming this place's record shows since its middle year. 20 Oct: 30.3 °C against a usual worst of 29.8 °C. 21 Oct: 29.9 °C against a usual worst of 29.8 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Lagos, Nigeria, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-20",
+      "value": 30.3,
+      "p95": 29.8,
+      "p99": 30.2,
+      "shift": 0.16
+     },
+     {
+      "day": "2026-10-21",
+      "value": 29.9,
+      "p95": 29.8,
+      "p99": 30.3,
+      "shift": 0.16
+     }
+    ],
+    "peak": 30.3,
+    "severe": true,
     "placeId": "lagos-ng",
     "geonameId": 2332459,
     "bias": {
-     "tmax": 0.07,
-     "dew": -0.08,
-     "rainRatio": 1.27,
-     "windRatio": 0.92,
+     "tmax": -0.01,
+     "dew": -0.02,
+     "rainRatio": 1.34,
+     "windRatio": 0.94,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
      "value": 0.52,
-     "day": "2026-10-11"
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-dakar-sn-2026-10-22",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Dakar, 22 Oct to 24 Oct",
+   "country": "Senegal",
+   "admin1": "Dakar",
+   "region": "Dakar, Senegal",
+   "lat": 14.6937,
+   "lon": -17.4441,
+   "alert": "High",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-22T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 41% of the days this model flagged did cross the line (11% would by chance), and it flagged 54% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.9 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row, and its 99th on at least one. That line is moved up 0.1 °C for the warming this place's record shows since its middle year. 22 Oct: 32.6 °C against a usual worst of 30.8 °C. 23 Oct: 32.6 °C against a usual worst of 30.8 °C. 24 Oct: 32.4 °C against a usual worst of 30.8 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Dakar, Senegal, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-22",
+      "value": 32.6,
+      "p95": 30.8,
+      "p99": 31.3,
+      "shift": 0.06
+     },
+     {
+      "day": "2026-10-23",
+      "value": 32.6,
+      "p95": 30.8,
+      "p99": 31.3,
+      "shift": 0.06
+     },
+     {
+      "day": "2026-10-24",
+      "value": 32.4,
+      "p95": 30.8,
+      "p99": 31.4,
+      "shift": 0.06
+     }
+    ],
+    "peak": 32.6,
+    "severe": true,
+    "placeId": "dakar-sn",
+    "geonameId": 2253354,
+    "bias": {
+     "tmax": 0.9,
+     "dew": -0.41,
+     "rainRatio": 1.26,
+     "windRatio": 1.22,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.49,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-10-18",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Niamey, 18 Oct to 24 Oct",
+   "country": "Niger",
+   "admin1": "Niamey",
+   "region": "Niamey, Niger",
+   "lat": 13.5137,
+   "lon": 2.1098,
+   "alert": "High",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-18T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved down 0.2 °C for the cooling this place's record shows since its middle year. 18 Oct: 39.8 °C against a usual worst of 38.7 °C. 19 Oct: 39.6 °C against a usual worst of 38.7 °C. 20 Oct: 41.2 °C against a usual worst of 38.7 °C. 21 Oct: 40.8 °C against a usual worst of 38.8 °C. 22 Oct: 40.6 °C against a usual worst of 38.8 °C. 23 Oct: 40.7 °C against a usual worst of 38.8 °C. 24 Oct: 40.5 °C against a usual worst of 38.8 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Niamey, Niger, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-10-18",
+      "value": 39.8,
+      "p95": 38.7,
+      "p99": 39.5,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-10-19",
+      "value": 39.6,
+      "p95": 38.7,
+      "p99": 39.5,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-10-20",
+      "value": 41.2,
+      "p95": 38.7,
+      "p99": 39.5,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-10-21",
+      "value": 40.8,
+      "p95": 38.8,
+      "p99": 39.5,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-10-22",
+      "value": 40.6,
+      "p95": 38.8,
+      "p99": 39.5,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-10-23",
+      "value": 40.7,
+      "p95": 38.8,
+      "p99": 39.5,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-10-24",
+      "value": 40.5,
+      "p95": 38.8,
+      "p99": 39.5,
+      "shift": -0.19
+     }
+    ],
+    "peak": 41.2,
+    "severe": true,
+    "placeId": "niamey-ne",
+    "geonameId": 2440485,
+    "bias": {
+     "tmax": -2.15,
+     "dew": 2.7,
+     "rainRatio": 0.72,
+     "windRatio": 1.22,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.15,
+     "day": "2026-10-14"
+    }
+   }
+  },
+  {
+   "id": "model-fire-niamey-ne-2026-10-22",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Wildfire",
+   "title": "Wildfire weather forecast for Niamey, 22 Oct to 23 Oct",
+   "country": "Niger",
+   "admin1": "Niamey",
+   "region": "Niamey, Niger",
+   "lat": 13.5137,
+   "lon": 2.1098,
+   "alert": "High",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-22T00:00:00Z",
+   "targetEnd": "2026-10-23T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 66% of the days this model flagged did cross the line (2% would by chance), and it flagged 39% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. The Fire Weather Index, computed from the last 60 days of measured weather and the corrected forecast, reaches the \"very high\" class and this place's 95th percentile for the month on 2 days in a row. Fire also needs fuel and a spark, which no weather index can see. 22 Oct: index 58.9 (very extreme) against a usual worst of 57.99. 23 Oct: index 60.2 (very extreme) against a usual worst of 57.99.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Niamey, Niger, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the Fire Weather Index NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "fire",
+    "days": [
+     {
+      "day": "2026-10-22",
+      "value": 58.9,
+      "p95": 57.99,
+      "level": "very extreme"
+     },
+     {
+      "day": "2026-10-23",
+      "value": 60.2,
+      "p95": 57.99,
+      "level": "very extreme"
+     }
+    ],
+    "peak": 60.2,
+    "severe": true,
+    "placeId": "niamey-ne",
+    "geonameId": 2440485,
+    "bias": {
+     "tmax": -2.15,
+     "dew": 2.7,
+     "rainRatio": 0.72,
+     "windRatio": 1.22,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.15,
+     "day": "2026-10-14"
     }
    }
   },
@@ -1333,523 +1241,260 @@
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Antananarivo, 20 Oct to 21 Oct",
+   "title": "Extreme heat forecast for Antananarivo, 20 Oct to 24 Oct",
    "country": "Madagascar",
    "admin1": "Analamanga Region",
    "region": "Antananarivo, Analamanga Region, Madagascar",
    "lat": -18.9137,
    "lon": 47.5361,
    "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
    "targetStart": "2026-10-20T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. 20 Oct: 29.7 °C against a usual worst of 26.4 °C. 21 Oct: 26.9 °C against a usual worst of 26.5 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Antananarivo, Analamanga Region, Madagascar, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 5 days in a row, and its 99th on at least one. That line is moved up 0.6 °C for the warming this place's record shows since its middle year. 20 Oct: 29.1 °C against a usual worst of 27 °C. 21 Oct: 29.1 °C against a usual worst of 27 °C. 22 Oct: 28.4 °C against a usual worst of 27.1 °C. 23 Oct: 29.9 °C against a usual worst of 27.1 °C. 24 Oct: 29.1 °C against a usual worst of 27.1 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Antananarivo, Analamanga Region, Madagascar, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
       "day": "2026-10-20",
-      "value": 29.7,
-      "p95": 26.4,
-      "p99": 27.4
+      "value": 29.1,
+      "p95": 27,
+      "p99": 27.9,
+      "shift": 0.57
      },
      {
       "day": "2026-10-21",
-      "value": 26.9,
-      "p95": 26.5,
-      "p99": 27.4
+      "value": 29.1,
+      "p95": 27,
+      "p99": 28,
+      "shift": 0.57
+     },
+     {
+      "day": "2026-10-22",
+      "value": 28.4,
+      "p95": 27.1,
+      "p99": 28,
+      "shift": 0.57
+     },
+     {
+      "day": "2026-10-23",
+      "value": 29.9,
+      "p95": 27.1,
+      "p99": 28,
+      "shift": 0.57
+     },
+     {
+      "day": "2026-10-24",
+      "value": 29.1,
+      "p95": 27.1,
+      "p99": 28.1,
+      "shift": 0.57
      }
     ],
-    "peak": 29.7,
+    "peak": 29.9,
     "severe": true,
     "placeId": "antananarivo-mg",
     "geonameId": 1070940,
     "bias": {
-     "tmax": 1.44,
-     "dew": -0.4,
+     "tmax": 1.43,
+     "dew": -0.42,
      "rainRatio": 2,
-     "windRatio": 0.99,
+     "windRatio": 0.97,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
      "value": 0.54,
-     "day": "2026-10-11"
+     "day": "2026-10-14"
     }
    }
   },
   {
-   "id": "model-rain-marseille-fr-2026-10-19",
+   "id": "model-rain-marseille-fr-2026-10-20",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Marseille, 19 Oct to 22 Oct",
+   "title": "Heavy rain and flooding forecast for Marseille, 20 Oct",
    "country": "France",
    "admin1": "Provence-Alpes-Côte d'Azur",
    "region": "Marseille, Provence-Alpes-Côte d'Azur, France",
    "lat": 43.297,
    "lon": 5.3811,
    "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-19T00:00:00Z",
-   "targetEnd": "2026-10-22T23:59:59Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-20T00:00:00Z",
+   "targetEnd": "2026-10-20T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 10% of the same month in 1996-2025 when last measured (11 Oct). 19 Oct: 184.8 mm (210.7 mm over three days) against a usual worst of 33.22 mm in a day and 62.92 mm over three days. 20 Oct: 81.6 mm (292.3 mm over three days) against a usual worst of 33.22 mm in a day and 62.92 mm over three days. 21 Oct: 12 mm (278.4 mm over three days) against a usual worst of 33.22 mm in a day and 62.92 mm over three days. 22 Oct: 10.8 mm (104.4 mm over three days) against a usual worst of 33.22 mm in a day and 62.92 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Marseille, Provence-Alpes-Côte d'Azur, France, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 10% of the same month in 1996-2025 when last measured (14 Oct). 20 Oct: 43.8 mm (55.7 mm over three days) against a usual worst of 33.22 mm in a day and 62.92 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Marseille, Provence-Alpes-Côte d'Azur, France, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "rain",
     "days": [
      {
-      "day": "2026-10-19",
-      "value": 184.8,
-      "threeDay": 210.7,
-      "p99": 33.22,
-      "p99x3": 62.92
-     },
-     {
       "day": "2026-10-20",
-      "value": 81.6,
-      "threeDay": 292.3,
-      "p99": 33.22,
-      "p99x3": 62.92
-     },
-     {
-      "day": "2026-10-21",
-      "value": 12,
-      "threeDay": 278.4,
-      "p99": 33.22,
-      "p99x3": 62.92
-     },
-     {
-      "day": "2026-10-22",
-      "value": 10.8,
-      "threeDay": 104.4,
+      "value": 43.8,
+      "threeDay": 55.7,
       "p99": 33.22,
       "p99x3": 62.92
      }
     ],
-    "peak": 184.8,
+    "peak": 43.8,
     "severe": false,
     "placeId": "marseille-fr",
     "geonameId": 2995469,
     "bias": {
-     "tmax": 0.48,
-     "dew": 0.43,
+     "tmax": 0.65,
+     "dew": 0.47,
      "rainRatio": 2,
-     "windRatio": 1.14,
+     "windRatio": 1.12,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0.1,
-     "value": 0.38,
-     "day": "2026-10-11"
+     "value": 0.37,
+     "day": "2026-10-14"
     }
    }
   },
   {
-   "id": "model-heat-moscow-ru-2026-10-16",
+   "id": "model-rain-london-gb-2026-10-23",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Moscow, 16 Oct to 18 Oct",
-   "country": "Russia",
-   "admin1": "Moscow",
-   "region": "Moscow, Russia",
-   "lat": 55.752,
-   "lon": 37.6178,
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for London, 23 Oct to 25 Oct",
+   "country": "United Kingdom",
+   "admin1": "England",
+   "region": "London, England, United Kingdom",
+   "lat": 51.5085,
+   "lon": -0.1257,
    "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-16T00:00:00Z",
-   "targetEnd": "2026-10-18T23:59:59Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-23T00:00:00Z",
+   "targetEnd": "2026-10-25T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row. 16 Oct: 15 °C against a usual worst of 14.1 °C. 17 Oct: 14.9 °C against a usual worst of 13.7 °C. 18 Oct: 13.9 °C against a usual worst of 13.4 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Moscow, Russia, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (14 Oct). 23 Oct: 27.3 mm (34.5 mm over three days) against a usual worst of 17.67 mm in a day and 36.08 mm over three days. 24 Oct: 33.6 mm (65.7 mm over three days) against a usual worst of 17.67 mm in a day and 36.08 mm over three days. 25 Oct: 1.2 mm (62.1 mm over three days) against a usual worst of 17.67 mm in a day and 36.08 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for London, England, United Kingdom, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
-    "hazard": "heat",
+    "hazard": "rain",
     "days": [
      {
-      "day": "2026-10-16",
-      "value": 15,
-      "p95": 14.1,
-      "p99": 16.2
+      "day": "2026-10-23",
+      "value": 27.3,
+      "threeDay": 34.5,
+      "p99": 17.67,
+      "p99x3": 36.08
      },
      {
-      "day": "2026-10-17",
-      "value": 14.9,
-      "p95": 13.7,
-      "p99": 15.9
+      "day": "2026-10-24",
+      "value": 33.6,
+      "threeDay": 65.7,
+      "p99": 17.67,
+      "p99x3": 36.08
      },
      {
-      "day": "2026-10-18",
-      "value": 13.9,
-      "p95": 13.4,
-      "p99": 15.6
+      "day": "2026-10-25",
+      "value": 1.2,
+      "threeDay": 62.1,
+      "p99": 17.67,
+      "p99x3": 36.08
      }
     ],
-    "peak": 15,
+    "peak": 33.6,
     "severe": false,
-    "placeId": "moscow-ru",
-    "geonameId": 524901,
+    "placeId": "london-gb",
+    "geonameId": 2643743,
     "bias": {
-     "tmax": 0.12,
-     "dew": 0.83,
-     "rainRatio": 0.95,
-     "windRatio": 1.7,
+     "tmax": 0.48,
+     "dew": -0.48,
+     "rainRatio": 2,
+     "windRatio": 1.42,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
-     "value": 0.49,
-     "day": "2026-10-11"
+     "value": 0.45,
+     "day": "2026-10-14"
     }
    }
   },
   {
-   "id": "model-rain-las-vegas-us-2026-10-21",
+   "id": "model-rain-los-angeles-us-2026-10-21",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Las Vegas, 21 Oct to 22 Oct",
+   "title": "Heavy rain and flooding forecast for Los Angeles, 21 Oct",
    "country": "United States",
-   "admin1": "Nevada",
-   "region": "Las Vegas, Nevada, United States",
-   "lat": 36.175,
-   "lon": -115.1372,
+   "admin1": "California",
+   "region": "Los Angeles, California, United States",
+   "lat": 34.0522,
+   "lon": -118.2437,
    "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
    "targetStart": "2026-10-21T00:00:00Z",
-   "targetEnd": "2026-10-22T23:59:59Z",
+   "targetEnd": "2026-10-21T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 90% of the same month in 1996-2025 when last measured (11 Oct), so more of the rain is likely to run off. 21 Oct: 16.8 mm (16.8 mm over three days) against a usual worst of 8.04 mm in a day and 18.59 mm over three days. 22 Oct: 19.8 mm (36.6 mm over three days) against a usual worst of 8.04 mm in a day and 18.59 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Las Vegas, Nevada, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 80% of the same month in 1996-2025 when last measured (14 Oct), so more of the rain is likely to run off. 21 Oct: 16 mm (16 mm over three days) against a usual worst of 14.65 mm in a day and 31.56 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Los Angeles, California, United States, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "rain",
     "days": [
      {
       "day": "2026-10-21",
-      "value": 16.8,
-      "threeDay": 16.8,
-      "p99": 8.04,
-      "p99x3": 18.59
-     },
-     {
-      "day": "2026-10-22",
-      "value": 19.8,
-      "threeDay": 36.6,
-      "p99": 8.04,
-      "p99x3": 18.59
+      "value": 16,
+      "threeDay": 16,
+      "p99": 14.65,
+      "p99x3": 31.56
      }
     ],
-    "peak": 19.8,
+    "peak": 16,
     "severe": true,
-    "placeId": "las-vegas-us",
-    "geonameId": 5506956,
+    "placeId": "los-angeles-us",
+    "geonameId": 5368361,
     "bias": {
-     "tmax": 2.23,
-     "dew": -1.53,
-     "rainRatio": 2,
-     "windRatio": 0.92,
+     "tmax": 1.74,
+     "dew": 2.66,
+     "rainRatio": 1,
+     "windRatio": 0.88,
      "overlapDays": 21
     },
     "soil": {
-     "percentile": 0.9,
-     "value": 0.51,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-toronto-ca-2026-10-16",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Toronto, 16 Oct to 18 Oct",
-   "country": "Canada",
-   "admin1": "Ontario",
-   "region": "Toronto, Ontario, Canada",
-   "lat": 43.7064,
-   "lon": -79.3986,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-16T00:00:00Z",
-   "targetEnd": "2026-10-18T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (11 Oct). 16 Oct: 45.5 mm (45.5 mm over three days) against a usual worst of 14.76 mm in a day and 33.12 mm over three days. 17 Oct: 0 mm (45.5 mm over three days) against a usual worst of 14.76 mm in a day and 33.12 mm over three days. 18 Oct: 0 mm (45.5 mm over three days) against a usual worst of 14.76 mm in a day and 33.12 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Toronto, Ontario, Canada, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-16",
-      "value": 45.5,
-      "threeDay": 45.5,
-      "p99": 14.76,
-      "p99x3": 33.12
-     },
-     {
-      "day": "2026-10-17",
-      "value": 0,
-      "threeDay": 45.5,
-      "p99": 14.76,
-      "p99x3": 33.12
-     },
-     {
-      "day": "2026-10-18",
-      "value": 0,
-      "threeDay": 45.5,
-      "p99": 14.76,
-      "p99x3": 33.12
-     }
-    ],
-    "peak": 45.5,
-    "severe": false,
-    "placeId": "toronto-ca",
-    "geonameId": 6167865,
-    "bias": {
-     "tmax": 0.49,
-     "dew": -2.22,
-     "rainRatio": 2,
-     "windRatio": 1.63,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.46,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-new-orleans-us-2026-10-15",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for New Orleans, 15 Oct to 17 Oct",
-   "country": "United States",
-   "admin1": "Louisiana",
-   "region": "New Orleans, Louisiana, United States",
-   "lat": 29.9547,
-   "lon": -90.0751,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-17T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.3 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row, and its 99th on at least one. 15 Oct: 31.4 °C against a usual worst of 29.6 °C. 16 Oct: 31.6 °C against a usual worst of 29.5 °C. 17 Oct: 29.9 °C against a usual worst of 29.4 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for New Orleans, Louisiana, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 31.4,
-      "p95": 29.6,
-      "p99": 30.4
-     },
-     {
-      "day": "2026-10-16",
-      "value": 31.6,
-      "p95": 29.5,
-      "p99": 30.2
-     },
-     {
-      "day": "2026-10-17",
-      "value": 29.9,
-      "p95": 29.4,
-      "p99": 30.1
-     }
-    ],
-    "peak": 31.6,
-    "severe": true,
-    "placeId": "new-orleans-us",
-    "geonameId": 4335045,
-    "bias": {
-     "tmax": -0.28,
-     "dew": -0.54,
-     "rainRatio": 0.84,
-     "windRatio": 1.18,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.48,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-fire-new-orleans-us-2026-10-17",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Wildfire",
-   "title": "Wildfire weather forecast for New Orleans, 17 Oct to 19 Oct",
-   "country": "United States",
-   "admin1": "Louisiana",
-   "region": "New Orleans, Louisiana, United States",
-   "lat": 29.9547,
-   "lon": -90.0751,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-17T00:00:00Z",
-   "targetEnd": "2026-10-19T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. The Fire Weather Index, computed from the last 60 days of measured weather and the corrected forecast, reaches the \"very high\" class and this place's 95th percentile for the month on 3 days in a row. Fire also needs fuel and a spark, which no weather index can see. 17 Oct: index 42.4 (extreme) against a usual worst of 21.52. 18 Oct: index 25.3 (very high) against a usual worst of 21.52. 19 Oct: index 23.9 (very high) against a usual worst of 21.52.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for New Orleans, Louisiana, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the Fire Weather Index NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "fire",
-    "days": [
-     {
-      "day": "2026-10-17",
-      "value": 42.4,
-      "p95": 21.52,
-      "level": "extreme"
-     },
-     {
-      "day": "2026-10-18",
-      "value": 25.3,
-      "p95": 21.52,
-      "level": "very high"
-     },
-     {
-      "day": "2026-10-19",
-      "value": 23.9,
-      "p95": 21.52,
-      "level": "very high"
-     }
-    ],
-    "peak": 42.4,
-    "severe": true,
-    "placeId": "new-orleans-us",
-    "geonameId": 4335045,
-    "bias": {
-     "tmax": -0.28,
-     "dew": -0.54,
-     "rainRatio": 0.84,
-     "windRatio": 1.18,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.48,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-miami-us-2026-10-16",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Miami, 16 Oct to 17 Oct",
-   "country": "United States",
-   "admin1": "Florida",
-   "region": "Miami, Florida, United States",
-   "lat": 25.7743,
-   "lon": -80.1937,
-   "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-16T00:00:00Z",
-   "targetEnd": "2026-10-17T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. 16 Oct: 29.9 °C against a usual worst of 29.6 °C. 17 Oct: 30.4 °C against a usual worst of 29.6 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Miami, Florida, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-16",
-      "value": 29.9,
-      "p95": 29.6,
-      "p99": 30.2
-     },
-     {
-      "day": "2026-10-17",
-      "value": 30.4,
-      "p95": 29.6,
-      "p99": 30.1
-     }
-    ],
-    "peak": 30.4,
-    "severe": true,
-    "placeId": "miami-us",
-    "geonameId": 4164138,
-    "bias": {
-     "tmax": -0.05,
-     "dew": -0.98,
-     "rainRatio": 2,
-     "windRatio": 1.32,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.6,
-     "value": 0.72,
-     "day": "2026-10-11"
+     "percentile": 0.8,
+     "value": 0.29,
+     "day": "2026-10-14"
     }
    }
   },
@@ -1858,218 +1503,156 @@
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Miami, 18 Oct to 22 Oct",
+   "title": "Heavy rain and flooding forecast for Miami, 18 Oct to 20 Oct",
    "country": "United States",
    "admin1": "Florida",
    "region": "Miami, Florida, United States",
    "lat": 25.7743,
    "lon": -80.1937,
    "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
    "targetStart": "2026-10-18T00:00:00Z",
-   "targetEnd": "2026-10-22T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 60% of the same month in 1996-2025 when last measured (11 Oct). 18 Oct: 51.4 mm (97.9 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days. 19 Oct: 67.6 mm (152.2 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days. 20 Oct: 47.4 mm (166.4 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days. 21 Oct: 36.6 mm (151.6 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days. 22 Oct: 82.2 mm (166.2 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Miami, Florida, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-18",
-      "value": 51.4,
-      "threeDay": 97.9,
-      "p99": 38.39,
-      "p99x3": 79.02
-     },
-     {
-      "day": "2026-10-19",
-      "value": 67.6,
-      "threeDay": 152.2,
-      "p99": 38.39,
-      "p99x3": 79.02
-     },
-     {
-      "day": "2026-10-20",
-      "value": 47.4,
-      "threeDay": 166.4,
-      "p99": 38.39,
-      "p99x3": 79.02
-     },
-     {
-      "day": "2026-10-21",
-      "value": 36.6,
-      "threeDay": 151.6,
-      "p99": 38.39,
-      "p99x3": 79.02
-     },
-     {
-      "day": "2026-10-22",
-      "value": 82.2,
-      "threeDay": 166.2,
-      "p99": 38.39,
-      "p99x3": 79.02
-     }
-    ],
-    "peak": 82.2,
-    "severe": false,
-    "placeId": "miami-us",
-    "geonameId": 4164138,
-    "bias": {
-     "tmax": -0.05,
-     "dew": -0.98,
-     "rainRatio": 2,
-     "windRatio": 1.32,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.6,
-     "value": 0.72,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-havana-cu-2026-10-20",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Havana, 20 Oct",
-   "country": "Cuba",
-   "admin1": "Havana",
-   "region": "Havana, Cuba",
-   "lat": 23.133,
-   "lon": -82.383,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-20T00:00:00Z",
    "targetEnd": "2026-10-20T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 20% of the same month in 1996-2025 when last measured (11 Oct). 20 Oct: 21 mm (72.2 mm over three days) against a usual worst of 30.29 mm in a day and 60.12 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Havana, Cuba, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.94 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 50% of the same month in 1996-2025 when last measured (14 Oct). 18 Oct: 84.7 mm (95.2 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days. 19 Oct: 1 mm (96.2 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days. 20 Oct: 2.1 mm (87.8 mm over three days) against a usual worst of 38.39 mm in a day and 79.02 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Miami, Florida, United States, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "rain",
     "days": [
      {
+      "day": "2026-10-18",
+      "value": 84.7,
+      "threeDay": 95.2,
+      "p99": 38.39,
+      "p99x3": 79.02
+     },
+     {
+      "day": "2026-10-19",
+      "value": 1,
+      "threeDay": 96.2,
+      "p99": 38.39,
+      "p99x3": 79.02
+     },
+     {
       "day": "2026-10-20",
-      "value": 21,
-      "threeDay": 72.2,
-      "p99": 30.29,
-      "p99x3": 60.12
+      "value": 2.1,
+      "threeDay": 87.8,
+      "p99": 38.39,
+      "p99x3": 79.02
      }
     ],
-    "peak": 21,
+    "peak": 84.7,
     "severe": false,
-    "placeId": "havana-cu",
-    "geonameId": 3553478,
+    "placeId": "miami-us",
+    "geonameId": 4164138,
     "bias": {
-     "tmax": -0.01,
-     "dew": -1.19,
-     "rainRatio": 2,
-     "windRatio": 1.22,
+     "tmax": 0.12,
+     "dew": -0.95,
+     "rainRatio": 1.94,
+     "windRatio": 1.25,
      "overlapDays": 21
     },
     "soil": {
-     "percentile": 0.2,
-     "value": 0.59,
-     "day": "2026-10-11"
+     "percentile": 0.5,
+     "value": 0.71,
+     "day": "2026-10-14"
     }
    }
   },
   {
-   "id": "model-heat-lima-pe-2026-10-15",
+   "id": "model-heat-lima-pe-2026-10-18",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Lima, 15 Oct to 21 Oct",
+   "title": "Extreme heat forecast for Lima, 18 Oct to 24 Oct",
    "country": "Peru",
    "admin1": "Lima Province",
    "region": "Lima, Lima Province, Peru",
    "lat": -12.0432,
    "lon": -77.0282,
    "alert": "High",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-21T23:59:59Z",
+   "issuedAt": "2026-10-17T15:49:18.199Z",
+   "updated": "2026-10-17T15:49:18.199Z",
+   "targetStart": "2026-10-18T00:00:00Z",
+   "targetEnd": "2026-10-24T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Higher: past this place's 99th percentile, or on already-wet ground",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. 15 Oct: 25.6 °C against a usual worst of 23.5 °C. 16 Oct: 25.5 °C against a usual worst of 23.5 °C. 17 Oct: 25.9 °C against a usual worst of 23.5 °C. 18 Oct: 25.1 °C against a usual worst of 23.5 °C. 19 Oct: 25.9 °C against a usual worst of 23.5 °C. 20 Oct: 24.6 °C against a usual worst of 23.5 °C. 21 Oct: 25.4 °C against a usual worst of 23.5 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Lima, Lima Province, Peru, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved up 0.4 °C for the warming this place's record shows since its middle year. 18 Oct: 25.4 °C against a usual worst of 23.9 °C. 19 Oct: 25.7 °C against a usual worst of 23.9 °C. 20 Oct: 26.3 °C against a usual worst of 23.9 °C. 21 Oct: 26.3 °C against a usual worst of 23.9 °C. 22 Oct: 25.6 °C against a usual worst of 23.9 °C. 23 Oct: 24.2 °C against a usual worst of 23.9 °C. 24 Oct: 24.4 °C against a usual worst of 23.9 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-17, compared with NASA POWER daily records for Lima, Lima Province, Peru, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
-      "day": "2026-10-15",
-      "value": 25.6,
-      "p95": 23.5,
-      "p99": 24.1
-     },
-     {
-      "day": "2026-10-16",
-      "value": 25.5,
-      "p95": 23.5,
-      "p99": 24.1
-     },
-     {
-      "day": "2026-10-17",
-      "value": 25.9,
-      "p95": 23.5,
-      "p99": 24.1
-     },
-     {
       "day": "2026-10-18",
-      "value": 25.1,
-      "p95": 23.5,
-      "p99": 24.1
+      "value": 25.4,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
      },
      {
       "day": "2026-10-19",
-      "value": 25.9,
-      "p95": 23.5,
-      "p99": 24.1
+      "value": 25.7,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
      },
      {
       "day": "2026-10-20",
-      "value": 24.6,
-      "p95": 23.5,
-      "p99": 24.1
+      "value": 26.3,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
      },
      {
       "day": "2026-10-21",
-      "value": 25.4,
-      "p95": 23.5,
-      "p99": 24.1
+      "value": 26.3,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
+     },
+     {
+      "day": "2026-10-22",
+      "value": 25.6,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
+     },
+     {
+      "day": "2026-10-23",
+      "value": 24.2,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
+     },
+     {
+      "day": "2026-10-24",
+      "value": 24.4,
+      "p95": 23.9,
+      "p99": 24.5,
+      "shift": 0.38
      }
     ],
-    "peak": 25.9,
+    "peak": 26.3,
     "severe": true,
     "placeId": "lima-pe",
     "geonameId": 3936456,
     "bias": {
-     "tmax": -0.24,
-     "dew": 4.76,
+     "tmax": -0.12,
+     "dew": 4.75,
      "rainRatio": 1,
      "windRatio": 0.83,
      "overlapDays": 21
@@ -2077,134 +1660,7 @@
     "soil": {
      "percentile": 0,
      "value": 0.11,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-heat-recife-br-2026-10-15",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Recife, 15 Oct to 18 Oct",
-   "country": "Brazil",
-   "admin1": "Pernambuco",
-   "region": "Recife, Pernambuco, Brazil",
-   "lat": -8.0539,
-   "lon": -34.8811,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-15T00:00:00Z",
-   "targetEnd": "2026-10-18T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.8 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 4 days in a row. 15 Oct: 31.4 °C against a usual worst of 31 °C. 16 Oct: 31.4 °C against a usual worst of 31 °C. 17 Oct: 31.3 °C against a usual worst of 31.1 °C. 18 Oct: 31.4 °C against a usual worst of 31.1 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Recife, Pernambuco, Brazil, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "heat",
-    "days": [
-     {
-      "day": "2026-10-15",
-      "value": 31.4,
-      "p95": 31,
-      "p99": 31.6
-     },
-     {
-      "day": "2026-10-16",
-      "value": 31.4,
-      "p95": 31,
-      "p99": 31.6
-     },
-     {
-      "day": "2026-10-17",
-      "value": 31.3,
-      "p95": 31.1,
-      "p99": 31.7
-     },
-     {
-      "day": "2026-10-18",
-      "value": 31.4,
-      "p95": 31.1,
-      "p99": 31.7
-     }
-    ],
-    "peak": 31.4,
-    "severe": false,
-    "placeId": "recife-br",
-    "geonameId": 3390760,
-    "bias": {
-     "tmax": -0.75,
-     "dew": -0.37,
-     "rainRatio": 0.63,
-     "windRatio": 1.24,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.26,
-     "day": "2026-10-11"
-    }
-   }
-  },
-  {
-   "id": "model-rain-manaus-br-2026-10-19",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Manaus, 19 Oct",
-   "country": "Brazil",
-   "admin1": "Amazonas",
-   "region": "Manaus, Amazonas, Brazil",
-   "lat": -3.1019,
-   "lon": -60.025,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-14T20:58:34.582Z",
-   "updated": "2026-10-14T20:58:34.582Z",
-   "targetStart": "2026-10-19T00:00:00Z",
-   "targetEnd": "2026-10-19T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Moderate: past this place's 95th percentile",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.12 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (11 Oct). 19 Oct: 24.3 mm (31.8 mm over three days) against a usual worst of 21.67 mm in a day and 44.57 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-14, compared with NASA POWER daily records for Manaus, Amazonas, Brazil, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-19",
-      "value": 24.3,
-      "threeDay": 31.8,
-      "p99": 21.67,
-      "p99x3": 44.57
-     }
-    ],
-    "peak": 24.3,
-    "severe": false,
-    "placeId": "manaus-br",
-    "geonameId": 3663517,
-    "bias": {
-     "tmax": 0.39,
-     "dew": 0.6,
-     "rainRatio": 1.12,
-     "windRatio": 0.58,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0,
-     "value": 0.36,
-     "day": "2026-10-11"
+     "day": "2026-10-14"
     }
    }
   }
