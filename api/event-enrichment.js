@@ -295,7 +295,8 @@ async function youtubeVideos(query) {
 
 /** Free, key-less reverse geocode so "where it originated" can name a city/state. */
 async function resolvePlace(lat, lon) {
-  if (!Number.isFinite(+lat) || !Number.isFinite(+lon)) return null;
+  /* A missing coordinate is null, and +null is 0: look up only a point the event gave. */
+  if (lat === null || lon === null || !Number.isFinite(+lat) || !Number.isFinite(+lon)) return null;
   const u = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' +
     encodeURIComponent(+lat) + '&longitude=' + encodeURIComponent(+lon) + '&localityLanguage=en';
   try {
@@ -477,8 +478,9 @@ async function handler(req, res) {
   const type = str(q.type, 80);
   const region = str(q.region, 160);
   const updated = str(q.updated, 80);
-  const lat = q.lat === undefined || q.lat === '' ? null : Number(q.lat);
-  const lon = q.lon === undefined || q.lon === '' ? null : Number(q.lon);
+  const coord = v => (v === undefined || v === null || String(v).trim() === '' ? null : Number(v));
+  const lat = coord(q.lat);
+  const lon = coord(q.lon);
   const isForecast = String(q.forecast || '') === 'true' || String(q.forecast || '') === '1';
 
   if (!title && !country && !type) {
