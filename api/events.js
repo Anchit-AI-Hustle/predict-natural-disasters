@@ -1,4 +1,6 @@
 'use strict';
+/* Query parameters from req.url, never Vercel's url.parse()-based req.query. */
+const { queryOf } = require('./_lib/http.js');
 /**
  * Unified live global hazard feed.
  *
@@ -1032,21 +1034,17 @@ function gdacsTime(v) {
 
 /** ?summary=1 asks for the meta block alone. */
 function wantsLedger(req) {
-  const v = (req && req.query && req.query.ledger) ||
-    (req && req.url && new URL(req.url, 'http://x').searchParams.get('ledger'));
+  const v = queryOf(req).ledger;
   return v === '1' || v === 'true';
 }
 
 function wantsSummary(req) {
-  const v = (req && req.query && req.query.summary) ||
-    (req && req.url && new URL(req.url, 'http://x').searchParams.get('summary'));
+  const v = queryOf(req).summary;
   return v === '1' || v === 'true';
 }
 
 function isCron(req) {
-  const v = (req && req.query && req.query.cron) ||
-    (req && req.url && new URL(req.url, 'http://x').searchParams.get('cron'));
-  return !!v;
+  return !!queryOf(req).cron;
 }
 
 async function handler(req, res) {
