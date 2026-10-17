@@ -169,18 +169,50 @@ async function bingNews(query) {
 /**
  * UN OCHA ReliefWeb: authoritative situation reports, assessments and appeals.
  *
- * The v2 API needs an appname approved by ReliefWeb, so this reads the public
- * search feed instead — same reports, no credential to configure.
+ * With RELIEFWEB_APPNAME set to an appname ReliefWeb has approved, this
+ * searches the v2 API (apidoc.reliefweb.int), every word required as on the
+ * site; without one, or if the API fails, the public search feed. A failure
+ * comes back as a note for the page, not as an empty list that reads as
+ * "no reports". The appname is never put in the note.
  */
+const RW_HINT = 'Set RELIEFWEB_APPNAME to an appname ReliefWeb has approved (apidoc.reliefweb.int) to read its API.';
 async function reliefwebReports(query, country) {
   const search = [query, country].filter(Boolean).join(' ').slice(0, 240);
+  const appname = String(process.env.RELIEFWEB_APPNAME || '').trim();
+  const quiet = m => (appname ? String(m).split(appname).join('[appname]') : String(m));
+  const tag = x => Object.assign(x, { via: 'ReliefWeb (UN OCHA)' });
+  let apiError = '';
+  if (appname) {
+    try {
+      const fields = ['title', 'url', 'url_alias', 'source.shortname', 'source.name', 'date.created'];
+      const u = 'https://api.reliefweb.int/v2/reports?appname=' + encodeURIComponent(appname) +
+        '&query[value]=' + encodeURIComponent(search) + '&query[operator]=AND&sort[]=date.created:desc&limit=12' +
+        fields.map(f => '&fields[include][]=' + f).join('');
+      const j = await getJson(u);
+      if (!j || !Array.isArray(j.data)) throw new Error('no data array in the answer');
+      const items = j.data.map(d => {
+        const f = (d && d.fields) || {};
+        const src = (Array.isArray(f.source) ? f.source[0] : f.source) || {};
+        return {
+          title: String(f.title || '').trim(),
+          link: /^https:\/\/reliefweb\.int\//.test(f.url_alias || '') ? f.url_alias : String(f.url || ''),
+          outlet: src.shortname || src.name || 'ReliefWeb',
+          publishedAt: (f.date && f.date.created) || '',
+          summary: ''
+        };
+      }).filter(x => x.title && x.link).map(tag);
+      return { items };
+    } catch (e) {
+      apiError = 'The ReliefWeb API did not answer (' + quiet(e.message || e) + '). Check that RELIEFWEB_APPNAME is an appname ReliefWeb has approved.';
+    }
+  }
   try {
     const url = 'https://reliefweb.int/updates/rss.xml?search=' + encodeURIComponent(search);
-    return parseRss(await getText(url), 12).map(x => Object.assign(x, {
-      outlet: x.outlet || 'ReliefWeb',
-      via: 'ReliefWeb (UN OCHA)'
-    }));
-  } catch (e) { return []; }
+    const items = parseRss(await getText(url), 12).map(x => tag(Object.assign(x, { outlet: x.outlet || 'ReliefWeb' })));
+    return { items, note: apiError || undefined };
+  } catch (e) {
+    return { items: [], note: [apiError, 'The ReliefWeb feed did not answer (' + quiet(e.message || e) + ').', appname ? '' : RW_HINT].filter(Boolean).join(' ') };
+  }
 }
 
 /**
@@ -457,7 +489,7 @@ async function handler(req, res) {
   const newsQuery = base + ' (disaster OR emergency OR flood OR earthquake OR cyclone OR storm OR wildfire OR landslide OR volcano OR relief)';
   const videoQuery = base + ' disaster news report';
 
-  const [googleItems, bingItems, rwItems, videoResult, place] = await Promise.all([
+  const [googleItems, bingItems, rwResult, videoResult, place] = await Promise.all([
     googleNews(newsQuery),
     bingNews(base + ' disaster'),
     reliefwebReports(title || type, country),
@@ -465,6 +497,7 @@ async function handler(req, res) {
     resolvePlace(lat, lon)
   ]);
   const videos = videoResult.videos;
+  const rwItems = rwResult.items;
 
   // Admit only recognised newsrooms and official agencies. Filtering precedes
   // the slice, so the cap is 24 admitted items rather than 24 candidates of
@@ -563,7 +596,7 @@ async function handler(req, res) {
     sources: [
       { name: 'Google News', role: 'Live press coverage aggregation', url: 'https://news.google.com/', items: googleItems.length },
       { name: 'Bing News', role: 'Secondary press coverage aggregation', url: 'https://www.bing.com/news', items: bingItems.length },
-      { name: 'ReliefWeb (UN OCHA)', role: 'Official situation reports and humanitarian updates', url: 'https://reliefweb.int/', items: rwItems.length },
+      { name: 'ReliefWeb (UN OCHA)', role: 'Official situation reports and humanitarian updates', url: 'https://reliefweb.int/', items: rwItems.length, note: rwResult.note },
       { name: 'YouTube', role: 'Video and field reporting search', url: 'https://www.youtube.com/', items: videos.length, note: videoResult.status.note },
       { name: 'BigDataCloud', role: 'Reverse geocoding of the source coordinates', url: 'https://www.bigdatacloud.com/', items: place ? 1 : 0 },
       { name: 'Verified support directory', role: 'National emergency numbers, authorities and relief organisations', url: 'https://www.ifrc.org/national-societies-directory', items: support.emergency.length + support.authorities.length }
