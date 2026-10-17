@@ -133,3 +133,72 @@ test('on a phone each row stacks as labelled lines instead of a sideways-scrolli
   assert.match(m[1], /#btTable\s+td::before\s*\{[^}]*content:\s*attr\(data-label\)/, 'the labels are not printed');
   r.close();
 });
+
+/* ---------------------------------------- the published model forecasts */
+/*
+ * Model forecasts are on /forecasts. The page said "None of their forecasts
+ * is published on this site yet", and the disaster record said "Every
+ * forecast we have published was about a danger already reported": both
+ * untrue once the models' advance forecasts went up on 15 Oct. The page now
+ * says they are published, and grades them from data/model-verdicts.json.
+ */
+function openWithVerdicts(verdicts, status) {
+  return renderPage('accuracy.html', {
+    mock: {},
+    waitFor: d => { const s = d.getElementById('pubStatus'); return !!s && s.dataset.state && s.dataset.state !== 'loading'; },
+    beforeParse(w) {
+      const real = w.fetch;
+      w.fetch = async (input) => {
+        const url = String(input && input.url ? input.url : input);
+        if (url.includes('model-verdicts.json')) {
+          const ok = verdicts !== undefined && (status || 200) < 400;
+          return { ok, status: ok ? 200 : 404, headers: { get: () => null },
+            json: async () => { if (!ok) throw new Error('not found'); return verdicts; }, text: async () => JSON.stringify(verdicts || {}) };
+        }
+        return real(input);
+      };
+    }
+  });
+}
+const VERDICTS = {
+  generatedAt: '2026-10-20T04:50:00Z',
+  counts: { issued: 5, correct: 2, falseAlarms: 1, pending: 2, missedDays: 3 },
+  outlooks: [
+    { id: 'a', hazard: 'heat', verdict: 'correct' }, { id: 'b', hazard: 'heat', verdict: 'false alarm' },
+    { id: 'c', hazard: 'heat', verdict: 'pending' }, { id: 'd', hazard: 'rain', verdict: 'correct' }, { id: 'e', hazard: 'fire', verdict: 'pending' }],
+  misses: [{ placeId: 'x', hazard: 'heat', day: '2026-10-16' }, { placeId: 'y', hazard: 'heat', day: '2026-10-16' }, { placeId: 'x', hazard: 'rain', day: '2026-10-17' }]
+};
+
+test('the page says the model forecasts are published, and no longer that none are', async () => {
+  const r = await openWithVerdicts(VERDICTS);
+  const t = r.document.body.textContent;
+  assert.doesNotMatch(t, /None of their forecasts is published/);
+  assert.doesNotMatch(t, /Every forecast we have published was about a danger already reported/);
+  assert.match(r.document.getElementById('backtest').textContent, /forecasts page/i);
+  r.close();
+});
+
+test('published model forecasts are graded by hazard, misses and pending included', async () => {
+  const r = await openWithVerdicts(VERDICTS);
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
+  const d = r.document;
+  assert.equal(d.getElementById('pubStatus').dataset.state, 'ready');
+  const rows = [...d.querySelectorAll('#pubRows tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.trim()));
+  const heat = rows.find(c => /heat/i.test(c[0]));
+  /* Published, correct, false alarms, missed days, waiting. */
+  assert.deepEqual(heat.slice(1), ['3', '1', '1', '2', '1'], 'heat row: ' + heat.join(' | '));
+  const rain = rows.find(c => /rain/i.test(c[0]));
+  assert.deepEqual(rain.slice(1), ['1', '1', '0', '1', '0']);
+  r.close();
+});
+
+test('with no grades yet, the section says so and shows no figures', async () => {
+  for (const v of [undefined, { counts: { issued: 4, correct: 0, falseAlarms: 0, pending: 4, missedDays: 0 }, outlooks: [], misses: [] }]) {
+    const r = await openWithVerdicts(v);
+    const s = r.document.getElementById('pubStatus');
+    assert.equal(s.dataset.state, 'empty', JSON.stringify(v));
+    assert.match(s.textContent, /not (yet )?been graded|Not yet graded/i);
+    assert.equal(r.document.querySelectorAll('#pubRows tr').length, 0);
+    r.close();
+  }
+});

@@ -2,10 +2,11 @@ name: Forecast models
 
 # Builds the 30-year climatology the forecast models judge each place
 # against, scores the method on forecasts that were really issued 3 and 5
-# days ahead, and does a trial run of the coming week. Nothing here is
-# published to the site: the trial run's forecasts go to a scratch file,
-# and only the climatology and the backtest scores are committed, so they
-# can be reviewed before the models are wired into the refresh job.
+# days ahead, and does a trial run of the coming week (the models job, on
+# pull requests and by hand). Once a day, and by hand, the publish job runs
+# the models for real: their forecasts go on the site, into the append-only
+# ledger data/model-ledger.json, and are graded in data/model-verdicts.json
+# once NASA POWER has measured their days.
 #
 # Runs on any pull request that changes the models, and by hand.
 #
@@ -18,6 +19,12 @@ name: Forecast models
 # commits; a push to main by the GITHUB_TOKEN starts no workflow at all.
 on:
   workflow_dispatch:
+  # The daily run that publishes: the coming week's forecasts, the ledger
+  # they are added to, and the grading of every one whose days have now been
+  # measured. 04:41 UTC, off the top of the hour, when GitHub drops most
+  # queued scheduled jobs, and after NASA POWER's overnight update.
+  schedule:
+    - cron: '41 4 * * *'
   pull_request:
     paths:
       - 'forecast-models.js'
@@ -35,6 +42,9 @@ concurrency:
 
 jobs:
   models:
+    # The climatology and the backtest: on pull requests and by hand. The
+    # daily schedule only publishes, below.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -50,7 +60,11 @@ jobs:
         run: node tools/backtest-models.js data/climatology.json data/model-backtest.json
 
       - name: Trial run of the coming week (not published)
-        run: node tools/run-models.js data/climatology.json /tmp/model-outlooks.json /tmp/model-runs.json
+        run: |
+          cp data/model-ledger.json /tmp/model-ledger.json
+          cp data/model-verdicts.json /tmp/model-verdicts.json 2>/dev/null || true
+          cp data/model-runs.json /tmp/model-runs.json
+          node tools/run-models.js data/climatology.json /tmp/model-outlooks.json /tmp/model-runs.json /tmp/model-ledger.json /tmp/model-verdicts.json
 
       - name: Write the scores to the job summary
         run: |
@@ -88,5 +102,39 @@ jobs:
           git config user.name "forecast-models"
           git config user.email "noreply@anthropic.com"
           git commit -m "Climatology and backtest scores for the forecast models"
+          # Rebases onto anything merged while this ran, instead of failing on it.
+          bash tools/push-with-retry.sh "${GITHUB_REF_NAME}"
+
+  publish:
+    # Publishes only from main, on the schedule or by hand. Never from a
+    # pull request: a GITHUB_TOKEN push to a PR branch holds its runs for
+    # approval (see the top of this file). Started by hand, it waits for the
+    # models job and checks out main again, so it runs on the climatology
+    # that job has just committed. On the schedule the models job is skipped.
+    needs: models
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && needs.models.result == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Run the models, add to the ledger, grade what has been measured
+        run: node tools/run-models.js
+
+      - name: Commit the forecasts, the ledger and the grades
+        run: |
+          set -euo pipefail
+          git add data/model-outlooks.json data/model-runs.json data/model-ledger.json data/model-verdicts.json
+          if git diff --cached --quiet; then echo "unchanged"; exit 0; fi
+          git config user.name "forecast-models"
+          git config user.email "noreply@anthropic.com"
+          git commit -m "Model forecasts, ledger and grades ($(date -u +%Y-%m-%dT%H:%MZ))"
           # Rebases onto anything merged while this ran, instead of failing on it.
           bash tools/push-with-retry.sh "${GITHUB_REF_NAME}"
