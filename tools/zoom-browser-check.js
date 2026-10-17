@@ -73,6 +73,17 @@ async function run(browser, width) {
   const ctx = await browser.newContext({ viewport: { width, height: phone ? 844 : width < 1000 ? 1180 : 900 },
     isMobile: phone, hasTouch: phone, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
+  /* When the hint came and went, as the page did it: the globe can take
+     longer to become interactive here, on a software renderer, than the six
+     seconds the hint stays, so whether it is still showing when the checks
+     below begin says nothing about what a reader saw. */
+  await page.addInitScript(() => {
+    window.__pndHint = {};
+    new MutationObserver(ms => ms.forEach(m => {
+      if (!m.target.classList || !m.target.classList.contains('pnd-hud-hint')) return;
+      window.__pndHint[m.target.hasAttribute('data-shown') ? 'shownAt' : 'goneAt'] = performance.now();
+    })).observe(document, { subtree: true, attributes: true, attributeFilter: ['data-shown'] });
+  });
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
@@ -124,8 +135,12 @@ async function run(browser, width) {
   };
 
   /* What a reader sees first. */
-  const hint = await page.evaluate(() => { const h = document.querySelector('.pnd-hud-hint'); return h && { shown: h.hasAttribute('data-shown'), text: h.textContent, opacity: getComputedStyle(h).opacity }; });
-  check(W, 'the hint is showing when the globe opens', hint && hint.shown, hint && hint.text);
+  const hint = await page.evaluate(() => { const h = document.querySelector('.pnd-hud-hint'), t = window.__pndHint || {};
+    return h && { text: h.textContent, shownAt: t.shownAt, goneAt: t.goneAt, now: performance.now() }; });
+  /* Shown when the globe opened, and kept up for its six seconds (or still up). */
+  const lasted = hint && hint.shownAt != null ? (hint.goneAt != null ? hint.goneAt : hint.now) - hint.shownAt : 0;
+  check(W, 'the hint showed when the globe opened, for its six seconds', hint && hint.shownAt != null && (hint.goneAt == null ? true : lasted >= 5900),
+    hint && (hint.text + ', shown at ' + Math.round(hint.shownAt / 100) / 10 + ' s for ' + Math.round(lasted / 100) / 10 + ' s'));
   const buttons = await page.evaluate(() => [...document.querySelectorAll('.pnd-hud-zoom button')].map(b => {
     const r = b.getBoundingClientRect(), top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     const host = document.querySelector('.pnd-globe').getBoundingClientRect();
