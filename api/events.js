@@ -1855,7 +1855,7 @@ async function handler(req, res) {
   push({
     id: 'ND-001', source: 'Predict Natural Disasters', sourceType: 'forecast', type: 'Flood / Landslide',
     title: 'Central Vietnam flash-flood + landslide forecast',
-    country: 'Vietnam', region: 'Huế-Đà Nẵng corridor',
+    country: 'Vietnam', region: 'Huế–Đà Nẵng corridor',
     alert: 'High', lat: 16.2, lon: 107.8,
     updated: '2026-09-13T19:20:03Z', issuedAt: '2026-09-13T19:20:03Z',
     issuedAtBasis: 'First verifiable timestamp: the commit that introduced this record. Any earlier drafting cannot be evidenced, so the later time is used.',

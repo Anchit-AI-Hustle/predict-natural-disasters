@@ -23,6 +23,13 @@ const ESC = /\\u201[34]/g;
 const EM = String.fromCharCode(0x2014), BS = String.fromCharCode(92);
 const escOf = code => BS + 'u' + code;
 
+/* The one exception: ND-001's area, as its commit froze it on 13 September
+   and as data/outlook-ledger.json records it. A frozen forecast's geography
+   is never reworded after the fact, and the feed must serve the claim it
+   froze, so this line keeps its en dash. */
+const FROZEN = [['api/events.js', "region: 'Hu" + String.fromCharCode(0x1ebf, 0x2013, 0x110, 0xe0) + ' N' + String.fromCharCode(0x1eb5) + "ng corridor'"]];
+const frozen = (f, line) => FROZEN.some(([file, text]) => file === f && line.includes(text));
+
 function tracked() {
   return execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).split('\n')
     .filter(f => f && !f.startsWith('data/') && !f.startsWith('vendor/'));
@@ -43,13 +50,19 @@ test('no tracked text file outside data/ and vendor/ has an em or en dash', () =
     if (buf.includes(0)) continue;
     const lines = buf.toString('utf8').split('\n');
     lines.forEach((line, i) => {
-      if (DASH.test(line)) bad.push(f + ':' + (i + 1) + ' has a dash character');
+      if (DASH.test(line) && !frozen(f, line)) bad.push(f + ':' + (i + 1) + ' has a dash character');
       for (const m of line.matchAll(ESC)) {
         if (!matchesOnly(line, m.index)) bad.push(f + ':' + (i + 1) + ' prints a dash through ' + m[0]);
       }
     });
   }
   assert.deepEqual(bad, []);
+});
+
+test('the frozen ND-001 area the guard allows is the one the ledger froze', () => {
+  const row = require(path.join(ROOT, 'data', 'outlook-ledger.json')).find(r => r.id === 'ND-001');
+  assert.equal("region: '" + row.region + "'", FROZEN[0][1], 'the allowed text is not the frozen record');
+  assert.ok(fs.readFileSync(path.join(ROOT, 'api', 'events.js'), 'utf8').includes(FROZEN[0][1]), 'the feed no longer serves the frozen area');
 });
 
 test('the guard catches what it is for, and passes what it allows', () => {
