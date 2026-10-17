@@ -73,14 +73,14 @@ function placeOf(e){
 }
 /* windowText is a sentence of its own ("Starts 13 Sept ... duration 4 days"),
    which cannot be dropped after "between". This is the plain range. */
-function dayOf(iso){const d=new Date(iso);return isNaN(d)?null:PND.fmtDate(iso).replace(/,[^,]*$/,'')}
+function dayOf(iso,other,role){const d=new Date(iso);return isNaN(d)?null:PND.fmtWhen(iso,other,role).replace(/,[^,]*$/,'')}
 function rangeText(e){
- const a=dayOf(e.targetStart),b=dayOf(e.targetEnd);
+ const a=dayOf(e.targetStart,e.targetEnd),b=dayOf(e.targetEnd,e.targetStart,'end');
  if(a&&b)return a===b?a:`${a} and ${b}`;
  return a||b||'the stated dates';
 }
 function spanText(e){
- const a=dayOf(e.targetStart),b=dayOf(e.targetEnd);
+ const a=dayOf(e.targetStart,e.targetEnd),b=dayOf(e.targetEnd,e.targetStart,'end');
  if(!a||!b)return 'the stated dates';
  const days=Math.max(1,Math.round((new Date(e.targetEnd)-new Date(e.targetStart))/864e5));
  return a===b?a:`${a} to ${b} (${days} day${days===1?'':'s'})`;

@@ -303,7 +303,7 @@ const pct=(x,n,unit)=>x===null?'Cannot be calculated':(Math.round(x*1000)/10)+'%
 
 mSample.textContent=pl(l.length,'forecast','forecasts');
 const onsets=l.map(r=>Date.parse(r.targetStart||'')).filter(Number.isFinite);
-mPeriod.textContent=onsets.length?'From '+PND.fmtDate(new Date(Math.min(...onsets)).toISOString())+' to '+PND.fmtDate(new Date(Math.max(...l.map(r=>Date.parse(r.targetEnd||0)).filter(Number.isFinite))).toISOString()):'No forecasts recorded';
+mPeriod.textContent=onsets.length?'From '+PND.fmtWhen(new Date(Math.min(...onsets)).toISOString())+' to '+PND.fmtWhen(new Date(Math.max(...l.map(r=>Date.parse(r.targetEnd||0)).filter(Number.isFinite))).toISOString(),null,'end'):'No forecasts recorded';
 const firstProspective=preds.filter(p=>p.forecastClass==='independent-prospective').map(p=>Date.parse(p.freezeTimestamp||p.recordedAt||'')).filter(Number.isFinite);
 mEarliest.textContent=firstProspective.length?PND.fmtDate(new Date(Math.min(...firstProspective)).toISOString()):'None yet';
 mUpdated.textContent=PND.fmtDate(new Date().toISOString());
