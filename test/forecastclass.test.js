@@ -383,7 +383,7 @@ test('the accuracy page separates predictions from conditional forecasts', async
   assert.equal(get('ipTotal'), '0');
   assert.equal(get('ipPrecision'), 'Cannot be calculated');
   assert.ok(Number(get('cdTotal')) > 0, 'the conditional outlooks should still be counted and shown');
-  assert.match(get('ipNote'), /no hit rate for advance forecasts/i);
+  assert.match(get('ipNote'), /no hit rate for advance disaster forecasts/i);
   const note = get('classBreak');
   assert.match(note, /Follows an ongoing event: \d+/);
   assert.match(note, /Test case, not made in advance: \d+/);

@@ -422,6 +422,17 @@ const num=v=>Number(v).toLocaleString('en-GB');
 const day=t=>{const d=new Date(String(t).slice(0,10)+'T00:00:00Z');return isNaN(d)?String(t):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function empty(){st.dataset.state='empty';st.textContent='Not yet available. The test results could not be read, or the last test scored nothing, so no figures are shown.';wrap.hidden=true;body.innerHTML='';lim.innerHTML='';}
+/* The heat limit names the line this backtest scored: the 30-year line, or
+   that line moved by each city's trend (heatLine 'trend'), with the plain
+   line's rate beside it when the backtest scored that too. */
+function heatLimit(doc,heat){
+  if(doc.heatLine!=='trend')return 'Days crossed the heat line on '+pct(heat.rightByChance)+' of the days tested, though the line is meant to be crossed on about 5%. Recent measurements run warmer than the 30-year record, so heat is easier to score well on than intended.';
+  const plain=window.PNDBacktest.rows({places:doc.places,results:Object.assign({},doc.results,{'heat@3':doc.results['heatUnshifted@3']})});
+  const p0=plain&&plain.find(r=>r.hazard==='heat'&&r.lead===3);
+  return 'The heat line is each city\u2019s 95th percentile for the date over 1996 to 2025, moved by that city\u2019s own temperature trend over those years to the year it is used in: up where it has warmed and down where it has cooled. '+(heat.rightByChance<=0.065
+    ?'Days crossed it on '+pct(heat.rightByChance)+' of the days tested, about the 5% the name suggests'+(p0?' (the line without the trend: '+pct(p0.rightByChance)+').':'.')
+    :'Even so, days crossed it on '+pct(heat.rightByChance)+' of the days tested'+(p0?', against '+pct(p0.rightByChance)+' for the line without the trend':'')+', not the 5% the name suggests: these months ran hotter than the trend predicts.')+' A heat warning here means hotter than 19 in 20 days of that trend, not of today\u2019s climate.';
+}
 function render(doc){
   const rows=window.PNDBacktest&&PNDBacktest.rows(doc);
   if(!rows){empty();return;}
@@ -437,7 +448,7 @@ function render(doc){
   const items=[
     'These are weather forecasts, not disasters. A hit means a day crossed a local weather line, such as '+rows[0].threshold+'. It does not mean a disaster happened, and a miss does not mean one was missed.',
     'One season only: about three months, in '+num(doc.places)+' cities. The models may do better or worse in other seasons and places.',
-    'The heat line is each city\u2019s 95th percentile for the date over 1996 to 2025, moved up by that city\u2019s own warming trend over those years to the year it is used in. Even so, days crossed it on '+pct(heat.rightByChance)+' of the days tested, not the 5% the name suggests: 2026 has run warmer than that trend predicts. A heat warning here means hotter than 19 in 20 days of that trend, not of today\u2019s climate.',
+    heatLimit(doc,heat),
     'Measured weather comes from NASA POWER, a grid with cells about 50 to 70 km across, not from weather stations, so a city’s own readings can differ.',
     'Wildfire weather is tested with the index built from measured weather up to the day before, so only the last day is forecast. The live models forecast every day, and should be expected to do worse than this.',
     'Each day is scored on its own here. A published heat or fire forecast needs two days in a row, and is graded in the table below once its days have been measured.'
