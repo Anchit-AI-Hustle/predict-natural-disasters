@@ -23651,6 +23651,108 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-17T15:33:22.009Z",
+      "sinceHours": 3.94,
+      "active": 55,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-7bddd0c4b8df69f9fa3856e34fcce9a0e94df0bf-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Cotton, Oklahoma and 4 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T13:48:00.000Z",
+          "targetEnd": "2026-10-20T13:48:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-fd76f3fb56b510367e02b17a266f9179ff06bee5-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Eastern Alaska Range North of Trims Camp and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T12:35:00.000Z",
+          "targetEnd": "2026-10-19T12:35:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-TC-1001338",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Champi — 5-day forecast",
+          "country": "Guam, Northern Mariana Islands",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-17T12:00:00.000Z",
+          "targetEnd": "2026-10-22T12:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-22T06:00:00.000Z",
+          "toEnd": "2026-10-22T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-usgs-volcano-332010",
+          "type": "Volcano",
+          "title": "Volcano risk in Hawaii, United States — 7-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T15:22:54.000Z",
+          "targetEnd": "2026-10-24T15:22:54.000Z",
+          "provider": "usgs_volcano",
+          "fromEnd": "2026-10-23T19:54:02.000Z",
+          "toEnd": "2026-10-24T15:22:54.000Z"
+        },
+        {
+          "id": "OUT-nhc-ep212026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+          "country": "Trudy (eastern Pacific system 1)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T15:00:00.000Z",
+          "targetEnd": "2026-10-22T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-22T09:00:00.000Z",
+          "toEnd": "2026-10-22T15:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-ad4df7c652a9aea0b8cdc5f41ad937f4cc4197b8-002-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Northern Outer Banks and 2 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T06:59:00.000Z",
+          "targetEnd": "2026-10-19T06:59:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-FL-1103888",
+          "type": "Flood",
+          "title": "Flood risk in United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-16T01:00:00.000Z",
+          "targetEnd": "2026-10-19T01:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -23661,8 +23763,8 @@
       "country": "Guam, Northern Mariana Islands",
       "alert": "High",
       "rank": 3,
-      "targetStart": "2026-10-17T06:00:00.000Z",
-      "targetEnd": "2026-10-22T06:00:00.000Z",
+      "targetStart": "2026-10-17T12:00:00.000Z",
+      "targetEnd": "2026-10-22T12:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-aftershock-usgs-us6000u2mq": {
@@ -23698,6 +23800,50 @@
       "targetEnd": "2026-10-20T05:44:46.000Z",
       "provider": "gdacs"
     },
+    "OUT-usgs-volcano-332010": {
+      "id": "OUT-usgs-volcano-332010",
+      "type": "Volcano",
+      "title": "Volcano risk in Hawaii, United States — 7-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-17T15:22:54.000Z",
+      "targetEnd": "2026-10-24T15:22:54.000Z",
+      "provider": "usgs_volcano"
+    },
+    "OUT-nhc-ep212026": {
+      "id": "OUT-nhc-ep212026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+      "country": "Trudy (eastern Pacific system 1)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-17T15:00:00.000Z",
+      "targetEnd": "2026-10-22T15:00:00.000Z",
+      "provider": "nhc"
+    },
+    "OUT-0-7bddd0c4b8df69f9fa3856e34fcce9a0e94df0bf-001-1": {
+      "id": "OUT-0-7bddd0c4b8df69f9fa3856e34fcce9a0e94df0bf-001-1",
+      "type": "Flood",
+      "title": "Flood risk in Cotton, Oklahoma and 4 nearby areas, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-17T13:48:00.000Z",
+      "targetEnd": "2026-10-20T13:48:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-fd76f3fb56b510367e02b17a266f9179ff06bee5-001-1": {
+      "id": "OUT-0-fd76f3fb56b510367e02b17a266f9179ff06bee5-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Eastern Alaska Range North of Trims Camp and 1 nearby area, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-17T12:35:00.000Z",
+      "targetEnd": "2026-10-19T12:35:00.000Z",
+      "provider": "nws"
+    },
     "OUT-0-4c12e972472cf7d83050fadcb75f06959e977293-001-1": {
       "id": "OUT-0-4c12e972472cf7d83050fadcb75f06959e977293-001-1",
       "type": "Red Flag Warning",
@@ -23708,17 +23854,6 @@
       "targetStart": "2026-10-17T10:35:00.000Z",
       "targetEnd": "2026-10-20T10:35:00.000Z",
       "provider": "nws"
-    },
-    "OUT-nhc-ep212026": {
-      "id": "OUT-nhc-ep212026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Trudy — 5-day forecast",
-      "country": "Trudy (eastern Pacific system 1)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-17T09:00:00.000Z",
-      "targetEnd": "2026-10-22T09:00:00.000Z",
-      "provider": "nhc"
     },
     "OUT-0-446e1ab62f8cc1ac6e89ab7c82dcfb7d4c3076f9-001-2": {
       "id": "OUT-0-446e1ab62f8cc1ac6e89ab7c82dcfb7d4c3076f9-001-2",
@@ -23740,17 +23875,6 @@
       "rank": 2,
       "targetStart": "2026-10-17T07:04:00.000Z",
       "targetEnd": "2026-10-19T07:04:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-ad4df7c652a9aea0b8cdc5f41ad937f4cc4197b8-002-1": {
-      "id": "OUT-0-ad4df7c652a9aea0b8cdc5f41ad937f4cc4197b8-002-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in Northern Outer Banks and 2 nearby areas, United States — 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-17T06:59:00.000Z",
-      "targetEnd": "2026-10-19T06:59:00.000Z",
       "provider": "nws"
     },
     "OUT-0-83d2e1a1b958024f0e2a986a407a8751fe7b3870-001-2": {
@@ -23785,17 +23909,6 @@
       "targetStart": "2026-10-16T21:00:00.000Z",
       "targetEnd": "2026-10-21T21:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-usgs-volcano-332010": {
-      "id": "OUT-usgs-volcano-332010",
-      "type": "Volcano",
-      "title": "Volcano risk in Hawaii, United States — 7-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T19:54:02.000Z",
-      "targetEnd": "2026-10-23T19:54:02.000Z",
-      "provider": "usgs_volcano"
     },
     "OUT-aftershock-usgs-aka2026ukynnb": {
       "id": "OUT-aftershock-usgs-aka2026ukynnb",
@@ -24011,17 +24124,6 @@
       "type": "Flood",
       "title": "Flood risk in Türkiye — 3-day forecast",
       "country": "Türkiye",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-16T01:00:00.000Z",
-      "targetEnd": "2026-10-19T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1103888": {
-      "id": "OUT-gdacs-FL-1103888",
-      "type": "Flood",
-      "title": "Flood risk in United States — 3-day forecast",
-      "country": "United States",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-16T01:00:00.000Z",
@@ -24260,10 +24362,10 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-17T11:37:10.285Z",
+  "updatedAt": "2026-10-17T15:33:22.009Z",
   "observedCadenceHours": {
-    "runs": 73,
-    "median": 4.91,
+    "runs": 74,
+    "median": 4.8,
     "min": 1.54,
     "max": 189.21
   }
