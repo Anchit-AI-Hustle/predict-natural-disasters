@@ -26,6 +26,7 @@ try { OUTLOOK_LEDGER = require('../data/outlook-ledger.json'); } catch (e) { OUT
 let FORECAST_CHANGES;
 try { FORECAST_CHANGES = require('../data/forecast-changes.json'); }
 catch (e) { FORECAST_CHANGES = null; }
+const MODEL_RUN_MAX_AGE_MS = 36 * 3600e3;
 let MODEL_OUTLOOKS;
 try { MODEL_OUTLOOKS = require('../data/model-outlooks.json'); }
 catch (e) { MODEL_OUTLOOKS = null; }
@@ -2133,8 +2134,21 @@ async function handler(req, res) {
     });
   }
 
-  // (c) Advance predictive model outlooks from data/model-outlooks.json
-  if (!isCron(req) && MODEL_OUTLOOKS && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
+  // (c) Advance predictive model outlooks from data/model-outlooks.json.
+  /* Only from a run made in the last 36 hours. The file was committed once,
+     by hand, on 14 Oct, and nothing refreshed it: three days later the site
+     was still showing that run's forecasts as current. The models now run
+     daily (forecast-models.yml); a run older than this is left out, and the
+     feed says so, rather than shown as today's. */
+  const modelRunAt = MODEL_OUTLOOKS ? Date.parse(MODEL_OUTLOOKS.generatedAt || '') : NaN;
+  const modelFresh = Number.isFinite(modelRunAt) && now.getTime() - modelRunAt <= MODEL_RUN_MAX_AGE_MS;
+  out.meta.modelRun = MODEL_OUTLOOKS ? {
+    at: Number.isFinite(modelRunAt) ? new Date(modelRunAt).toISOString() : null,
+    served: modelFresh,
+    note: modelFresh ? 'Forecasts from the experimental weather models, run ' + new Date(modelRunAt).toISOString() + '.'
+      : 'The experimental weather models have not run in the last 36 hours, so none of their forecasts is shown.'
+  } : null;
+  if (!isCron(req) && modelFresh && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
     for (const mo of MODEL_OUTLOOKS.outlooks) {
       if (!mo || !mo.targetEnd) continue;
       const endMs = Date.parse(mo.targetEnd);
