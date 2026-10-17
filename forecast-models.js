@@ -357,6 +357,56 @@
     return out;
   }
 
+  /*
+   * Warming since the middle of the record.
+   *
+   * The heat line is a place's 95th percentile over 1996-2025, a record
+   * whose middle is 2011. Applied to 2026 it was crossed on 14% of the days
+   * tested instead of about 5%: the climate it was drawn from is fifteen
+   * years cooler than the one it is applied to. So each place's own warming
+   * trend is fitted from that record alone - the median of the slopes
+   * between every pair of yearly means (Theil-Sen), which one freak year
+   * cannot drag - and the line is moved by it to the date it is used on.
+   * Yearly means, not the hottest days: the whole distribution is shifted,
+   * which is the usual first correction for a warming record. Only years
+   * with nearly every day measured count, and twenty of them are needed.
+   */
+  var MAX_HEAT_SHIFT_C = 2.5, TREND_MIN_YEARS = 20, YEAR_MIN_DAYS = 350;
+  function warmingTrend(days, tmax) {
+    var by = {};
+    for (var i = 0; i < days.length; i++) {
+      if (!isFinite(tmax[i])) continue;
+      var y = +days[i].slice(0, 4);
+      (by[y] = by[y] || []).push(tmax[i]);
+    }
+    var pts = Object.keys(by).filter(function (y) { return by[y].length >= YEAR_MIN_DAYS; })
+      .map(function (y) { return [+y + 0.5, mean(by[y])]; });
+    if (pts.length < TREND_MIN_YEARS) return null;
+    var slopes = [];
+    for (var a = 0; a < pts.length; a++) for (var b = a + 1; b < pts.length; b++) slopes.push((pts[b][1] - pts[a][1]) / (pts[b][0] - pts[a][0]));
+    var ref = mean(pts.map(function (p) { return p[0]; }));
+    return { perYear: round(quantile(slopes, 0.5), 4), refYear: round(ref, 2), years: pts.length };
+  }
+  /** How far the heat line moves for this date, in °C; 0 with no trend. */
+  function heatShift(clim, ymd) {
+    var t = clim && clim.heat && clim.heat.trend;
+    if (!t || !isFinite(t.perYear) || !isFinite(t.refYear)) return 0;
+    var when = +ymd.slice(0, 4) + (dayOfYear(ymd) - 0.5) / 365.25;
+    var s = t.perYear * (when - t.refYear);
+    return Math.max(-MAX_HEAT_SHIFT_C, Math.min(MAX_HEAT_SHIFT_C, s));
+  }
+  /** The sentence that explains a trend shift, or nothing for one under 0.05 °C. */
+  function heatShiftText(shift) {
+    if (!isFinite(shift) || Math.abs(shift) < 0.05) return '';
+    return ' That line is moved ' + (shift > 0 ? 'up ' : 'down ') + Math.abs(shift).toFixed(1) + ' \u00b0C for the ' +
+      (shift > 0 ? 'warming' : 'cooling') + ' this place\'s record shows since its middle year.';
+  }
+  /** The heat lines for one date, moved to that date's climate. */
+  function heatLines(clim, ymd) {
+    var doy = dayOfYear(ymd), s = heatShift(clim, ymd);
+    return { p95: harmonicAt(clim.heat.p95, doy) + s, p99: clim.heat.p99 ? harmonicAt(clim.heat.p99, doy) + s : NaN, shift: s };
+  }
+
   var HEAT_MIN_DAYS = 2;
   /**
    * Heat: days whose forecast maximum, corrected to the climatology's scale,
@@ -364,8 +414,9 @@
    * make an outlook; a day above the 99th makes it severe.
    */
   function heatModel(clim, days, tmaxCorrected) {
-    var p95 = days.map(function (d) { return harmonicAt(clim.heat.p95, dayOfYear(d)); });
-    var p99 = days.map(function (d) { return harmonicAt(clim.heat.p99, dayOfYear(d)); });
+    var lines = days.map(function (d) { return heatLines(clim, d); });
+    var p95 = lines.map(function (l) { return l.p95; });
+    var p99 = lines.map(function (l) { return l.p99; });
     var flags = days.map(function (d, i) { return isFinite(tmaxCorrected[i]) && tmaxCorrected[i] >= p95[i]; });
     return runs(flags).filter(function (r) { return r[1] - r[0] + 1 >= HEAT_MIN_DAYS; }).map(function (r) {
       var idx = []; for (var i = r[0]; i <= r[1]; i++) idx.push(i);
@@ -373,7 +424,7 @@
       var severe = idx.some(function (i) { return tmaxCorrected[i] >= p99[i]; });
       return {
         hazard: 'heat', start: days[r[0]], end: days[r[1]], days: idx.length, severe: severe,
-        detail: idx.map(function (i) { return { day: days[i], value: round(tmaxCorrected[i], 1), p95: round(p95[i], 1), p99: round(p99[i], 1) }; }),
+        detail: idx.map(function (i) { return { day: days[i], value: round(tmaxCorrected[i], 1), p95: round(p95[i], 1), p99: round(p99[i], 1), shift: round(lines[i].shift, 2) }; }),
         peak: round(peak, 1)
       };
     });
@@ -435,6 +486,99 @@
   }
 
   /** Where a value falls in a sorted reference distribution, 0..1. */
+  /* --------------------------------------- grading published forecasts */
+
+  /*
+   * What happened, in the models' own terms: the days a model would have
+   * flagged had it been shown the measurements instead of a forecast. Two
+   * hot days in a row past the (shifted) heat line, a day or three days of
+   * rain past the rain line, two days in a row of fire weather. measured is
+   * { tmax, rain, fwi }, arrays matching days; a gap is NaN.
+   */
+  function observedEvents(clim, days, measured) {
+    var set = function (found) {
+      var s = new Set();
+      found.forEach(function (f) { f.detail.forEach(function (d) { s.add(d.day); }); });
+      return s;
+    };
+    return {
+      heat: set(heatModel(clim, days, measured.tmax)),
+      rain: set(rainModel(clim, days, measured.rain, NaN)),
+      fire: set(fireModel(clim, days, measured.fwi))
+    };
+  }
+
+  function ymdOf(t) { return new Date(t).toISOString().slice(0, 10); }
+  /** The UTC days a window covers; a midnight end excludes its own day. */
+  function windowDays(start, end) {
+    var a = Date.parse(start), b = Date.parse(end);
+    if (!isFinite(a) || !isFinite(b)) return [];
+    if (/T00:00:00(\.0+)?Z$/.test(String(end))) b -= 1;
+    var out = [];
+    for (var t = Date.UTC(+ymdOf(a).slice(0, 4), +ymdOf(a).slice(5, 7) - 1, +ymdOf(a).slice(8, 10)); t <= b; t += 864e5) out.push(ymdOf(t));
+    return out;
+  }
+
+  /*
+   * Grade the published model forecasts.
+   *
+   * ledger: every model forecast ever published, as frozen when it was.
+   * observed: { placeId: { measured: Set (or from, through), heat: Set,
+   *   rain: Set, fire: Set } }, the measured days and the observed events.
+   * runs: every model run, { at, checked: [placeId], leadDays: [lo, hi] }.
+   *
+   * A forecast is correct when its event happened on at least one day of its
+   * window and a false alarm when it did not - the rule it was published
+   * with - and pending until every day of the window has been measured. A
+   * day with an observed event is a miss when some run was watching that
+   * place on that day (it was 1 to 7 days ahead of the run, and the run
+   * checked the place) and no forecast for it was published beforehand. A
+   * day no run was watching is not counted at all: silence about a place
+   * nobody checked is not a forecast of calm.
+   */
+  function gradePublished(ledger, observed, runs) {
+    var outlooks = [], misses = [], seen = {};
+    /* Measured: in the set of measured days where one is given, else in the range. */
+    function measuredOn(obs, d) { return obs.measured ? obs.measured.has(d) : d >= obs.from && d <= obs.through; }
+    var counts = { issued: ledger.length, correct: 0, falseAlarms: 0, pending: 0, missedDays: 0 };
+    ledger.forEach(function (o) {
+      var m = o.model || {}, obs = observed[m.placeId], days = windowDays(o.targetStart, o.targetEnd);
+      var verdict = 'pending', crossed = [];
+      if (obs && days.length && obs[m.hazard] && days.every(function (d) { return measuredOn(obs, d); })) {
+        crossed = days.filter(function (d) { return obs[m.hazard].has(d); });
+        verdict = crossed.length ? 'correct' : 'false alarm';
+      }
+      counts[verdict === 'correct' ? 'correct' : verdict === 'false alarm' ? 'falseAlarms' : 'pending']++;
+      outlooks.push({ id: o.id, hazard: m.hazard, placeId: m.placeId, verdict: verdict, crossed: crossed });
+    });
+    function forecastBefore(placeId, hazard, day) {
+      return ledger.some(function (o) {
+        var m = o.model || {};
+        return m.placeId === placeId && m.hazard === hazard && Date.parse(o.issuedAt) < Date.parse(day + 'T00:00:00Z') &&
+          windowDays(o.targetStart, o.targetEnd).indexOf(day) >= 0;
+      });
+    }
+    (runs || []).forEach(function (r) {
+      var runDay = Date.parse(ymdOf(Date.parse(r.at)) + 'T00:00:00Z'), lo = (r.leadDays || [1, 7])[0], hi = (r.leadDays || [1, 7])[1];
+      for (var L = lo; L <= hi; L++) {
+        var day = ymdOf(runDay + L * 864e5);
+        (r.checked || []).forEach(function (pid) {
+          var obs = observed[pid];
+          if (!obs || !measuredOn(obs, day)) return;
+          ['heat', 'rain', 'fire'].forEach(function (hz) {
+            var key = pid + '|' + hz + '|' + day;
+            if (seen[key] || !obs[hz] || !obs[hz].has(day) || forecastBefore(pid, hz, day)) return;
+            seen[key] = true;
+            misses.push({ placeId: pid, hazard: hz, day: day });
+          });
+        });
+      }
+    });
+    misses.sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : (a.placeId + a.hazard < b.placeId + b.hazard ? -1 : 1); });
+    counts.missedDays = misses.length;
+    return { outlooks: outlooks, misses: misses, counts: counts };
+  }
+
   function percentileOf(sortedRef, v) {
     if (!sortedRef || !sortedRef.length || !isFinite(v)) return NaN;
     var lo = 0; while (lo < sortedRef.length && sortedRef[lo] <= v) lo++;
@@ -451,6 +595,8 @@
     RJ_GENERIC: RJ_GENERIC, rjExpected: rjExpected, rjProbability: rjProbability,
     MIN_OVERLAP: MIN_OVERLAP, BIAS_WINDOW: BIAS_WINDOW, MAX_SHIFT_C: MAX_SHIFT_C, biasDelta: biasDelta, rainRatio: rainRatio,
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
+    warmingTrend: warmingTrend, heatShift: heatShift, heatShiftText: heatShiftText, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
+    observedEvents: observedEvents, gradePublished: gradePublished, windowDays: windowDays,
     HEAT_MIN_DAYS: HEAT_MIN_DAYS, FIRE_MIN_DAYS: FIRE_MIN_DAYS, FIRE_FLOOR: FIRE_FLOOR,
     percentileOf: percentileOf, round: round, mean: mean
   };

@@ -201,3 +201,145 @@ test('the backtest scores nothing where nothing was measured, and fire needs a m
   const fireDays = BT.scores(T['fire@3']).days, heatDays = BT.scores(T['heat@3']).days;
   assert.ok(fireDays < heatDays, 'fire was scored without a month of measured weather behind it');
 });
+
+/* ------------------------------------------------ warming since the record */
+/*
+ * The heat line is each place's 95th percentile of 1996-2025, a record whose
+ * middle is 2011. Over 12 Jul to 12 Oct 2026 it was crossed on 14% of days
+ * tested, not 5%: the climate the line was drawn from is fifteen years cooler
+ * than the one it is applied to. The record's own warming trend, fitted to
+ * 1996-2025 alone, moves the line to the year it is used in.
+ */
+function warmingRecord(perYear, years) {
+  const days = [], tmax = [];
+  for (let y = 1996; y < 1996 + years; y++) {
+    for (let d = 0; d < 365; d++) {
+      const t = Date.UTC(y, 0, 1) + d * 864e5;
+      days.push(new Date(t).toISOString().slice(0, 10));
+      /* A seasonal cycle, a steady trend, and day-to-day noise that repeats each year. */
+      tmax.push(25 + 8 * Math.sin(2 * Math.PI * d / 365) + perYear * (y + d / 365 - 2011) + 3 * Math.sin(d * 1.7));
+    }
+  }
+  return { days, tmax };
+}
+
+test('the warming trend is fitted from the record alone, robustly', () => {
+  const r = warmingRecord(0.04, 30);
+  const t = M.warmingTrend(r.days, r.tmax);
+  near(t.perYear, 0.04, 0.003, 'trend per year');
+  near(t.refYear, 2011, 0.01, 'middle of the record');
+  assert.equal(t.years, 30);
+  /* One freak year does not drag a median-of-slopes fit. */
+  const bad = r.tmax.slice(); for (let i = 0; i < 365; i++) bad[i] += 6;
+  near(M.warmingTrend(r.days, bad).perYear, 0.04, 0.006, 'trend with one outlier year');
+  /* Too short a record gives no trend rather than a guess. */
+  const short = warmingRecord(0.04, 15);
+  assert.equal(M.warmingTrend(short.days, short.tmax), null);
+  /* A year with weeks missing is not a year. */
+  const gappy = r.tmax.slice(); for (let i = 0; i < 365 * 30; i++) if (i % 365 < 40) gappy[i] = NaN;
+  assert.equal(M.warmingTrend(r.days, gappy), null, 'years with 40 days missing were averaged');
+});
+
+test('the heat line moves by the trend to the year it is used in, within bounds', () => {
+  const C = { heat: { trend: { perYear: 0.04, refYear: 2011 } } };
+  near(M.heatShift(C, '2026-07-02'), 0.04 * (2026 + 182.5 / 365 - 2011), 0.005, 'shift in July 2026');
+  assert.equal(M.heatShift({ heat: {} }, '2026-07-02'), 0, 'no trend, no shift');
+  assert.equal(M.heatShift({ heat: { trend: { perYear: 1, refYear: 2011 } } }, '2026-07-02'), M.MAX_HEAT_SHIFT_C);
+  assert.equal(M.heatShift({ heat: { trend: { perYear: -1, refYear: 2011 } } }, '2026-07-02'), -M.MAX_HEAT_SHIFT_C);
+});
+
+test('the heat model judges the coming week against the shifted line', () => {
+  const C = flatClimate();
+  /* 41 °C is past a 40 °C line, but not past one moved up by about 1.5 °C. */
+  assert.equal(M.heatModel(C, week, [41, 41, 30, 30, 30, 30, 30]).length, 1);
+  C.heat.trend = { perYear: 0.1, refYear: 2011 };
+  assert.deepEqual(M.heatModel(C, week, [41, 41, 30, 30, 30, 30, 30]), [], 'the shift was ignored');
+  const out = M.heatModel(C, week, [42, 42, 30, 30, 30, 30, 30]);
+  assert.equal(out.length, 1);
+  near(out[0].detail[0].p95, 40 + M.heatShift(C, '2026-06-01'), 0.05, 'the recorded line is the shifted one');
+});
+
+test('the backtest moves the line for the forecast and the observation alike', () => {
+  const { place, arc, obs } = synthetic(0);
+  const plain = BT.blankTallies(); BT.scorePlace(place, arc, obs, plain);
+  const warmed = Object.assign({}, place, { heat: Object.assign({}, place.heat, { trend: { perYear: 0.1, refYear: 2011 } }) });
+  const moved = BT.blankTallies(); BT.scorePlace(warmed, arc, obs, moved);
+  for (const L of BT.LEADS) {
+    const a = plain['heat@' + L], b = moved['heat@' + L];
+    assert.ok(b.hits + b.misses < a.hits + a.misses, 'a higher line was crossed as often');
+    assert.equal(b.misses + b.falseAlarms, 0, 'forecast and observation were judged against different lines');
+  }
+});
+
+/* --------------------------------------------- grading published forecasts */
+/*
+ * Model forecasts are published on /forecasts. Each is graded once its days
+ * have been measured, by the rule it carries: correct if the line was crossed
+ * on at least one day of its window, a false alarm if not. A crossing the
+ * models were watching for and did not forecast is a miss. "Crossing" is the
+ * models' own event, read off the measurements: two hot days in a row past
+ * the heat line, a day or three days of rain past the rain line, two days in
+ * a row of fire weather.
+ */
+const heatPlace = () => Object.assign(flatClimate(), { id: 'x-city' });
+const days10 = Array.from({ length: 10 }, (_, i) => '2026-06-' + String(i + 1).padStart(2, '0'));
+
+test('observed events are the models\' own events, found in the measurements', () => {
+  const C = heatPlace();
+  const tmax = [30, 41, 41, 30, 41, 30, 30, 30, 42, 42];
+  const ev = M.observedEvents(C, days10, { tmax, rain: Array(10).fill(0), fwi: Array(10).fill(0) });
+  assert.deepEqual([...ev.heat].sort(), ['2026-06-02', '2026-06-03', '2026-06-09', '2026-06-10'], 'a lone hot day counted, or a pair was lost');
+  assert.equal(ev.rain.size, 0);
+  const wet = M.observedEvents(C, days10, { tmax: Array(10).fill(30), rain: [0, 60, 0, 0, 0, 0, 0, 0, 0, 0], fwi: Array(10).fill(0) });
+  assert.deepEqual([...wet.rain], ['2026-06-02']);
+});
+
+test('a published forecast is graded by its own window, and waits until every day is measured', () => {
+  const ledger = [
+    { id: 'hit', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-04T23:59:59Z' },
+    { id: 'false', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-05T00:00:00Z', targetEnd: '2026-06-07T23:59:59Z' },
+    { id: 'open', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-06-05T20:00:00Z', targetStart: '2026-06-09T00:00:00Z', targetEnd: '2026-06-12T23:59:59Z' },
+    { id: 'blind', model: { hazard: 'rain', placeId: 'nowhere' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-02T23:59:59Z' }
+  ];
+  const observed = { 'x-city': { from: '2026-06-01', through: '2026-06-10', heat: new Set(['2026-06-02', '2026-06-03', '2026-06-09', '2026-06-10']), rain: new Set(), fire: new Set() } };
+  const g = M.gradePublished(ledger, observed, []);
+  const v = Object.fromEntries(g.outlooks.map(o => [o.id, o.verdict]));
+  assert.deepEqual(v, { hit: 'correct', false: 'false alarm', open: 'pending', blind: 'pending' });
+  assert.deepEqual(g.outlooks.find(o => o.id === 'hit').crossed, ['2026-06-02', '2026-06-03']);
+  assert.equal(g.counts.correct, 1); assert.equal(g.counts.falseAlarms, 1); assert.equal(g.counts.pending, 2);
+});
+
+test('a crossing the models were watching and did not forecast is a miss; one they were not watching is not', () => {
+  const observed = { 'x-city': { from: '2026-06-01', through: '2026-06-10', heat: new Set(['2026-06-02', '2026-06-03', '2026-06-09', '2026-06-10']), rain: new Set(), fire: new Set() } };
+  const ledger = [{ id: 'hit', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-03T23:59:59Z' }];
+  /* One run on 31 May watched days 1 to 7 ahead: 1 to 7 June. 9 and 10 June were never watched. */
+  const runs = [{ at: '2026-05-31T20:00:00Z', checked: ['x-city'], leadDays: [1, 7] }];
+  let g = M.gradePublished(ledger, observed, runs);
+  assert.deepEqual(g.misses, [], 'an unwatched crossing was counted as a miss, or a forecast one');
+  /* A second run on 3 June watched 4 to 10 June: 9 and 10 June are now misses. */
+  runs.push({ at: '2026-06-03T20:00:00Z', checked: ['x-city'], leadDays: [1, 7] });
+  g = M.gradePublished(ledger, observed, runs);
+  assert.deepEqual(g.misses.map(m => m.day), ['2026-06-09', '2026-06-10']);
+  assert.equal(g.misses[0].hazard, 'heat'); assert.equal(g.counts.missedDays, 2);
+  /* A place a run skipped is not watched by it. */
+  g = M.gradePublished(ledger, observed, [{ at: '2026-06-03T20:00:00Z', checked: [], leadDays: [1, 7] }]);
+  assert.deepEqual(g.misses, []);
+});
+
+test('a window with an unmeasured day stays pending, and an unmeasured day is never a miss', () => {
+  const measured = new Set(['2026-06-01', '2026-06-02', '2026-06-04', '2026-06-05']); // 3 June missing
+  const observed = { 'x-city': { measured, heat: new Set(), rain: new Set(), fire: new Set(['2026-06-03']) } };
+  const ledger = [{ id: 'gap', model: { hazard: 'heat', placeId: 'x-city' }, issuedAt: '2026-05-31T20:00:00Z', targetStart: '2026-06-02T00:00:00Z', targetEnd: '2026-06-04T23:59:59Z' }];
+  const g = M.gradePublished(ledger, observed, [{ at: '2026-05-31T20:00:00Z', checked: ['x-city'], leadDays: [1, 7] }]);
+  assert.equal(g.outlooks[0].verdict, 'pending', 'a window with a day nobody measured was graded a false alarm');
+  assert.deepEqual(g.misses, []);
+});
+
+test('the heat explanation says which way the line moved, and says nothing for no move', () => {
+  assert.equal(M.heatShiftText(0.43), ' That line is moved up 0.4 °C for the warming this place\'s record shows since its middle year.');
+  assert.equal(M.heatShiftText(-0.31), ' That line is moved down 0.3 °C for the cooling this place\'s record shows since its middle year.');
+  /* A move that rounds to 0.0 °C is not worth a sentence, and never reads "-0.0". */
+  for (const s of [0, 0.04, -0.04, NaN, undefined, null]) assert.equal(M.heatShiftText(s), '', String(s));
+  assert.doesNotMatch(require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'tools', 'run-models.js'), 'utf8'),
+    /moved up ' \+/, 'run-models.js still builds its own "moved up" sentence');
+});
