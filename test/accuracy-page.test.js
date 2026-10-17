@@ -34,7 +34,7 @@ test('no prediction rate is published when none can be computed', async () => {
     assert.equal(text(r, id), 'Cannot be calculated',
       id + ' published a number from a record that cannot support one');
   }
-  assert.match(text(r, 'ipNote'), /no hit rate for advance forecasts/i);
+  assert.match(text(r, 'ipNote'), /no hit rate for advance disaster forecasts/i);
   r.close();
 });
 
