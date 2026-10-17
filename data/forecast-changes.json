@@ -22789,9 +22789,207 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-17T01:19:03.121Z",
+      "sinceHours": 2.47,
+      "active": 57,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-f99702882a0d777b34053b53227abd132c15cfbd-001-1",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Warning — Guam Coastal Waters — 5-day forecast",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-17T01:12:00.000Z",
+          "targetEnd": "2026-10-22T01:12:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-19e25fa51c5077ad086dafc3a2840f02f743da3c-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Tidal Potomac from Indian Head to Cobb Island MD and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T01:11:00.000Z",
+          "targetEnd": "2026-10-19T01:11:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-51f2eaa5b81c07b9a32c8c8f98d4afcb5cfddc5d-001-2",
+          "type": "Red Flag Warning",
+          "title": "Red Flag Warning risk in Ashley and 57 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T01:07:00.000Z",
+          "targetEnd": "2026-10-20T01:07:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-97338fb0294bf0fa13c04c4db17a4aef48f59f9f-003-2",
+          "type": "Storm Watch",
+          "title": "Storm Watch risk in waters from Oregon Inlet to Cape Hatteras NC from 20 to 60 nautical miles and 1 nearby area, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T18:29:00.000Z",
+          "targetEnd": "2026-10-18T18:29:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-FL-1103888",
+          "type": "Flood",
+          "title": "Flood risk in United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-16T01:00:00.000Z",
+          "targetEnd": "2026-10-19T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032778",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-16T00:00:00.000Z",
+          "targetEnd": "2026-10-19T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep212026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+          "country": "Trudy (eastern Pacific system 1)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-17T00:00:00.000Z",
+          "targetEnd": "2026-10-22T00:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-21T21:00:00.000Z",
+          "toEnd": "2026-10-22T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-03f61ee0109d981a89ba3836d4c84d86cd1d7ea1-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Hartford, Connecticut and 4 nearby areas, United States — 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T22:41:00.000Z",
+          "targetEnd": "2026-10-18T22:41:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-26b913b2029babcc0badbd23a5bea62d86323f19-001-2",
+          "type": "Flood",
+          "title": "Flood risk in Guam and 3 nearby areas, United States — 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-16T21:26:00.000Z",
+          "targetEnd": "2026-10-19T21:26:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032817",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-16T00:00:00.000Z",
+          "targetEnd": "2026-10-19T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-gdacs-FL-1104218",
+          "type": "Flood",
+          "title": "Flood risk in Argentina — 3-day forecast",
+          "country": "Argentina",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T01:00:00.000Z",
+          "targetEnd": "2026-10-17T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104224",
+          "type": "Flood",
+          "title": "Flood risk in Indonesia — 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T01:00:00.000Z",
+          "targetEnd": "2026-10-17T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104233",
+          "type": "Flood",
+          "title": "Flood risk in Syria — 3-day forecast",
+          "country": "Syria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T01:00:00.000Z",
+          "targetEnd": "2026-10-17T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104167",
+          "type": "Flood",
+          "title": "Flood risk in Ecuador — 3-day forecast",
+          "country": "Ecuador",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T01:00:00.000Z",
+          "targetEnd": "2026-10-17T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032753",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mongolia and China — 3-day forecast",
+          "country": "Mongolia, China",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-14T00:00:00.000Z",
+          "targetEnd": "2026-10-17T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
+    "OUT-0-f99702882a0d777b34053b53227abd132c15cfbd-001-1": {
+      "id": "OUT-0-f99702882a0d777b34053b53227abd132c15cfbd-001-1",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Typhoon Warning — Guam Coastal Waters — 5-day forecast",
+      "country": "United States",
+      "alert": "High",
+      "rank": 3,
+      "targetStart": "2026-10-17T01:12:00.000Z",
+      "targetEnd": "2026-10-22T01:12:00.000Z",
+      "provider": "nws"
+    },
     "OUT-gdacs-TC-1001338": {
       "id": "OUT-gdacs-TC-1001338",
       "type": "Tropical Cyclone",
@@ -22836,16 +23034,38 @@
       "targetEnd": "2026-10-20T05:44:46.000Z",
       "provider": "gdacs"
     },
-    "OUT-0-03f61ee0109d981a89ba3836d4c84d86cd1d7ea1-001-1": {
-      "id": "OUT-0-03f61ee0109d981a89ba3836d4c84d86cd1d7ea1-001-1",
+    "OUT-0-19e25fa51c5077ad086dafc3a2840f02f743da3c-001-1": {
+      "id": "OUT-0-19e25fa51c5077ad086dafc3a2840f02f743da3c-001-1",
       "type": "Severe Storm",
-      "title": "Severe Storm risk in Hartford, Connecticut and 4 nearby areas, United States — 2-day forecast",
+      "title": "Severe Storm risk in Tidal Potomac from Indian Head to Cobb Island MD and 1 nearby area, United States — 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-16T22:41:00.000Z",
-      "targetEnd": "2026-10-18T22:41:00.000Z",
+      "targetStart": "2026-10-17T01:11:00.000Z",
+      "targetEnd": "2026-10-19T01:11:00.000Z",
       "provider": "nws"
+    },
+    "OUT-0-51f2eaa5b81c07b9a32c8c8f98d4afcb5cfddc5d-001-2": {
+      "id": "OUT-0-51f2eaa5b81c07b9a32c8c8f98d4afcb5cfddc5d-001-2",
+      "type": "Red Flag Warning",
+      "title": "Red Flag Warning risk in Ashley and 57 nearby areas, United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-17T01:07:00.000Z",
+      "targetEnd": "2026-10-20T01:07:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-nhc-ep212026": {
+      "id": "OUT-nhc-ep212026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Hurricane Trudy — 5-day forecast",
+      "country": "Trudy (eastern Pacific system 1)",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-17T00:00:00.000Z",
+      "targetEnd": "2026-10-22T00:00:00.000Z",
+      "provider": "nhc"
     },
     "OUT-0-bff0403f88af8c84b38cda13c7eab16e3cbe5220-001-1": {
       "id": "OUT-0-bff0403f88af8c84b38cda13c7eab16e3cbe5220-001-1",
@@ -22857,28 +23077,6 @@
       "targetStart": "2026-10-16T22:01:00.000Z",
       "targetEnd": "2026-10-21T22:01:00.000Z",
       "provider": "nws"
-    },
-    "OUT-0-26b913b2029babcc0badbd23a5bea62d86323f19-001-2": {
-      "id": "OUT-0-26b913b2029babcc0badbd23a5bea62d86323f19-001-2",
-      "type": "Flood",
-      "title": "Flood risk in Guam and 3 nearby areas, United States — 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T21:26:00.000Z",
-      "targetEnd": "2026-10-19T21:26:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-nhc-ep212026": {
-      "id": "OUT-nhc-ep212026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Hurricane Trudy — 5-day forecast",
-      "country": "Trudy (eastern Pacific system 1)",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-16T21:00:00.000Z",
-      "targetEnd": "2026-10-21T21:00:00.000Z",
-      "provider": "nhc"
     },
     "OUT-nhc-ep202026": {
       "id": "OUT-nhc-ep202026",
@@ -22901,6 +23099,17 @@
       "targetStart": "2026-10-16T19:54:02.000Z",
       "targetEnd": "2026-10-23T19:54:02.000Z",
       "provider": "usgs_volcano"
+    },
+    "OUT-0-97338fb0294bf0fa13c04c4db17a4aef48f59f9f-003-2": {
+      "id": "OUT-0-97338fb0294bf0fa13c04c4db17a4aef48f59f9f-003-2",
+      "type": "Storm Watch",
+      "title": "Storm Watch risk in waters from Oregon Inlet to Cape Hatteras NC from 20 to 60 nautical miles and 1 nearby area, United States — 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-16T18:29:00.000Z",
+      "targetEnd": "2026-10-18T18:29:00.000Z",
+      "provider": "nws"
     },
     "OUT-gdacs-TC-1001339": {
       "id": "OUT-gdacs-TC-1001339",
@@ -23056,6 +23265,17 @@
       "targetEnd": "2026-10-19T01:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-FL-1103888": {
+      "id": "OUT-gdacs-FL-1103888",
+      "type": "Flood",
+      "title": "Flood risk in United States — 3-day forecast",
+      "country": "United States",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-16T01:00:00.000Z",
+      "targetEnd": "2026-10-19T01:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-FL-1104200": {
       "id": "OUT-gdacs-FL-1104200",
       "type": "Flood",
@@ -23133,11 +23353,33 @@
       "targetEnd": "2026-10-19T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032817": {
-      "id": "OUT-gdacs-WF-1032817",
+    "OUT-gdacs-WF-1032778": {
+      "id": "OUT-gdacs-WF-1032778",
       "type": "Wildfire",
       "title": "Wildfire risk in Indonesia — 3-day forecast",
       "country": "Indonesia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-16T00:00:00.000Z",
+      "targetEnd": "2026-10-19T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032785": {
+      "id": "OUT-gdacs-WF-1032785",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Botswana — 3-day forecast",
+      "country": "Botswana",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-16T00:00:00.000Z",
+      "targetEnd": "2026-10-19T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032794": {
+      "id": "OUT-gdacs-WF-1032794",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Tanzania — 3-day forecast",
+      "country": "Tanzania",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-16T00:00:00.000Z",
@@ -23171,28 +23413,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Malawi — 3-day forecast",
       "country": "Malawi",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-16T00:00:00.000Z",
-      "targetEnd": "2026-10-19T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032785": {
-      "id": "OUT-gdacs-WF-1032785",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Botswana — 3-day forecast",
-      "country": "Botswana",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-16T00:00:00.000Z",
-      "targetEnd": "2026-10-19T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032794": {
-      "id": "OUT-gdacs-WF-1032794",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Tanzania — 3-day forecast",
-      "country": "Tanzania",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-16T00:00:00.000Z",
@@ -23254,22 +23474,22 @@
       "targetEnd": "2026-10-18T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032837": {
-      "id": "OUT-gdacs-WF-1032837",
+    "OUT-gdacs-WF-1032686": {
+      "id": "OUT-gdacs-WF-1032686",
       "type": "Wildfire",
-      "title": "Wildfire risk in The Democratic Republic of Congo — 3-day forecast",
-      "country": "The Democratic Republic of Congo",
+      "title": "Wildfire risk in Bolivia — 3-day forecast",
+      "country": "Bolivia",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-15T00:00:00.000Z",
       "targetEnd": "2026-10-18T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032686": {
-      "id": "OUT-gdacs-WF-1032686",
+    "OUT-gdacs-WF-1032837": {
+      "id": "OUT-gdacs-WF-1032837",
       "type": "Wildfire",
-      "title": "Wildfire risk in Bolivia — 3-day forecast",
-      "country": "Bolivia",
+      "title": "Wildfire risk in The Democratic Republic of Congo — 3-day forecast",
+      "country": "The Democratic Republic of Congo",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-15T00:00:00.000Z",
@@ -23297,50 +23517,6 @@
       "targetStart": "2026-10-14T10:42:00.000Z",
       "targetEnd": "2026-10-17T10:42:00.000Z",
       "provider": "eonet"
-    },
-    "OUT-gdacs-FL-1104218": {
-      "id": "OUT-gdacs-FL-1104218",
-      "type": "Flood",
-      "title": "Flood risk in Argentina — 3-day forecast",
-      "country": "Argentina",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T01:00:00.000Z",
-      "targetEnd": "2026-10-17T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104224": {
-      "id": "OUT-gdacs-FL-1104224",
-      "type": "Flood",
-      "title": "Flood risk in Indonesia — 3-day forecast",
-      "country": "Indonesia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T01:00:00.000Z",
-      "targetEnd": "2026-10-17T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104233": {
-      "id": "OUT-gdacs-FL-1104233",
-      "type": "Flood",
-      "title": "Flood risk in Syria — 3-day forecast",
-      "country": "Syria",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T01:00:00.000Z",
-      "targetEnd": "2026-10-17T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104167": {
-      "id": "OUT-gdacs-FL-1104167",
-      "type": "Flood",
-      "title": "Flood risk in Ecuador — 3-day forecast",
-      "country": "Ecuador",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T01:00:00.000Z",
-      "targetEnd": "2026-10-17T01:00:00.000Z",
-      "provider": "gdacs"
     },
     "OUT-gdacs-DR-1018344": {
       "id": "OUT-gdacs-DR-1018344",
@@ -23429,22 +23605,11 @@
       "targetStart": "2026-10-14T00:00:00.000Z",
       "targetEnd": "2026-11-13T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032753": {
-      "id": "OUT-gdacs-WF-1032753",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Mongolia and China — 3-day forecast",
-      "country": "Mongolia, China",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-14T00:00:00.000Z",
-      "targetEnd": "2026-10-17T00:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-16T22:50:55.928Z",
+  "updatedAt": "2026-10-17T01:19:03.121Z",
   "observedCadenceHours": {
-    "runs": 70,
+    "runs": 71,
     "median": 4.91,
     "min": 1.54,
     "max": 189.21
