@@ -27,8 +27,11 @@ test.after(closeAllWindows);
 const ROOT = path.join(__dirname, '..');
 const api = require(path.join(ROOT, 'api', 'events.js'));
 const feed = async mock => (await callApi(api, '/api/events', mock)).json();
-const hoursAgo = h => new Date(Date.now() - h * 3600e3).toISOString();
-const hoursAhead = h => new Date(Date.now() + h * 3600e3).toISOString();
+/* From a given now, when a test compares against that same now: read
+   separately, the clock can tick between them, and a record 40 days old
+   becomes 39.99... days old. */
+const hoursAgo = (h, from = Date.now()) => new Date(from - h * 3600e3).toISOString();
+const hoursAhead = (h, from = Date.now()) => new Date(from + h * 3600e3).toISOString();
 
 /* ------------------------------------------------------------------ names */
 
@@ -185,12 +188,12 @@ test('a generic storm name gives way to the warning centre\'s own', () => {
 test('a record its provider stopped updating is kept but not live', () => {
   const now = Date.now();
   const evs = [
-    { type: 'Flood', updated: hoursAgo(40 * 24) },
-    { type: 'Flood', updated: hoursAgo(20 * 24), expectedEnd: hoursAhead(24) },
-    { type: 'Tropical Cyclone', updated: hoursAgo(50) },
-    { type: 'Tropical Cyclone', updated: hoursAgo(4.5 * 24) },
-    { type: 'Drought', updated: hoursAgo(30 * 24) },
-    { type: 'Flood', forecast: true, updated: hoursAgo(90 * 24) }
+    { type: 'Flood', updated: hoursAgo(40 * 24, now) },
+    { type: 'Flood', updated: hoursAgo(20 * 24, now), expectedEnd: hoursAhead(24, now) },
+    { type: 'Tropical Cyclone', updated: hoursAgo(50, now) },
+    { type: 'Tropical Cyclone', updated: hoursAgo(4.5 * 24, now) },
+    { type: 'Drought', updated: hoursAgo(30 * 24, now) },
+    { type: 'Flood', forecast: true, updated: hoursAgo(90 * 24, now) }
   ];
   assert.equal(api.markLive(evs, now), 2);
   assert.deepEqual(evs.map(e => e.live), [false, true, true, false, true, undefined]);
