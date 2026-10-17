@@ -35,9 +35,20 @@ own error body) are returned in `meta.sources`.
 
 ### ReliefWeb
 
-ReliefWeb's v2 API requires an appname that ReliefWeb approves by hand, so both
-the disaster list and the per-event situation reports read its **public RSS
-feeds** instead. Nothing to register, no environment variable, no key.
+ReliefWeb's v2 API needs an appname that ReliefWeb has approved (since
+1 November 2025; request one through the form linked from
+[apidoc.reliefweb.int](https://apidoc.reliefweb.int/)). Set it in the
+**`RELIEFWEB_APPNAME`** environment variable (Vercel project, Production), and
+both the disaster list (`/v2/disasters`, status `current`) and the per-event
+situation reports (`/v2/reports`) read the API. The appname is never echoed to
+the page.
+
+Without it, or when the API fails, both read ReliefWeb's **public RSS feeds**.
+Since October 2026 the disasters feeds answer servers with HTTP 406 ("Blocked
+due to bot activity"), so without an appname ReliefWeb is reported as offline.
+`meta.sources.reliefweb` says which path answered (`via`), the API's error if
+it failed (`apiError`), and what to set (`hint`); the event page's ReliefWeb
+source carries the same in its `note`.
 
 The disasters feed path is not documented, so the handler tries a short list of
 candidate URLs and accepts one only if it parses into feed items — a Drupal miss
