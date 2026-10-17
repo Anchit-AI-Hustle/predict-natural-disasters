@@ -141,7 +141,7 @@ test('an outlook is never described as a prediction made ahead of its signal', (
  * a search result and a shared link show, and they are the one place nobody
  * looks again after writing them. Every claim audit here had been applied to
  * the body of the pages and none of it to this block, which was still
- * marketing copy — "every active natural disaster", "ranked by population
+ * marketing copy - "every active natural disaster", "ranked by population
  * exposure", "the models behind the forecasts", "cross-checked before it is
  * published". Each of those describes something this implementation does not
  * do.
@@ -181,7 +181,7 @@ test('no page describes itself to search engines as doing something it does not 
     const m = metaOf(f);
     const text = [m.title, m.description, m.og, m.twitter].join(' ');
     for (const r of RULES) {
-      if (r.claim.test(text)) offences.push(f + ': "' + (text.match(r.claim) || [])[0] + '" — ' + r.why);
+      if (r.claim.test(text)) offences.push(f + ': "' + (text.match(r.claim) || [])[0] + '" - ' + r.why);
     }
   }
   assert.deepEqual(offences, [],

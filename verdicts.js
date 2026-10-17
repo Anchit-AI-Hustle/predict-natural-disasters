@@ -8,7 +8,7 @@
  * published: false alarms 0, missed events 0, severe-event recall 100%.
  *
  * An unrecognised verdict is therefore never silently bucketed here. It is
- * returned as UNKNOWN, counted, and surfaced — a test fails if the ledgers
+ * returned as UNKNOWN, counted, and surfaced - a test fails if the ledgers
  * contain one, which is what would have caught the original defect.
  */
 /* Wrapped, because a top-level const in a classic script becomes a global
@@ -229,15 +229,15 @@ const CLAIM_FIELDS = ['id', 'type', 'title', 'country', 'admin1', 'region',
  * onto all three windows and turned five graded false alarms into nine.
  *
  * So an exact window match wins. Where the ledger disagrees with the verdict
- * about the window — ND-001's two records are 17 hours apart, the frozen
- * benchmark having been written by hand in local time — the verdict is still
+ * about the window - ND-001's two records are 17 hours apart, the frozen
+ * benchmark having been written by hand in local time - the verdict is still
  * attached, but only when that id has exactly one window and the attachment is
  * therefore unambiguous. Anything left over is returned in `unattached`
  * rather than dropped, so a verdict can never quietly stop counting.
  */
 /* The whole window, not just its start: a rolling outlook reissued with the
    same start and a revised end would otherwise collapse onto one key, and the
-   merge would apply one verdict to both rows — the multi-window misgrading
+   merge would apply one verdict to both rows - the multi-window misgrading
    this helper exists to prevent. */
 function windowKey(r) {
   const a = Date.parse((r && r.targetStart) || '');
@@ -269,8 +269,8 @@ function joinVerdicts(rows, verifications) {
     if (!v) return r;
     /* The ledger row is the frozen claim; the verdict is what was found
        afterwards. Spreading the verdict over the row let it rewrite the claim
-       it was judging: ND-001's frozen area is the Hu\u1ebf\u2013\u0110\u00e0 N\u1eb5ng corridor, and the
-       verdict's wider "Hue\u2013Da Nang\u2013Quang Ngai corridor" was then displayed as
+       it was judging: ND-001's frozen area is the Hu\u1ebf-\u0110\u00e0 N\u1eb5ng corridor, and the
+       verdict's wider "Hue-Da Nang-Quang Ngai corridor" was then displayed as
        what had been predicted. Every claim field is restored from the row, so
        a verdict can only ever add the outcome. */
     const out = Object.assign({}, r, v);

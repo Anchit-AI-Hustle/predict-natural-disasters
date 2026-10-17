@@ -31,7 +31,7 @@ function resolveRoute(url) {
 }
 
 const enc = encodeURIComponent;
-// An id with a hyphen, digits and an underscore — the shape EMSC actually emits.
+// An id with a hyphen, digits and an underscore - the shape EMSC actually emits.
 const EVENT_ID = 'emsc-20260911_0000279';
 
 const GENERATED = [
@@ -93,7 +93,7 @@ test('every rewrite destination resolves to a page the deployment serves', () =>
 });
 
 test('no rewrite shadows a file that cleanUrls already serves', () => {
-  // Vercel checks the filesystem before rewrites, so such a rule never fires —
+  // Vercel checks the filesystem before rewrites, so such a rule never fires -
   // and once the .html is stripped from its destination it rewrites to itself.
   const inert = cfg.rewrites
     .filter(r => pages.has(r.source.replace(/^\//, '') + '.html'))

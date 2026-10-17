@@ -241,7 +241,7 @@ test('a map marker is never a bare coloured dot', () => {
   const icon = RISK.markerIcon('Red', 'M6.2 earthquake');
   assert.match(icon.className, /risk-mk risk-high/);
   assert.match(icon.html, /role="img"/, 'the marker is not exposed as an image');
-  assert.match(icon.html, /aria-label="M6\.2 earthquake — High risk"/,
+  assert.match(icon.html, /aria-label="M6\.2 earthquake - High risk"/,
     'the marker has no accessible name, so a screen reader announces nothing');
   /* Size carries the level too, so the shapes are not the only fallback. */
   const sizes = RISK.LEVELS.map(l => RISK.markerIcon(l.label).iconSize[0]);
@@ -395,8 +395,8 @@ test('the ink the stylesheet paints is the ink that was measured', () => {
 /* ------------------------------ no link offered to a reader opens raw JSON */
 
 test('no source link shown to a reader opens a machine-readable endpoint', async () => {
-  // A National Weather Service record carried p['@id'] — the CAP record's API
-  // URL — as its source link, so "Open original source record" dropped the
+  // A National Weather Service record carried p['@id'] - the CAP record's API
+  // URL - as its source link, so "Open original source record" dropped the
   // reader into raw GeoJSON. 36 of 795 live records did this.
   const handler = require(path.join(ROOT, 'api', 'events.js'));
   const { callApi } = require('./render.js');
@@ -410,7 +410,7 @@ test('no source link shown to a reader opens a machine-readable endpoint', async
     'these source links open a payload rather than a page:\n' + bad.join('\n'));
 
   // Every record still has somewhere to send a reader.
-  const none = events.filter(e => !e.sourceUrl).map(e => e.source + ' — ' + e.title);
+  const none = events.filter(e => !e.sourceUrl).map(e => e.source + ' - ' + e.title);
   assert.deepEqual(none, [], 'records with no source link at all:\n' + none.join('\n'));
 });
 
@@ -420,7 +420,7 @@ test('a machine-readable record is kept for provenance under its own name', asyn
   const { events } = await (await callApi(handler, '/api/events')).json();
   const nws = events.filter(e => /Weather Service/.test(String(e.source)) && !e.forecast);
   assert.ok(nws.length, 'fixture should include National Weather Service records');
-  // The API URL is not thrown away — it moves to a field whose name says what
+  // The API URL is not thrown away - it moves to a field whose name says what
   // it is, so provenance survives without being offered as something to read.
   assert.ok(nws.some(e => e.sourceApiUrl), 'the API record should be retained as sourceApiUrl');
   for (const e of nws) {
@@ -460,7 +460,7 @@ test('a detail page headlines the site’s level, never the provider’s colour 
 
   for (const page of ['alert-detail.html', 'calamity-detail.html', 'forecast-detail.html']) {
     const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', page), 'utf8');
-    assert.doesNotMatch(src, /textContent=e\.alert\|\|'(Live|—)'/,
+    assert.doesNotMatch(src, /textContent=e\.alert\|\|'(Live|-)'/,
       page + ' still prints the provider’s alert word as its level');
   }
 });

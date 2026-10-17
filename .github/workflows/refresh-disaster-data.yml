@@ -10,7 +10,7 @@ name: Refresh disaster intelligence
 # What it actually achieves is measured rather than asserted here, because a
 # hand measurement goes stale: tools/record-changes.js records the gap between
 # runs and publishes it as observedCadenceHours, and /api/events serves it as
-# meta.refreshRecorded. Read from that record rather than from this comment —
+# meta.refreshRecorded. Read from that record rather than from this comment -
 # as of the last run it was a median of about four hours, a shortest of 1.5
 # and a longest of nearly 35, which is a scheduled job on a shared runner
 # rather than a promise.
@@ -18,7 +18,7 @@ name: Refresh disaster intelligence
 # The pages themselves are not stale in between: /api/events recomputes the
 # feed from the upstream sources whenever its shared copy is more than 30
 # seconds old, and this job's ?cron=<time> is never served a copy. What this job adds is the
-# written record — which outlook existed when, and what changed since.
+# written record - which outlook existed when, and what changed since.
 #
 # Minute 17, not minute 0: GitHub's documentation says scheduled runs can be
 # delayed under load, that the start of every hour is a high-load time, and

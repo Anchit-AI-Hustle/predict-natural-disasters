@@ -155,7 +155,7 @@ test('the guard leaves dragging, pinch and the zoom control alone', () => {
   const src = read('map-setup.js');
   for (const option of ['dragging', 'touchZoom', 'doubleClickZoom', 'zoomControl', 'boxZoom', 'keyboard']) {
     assert.ok(!new RegExp(option + '\\s*[:=]').test(src),
-      'the guard should not touch ' + option + ' — Leaflet already enables it');
+      'the guard should not touch ' + option + ' - Leaflet already enables it');
   }
   assert.match(src, /scrollWheelZoom/, 'the guard does not touch the wheel at all');
 });
@@ -383,7 +383,7 @@ test('the reader can still drag and zoom', () => {
   const src = read('map-setup.js');
   for (const option of ['dragging', 'doubleClickZoom', 'zoomControl', 'touchZoom', 'boxZoom', 'keyboard']) {
     assert.ok(!new RegExp('\\b' + option + '\\s*[:=]').test(src),
-      option + ' is being overridden — Leaflet already enables it');
+      option + ' is being overridden - Leaflet already enables it');
   }
   // Rigid bounds make a drag feel like the map has seized up at the edge.
   const v = src.match(/maxBoundsViscosity = ([\d.]+)/);

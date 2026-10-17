@@ -51,7 +51,7 @@ it failed (`apiError`), and what to set (`hint`); the event page's ReliefWeb
 source carries the same in its `note`.
 
 The disasters feed path is not documented, so the handler tries a short list of
-candidate URLs and accepts one only if it parses into feed items — a Drupal miss
+candidate URLs and accepts one only if it parses into feed items - a Drupal miss
 can answer 200 with an HTML page, which would otherwise look like "online, no
 disasters". `meta.sources.reliefweb.endpoint` records which URL answered.
 
@@ -66,12 +66,12 @@ cannot be resolved is left off the map rather than placed somewhere plausible.
 Outlooks are derived from **active official signals**, never from a single
 provider, and each one carries its evidence, confidence and grading rule:
 
-- **Hazard-continuation outlooks** — a 72-hour outlook for each active
+- **Hazard-continuation outlooks** - a 72-hour outlook for each active
   non-seismic official signal, deduplicated by country and hazard.
-- **Aftershock-sequence outlooks** — a 7-day outlook following an observed
+- **Aftershock-sequence outlooks** - a 7-day outlook following an observed
   M5.5+ earthquake. This describes the ongoing sequence; the mainshock is never
   presented as having been predicted.
-- **ND-001** — the frozen benchmark forecast, retained for verification history.
+- **ND-001** - the frozen benchmark forecast, retained for verification history.
 
 Outlook IDs are derived from the source record, so a detail link stays valid
 across refreshes.
@@ -100,7 +100,7 @@ archive page renders this block.
 
 Emergency numbers are national numbers published by the relevant public-safety
 authority. Where none could be verified, the page says so and links the national
-authority instead — a number is never guessed. Email addresses appear only where
+authority instead - a number is never guessed. Email addresses appear only where
 the organisation publishes them on its own contact page. Donation links always
 point at the organisation's own domain, and are withheld entirely on forecast
 records until impact is independently verified.
@@ -111,19 +111,19 @@ Every page that lists records carries a sort control. The vocabulary is shared
 (`PND.SORT_DEFS` in `portal.js`) so the options, labels and behaviour match
 everywhere, and the choice is remembered per page in `localStorage`.
 
-- **Event lists** — severity, last updated (newest/oldest), reported deaths,
+- **Event lists** - severity, last updated (newest/oldest), reported deaths,
   people affected, country/region, hazard type, source, title.
-- **Forecast lists** — the above plus window-ends-soonest.
-- **Nearby lists** on detail pages — distance first, then the event options.
-- **Region and source aggregates** — priority, record count, most recent, name.
-- **Historical archive** — date, name, hazard type.
+- **Forecast lists** - the above plus window-ends-soonest.
+- **Nearby lists** on detail pages - distance first, then the event options.
+- **Region and source aggregates** - priority, record count, most recent, name.
+- **Historical archive** - date, name, hazard type.
 
 `index.html`, `dashboard.html` and `home-v3.html` are self-contained pages that
 do not load `portal.js`, so they carry their own copy of the same vocabulary;
 the test suite asserts they stay in step.
 
 `about.html`, `insights.html` and `methodology.html` are static prose with no
-record list, so they have no sort control — and `methodology.html` is a numbered
+record list, so they have no sort control - and `methodology.html` is a numbered
 sequence that reordering would actively break.
 
 ## Refresh cycle
@@ -137,7 +137,7 @@ sequence that reordering would actively break.
 
 ## Tests
 
-Offline suite — no network required. Upstream providers are mocked, and the real
+Offline suite - no network required. Upstream providers are mocked, and the real
 handlers and real pages run against them.
 
 ```bash
@@ -146,9 +146,9 @@ npm install
 npm test
 ```
 
-- `api.test.js` — both API handlers across success and total-outage paths,
+- `api.test.js` - both API handlers across success and total-outage paths,
   outlook generation, ID stability, and the verified support directory.
-- `pages.test.js` — renders every page in the repository in jsdom and asserts the
+- `pages.test.js` - renders every page in the repository in jsdom and asserts the
   detail pages populate their fields and the full context block.
 
 `test/` is excluded from the Vercel deployment via `.vercelignore`.

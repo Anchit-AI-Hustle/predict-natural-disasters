@@ -3,7 +3,7 @@
  * Forecasts that hold still, and a record of them that survives.
  *
  * Outlooks were computed with targetStart set to the moment of the request, so
- * the same outlook id carried a different window every time it was fetched —
+ * the same outlook id carried a different window every time it was fetched -
  * measured against production, 26 of 27 windows slid forward between two
  * fetches 47 minutes apart. A claim that is rewritten on every page load cannot
  * be right or wrong, which is why nothing had ever been graded.
@@ -202,7 +202,7 @@ test('a claim is its terms, not its id and the day it starts', async () => {
      claim under the original row's freeze, which is a claim nobody froze
      presented as having existed for days. */
   const H = require(path.join(ROOT, 'hazard-model.js'));
-  const base = { id: 'OUT-x1', type: 'Flood', title: '3-day Flood risk outlook \u2014 Nepal',
+  const base = { id: 'OUT-x1', type: 'Flood', title: '3-day Flood risk outlook - Nepal',
     country: 'Nepal', region: 'Bagmati Province', lat: 27.7, lon: 85.3, forecast: true,
     forecastScope: 'event', severity: 'SEVERE', alert: 'Orange', source: 'Derived',
     targetStart: '2026-09-25T00:00:00Z', targetEnd: '2026-09-27T00:00:00Z',
@@ -226,8 +226,8 @@ test('a claim is its terms, not its id and the day it starts', async () => {
      two rows sharing an id, a window and a geography were one key and two
      different hazards, and the second was served under the first one's
      freeze timestamp, which is a freeze nobody performed for that claim. */
-  const vague = Object.assign({}, base, { type: 'Other', title: 'Flood risk outlook \u2014 Bagmati' });
-  const alsoVague = Object.assign({}, vague, { title: 'Landslide risk outlook \u2014 Bagmati' });
+  const vague = Object.assign({}, base, { type: 'Other', title: 'Flood risk outlook - Bagmati' });
+  const alsoVague = Object.assign({}, vague, { title: 'Landslide risk outlook - Bagmati' });
   const OBS = require(path.join(ROOT, 'observed-model.js'));
   const V = require(path.join(ROOT, 'verification-model.js'));
   assert.notDeepEqual(V.frozenClaim(vague, OBS.familyOf).hazards,

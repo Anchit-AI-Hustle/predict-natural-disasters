@@ -2,8 +2,8 @@
 /*
  * What the site says about where its data comes from.
  *
- * The sources page listed four names written into the file. One of them —
- * WMO — nothing here has ever read; four that are read on every request were
+ * The sources page listed four names written into the file. One of them -
+ * WMO - nothing here has ever read; four that are read on every request were
  * missing; and beside them sat a search box, a hazard filter and a level
  * filter, all disabled, and a "Refresh source status" button next to a line
  * describing the event feed rather than any source's status.
@@ -122,7 +122,7 @@ test('the page states which hazards no source here can establish an absence for'
   }
   const blind = Object.keys(seen).filter(f => !seen[f]);
   assert.ok(blind.length > 0,
-    'every hazard now has an exhaustive observer, so this page has nothing to disclose — check the fixture');
+    'every hazard now has an exhaustive observer, so this page has nothing to disclose - check the fixture');
   for (const f of blind) {
     assert.ok(summary.includes(f.replace(/-/g, ' ')),
       f + ' has no source that can establish an absence, and the page does not say so');

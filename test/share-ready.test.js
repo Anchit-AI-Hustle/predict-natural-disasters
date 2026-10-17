@@ -133,16 +133,16 @@ test('the homepage asks for the shared copy too', () => {
 
 test('the homepage tiles stop saying they are loading, whether the feed came or not', async () => {
   const html = read('index.html');
-  assert.equal((html.match(/<strong id="k(?:Events|Warnings|Forecasts|Countries)" class="pending" aria-busy="true">—<\/strong>/g) || []).length, 4,
+  assert.equal((html.match(/<strong id="k(?:Events|Warnings|Forecasts|Countries)" class="pending" aria-busy="true">-<\/strong>/g) || []).length, 4,
     'the tiles do not start out marked as loading');
   const ok = await renderPage('index.html', { timeoutMs: 8000,
-    waitFor: d => d.getElementById('kEvents').textContent !== '—' });
+    waitFor: d => d.getElementById('kEvents').textContent !== '-' });
   assert.equal(ok.document.querySelectorAll('.kpi strong.pending').length, 0, 'a tile still shows as loading after the feed came');
   assert.match(ok.document.getElementById('kEvents').textContent, /^\d+$/);
   ok.close();
   const down = await renderPage('index.html', { feedDown: true, timeoutMs: 3000 });
   assert.equal(down.document.querySelectorAll('.kpi strong.pending').length, 0, 'a tile shows as loading for ever when the feed is down');
-  assert.equal(down.document.getElementById('kEvents').textContent, '—');
+  assert.equal(down.document.getElementById('kEvents').textContent, '-');
   down.close();
 });
 

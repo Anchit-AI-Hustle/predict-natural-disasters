@@ -5,7 +5,7 @@ const { queryOf } = require('./_lib/http.js');
  * Unified live global hazard feed.
  *
  * Every upstream is fetched independently and failures are isolated, so a
- * single provider outage degrades coverage instead of emptying the feed — and,
+ * single provider outage degrades coverage instead of emptying the feed - and,
  * critically, it never collapses the experimental outlook set down to a single
  * record, which is what happened when outlook generation depended on GDACS
  * alone.
@@ -81,7 +81,7 @@ async function timedFetch(url, opts) {
     if (!r.ok) {
       let detail = '';
       try { detail = (await r.text()).replace(/\s+/g, ' ').slice(0, 220); } catch (e) { /* body unreadable */ }
-      throw new Error('HTTP ' + r.status + (detail ? ' — ' + detail : ''));
+      throw new Error('HTTP ' + r.status + (detail ? ' - ' + detail : ''));
     }
     return o.text ? await r.text() : await r.json();
   } finally {
@@ -100,11 +100,11 @@ function tag(name, block) {
   return m ? decodeXml(m[1]).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 }
 
-/** Mean of a GeoJSON geometry's coordinates — good enough to place an alert polygon. */
+/** Mean of a GeoJSON geometry's coordinates - good enough to place an alert polygon. */
 /* A point guaranteed to lie inside the shape, which the mean of its vertices
    is not: for a C-shaped or multipart warning area the mean lands in the gap.
    That is tolerable for a map pin but not for the source link, which opens the
-   National Weather Service's point forecast for exactly that coordinate — from
+   National Weather Service's point forecast for exactly that coordinate - from
    outside the polygon it shows a location with no warning and omits the very
    alert the reader clicked through from.
 
@@ -114,7 +114,7 @@ function tag(name, block) {
    interior for any simple polygon. */
 /* Polygons, each kept as its exterior ring plus its holes. The first version
    of this flattened every ring into one list and accepted a point inside any
-   of them — so for a warning area with a hole, a point sitting in the hole
+   of them - so for a warning area with a hole, a point sitting in the hole
    passed, because it is also inside the exterior. GeoJSON defines a hole as
    outside the geometry, so that link could still open an unwarned location. */
 function polygonsOf(geometry) {
@@ -391,7 +391,7 @@ function spellUsPlaces(text) {
 
 /**
  * The part of a place after the last comma. For a United States record that is
- * a state, not a country — "Malibu, CA" was being counted as a country of its
+ * a state, not a country - "Malibu, CA" was being counted as a country of its
  * own, so the United States appeared fourteen times in the country total.
  */
 function placeFromTitle(title) {
@@ -493,7 +493,7 @@ function gdacsMeasurement(sd, eventType) {
  *
  * Coercing an absent field to 0 loses the difference between "the agency
  * reported no deaths" and "the agency reported nothing", and the page then
- * prints "Lives lost 0" — a claim nobody made. All 100 GDACS records in the
+ * prints "Lives lost 0" - a claim nobody made. All 100 GDACS records in the
  * live feed were carrying a manufactured zero this way.
  */
 function reportedCounts(specs) {
@@ -556,14 +556,14 @@ function mergeSeismicReports(events) {
     /* Only the lead record survives, so anything only one agency publishes
        would go with the discarded copies. GDACS earthquakes now carry a
        magnitude, which makes them eligible to lead a group, and a GDACS record
-       reporting deaths outranks the USGS one — taking the depth, the PAGER
+       reporting deaths outranks the USGS one - taking the depth, the PAGER
        assessment and the tsunami flag with it. The page then read "USGS issued
        no impact assessment" while naming USGS as corroboration. These are
        measurements of the same earthquake, taken from the highest-ranked
        member that published each one. */
     /* Impact counts belong here too. reportRank weighs them with a truthy
        test, so an agency reporting an explicit zero gets no credit for it and
-       need not lead — and that reported zero, which is a finding, would then
+       need not lead - and that reported zero, which is a finding, would then
        vanish with its record. Only fields the leader does not already have are
        taken, so no agency's figure overwrites another's. */
     for (const f of ['depthKm', 'pagerAlert', 'tsunamiFlag', 'magnitude',
@@ -642,7 +642,7 @@ function nearText(e) {
 function outlookTitle(e, windowWords) {
   const kind = e.type === 'Tropical Cyclone' ? 'Storm risk from ' + e.title
     : e.type + ' risk ' + nearText(e);
-  return kind.replace(/\s+$/, '') + ' — ' + windowWords + ' forecast';
+  return kind.replace(/\s+$/, '') + ' - ' + windowWords + ' forecast';
 }
 
 /* ------------------------------------------------ plain names and places */
@@ -1075,7 +1075,7 @@ async function handler(req, res) {
       forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
       /* The feed itself is recomputed from the upstream sources whenever the
          shared copy is more than 30 seconds old (see the handler's headers). What runs
-         on a schedule is the written record — the ledger and the change log —
+         on a schedule is the written record - the ledger and the change log -
          and that is described by refreshRecorded, measured rather than
          declared. This field used to state a five-minute rate, which was the cron's
          request and about a fortieth of what GitHub actually granted it. */
@@ -1191,7 +1191,7 @@ async function handler(req, res) {
 
   const jobs = [];
 
-  // 1. GDACS — multi-hazard global alerts: one hazard at a time, plus what is
+  // 1. GDACS - multi-hazard global alerts: one hazard at a time, plus what is
   //    active now; the app endpoint and then RSS if the searches fail.
   //
   // It used to be one question - every hazard, every alert level, the last
@@ -1263,7 +1263,7 @@ async function handler(req, res) {
     }
   })());
 
-  // 2. USGS — earthquakes, M2.5+ over the last 7 days.
+  // 2. USGS - earthquakes, M2.5+ over the last 7 days.
   jobs.push((async () => {
     try {
       const j = await timedFetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson');
@@ -1282,8 +1282,8 @@ async function handler(req, res) {
           lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
           startedAt: new Date(f.properties.time).toISOString(),
           updated: new Date(f.properties.updated || f.properties.time).toISOString(),
-          details: 'Magnitude ' + (mag === null ? '—' : mag) + ' · depth ' +
-            (f.geometry.coordinates[2] == null ? '—' : f.geometry.coordinates[2]) + ' km' +
+          details: 'Magnitude ' + (mag === null ? '-' : mag) + ' · depth ' +
+            (f.geometry.coordinates[2] == null ? '-' : f.geometry.coordinates[2]) + ' km' +
             (f.properties.tsunami ? ' · tsunami flag issued' : '') +
             (f.properties.alert
               ? ' · USGS PAGER impact alert: ' + String(f.properties.alert).toLowerCase()
@@ -1299,7 +1299,7 @@ async function handler(req, res) {
     } catch (e) { mark('usgs', false, { error: String(e.message || e) }); }
   })());
 
-  // 3. NASA EONET — satellite-observed open natural events.
+  // 3. NASA EONET - satellite-observed open natural events.
   jobs.push((async () => {
     try {
       const j = await timedFetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=300');
@@ -1317,7 +1317,7 @@ async function handler(req, res) {
           id: 'eonet-' + v.id,
           source: 'NASA EONET', sourceType: 'official', type: tc ? 'Tropical Cyclone' : normalizeType(cat),
           // "RX" is fire-management shorthand for a prescribed fire, so EONET titles
-          // read "Prescribed Fire RX Tom Green" — the same words twice, one of them
+          // read "Prescribed Fire RX Tom Green" - the same words twice, one of them
           // an abbreviation.
           title: eonetTitle,
           country: eonetPlace ? eonetPlace.country : '',
@@ -1355,7 +1355,7 @@ async function handler(req, res) {
     return '(' + BASINS[m[1]] + ' system ' + Number(m[2]) + ')';
   };
 
-  // 4. NOAA National Hurricane Center — active tropical cyclones.
+  // 4. NOAA National Hurricane Center - active tropical cyclones.
   jobs.push((async () => {
     try {
       const j = await timedFetch('https://www.nhc.noaa.gov/CurrentStorms.json');
@@ -1386,9 +1386,9 @@ async function handler(req, res) {
           alertBasis: 'derived-from-intensity',
           lat, lon,
           updated: s.lastUpdate || now.toISOString(),
-          details: 'Active system · maximum sustained wind ' + (intensity === null ? '—' : intensity + ' kt') +
+          details: 'Active system · maximum sustained wind ' + (intensity === null ? '-' : intensity + ' kt') +
             (s.pressure ? ' · minimum pressure ' + s.pressure + ' mb' : '') +
-            (s.movementDir != null ? ' · moving ' + s.movementDir + '° at ' + (s.movementSpeed || '—') + ' kt' : ''),
+            (s.movementDir != null ? ' · moving ' + s.movementDir + '° at ' + (s.movementSpeed || '-') + ' kt' : ''),
           sourceUrl: (s.publicAdvisory && s.publicAdvisory.url) || 'https://www.nhc.noaa.gov/',
           /* The measures the hurricane centre publishes, as fields.
            *
@@ -1411,7 +1411,7 @@ async function handler(req, res) {
     } catch (e) { mark('nhc', false, { error: String(e.message || e) }); }
   })());
 
-  // 5. NOAA / NWS — active severe and extreme US warnings with a mapped area.
+  // 5. NOAA / NWS - active severe and extreme US warnings with a mapped area.
   //    A single fixed query is brittle: one parameter the API rejects takes the
   //    whole provider offline with a bare 400. Walk a ladder instead.
   jobs.push((async () => {
@@ -1441,7 +1441,7 @@ async function handler(req, res) {
         /* The zone's shape, not only its middle. An alert with no inline
            geometry still gets its point-forecast link from somewhere, and
            passing a null geometry to insidePoint made it accept the mean
-           unchecked — so a concave or multipart forecast zone could still
+           unchecked - so a concave or multipart forecast zone could still
            send the reader to a place that is not under the warning. */
         const zoneGeometry = new Map();
         /*
@@ -1513,7 +1513,7 @@ async function handler(req, res) {
             id: 'nws-' + (p.id || f.id),
             source: 'NOAA / National Weather Service', sourceType: 'official',
             type: normalizeType(p.event, p.event),
-            title: p.event + (p.areaDesc ? ' — ' + spellUsPlaces(String(p.areaDesc).split(';')[0].trim()) : ''),
+            title: p.event + (p.areaDesc ? ' - ' + spellUsPlaces(String(p.areaDesc).split(';')[0].trim()) : ''),
             country: 'United States', region: spellUsPlaces(p.areaDesc || ''),
             /* The severity the alert itself carries, in this site's colours. */
             alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
@@ -1704,7 +1704,7 @@ async function handler(req, res) {
           updated: it.published ? new Date(it.published).toISOString() : now.toISOString(),
           details: 'UN OCHA ReliefWeb humanitarian disaster record. ' +
             (it.summary ? it.summary + ' ' : '') +
-            'Mapped at country level, not at an incident location — open the source record for the affected areas, ' +
+            'Mapped at country level, not at an incident location - open the source record for the affected areas, ' +
             'situation reports, appeals and response updates.',
           sourceUrl: it.link,
           humanitarian: true
@@ -1718,7 +1718,7 @@ async function handler(req, res) {
     }
   })());
 
-  // 7. USGS Volcano Hazards Program — volcanoes at elevated alert level.
+  // 7. USGS Volcano Hazards Program - volcanoes at elevated alert level.
   //    The elevated-volcanoes payload is a list of notices: no coordinates, and
   //    `notice_data` is a URL to the full notice rather than the data itself.
   //    Fetch those few notices to place each volcano.
@@ -1809,7 +1809,7 @@ async function handler(req, res) {
           id: 'usgs-volcano-' + (v.vnum || v.volcanoId || name),
           source: 'USGS Volcano Hazards Program', sourceType: 'official', type: 'Volcano',
           /* USGS writes the level in capitals; it is a word, not a shout. */
-          title: name + ' volcano — ' + (level
+          title: name + ' volcano - ' + (level
             ? 'alert level ' + level.charAt(0) + level.slice(1).toLowerCase() : 'raised alert level'),
           country: 'United States', region: v.obs_fullname || v.observatory || v.obs_abbr || '',
           alert: level === 'WARNING' ? 'Red' : level === 'WATCH' ? 'Orange' : 'Green',
@@ -1842,7 +1842,7 @@ async function handler(req, res) {
     } catch (e) { mark('usgs_volcano', false, { error: String(e.message || e) }); }
   })());
 
-  // 8. EMSC / seismicportal — independent seismic cross-check.
+  // 8. EMSC / seismicportal - independent seismic cross-check.
   jobs.push((async () => {
     try {
       const j = await timedFetch('https://www.seismicportal.eu/fdsnws/event/1/query?limit=80&format=json&minmag=4.5');
@@ -1856,14 +1856,14 @@ async function handler(req, res) {
         push({
           id: 'emsc-' + (p.unid || f.id || n),
           source: 'EMSC', sourceType: 'official', type: 'Earthquake',
-          title: 'M ' + (mag === null ? '—' : mag.toFixed(1)) + ' — ' + (p.flynn_region || 'earthquake'),
+          title: 'M ' + (mag === null ? '-' : mag.toFixed(1)) + ' - ' + (p.flynn_region || 'earthquake'),
           country: '', region: p.flynn_region || '',
           alert: 'Green',
           lat, lon,
           startedAt: p.time || null,
           updated: p.lastupdate || p.time || now.toISOString(),
-          details: 'Magnitude ' + (mag === null ? '—' : mag) + ' ' + (p.magtype || '') +
-            ' · depth ' + (p.depth == null ? '—' : p.depth + ' km') + ' · reported by ' + (p.auth || 'EMSC') + '. EMSC publishes detections, not impact alert levels.',
+          details: 'Magnitude ' + (mag === null ? '-' : mag) + ' ' + (p.magtype || '') +
+            ' · depth ' + (p.depth == null ? '-' : p.depth + ' km') + ' · reported by ' + (p.auth || 'EMSC') + '. EMSC publishes detections, not impact alert levels.',
           sourceUrl: p.unid ? 'https://www.emsc-csem.org/Earthquake_information/earthquake.php?id=' + p.unid : 'https://www.emsc-csem.org/',
           magnitude: mag, depthKm: num(p.depth)
         });
@@ -1885,7 +1885,7 @@ async function handler(req, res) {
   const hasNepal = out.events.some(e => /nepal/i.test([e.title, e.country, e.region].join(' ')) && /flood/i.test(e.type));
   if (!hasNepal) push({
     id: 'gdacs-FL-1104124', source: 'GDACS verified snapshot', sourceType: 'official', type: 'Flood',
-    title: 'Nepal flood — Bagmati / Rasuwa impact and recovery',
+    title: 'Nepal flood - Bagmati / Rasuwa impact and recovery',
     country: 'Nepal', region: 'Bagmati Province · Rasuwagadhi · Bhote Koshi · Trishuli corridor',
     alert: 'Red', lat: 28.18, lon: 85.39,
     startedAt: '2026-08-26T00:00:00Z', updated: '2026-09-05T18:50:00Z',
@@ -2045,12 +2045,12 @@ async function handler(req, res) {
       /* Said as what the level rests on. A storm's colour is this site's
          reading of its wind speed, not an alert anyone issued. */
       confidence: e.alertBasis === 'derived-from-intensity'
-        ? (e.alert === 'Red' ? 'Higher — a major storm (category 3 or stronger)'
-          : e.alert === 'Orange' ? 'Moderate — a hurricane-strength storm'
-            : 'Watch — a weaker storm')
-        : (e.alert === 'Red' ? 'Higher — the agency issued its highest (red) alert'
-          : e.alert === 'Orange' ? 'Moderate — the agency issued an orange alert'
-            : 'Watch — the agency issued a lower-level alert'),
+        ? (e.alert === 'Red' ? 'Higher - a major storm (category 3 or stronger)'
+          : e.alert === 'Orange' ? 'Moderate - a hurricane-strength storm'
+            : 'Watch - a weaker storm')
+        : (e.alert === 'Red' ? 'Higher - the agency issued its highest (red) alert'
+          : e.alert === 'Orange' ? 'Moderate - the agency issued an orange alert'
+            : 'Watch - the agency issued a lower-level alert'),
       evidence: 'Based on the ' + e.source + ' report “' + e.title + '”' +
         (e.alert ? ' (' + e.alert.toLowerCase() + ' level)' : '') + ', last updated ' + utcText(e.updated) + '.',
       sourceUrl: e.sourceUrl || '',
@@ -2107,7 +2107,7 @@ async function handler(req, res) {
       id: outlookId('aftershock-' + e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,
       sourceType: 'forecast', type: 'Earthquake aftershock sequence',
-      title: 'Aftershock risk ' + nearText(e) + ' — 7-day forecast',
+      title: 'Aftershock risk ' + nearText(e) + ' - 7-day forecast',
       country: e.country || '', region: e.region || e.sourceTitle || e.title || '',
       alert: num(e.magnitude) >= 6.5 ? 'High' : 'Moderate',
       lat: e.lat, lon: e.lon,
@@ -2191,8 +2191,8 @@ async function handler(req, res) {
     if (where.sea) e.sea = where.sea;
   }
 
-  /* Merging can raise a record's alert — a leader that inherits a graver
-     assessment from a discarded member — and the feed was sorted before that
+  /* Merging can raise a record's alert - a leader that inherits a graver
+     assessment from a discarded member - and the feed was sorted before that
      happened, so a newly Red record kept the position it held while Green.
      The merge itself now runs before the outlooks are derived, above. */
   out.events = out.events.sort(byAlertThenTime);
@@ -2766,7 +2766,7 @@ async function handler(req, res) {
 
   /* A forecast whose window has already closed is history, not an outlook.
      Signal-derived outlooks are dropped once their window ends, but the frozen
-     ND-001 benchmark is deliberately kept so its grading stays visible — and it
+     ND-001 benchmark is deliberately kept so its grading stays visible - and it
      was being counted among the active forecasts four days after its window
      closed. It is marked instead of removed. */
   for (const e of out.events) {
@@ -2799,7 +2799,7 @@ async function handler(req, res) {
        site looks further ahead than this, and the absence of a forecast beyond
        it is a limit of the method, not a forecast of calm. */
     note: 'No outlook on this site extends past the furthest window end. ' +
-      'Beyond it there is no forecast at all — which is not the same as a forecast of no hazard.'
+      'Beyond it there is no forecast at all - which is not the same as a forecast of no hazard.'
   } : null;
 
   out.meta.hazardTypeCount = new Set(out.events.map(e => e.type).filter(Boolean)).size;

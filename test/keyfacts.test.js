@@ -2,8 +2,8 @@
 /**
  * What each hazard has to say about itself.
  *
- * The feed carried the same four fields for every record — deaths, displaced,
- * affected, alert — so an earthquake page never showed a magnitude and a
+ * The feed carried the same four fields for every record - deaths, displaced,
+ * affected, alert - so an earthquake page never showed a magnitude and a
  * wildfire page never showed how much had burned, even where the upstream
  * record carried the number. GDACS in particular publishes its measurement as
  * a structured object whose unit changes with the hazard, and the API was
@@ -15,7 +15,7 @@
  * fields are shown and marked not reported instead.
  *
  * And the homepage headed its hazard panel "Forecasts by Hazard Type" while
- * counting every tracked record under it — so 370 observed earthquakes read as
+ * counting every tracked record under it - so 370 observed earthquakes read as
  * 370 earthquake forecasts. Nobody forecasts the onset of an earthquake, and
  * the panel now says what it is actually counting.
  */
@@ -322,7 +322,7 @@ test('a reported zero reads the same in the grid and in the panel below it', asy
   });
   const doc = r.document;
   // The impact panel tested `+v > 0`, so a source that reported zero deaths was
-  // shown as having reported nothing — directly under a grid showing the zero.
+  // shown as having reported nothing - directly under a grid showing the zero.
   const panel = (doc.getElementById('deaths') || {}).textContent;
   const grid = doc.getElementById('keyFacts').textContent;
   r.close();
@@ -455,7 +455,7 @@ const quake = (o) => Object.assign({
 test('a merge never lowers the graver of two agencies’ assessments', () => {
   // Carrying the PAGER assessment onto a non-USGS leader also recomputed its
   // alert from that assessment alone, so a GDACS Red paired with a yellow PAGER
-  // was published as Orange — a published authority alert, downgraded.
+  // was published as Orange - a published authority alert, downgraded.
   const [red] = mergeSeismicReports([
     quake({ id: 'g', source: 'GDACS', alert: 'Red', deaths: 21 }),
     quake({ id: 'u', source: 'USGS', alert: 'Orange', pagerAlert: 'yellow', depthKm: 11 })
@@ -475,7 +475,7 @@ test('a merge never lowers the graver of two agencies’ assessments', () => {
 
 test('a merge keeps an impact figure the leader never reported, zero included', () => {
   // reportRank weighs impact with a truthy test, so an agency reporting an
-  // explicit zero gets no credit for it and need not lead — and that reported
+  // explicit zero gets no credit for it and need not lead - and that reported
   // zero, which is a finding, went with its record.
   const [out] = mergeSeismicReports([
     quake({ id: 'g', source: 'GDACS', alert: 'Green', deaths: 0, affected: 0 }),
@@ -580,7 +580,7 @@ test('no record reports a figure as absent while its own narrative states it', a
     if (!mag) continue;
     if (!mag.reported) {
       contradictions.push(e.id + ': text says M' + quoted[1] + ', grid says "' +
-        mag.label + ' — Not reported"');
+        mag.label + ' - Not reported"');
     }
   }
   assert.deepEqual(contradictions, [],
@@ -657,7 +657,7 @@ test('every spelling of a wind unit converts to knots, and an unknown one is ref
     ';({knotsFactor: knotsFactor, hectaresFactor: hectaresFactor})');
 
   // 120 units of wind, in each spelling. GDACS is reported to label this Kph,
-  // which a test for the substring "km/h" does not match — so the value passed
+  // which a test for the substring "km/h" does not match - so the value passed
   // through as 120 knots and a tropical storm was published as a category 4.
   const kt = u => { const f = knotsFactor(u); return f === null ? null : Math.round(120 * f); };
   for (const u of ['Kph', 'kph', 'KPH', 'km/h', 'KM/H', 'kmh', 'kmph', 'km/hr']) {
@@ -795,7 +795,7 @@ test('a merged record keeps the gravest alert any member published', () => {
 
 test('an alert raised by the merge is ordered as the alert it became', async () => {
   // The feed is sorted by alert before records are merged, and a leader that
-  // inherits a graver assessment changes alert after that — so a newly Red
+  // inherits a graver assessment changes alert after that - so a newly Red
   // record kept the position it held while it was Green.
   const { events } = await feed();
   const RANK = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };

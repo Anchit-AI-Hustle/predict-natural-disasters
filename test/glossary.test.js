@@ -24,7 +24,7 @@ test('the stateless rules expand the forms these feeds actually publish', () => 
     ['M 6.5 - 126 km NNE of Teluknaga, Indonesia', 'Magnitude 6.5 - 126 km north-north-east of Teluknaga, Indonesia'],
     ['Magnitude 6.5 mw · depth 369.2 km', 'Moment magnitude 6.5 · depth 369.2 km'],
     ['Magnitude 5.2 mb · depth 10 km', 'Body-wave magnitude 5.2 · depth 10 km'],
-    ['Flood Warning — Citrus, FL', 'Flood Warning — Citrus, Florida'],
+    ['Flood Warning - Citrus, FL', 'Flood Warning - Citrus, Florida'],
     ['40 km W of Concepcion, Chile', '40 km west of Concepcion, Chile']
   ];
   for (const [input, expected] of cases) assert.equal(glossary.expandAlways(input), expected);

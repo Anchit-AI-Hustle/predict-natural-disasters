@@ -33,7 +33,7 @@ function draw(){const a=PND.savedLocations();
   saved.querySelectorAll('.card').forEach((el,i)=>{const x=a[i];if(!x)return;el.insertAdjacentHTML('beforeend',`<div class="provenance">${PND.esc(summarise(x))}</div>`)});
   risks.innerHTML=PNDHazards.RISK_BANDS.map(b=>bandSection(b,rows.filter(r=>r.r.band===b.key))).join('');
   /* A country-wide outlook applies to a country, and a place saved as bare
-     coordinates has none recorded — so those outlooks can be neither shown
+     coordinates has none recorded - so those outlooks can be neither shown
      nor ruled out for it. Said once, with the remedy, rather than guessed at
      per row. */
   const wide=events.filter(e=>(e.forecast||e.isForecast)&&e.forecastScope==='country'&&e.country).length;
@@ -54,7 +54,7 @@ let foundCountry='';
 let foundCountryCode='';
 /* The geocoded country belongs to the coordinates it came back with, and to
    nothing else. It survived any later edit, so searching Paris and then
-   pasting Tokyo's coordinates saved Tokyo as being in France — and a
+   pasting Tokyo's coordinates saved Tokyo as being in France - and a
    country-wide French outlook would then have been shown for it while every
    Japanese one was withheld. Any change to the place clears it. */
 ['input','change'].forEach(ev=>[placeName,lat,lon].forEach(f=>f.addEventListener(ev,()=>{

@@ -4,7 +4,7 @@
  * Fixture quakes are dated relative to now, not to fixed days in September.
  *
  * They used to carry absolute timestamps, and an aftershock outlook runs seven
- * days from its mainshock — so on 2026-09-20T22:00Z the last of the three
+ * days from its mainshock - so on 2026-09-20T22:00Z the last of the three
  * windows closed, the outlooks stopped being generated, and "M5.5+ quakes
  * should produce an aftershock-sequence outlook" began failing for everyone,
  * on a suite nobody had touched. A fixture that expires is a test that reports
@@ -201,7 +201,7 @@ const FIXTURES = {
     }
   ],
 
-  // Coordinates live one fetch away, nested inside the notice body — and an
+  // Coordinates live one fetch away, nested inside the notice body - and an
   // observatory notice can reference more than one volcano, which is what put
   // Great Sitkin at Shishaldin's coordinates in production.
   usgsVolcanoNotice: {
@@ -210,7 +210,7 @@ const FIXTURES = {
       observatory: { obs_abbr: 'avo', name: 'Alaska Volcano Observatory' },
       volcanoes: [
         // Order matters: a depth-first walk reaches Shishaldin's pair first, so
-        // "take the first coordinates found" mislabels Great Sitkin — exactly
+        // "take the first coordinates found" mislabels Great Sitkin - exactly
         // what production showed.
         { volcano_name: 'Great Sitkin', vnum: '311120', latitude: 52.076, longitude: -176.13 },
         { volcano_name: 'Shishaldin', vnum: '311360', latitude: 54.755, longitude: -163.971 }

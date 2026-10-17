@@ -124,7 +124,7 @@ test('the map still has a height floor, which is why it has to be allowed to shr
   const map = blocksFor(css, '.map').find(b => declares(b, 'aspect-ratio'));
   assert.ok(map, 'control: .map should still be sized by an aspect ratio');
   assert.ok(declares(map, 'min-height'),
-    'control: .map should still have a height floor — if it does not, the shrink rules above are no longer load-bearing');
+    'control: .map should still have a height floor - if it does not, the shrink rules above are no longer load-bearing');
   const ratio = valueOf(map, 'aspect-ratio');
   const floor = Number(String(valueOf(map, 'min-height')).replace('px', ''));
   assert.ok(floor > 0 && /2\s*\/\s*1/.test(ratio),

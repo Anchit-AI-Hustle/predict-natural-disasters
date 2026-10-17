@@ -120,7 +120,7 @@ test('the source-health line counts against the real number of providers', async
   assert.ok(m || /sources are down/.test(line), 'no source count in: ' + line.trim());
   if (m) {
     const [, online, total] = m.map(Number);
-    assert.ok(online <= total, 'reported ' + line.trim() + ' — more online than exist');
+    assert.ok(online <= total, 'reported ' + line.trim() + ' - more online than exist');
     assert.ok(total >= 3, 'implausible provider total in: ' + line.trim());
   }
 });

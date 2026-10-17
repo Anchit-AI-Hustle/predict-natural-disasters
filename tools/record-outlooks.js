@@ -10,7 +10,7 @@
  * wrong.
  *
  * The ledger is append-only and lives in git, so the record of what was
- * forecast and when is auditable and tamper-evident by construction — a better
+ * forecast and when is auditable and tamper-evident by construction - a better
  * fit for a verification record than a mutable store.
  *
  *   node tools/record-outlooks.js <events.json> <ledger.json>
@@ -49,7 +49,7 @@ const ledger = G.readLedger(ledgerPath, Array.isArray, () => []);
  * the moment its window opens.
  *
  * When the signal behind it is updated the window moves with it, and that is
- * a new claim about a new period — separately gradeable, not an edit of the
+ * a new claim about a new period - separately gradeable, not an edit of the
  * old one. The same is true of the rest: a window that now ends eight days
  * later, or a geography that has moved to another country, is a different
  * claim under the same id, and recording nothing for it leaves the revised

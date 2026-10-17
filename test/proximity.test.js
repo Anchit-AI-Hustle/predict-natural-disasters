@@ -421,8 +421,8 @@ test('a browser notification does fire for an incident next door', async () => {
 
 test('a country-wide outlook applies to the country, not to a radius', async () => {
   /* A United States outlook anchored in Florida was dropped for a home in
-     California — 3,500 km away and squarely inside the area the outlook
-     names — because a forecast with no geometry was matched on distance to
+     California - 3,500 km away and squarely inside the area the outlook
+     names - because a forecast with no geometry was matched on distance to
      whichever point it happened to be anchored at. */
   const outlook = { id: 'OUT-us', forecast: true, forecastScope: 'country',
     country: 'United States', type: 'Wildfire', lat: 27.9, lon: -81.7 };
@@ -480,7 +480,7 @@ test('a country-wide outlook is not lost to the language the place was saved in'
      being wrong out loud. */
   const H = require(path.join(ROOT, 'hazard-model.js'));
   const outlook = { forecast: true, forecastScope: 'country', country: 'Germany',
-    type: 'Severe Storm', title: '2-day Severe Storm risk outlook \u2014 Germany',
+    type: 'Severe Storm', title: '2-day Severe Storm risk outlook - Germany',
     lat: 50.1, lon: 8.7 };
   const berlin = { lat: 52.52, lon: 13.40 };
 
@@ -527,7 +527,7 @@ test('a place with no coordinates is not measured from Null Island', () => {
 
 test('the country a place was found in is forgotten when the place changes', async () => {
   /* The geocoded country survived any later edit, so searching Paris and then
-     pasting Tokyo's coordinates saved Tokyo as being in France — and a
+     pasting Tokyo's coordinates saved Tokyo as being in France - and a
      country-wide French outlook would then be shown for it while every
      Japanese one was withheld. */
   const r = await renderPage('personal-risk.html', { waitFor: d => !!d.getElementById('placeName') });

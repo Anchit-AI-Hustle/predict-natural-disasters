@@ -3,7 +3,7 @@
 /**
  * Does any page scroll sideways?
  *
- * jsdom has no layout engine — every rectangle it reports is zero — so the
+ * jsdom has no layout engine - every rectangle it reports is zero - so the
  * offline suite cannot answer this, and for a long time nothing did. Measured
  * in a real browser, every page in this repository overflowed its viewport
  * somewhere: 252px on /alerts and /forecasts at 360px, 230px on the homepage
@@ -118,7 +118,7 @@ const server = http.createServer(async (req, res) => {
       if (result.over > 0) {
         failures++;
         console.log('  FAIL ' + label + result.over + 'px of sideways scroll' +
-          (result.worst ? ' — furthest out: ' + result.worst.what : ''));
+          (result.worst ? ' - furthest out: ' + result.worst.what : ''));
       } else {
         console.log('  ok   ' + label + 'no sideways scroll');
       }

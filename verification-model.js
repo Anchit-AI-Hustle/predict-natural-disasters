@@ -8,7 +8,7 @@
  *   A forecast is compared only against what it said when it was frozen. Its
  *   hazard, its geography, its window, its threshold and the moment it can be
  *   shown to have existed. None of those may be reconsidered once the outcome
- *   is known — widening a geography or relaxing a threshold after seeing where
+ *   is known - widening a geography or relaxing a threshold after seeing where
  *   the disaster landed turns verification into curve-fitting.
  *
  *   The tolerances are published, fixed and applied to every forecast alike.
@@ -70,8 +70,8 @@
    * Frozen outlooks name a country, a region or an event and never named a
    * radius. Grading one needs a tolerance, and taking it from the outcome is
    * the move this file exists to prevent, so it is fixed per hazard from how
-   * far that hazard's effects reach from its centre — not from any particular
-   * case — published on every record, and changed only by changing
+   * far that hazard's effects reach from its centre - not from any particular
+   * case - published on every record, and changed only by changing
    * VERIFICATION_VERSION.
    */
   var GEOGRAPHY_TOLERANCE_KM = {

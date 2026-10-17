@@ -1,7 +1,7 @@
 /* The search rules, in one place and loadable on their own.
    portal.js delegates to this, and the pages that do not load portal.js
    (the dashboard) load only this, so no page has to keep its own copy of
-   the matching rules — which is how the field lists drifted apart in the
+   the matching rules - which is how the field lists drifted apart in the
    first place. */
 /* Wrapped, because a top-level const in a classic script becomes a global
    binding: an unwrapped `const S` here collided with the same name in a
@@ -91,7 +91,7 @@ const S={
       .filter(v=>v!==undefined&&v!==null&&v!=='').join(' ').toLowerCase();
     return terms.every(w=>t.indexOf(w)>=0);
   },
-  /* An empty result is ambiguous — a broken box looks exactly like a feed with
+  /* An empty result is ambiguous - a broken box looks exactly like a feed with
      nothing in it. Say which one it is, and say it from the data rather than
      from a guess. */
   emptyHtml(query,pool,all,noun){

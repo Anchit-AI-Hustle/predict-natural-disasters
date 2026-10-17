@@ -28,7 +28,7 @@ function pageNote(){
    what overlaps and what is about to expire can be read at a glance -- which a
    grid of cards, every one of them starting "just now", cannot show. */
 const DAY=864e5;
-function dayRange(a,b){const f=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short'});const x=f(a),y=f(b);return x===y?x:x+' \u2013 '+y}
+function dayRange(a,b){const f=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short'});const x=f(a),y=f(b);return x===y?x:x+' - '+y}
 function dayLabel(t){const d=new Date(t);return{dow:d.toLocaleDateString(undefined,{weekday:'short'}),day:d.getDate(),mon:d.toLocaleDateString(undefined,{month:'short'})}}
 function timeline(list){
  if(!list.length)return '<div class="card"><b>No forecasts to show for these dates.</b><p class="muted">Try removing a filter, or refresh the page.</p></div>';
@@ -57,7 +57,7 @@ function timeline(list){
       `${PND.riskTag(e)}`+
       `<span class="tl-where">${where}</span></a>`+
       `<div class="tl-track"><a class="tl-bar ${cls}${live?' is-live':''}" style="left:${left}%;width:${width}%" `+
-      `href="${PND.eventUrl(e)}" title="${PND.esc(PND.titleOf(e))}${when?' — '+when:''}">`+
+      `href="${PND.eventUrl(e)}" title="${PND.esc(PND.titleOf(e))}${when?' - '+when:''}">`+
       `<span>${PND.esc(dayRange(s,en))}</span></a>`+
       `<div class="tl-now" style="left:${pct(now)}%"></div></div></div>`}).join('')+'</div>'}).join('');
  return '<div class="tl">'+head+rows+'</div>'+
@@ -153,7 +153,7 @@ cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="even
 if(forecastMode)PND.fillHazardSelect(document.getElementById('type'),all.filter(keep));
 statusLine.textContent=mode==='resources'
   ?`${PND.statusText(d.meta)} · sources checked ${PND.fmtDate((d.meta&&d.meta.scan&&d.meta.scan.scanTimestamp)||d.generatedAt)} · updated ${PND.age(d.generatedAt)}`
-  :`${PND.statusText(d.meta)} · ${countText(shown,cfg[2])} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name — A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name — Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
+  :`${PND.statusText(d.meta)} · ${countText(shown,cfg[2])} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name - A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name - Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
 /* Looked up rather than assumed: the sources view has no search box and no
    hazard or level filter, because on that page they filtered nothing and a
    control that cannot be operated is not a control. */

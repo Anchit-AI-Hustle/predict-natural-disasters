@@ -30,7 +30,7 @@ test('no earthquake alert level is derived from magnitude', () => {
   const api = read('api/events.js');
   const bad = [...api.matchAll(/mag[a-zA-Z]*\s*>=?\s*[\d.]+\s*\?\s*'(Red|Orange)'/g)].map(m => m[0]);
   assert.deepEqual(bad, [],
-    'magnitude is a measurement, not an alert level — an agency has to issue one:\n' + bad.join('\n'));
+    'magnitude is a measurement, not an alert level - an agency has to issue one:\n' + bad.join('\n'));
 });
 
 test('USGS earthquakes take their alert level from the PAGER field', () => {
@@ -119,7 +119,7 @@ test('no page hard-codes how many upstream providers exist', () => {
   const offenders = [];
   for (const p of PAGES) {
     const s = read(p);
-    // e.g. filter(x => x && x.ok).length + '/3'  — numerator from the feed,
+    // e.g. filter(x => x && x.ok).length + '/3'  - numerator from the feed,
     // denominator typed in, so a healthy feed read "7/3".
     for (const m of s.matchAll(/\.length\s*\+\s*['"]\/\d+['"]/g)) offenders.push(p + ': ' + m[0]);
     for (const m of s.matchAll(/state\.feeds\s*\+\s*['"]\/\d+['"]/g)) offenders.push(p + ': ' + m[0]);
@@ -146,7 +146,7 @@ test('a page that calls PND also loads portal.js', () => {
   for (const p of PAGES) {
     const s = read(p);
     /* Both sides of this check were wrong. It looked for the bare string
-       "portal.js", so a code comment naming the file satisfied it — and
+       "portal.js", so a code comment naming the file satisfied it - and
        home-v3.html called PND.matches with no portal.js loaded while this
        test passed. It must match a script tag, and allow the cache-busting
        query string that home.html and home-v2.html carry. And the calls must
@@ -266,7 +266,7 @@ test('a chip count equals the count on the page it opens', async () => {
     const page = await renderPage('hazard-detail.html', {
       search: '?type=' + encodeURIComponent(chip.name),
       waitFor: d => (d.getElementById('kEvents') || {}).textContent &&
-        d.getElementById('kEvents').textContent !== '—'
+        d.getElementById('kEvents').textContent !== '-'
     });
     const shown = Number(page.document.getElementById('kEvents').textContent.replace(/\D+/g, ''));
     const heading = page.document.getElementById('title').textContent;

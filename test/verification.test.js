@@ -66,8 +66,8 @@ test('a window is stated as a start and a duration, never a date range', () => {
     // Comments are not rendered, and a comment explaining the rule should not
     // trip the rule.
     const src = read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
-    // "13–16 Sep" / "13-16 September": two day numbers joined by a dash.
-    for (const m of src.matchAll(/\b\d{1,2}\s?[–—-]\s?\d{1,2}\s+(Sep|Oct|Nov|Dec|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug)/g)) {
+    // "13-16 Sep" / "13-16 September": two day numbers joined by a dash.
+    for (const m of src.matchAll(/\b\d{1,2}\s?[\u2013\u2014-]\s?\d{1,2}\s+(Sep|Oct|Nov|Dec|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug)/g)) {
       ranges.push(f + ': "' + m[0] + '"');
     }
     if (/Window ends/.test(src)) ranges.push(f + ': still says "Window ends"');
@@ -121,6 +121,6 @@ test('a forecast card states when it starts and how long it is expected to run',
   const text = r.document.getElementById('cards').textContent;
   assert.match(text, /Starts /, 'no start stated on the forecast cards');
   assert.match(text, /lasts \d|length not stated/, 'no duration stated');
-  assert.ok(!/\d{1,2}\s?[–—]\s?\d{1,2}\s+\w{3}/.test(text), 'a date range is still rendered');
+  assert.ok(!/\d{1,2}\s?[\u2013\u2014]\s?\d{1,2}\s+\w{3}/.test(text), 'a date range is still rendered');
   r.close();
 });

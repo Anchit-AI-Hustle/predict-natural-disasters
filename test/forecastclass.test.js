@@ -373,7 +373,7 @@ test('the published hit rate is not a prediction hit rate', async () => {
 
 test('the accuracy page separates predictions from conditional forecasts', async () => {
   const r = await renderPage('accuracy.html', {
-    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014'
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-'
   });
   const get = id => (r.document.getElementById(id) || {}).textContent;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));

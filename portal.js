@@ -26,11 +26,11 @@ const PND={
     if(r&&c&&!r.toLowerCase().includes(c.toLowerCase()))return r+', '+c;
     return r||c||fallback;},
   /* A forecast's name as a reader should see it. Forecasts recorded before
-     September 2026 were titled "3-day Flood risk outlook — Nepal", and the
+     September 2026 were titled "3-day Flood risk outlook - Nepal", and the
      record keeps them as written; this only changes how that name is shown. */
-  titleOf(e){const t=String((e&&e.title)||'');let m=/^(\d+)-(day|hour) (.+?) risk outlook — (.+)$/.exec(t);
-    if(m)return m[3]+' risk in '+m[4]+' — '+m[1]+'-'+m[2]+' forecast';
-    m=/^Aftershock-sequence outlook — (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^\d/.test(m[1])?'':'near ')+m[1]+' — 7-day forecast';
+  titleOf(e){const t=String((e&&e.title)||'');let m=/^(\d+)-(day|hour) (.+?) risk outlook - (.+)$/.exec(t);
+    if(m)return m[3]+' risk in '+m[4]+' - '+m[1]+'-'+m[2]+' forecast';
+    m=/^Aftershock-sequence outlook - (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^\d/.test(m[1])?'':'near ')+m[1]+' - 7-day forecast';
     return t;},
   /* How many countries a list names. A drought's country field lists every
      country it covers, and counting that string as one country - and a
@@ -51,7 +51,7 @@ const PND={
   qs(k){return new URLSearchParams(location.search).get(k)||this.pathParam(k)||'';},
   getTZ(){return this.timezone;},
   tzLabel(tz=this.timezone){const aliases={'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'};return aliases[tz]||tz;},
-  fmtDate(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   /* A forecast window edge. Whole-day windows are stored as UTC midnight to
      23:59:59Z, or midnight to midnight with the end excluded, and fmtDate
      turned each edge into a time of day in the reader's zone: "19 Oct to
@@ -61,12 +61,12 @@ const PND={
      day shown is the one before. `other` is the window's other edge (a
      midnight opening a window that ends at a real moment is a moment too);
      `role` is 'end' for an end. Any other edge keeps its time. */
-  fmtWhen(v,other,role){if(!v)return '\u2014';
+  fmtWhen(v,other,role){if(!v)return '-';
     const edge=x=>{const m=/^(\d{4})-(\d\d)-(\d\d)T(00:00:00|23:59:59)(\.0+|\.9+)?Z$/.exec(String(x||''));return m?{t:Date.UTC(+m[1],+m[2]-1,+m[3]),last:m[4]==='23:59:59'}:null};
     const m=edge(v);if(!m||(other&&!edge(other)))return this.fmtDate(v);
     const day=m.last||role!=='end'?m.t:m.t-864e5;
     return new Date(day).toLocaleDateString('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'});},
-  fmtTime(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+  fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
   /* The one risk scale, from risk.js. This used to be a second vocabulary
      mapping onto a second palette, which is how `.badge.watch` came to be
@@ -311,7 +311,7 @@ const PND={
       ? ' (' + (c.sinceHours<1 ? Math.round(c.sinceHours*60)+' minutes' : c.sinceHours+(c.sinceHours===1?' hour':' hours')) + ' after the check before)'
       : '';
     /* An outage is not a change in the forecasts, so it is deliberately not
-       counted in total — but it still has to be shown. Returning on total
+       counted in total - but it still has to be shown. Returning on total
        alone meant a run whose only exceptional result was an unreachable
        source reported "nothing changed" and dropped the outage rows entirely,
        which is the opposite of what recording them was for. */
@@ -330,19 +330,19 @@ const PND={
     const caveat=un?', and '+un+' that could not be checked':'';
     return '<p class="muted">Checked '+this.esc(when)+this.esc(gap)+' · '+
       this.esc(headline+caveat)+'.</p>'+
-      row('New',R.added,x=>this.titleOf(x)+' — '+x.alert)+
-      row('Raised',R.raised,x=>this.titleOf(x)+' — '+x.from+' → '+x.to)+
-      row('Lowered',R.lowered,x=>this.titleOf(x)+' — '+x.from+' → '+x.to)+
+      row('New',R.added,x=>this.titleOf(x)+' - '+x.alert)+
+      row('Raised',R.raised,x=>this.titleOf(x)+' - '+x.from+' → '+x.to)+
+      row('Lowered',R.lowered,x=>this.titleOf(x)+' - '+x.from+' → '+x.to)+
       row('Dates changed',R.windowMoved,x=>this.titleOf(x)+' - now ends '+this.fmtWhen(x.toEnd,null,'end'))+
-      row('Stopped',R.gone,x=>this.titleOf(x)+' — the event it followed is no longer reported')+
+      row('Stopped',R.gone,x=>this.titleOf(x)+' - the event it followed is no longer reported')+
       /* An outlook whose window simply ended did what it said it would. It
          must not read as a withdrawal. */
-      row('Ended on schedule',R.expired,x=>this.titleOf(x)+' — its forecast period ended')+
-      /* Not a change in the forecasts at all — a gap in what could be seen.
+      row('Ended on schedule',R.expired,x=>this.titleOf(x)+' - its forecast period ended')+
+      /* Not a change in the forecasts at all - a gap in what could be seen.
          Reporting it as a withdrawal would blame the forecast for our
          outage, and blame it again as a new forecast on recovery. */
       row('Could not be checked',R.unavailable,x=>this.titleOf(x)+
-        ' — we could not reach its source this time, so it is unchanged, not withdrawn');
+        ' - we could not reach its source this time, so it is unchanged, not withdrawn');
   },
   SORT_DEFS:{
     severity:{label:'Most serious first',cmp(a,b){return PND.rankOf(b)-PND.rankOf(a)||PND.timeOf(b)-PND.timeOf(a)}},
@@ -473,7 +473,7 @@ const PND={
      across the top. */
   NAV:[['Map','/live-map'],['Alerts & events','/alerts'],['Forecasts','/forecasts'],['My places','/personal-risk'],['Track record','/accuracy']],
   NAV_ALIAS:{'Live Map':'Map','Alerts':'Alerts & events','Calamities':'Alerts & events','Events':'Alerts & events','Personal Risk':'My places','Verification':'Track record','Accuracy':'Track record'},
-  nav(active=''){const on=this.NAV_ALIAS[active]||active;return `<header class="top"><a class="logo" href="/" aria-label="Predict Natural Disasters — check a place"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Check a place · live hazards · forecasts</small></span></a><nav aria-label="Main">${this.NAV.map(([n,u])=>`<a class="${on===n?'active':''}" href="${u}"${on===n?' aria-current="page"':''}>${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
+  nav(active=''){const on=this.NAV_ALIAS[active]||active;return `<header class="top"><a class="logo" href="/" aria-label="Predict Natural Disasters - check a place"><span class="globe">◎</span><span><b>Predict Natural Disasters</b><small>Check a place · live hazards · forecasts</small></span></a><nav aria-label="Main">${this.NAV.map(([n,u])=>`<a class="${on===n?'active':''}" href="${u}"${on===n?' aria-current="page"':''}>${n}</a>`).join('')}</nav><select id="pndTimezone" aria-label="Display timezone" onchange="PND.setTimezone(this.value)" style="max-width:150px;background:#09231b;color:#eaf7f1;border:1px solid #285f4b;border-radius:8px;padding:7px 8px;font-size:11px">${this.timezoneOptions()}</select><a class="live" href="/events">● Live</a></header>`;},
   /* Everything that left the top bar, kept one tap away on every page. */
   FOOT:[['Check a place','/'],['Live events','/events'],['Official warnings','/official-warnings'],['Disasters now and in the past','/calamities'],['Regions','/regions'],['Forecast calendar','/forecast-calendar'],['How it works','/methodology'],['Our sources','/resources'],['Insights','/insights'],['About','/about']],
   footer(){return `<footer class="sitefoot" aria-label="More of this site"><nav>${this.FOOT.map(([n,u])=>`<a href="${u}">${n}</a>`).join('')}</nav><p>Up-to-date information from public sources. This is not an official warning service. In an emergency, follow your local authorities.</p></footer>`;},
@@ -526,7 +526,7 @@ const PND={
      description - often 50 or 60 words - is on the record's own page. */
   summary(text,max=160){let t=String(text||'').replace(/\s*(This is not a deterministic prediction and must not replace official warnings|This is our own estimate, not an official warning)\.?\s*$/,'').replace(/\s+/g,' ').trim();
     const first=t.match(/^.{20,}?[.!?](?=\s+[A-Z(]|$)/);if(first)t=first[0];
-    if(t.length<=max)return t;const cut=t.slice(0,max);return cut.slice(0,Math.max(cut.lastIndexOf(' '),max*0.6|0)).replace(/[\s,;:·—-]+$/,'')+'…';},
+    if(t.length<=max)return t;const cut=t.slice(0,max);return cut.slice(0,Math.max(cut.lastIndexOf(' '),max*0.6|0)).replace(/[\s,;:·\u2014-]+$/,'')+'…';},
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region|Pseudo|European Union|Eurozone|United Nations|Outlying Oceania|^world$/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };

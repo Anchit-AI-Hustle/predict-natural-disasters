@@ -28,7 +28,7 @@ window.PND_HISTORY=[
 {year:"2018",sort:2018,type:"Earthquake / Tsunami",name:"Sulawesi earthquake and tsunami",location:"Indonesia",severity:"Major",summary:"An earthquake, a tsunami and liquefaction, where shaking makes wet ground flow like a liquid, caused severe damage around Palu and central Sulawesi."},
 {year:"2020",sort:2020,type:"Wildfire",name:"Australian Black Summer",location:"Australia",severity:"Major",summary:"An exceptionally severe bushfire season caused widespread harm to nature, to people's health and to buildings and services."},
 {year:"2022",sort:2022,type:"Flood",name:"Pakistan floods",location:"Pakistan",severity:"Catastrophic",summary:"Exceptional monsoon rain and flooding forced many people from their homes, damaged roads and buildings, and left many in need of aid."},
-{year:"2023",sort:2023,type:"Earthquake",name:"Türkiye–Syria earthquakes",location:"Türkiye / Syria",severity:"Catastrophic",summary:"A series of major earthquakes caused catastrophic losses across southern Türkiye and northern Syria."},
+{year:"2023",sort:2023,type:"Earthquake",name:"Türkiye-Syria earthquakes",location:"Türkiye / Syria",severity:"Catastrophic",summary:"A series of major earthquakes caused catastrophic losses across southern Türkiye and northern Syria."},
 {year:"2023",sort:2023.1,type:"Earthquake",name:"Al Haouz earthquake",location:"Morocco",severity:"Major",summary:"A destructive earthquake struck the High Atlas region and affected communities south of Marrakesh."},
 {year:"2024",sort:2024,type:"Earthquake",name:"Noto Peninsula earthquake",location:"Japan",severity:"Major",summary:"A damaging earthquake affected Ishikawa Prefecture and surrounding areas at the start of 2024."}
 ];
