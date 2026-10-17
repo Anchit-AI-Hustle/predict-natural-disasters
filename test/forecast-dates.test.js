@@ -113,4 +113,9 @@ test('every page that prints a forecast window uses the day-aware formatter', ()
   assert.doesNotMatch(read('forecast-table.js'), /fmtDate\(e\.target(Start|End)\)/, 'the table still formats window edges as moments');
   assert.doesNotMatch(read('forecast-detail.html'), /PND\.fmtDate\(iso\)\.replace/, 'the detail page still strips a moment down to a day');
   assert.doesNotMatch(read('verification-detail.html'), /PND\.fmtDate\(v\)\.split/, 'the verification page still strips a moment down to a day');
+  /* Every window end on the detail page passes its start and the 'end' role,
+     so a midnight end names the last day inside the window. */
+  const ends = read('forecast-detail.html').match(/dayOf\(e\.targetEnd[^)]*\)/g) || [];
+  assert.ok(ends.length >= 3, 'expected the detail page to print the window end');
+  for (const c of ends) assert.equal(c, "dayOf(e.targetEnd,e.targetStart,'end')", 'a window end without its role: ' + c);
 });
