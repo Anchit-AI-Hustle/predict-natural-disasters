@@ -44,7 +44,7 @@ const deaths=anyDeaths?ev.reduce((n,e)=>n+(Number(e.deaths)||0),0):null;
 const places=[...new Set(ev.map(e=>e.country||e.region).filter(Boolean))];
 /* \bM must start a word: without it "Central Vietnam 2026" scraped as magnitude 2026. */
 const mags=ev.map(e=>{const m=String(e.title||'').match(/\bM\s*(\d+(?:\.\d+)?)\b/)||String(e.title||'').match(/\bmagnitude\s+(\d+(?:\.\d+)?)/i);return m?Number(m[1]):null}).filter(Number.isFinite);
-const dateOf=v=>{const t=Date.parse(v||'');return Number.isFinite(t)?PND.fmtDate(v).split(',')[0].trim():''};
+const dateOf=v=>{const t=Date.parse(v||'');return Number.isFinite(t)?PND.fmtWhen(v).split(',')[0].trim():''};
 const timeOf=v=>{const t=Date.parse(v||'');return Number.isFinite(t)?PND.fmtTime(v):''};
 const fcStart=fc&&(fc.targetStart||fc.startedAt||fc.updated)||'';
 const rows=[

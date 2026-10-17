@@ -52,6 +52,20 @@ const PND={
   getTZ(){return this.timezone;},
   tzLabel(tz=this.timezone){const aliases={'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'};return aliases[tz]||tz;},
   fmtDate(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+  /* A forecast window edge. Whole-day windows are stored as UTC midnight to
+     23:59:59Z, or midnight to midnight with the end excluded, and fmtDate
+     turned each edge into a time of day in the reader's zone: "19 Oct to
+     21 Oct" ran from "19 Oct, 5:30 AM IST" to "22 Oct, 5:29 AM IST", and
+     west of UTC it started the day before. An edge of a whole-day window is
+     that day, for everyone: a midnight end excludes its own day, so the last
+     day shown is the one before. `other` is the window's other edge (a
+     midnight opening a window that ends at a real moment is a moment too);
+     `role` is 'end' for an end. Any other edge keeps its time. */
+  fmtWhen(v,other,role){if(!v)return '\u2014';
+    const edge=x=>{const m=/^(\d{4})-(\d\d)-(\d\d)T(00:00:00|23:59:59)(\.0+|\.9+)?Z$/.exec(String(x||''));return m?{t:Date.UTC(+m[1],+m[2]-1,+m[3]),last:m[4]==='23:59:59'}:null};
+    const m=edge(v);if(!m||(other&&!edge(other)))return this.fmtDate(v);
+    const day=m.last||role!=='end'?m.t:m.t-864e5;
+    return new Date(day).toLocaleDateString('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'});},
   fmtTime(v){if(!v)return '—';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
   /* The one risk scale, from risk.js. This used to be a second vocabulary
@@ -280,7 +294,7 @@ const PND={
     const ahead=d>=1?Math.round(d)+' day'+(Math.round(d)===1?'':'s'):'less than a day';
     const lens=(h.windowLengthDays||[]).slice();
     const lenText=lens.length?(lens.length>1?lens.slice(0,-1).join(', ')+' or '+lens[lens.length-1]:lens[0])+' day'+(lens.length===1&&lens[0]===1?'':'s'):'';
-    return 'Our forecasts reach as far as '+this.fmtDate(h.furthestWindowEnds)+
+    return 'Our forecasts reach as far as '+this.fmtWhen(h.furthestWindowEnds,null,'end')+
       ' ('+ahead+' from now)'+(lenText?'. Each one covers '+lenText:'')+
       '. We do not forecast further ahead than that. It does not mean nothing will happen after that date.';
   },
@@ -319,7 +333,7 @@ const PND={
       row('New',R.added,x=>this.titleOf(x)+' — '+x.alert)+
       row('Raised',R.raised,x=>this.titleOf(x)+' — '+x.from+' → '+x.to)+
       row('Lowered',R.lowered,x=>this.titleOf(x)+' — '+x.from+' → '+x.to)+
-      row('Dates changed',R.windowMoved,x=>this.titleOf(x)+' — now ends '+this.fmtDate(x.toEnd))+
+      row('Dates changed',R.windowMoved,x=>this.titleOf(x)+' - now ends '+this.fmtWhen(x.toEnd,null,'end'))+
       row('Stopped',R.gone,x=>this.titleOf(x)+' — the event it followed is no longer reported')+
       /* An outlook whose window simply ended did what it said it would. It
          must not read as a withdrawal. */
@@ -483,7 +497,7 @@ const PND={
     const start=e&&(e.targetStart||e.startedAt||e.updated);
     if(!start)return 'The source gives no start time';
     const dur=this.duration(start,e&&e.targetEnd);
-    return 'Starts '+this.fmtDate(start)+(dur?' · lasts '+dur:' · length not stated');
+    return 'Starts '+this.fmtWhen(start,e&&e.targetEnd)+(dur?' · lasts '+dur:' · length not stated');
   },
   statusText(meta){if(!meta)return 'Refreshing';const all=Object.values(meta.sources||{});const n=all.filter(x=>x&&x.ok).length;/* The denominator was hard-coded to 3 while the feed grew to eight providers, so a healthy feed read "7/3 sources online". */return meta.live?`Live · ${n} of ${all.length||n} sources working`:'Our data sources are not answering · showing saved copies only';},
   /* Online/total upstream providers. Pages must use this rather than a literal

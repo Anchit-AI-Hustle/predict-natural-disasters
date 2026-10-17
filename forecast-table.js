@@ -97,8 +97,8 @@ function forecastRow(e,opts){
      list of every county it names, and ran a single row to a screen. */
   Geography:'<span class="clamp" title="'+PND.esc(geo)+'">'+PND.esc(geo)+'</span>',
   Hazard:PND.esc(e.type||'\u2014'),
-  Starts:e.targetStart?PND.esc(PND.fmtDate(e.targetStart)):'\u2014',
-  Ends:e.targetEnd?PND.esc(PND.fmtDate(e.targetEnd)):'\u2014',
+  Starts:e.targetStart?PND.esc(PND.fmtWhen(e.targetStart,e.targetEnd)):'\u2014',
+  Ends:e.targetEnd?PND.esc(PND.fmtWhen(e.targetEnd,e.targetStart,'end')):'\u2014',
   Class:'<span title="'+PND.esc(classTitle(e))+'">'+PND.esc(classLabel(e))+'</span>',
   Provenance:'<span class="prov">'+PND.esc(provenanceOf(e))+'</span>',
   Source:e.source?'<span title="'+PND.esc(e.source)+'">'+PND.esc(sourceText(e))+'</span>':'\u2014',
