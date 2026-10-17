@@ -1,7 +1,7 @@
 'use strict';
 /**
  * Renders a real page from the repository inside jsdom with the live APIs
- * served by the real handlers over mocked upstreams — so a page test exercises
+ * served by the real handlers over mocked upstreams - so a page test exercises
  * the same path a browser does: HTML -> portal.js -> /api/events ->
  * /api/event-enrichment -> rendered DOM.
  */
@@ -133,7 +133,7 @@ const LEAFLET_STUB = `
  * Enough of Cesium, and of WebGL, for the globe to mount.
  *
  * jsdom has no WebGL at all, so PNDGlobe.webglOk() is false there and the
- * globe would silently never be built — every assertion about it would pass
+ * globe would silently never be built - every assertion about it would pass
  * against a page that had no globe. The canvas reports a context and Cesium is
  * present before parse, so loadCesium() resolves without reaching a CDN.
  */
@@ -152,8 +152,8 @@ const CESIUM_STUB = `
            asking it for one raises "Not implemented" on the virtual console,
            which the page-error test reads as a broken page. So this never
            calls through: the globe paints the world into a canvas, and that
-           whole path — the palette, the antimeridian, the imagery layer it
-           produces — would otherwise go unexercised here. Both work in the
+           whole path - the palette, the antimeridian, the imagery layer it
+           produces - would otherwise go unexercised here. Both work in the
            real browser; tools/globe-browser-check.js is what checks that. */
         var ops = { fills: [], strokes: 0, paths: 0 };
         this.__ops = ops;
@@ -262,7 +262,7 @@ class RepoLoader extends ResourceLoader {
   fetch(url, options) {
     /* The map library, stubbed rather than served.
        The real one is in this repository now (vendor/leaflet), so without
-       this it would be loaded from disk and overwrite the stub — and with it
+       this it would be loaded from disk and overwrite the stub - and with it
        the recorded maps, the reported container height and the observable
        zoom state that every map and globe test reads. Real Leaflet is
        exercised in a real browser instead, by tools/map-fallback-check.js and
@@ -309,7 +309,7 @@ async function callApi(handler, urlString, mockOpts) {
 /**
  * @param {string} page  file name, e.g. 'event-detail.html'
  * @param {object} opts  { search, url, mock, feedDown, waitFor, timeoutMs }
- *   url  serve this file at a different address — how 404.html is reached in
+ *   url  serve this file at a different address - how 404.html is reached in
  *        production, where the path is the route the visitor actually asked for.
  */
 async function renderPage(page, opts) {
@@ -346,8 +346,8 @@ async function renderPage(page, opts) {
           return callApi(eventsHandler, url, o.mock);
         }
         // The ledgers are static files the pages fetch like any other asset.
-        // They were not served here, so /accuracy — the page whose whole job is
-        // to report the verification record — could only ever render its
+        // They were not served here, so /accuracy - the page whose whole job is
+        // to report the verification record - could only ever render its
         // "data unavailable" branch, and nothing tested what it publishes.
         /* The ledgers under /data, and the root-level JSON the basemap is
            built from. world-countries.json was not served either, so both
@@ -402,7 +402,7 @@ async function renderPage(page, opts) {
   };
 }
 
-/** First live official record from the mocked feed — the id a detail page opens with. */
+/** First live official record from the mocked feed - the id a detail page opens with. */
 async function sampleEvents(mockOpts) {
   const r = await callApi(eventsHandler, '/api/events', mockOpts);
   return (await r.json()).events;

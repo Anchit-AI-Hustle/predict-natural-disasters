@@ -6,7 +6,7 @@
  * already 298 days old was published over a three-day window. Severity was
  * read off whatever colour the alert field carried, which is each agency's own
  * scale and not comparable between hazards. And nothing recorded how far ahead
- * of its window a forecast was issued — the number that decides whether a
+ * of its window a forecast was issued - the number that decides whether a
  * forecast is useful or is describing something already under way.
  */
 const test = require('node:test');

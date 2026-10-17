@@ -5,7 +5,7 @@
  * calamity and outlook detail page shares: when and where the event started,
  * who is in distress, live news, situation reports, video reporting, verified
  * helplines, national authorities, local support groups and real donation
- * links — refreshed on the platform's 5-minute cycle.
+ * links - refreshed on the platform's 5-minute cycle.
  */
 (() => {
   const REFRESH_MS = 300000; // 5 minutes
@@ -16,7 +16,7 @@
   }[c]));
 
   const fmt = d => {
-    if (!d) return '—';
+    if (!d) return '-';
     try { return window.PND ? PND.fmtDate(d) : new Date(d).toUTCString(); } catch (e) { return String(d); }
   };
   const age = d => {
@@ -90,11 +90,11 @@
     if (e.expiresAt) row('Official warning ends', esc(fmt(e.expiresAt)));
     row('Where it started', esc(w.originArea || e.region || e.country || 'Not given by the source'));
     if (place) {
-      row('Nearest place', esc([place.locality, place.city, place.state, place.country].filter(Boolean).join(' · ') || '—') +
+      row('Nearest place', esc([place.locality, place.city, place.state, place.country].filter(Boolean).join(' · ') || '-') +
         '<br><span class="muted">Worked out from the map position the source gave · ' + esc(place.resolvedBy || 'map lookup') + '</span>');
       if (place.continent) row('Continent', esc(place.continent));
     }
-    row('Areas affected', esc(w.affectedAreaText || '—'));
+    row('Areas affected', esc(w.affectedAreaText || '-'));
     if (w.coordinates) {
       const c = w.coordinates, m = w.mapLinks || {};
       row('Coordinates', esc(c.lat.toFixed(4) + ', ' + c.lon.toFixed(4)) +
@@ -102,8 +102,8 @@
         (m.googleMaps ? ' · <a href="' + esc(m.googleMaps) + '" target="_blank" rel="noopener">Google Maps ↗</a>' : '') +
         (m.windy ? ' · <a href="' + esc(m.windy) + '" target="_blank" rel="noopener">Weather map ↗</a>' : ''));
     }
-    row('Type', esc(e.type || '—'));
-    row('Source', esc(e.source || '—') +
+    row('Type', esc(e.type || '-'));
+    row('Source', esc(e.source || '-') +
       (e.sourceUrl ? ' · <a href="' + esc(e.sourceUrl) + '" target="_blank" rel="noopener">Open the original report ↗</a>' : ''));
     row('About these times', '<span class="muted">' + esc(when.note || '') + '</span>');
 

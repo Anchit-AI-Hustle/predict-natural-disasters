@@ -6,8 +6,8 @@
  * The ledger answers "what did you predict"; it cannot answer "what changed
  * since I last looked", because a re-issued outlook is appended as a new row
  * indistinguishable from a brand-new one, and an outlook that stopped being
- * issued leaves no trace at all. So a reader watching for movement — a watch
- * raised to a warning, a window pushed out, a signal that has gone — had
+ * issued leaves no trace at all. So a reader watching for movement - a watch
+ * raised to a warning, a window pushed out, a signal that has gone - had
  * nothing to read.
  *
  *   node tools/record-changes.js <events.json> <changes.json>
@@ -34,8 +34,8 @@ const log = G.readLedger(changesPath, raw => !!raw && Array.isArray(raw.runs) &&
   () => ({ schemaVersion: 1, runs: [], snapshot: {} }));
 
 /* Which upstreams were unreachable on this run. /api/events deliberately
-   returns a partial feed when a provider is down — ReliefWeb has been
-   answering HTTP 406 for days — so every outlook derived from it simply
+   returns a partial feed when a provider is down - ReliefWeb has been
+   answering HTTP 406 for days - so every outlook derived from it simply
    vanishes from the feed. Without this, an outage reads as "the signal behind
    it stopped", and the provider coming back reads as a fresh forecast. */
 const sources = (feed.meta && feed.meta.sources) || {};
@@ -89,7 +89,7 @@ const previous = (log.snapshot && typeof log.snapshot === 'object') ? log.snapsh
 /* Whether any run has happened before, not whether the last one saw
    anything. A run that legitimately finds no open outlooks writes an empty
    snapshot, and reading that as "no history" would make the next run a
-   second baseline — suppressing every newly issued outlook from `added`
+   second baseline - suppressing every newly issued outlook from `added`
    and telling the reader there is nothing earlier to compare with. */
 const first = !log.runs.length;
 
@@ -116,7 +116,7 @@ for (const id of Object.keys(previous)) {
   const end = Date.parse(was.targetEnd || '');
   if (Number.isFinite(end) && end <= Date.parse(nowIso)) { expired.push(was); continue; }
   /* A snapshot written before this field existed carries no provider at all,
-     which is not the same as a record that genuinely has no upstream — the
+     which is not the same as a record that genuinely has no upstream - the
      frozen benchmark stores an empty string for that. The committed baseline
      holds 29 such entries, so on the first scheduled run after deploying this
      every one of them would have failed the guard and been recorded as

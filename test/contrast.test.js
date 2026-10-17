@@ -4,7 +4,7 @@
  *
  * A link with no author `color` rule falls through to the browser's default
  * #0000EE, and #551A8B once visited. On this site's dark green surfaces those
- * land at 1.3:1 and 1.1:1 — the source links, coordinate links and every
+ * land at 1.3:1 and 1.1:1 - the source links, coordinate links and every
  * donation and helpline link on the detail pages were unreadable in production.
  * jsdom cannot catch this: it has no UA stylesheet for links, so it reports the
  * anchor inheriting body colour and the page looks fine. These rules are
@@ -123,7 +123,7 @@ test('a visited link stays distinguishable from an unvisited one', () => {
   }
 });
 
-test('the browser default link colours would fail — which is why the rule is required', () => {
+test('the browser default link colours would fail - which is why the rule is required', () => {
   // Guards the premise: if these ever passed, the rule above would be pointless.
   for (const uaDefault of ['#0000EE', '#551A8B']) {
     assert.ok(worstSurface(uaDefault).ratio < 2,
@@ -177,7 +177,7 @@ test('every anchor class in the codebase is styled, so none inherits the default
 
 /* Leaflet renders its own controls and popups inside the map, on surfaces this
    palette does not own. `.leaflet-container a` is (0,1,1), the same specificity
-   as a bare `a:visited` / `a:hover`, so whichever stylesheet loads last wins —
+   as a bare `a:visited` / `a:hover`, so whichever stylesheet loads last wins -
    and on index.html and dashboard.html the inline styles load after Leaflet.
    The attribution pill is near-white and the popups are painted dark by this
    app, so the two need opposite treatment. */
@@ -200,7 +200,7 @@ test('Leaflet control links keep a colour that reads on its light chrome', () =>
   assert.deepEqual(bad, [], 'unreadable attribution links:\n' + bad.join('\n'));
 });
 
-test('the site link colours would be unreadable on that pill — which is why it is scoped', () => {
+test('the site link colours would be unreadable on that pill - which is why it is scoped', () => {
   for (const file of ALL) {
     for (const selector of ['a:visited', 'a:hover']) {
       assert.ok(contrast(colourFor(file, selector), LEAFLET_ATTRIBUTION_BG) < 2,
@@ -225,7 +225,7 @@ test('map popup links read against the dark popup this app paints', () => {
   }
   assert.deepEqual(bad, [], 'unreadable popup links:\n' + bad.join('\n'));
   assert.ok(contrast(LEAFLET_BLUE, POPUP_BG.shared) < AA,
-    "Leaflet's blue now passes on the dark popup — the override is redundant");
+    "Leaflet's blue now passes on the dark popup - the override is redundant");
 });
 
 /* ------------------------------------------------------------------ badges */

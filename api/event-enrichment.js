@@ -2,7 +2,7 @@
 const { queryOf } = require('./_lib/http.js');
 /**
  * Per-event enrichment: everything a disaster detail page needs beyond the raw
- * feed record — when/where it started, who is exposed, live news coverage,
+ * feed record - when/where it started, who is exposed, live news coverage,
  * video reports, official situation reports, verified helplines, national
  * authorities and real donation links.
  *
@@ -170,7 +170,7 @@ async function bingNews(query) {
  * UN OCHA ReliefWeb: authoritative situation reports, assessments and appeals.
  *
  * The v2 API needs an appname approved by ReliefWeb, so this reads the public
- * search feed instead — same reports, no credential to configure.
+ * search feed instead - same reports, no credential to configure.
  */
 async function reliefwebReports(query, country) {
   const search = [query, country].filter(Boolean).join(' ').slice(0, 240);
@@ -313,7 +313,7 @@ function hazardPlaybook(type) {
       'Road clearance, alternative transport and airlift where roads are severed', 'Trauma care, medical evacuation and communications restoration'],
     ['Repeat failures on the same slope after further rain', 'Landslide-dammed rivers that can breach suddenly',
       'Complete severance of supply routes to communities uphill'],
-    ['Leave the area below an active or cracking slope immediately — do not return for belongings',
+    ['Leave the area below an active or cracking slope immediately - do not return for belongings',
       'Treat new cracks, tilting trees/poles and sudden changes in stream flow as a warning sign',
       'Avoid hill roads during and immediately after heavy rainfall']
   );
@@ -327,7 +327,7 @@ function hazardPlaybook(type) {
       'Emergency shelter materials and tarpaulins after roof loss'],
     ['Storm surge and coastal inundation, often the deadliest component', 'Inland river flooding and landslides from the rain band',
       'Extended power and communications loss', 'Contaminated water and post-storm disease risk'],
-    ['Evacuate on the official instruction — surge, not wind, drives most deaths',
+    ['Evacuate on the official instruction - surge, not wind, drives most deaths',
       'Shelter in the strongest interior room away from windows once travel is unsafe',
       'Stay sheltered during the eye; the second wind shift can be the more destructive one',
       'Never touch fallen power lines and treat all floodwater as electrified']
@@ -344,7 +344,7 @@ function hazardPlaybook(type) {
       'Power shut-offs, road closures and water contamination', 'Post-fire debris flows and slope instability in the next rains'],
     ['Leave early on the official warning rather than waiting to see the fire',
       'Keep windows and vents closed and stay indoors when smoke is heavy',
-      'Follow the designated evacuation route only — do not improvise through unburnt bush']
+      'Follow the designated evacuation route only - do not improvise through unburnt bush']
   );
 
   if (/earthquake|seismic|quake/.test(t)) return P(
@@ -410,7 +410,7 @@ function hazardPlaybook(type) {
       'Shelter, water and sanitation on high ground', 'Clear public information on when it is safe to return'],
     ['Later waves that are larger than the first', 'Strong and unpredictable harbour currents for many hours',
       'Debris, structural collapse and contaminated water'],
-    ['Move inland and uphill immediately after strong or long shaking — do not wait for an official alert',
+    ['Move inland and uphill immediately after strong or long shaking - do not wait for an official alert',
       'Stay away from the shoreline until the authority formally cancels the warning',
       'Follow the marked tsunami evacuation route']
   );

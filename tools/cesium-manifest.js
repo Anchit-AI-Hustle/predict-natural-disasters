@@ -6,7 +6,7 @@
  * globe.js was written against CesiumJS from memory and is loaded from a CDN
  * at runtime, so nothing in this repository could tell whether the symbols it
  * calls exist. A misremembered class or option name would fail only in a
- * reader's browser, and the stubbed tests would stay green — which is exactly
+ * reader's browser, and the stubbed tests would stay green - which is exactly
  * how the pane regression shipped.
  *
  * The full package is twenty megabytes and has no business in CI, so this

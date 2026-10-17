@@ -96,12 +96,12 @@ function forecastRow(e,opts){
   /* Clamped to three lines, whole in the tooltip: a US warning's area is a
      list of every county it names, and ran a single row to a screen. */
   Geography:'<span class="clamp" title="'+PND.esc(geo)+'">'+PND.esc(geo)+'</span>',
-  Hazard:PND.esc(e.type||'\u2014'),
-  Starts:e.targetStart?PND.esc(PND.fmtWhen(e.targetStart,e.targetEnd)):'\u2014',
-  Ends:e.targetEnd?PND.esc(PND.fmtWhen(e.targetEnd,e.targetStart,'end')):'\u2014',
+  Hazard:PND.esc(e.type||'-'),
+  Starts:e.targetStart?PND.esc(PND.fmtWhen(e.targetStart,e.targetEnd)):'-',
+  Ends:e.targetEnd?PND.esc(PND.fmtWhen(e.targetEnd,e.targetStart,'end')):'-',
   Class:'<span title="'+PND.esc(classTitle(e))+'">'+PND.esc(classLabel(e))+'</span>',
   Provenance:'<span class="prov">'+PND.esc(provenanceOf(e))+'</span>',
-  Source:e.source?'<span title="'+PND.esc(e.source)+'">'+PND.esc(sourceText(e))+'</span>':'\u2014',
+  Source:e.source?'<span title="'+PND.esc(e.source)+'">'+PND.esc(sourceText(e))+'</span>':'-',
   Updated:'<span title="'+PND.esc(PND.fmtDate(e.updated))+'">'+PND.esc(PND.age(e.updated))+'</span>'
  };
  return '<tr data-href="'+PND.eventUrl(e)+'">'+

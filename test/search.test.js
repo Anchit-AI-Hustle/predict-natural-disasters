@@ -8,7 +8,7 @@
  * entirely and matched 1 of 349 earthquake records for "earthquake".
  *
  * Worse, the homepage's main box navigated to /events?search=<term> and
- * nothing anywhere in the repository read that parameter — so every search
+ * nothing anywhere in the repository read that parameter - so every search
  * started from the front page arrived as a completely unfiltered list with an
  * empty box. And three pages rendered a search input with no id, no handler
  * and no code reading it: typing there did nothing, forever.
@@ -34,7 +34,7 @@ test('the hazard type is searchable, which is what the homepage dropped', () => 
   const quake = { title: 'M 5.9 - 253 km ENE of Lospalos', type: 'Earthquake',
     country: 'Timor Leste' };
   /* The old homepage list was [title, country, region]: no type, so this
-     record — like 348 of the 349 in the live feed — was unfindable. */
+     record - like 348 of the 349 in the live feed - was unfindable. */
   assert.equal(S.matches(quake, 'earthquake'), true);
   assert.equal(S.SEARCH_FIELDS.includes('type'), true);
 });

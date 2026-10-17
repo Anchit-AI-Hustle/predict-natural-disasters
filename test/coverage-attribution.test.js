@@ -42,7 +42,7 @@ const flood = over => Object.assign({
 }, over || {});
 
 const quakePrediction = over => Object.assign({
-  id: 'OUT-q1', type: 'Earthquake', title: 'Earthquake outlook — Nepal',
+  id: 'OUT-q1', type: 'Earthquake', title: 'Earthquake outlook - Nepal',
   country: 'Nepal', region: null, lat: 27.7, lon: 85.3,
   forecastClass: 'independent-prospective', freezeTimestamp: '2026-09-01T00:00:00Z',
   targetStart: '2026-09-02T00:00:00Z', targetEnd: '2026-09-05T00:00:00Z'
@@ -68,7 +68,7 @@ test('an earthquake prediction cannot have predicted a flood', () => {
   assert.deepEqual(a.matched, []);
 
   // Control: the same prediction, for the hazard that actually happened.
-  const fc = quakePrediction({ id: 'OUT-f1', type: 'Flood', title: 'Flood outlook — Nepal' });
+  const fc = quakePrediction({ id: 'OUT-f1', type: 'Flood', title: 'Flood outlook - Nepal' });
   const b = V.assessCoverage(flood(), [fc], led, { hazardFamilyOf: OBS.familyOf });
   assert.equal(b.falseNegative, false, 'a matching flood prediction was not credited');
   assert.equal(b.matched[0].result, 'HIT');
@@ -175,7 +175,7 @@ test('a cyclone outside the published basins is not the hurricane centre\'s to h
 test('a record with no coordinates is not at Null Island', () => {
   /* Number(null) and Number('') are both 0, and 0,0 sits inside the Atlantic
      basin, so an unlocated cyclone tested as covered by the hurricane centre
-     — whose basins are nowhere near the western Pacific. That provider's
+     - whose basins are nowhere near the western Pacific. That provider's
      silence could then establish an absence nobody was in a position to
      observe, and a disaster nothing forecast would be blamed on forecasting
      rather than reported as coverage that cannot be established. */
@@ -268,7 +268,7 @@ test('a run where a hazard\'s providers were down extends no coverage for it', (
 test('a selective feed\'s silence is not evidence that nothing happened', () => {
   /* A scan of GDACS was being read as proof that no flood occurred. GDACS
      carries only what it raises to an alert level, so its silence is
-     consistent with a flood it never rated — and a matured flood outlook was
+     consistent with a flood it never rated - and a matured flood outlook was
      being scored a false positive on the strength of it. Watching and being
      able to establish an absence are two different questions, and only the
      first one a selective feed answers. */
@@ -361,13 +361,13 @@ test('better evidence renames nothing and duplicates nothing', async () => {
   assert.ok(target, 'fixture should record a flood');
 
   /* The same disaster, reported again with a better position and an earlier
-     onset — both inputs to the generated id. */
+     onset - both inputs to the generated id. */
   const moved = JSON.parse(JSON.stringify({ events }));
   const ids = new Set(target.evidence.map(ev => ev.id));
   const shiftedOnset = new Date(Date.parse(target.onset) - 3 * 3600e3).toISOString();
   for (const e of moved.events) {
-    /* Enough to change both inputs to the generated id — the rounded degree
-       and the minute — and not enough to change which records group. */
+    /* Enough to change both inputs to the generated id - the rounded degree
+       and the minute - and not enough to change which records group. */
     if (ids.has(e.id)) { e.lat = Number(e.lat) + 1.0; e.startedAt = shiftedOnset; }
   }
   const b = path.join(dir, 'b.json');
@@ -462,7 +462,7 @@ test('a gap between successful scans is not coverage', () => {
   /* Coverage was the earliest successful scan through the latest, which is
      not a period at all: a provider that answered on Monday and again on
      Friday, and was unavailable in between, produced a week of "coverage"
-     from two instants — and a Tuesday outlook could be failed for an absence
+     from two instants - and a Tuesday outlook could be failed for an absence
      nobody was there to observe. */
   const usgs = { hazards: ['Earthquake'], scope: { kind: 'global' }, completeness: 'exhaustive', recordsObservations: true };
   const at = (t, ok) => ({ scanTimestamp: t, providers: [{ provider: 'usgs', status: ok ? 'SCANNED' : 'DATA_UNAVAILABLE' }] });
@@ -516,7 +516,7 @@ test('an isolated scan covers the moment it ran, not the days around it', () => 
 
 test('a feed of warnings or statuses can never establish that nothing happened', () => {
   /* The volcano feed lists every elevated alert level in its network, which
-     made it exhaustive — but those records are statuses, they are excluded
+     made it exhaustive - but those records are statuses, they are excluded
      from the observed-disaster ledger, and a ledger that would never have
      recorded the eruption cannot show that none occurred. Its silence
      establishes that nothing was elevated, and nothing more. */
@@ -558,7 +558,7 @@ test('the served feed says, for every provider, whether its records are observat
 test('a scan is read under the definitions it was recorded with', () => {
   /* One table overwritten every run meant that widening a provider's scope,
      or calling a selective feed exhaustive, reached back and turned scans
-     that established nothing into evidence of an absence — silently changing
+     that established nothing into evidence of an absence - silently changing
      verdicts already published. */
   const usOnly = { usgs: { hazards: ['Earthquake'], scope: { kind: 'countries', countries: ['United States'] },
     completeness: 'exhaustive', recordsObservations: true } };

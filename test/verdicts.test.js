@@ -13,7 +13,7 @@
  * several windows; joining a verdict on the id alone stamped one false-alarm
  * verdict onto all three of OUT-gdacs-WF-1031965's windows. And a window that
  * had closed with nobody checking it was labelled "PENDING", exactly like one
- * that had not opened yet — hiding that 144 of 150 matured windows have never
+ * that had not opened yet - hiding that 144 of 150 matured windows have never
  * been graded at all.
  */
 const test = require('node:test');
@@ -30,7 +30,7 @@ const LEDGER = require(path.join(ROOT, 'data', 'verification-ledger.json'));
 
 test.after(closeAllWindows);
 
-const settled = d => (d.getElementById('mTotal') || {}).textContent !== '—';
+const settled = d => (d.getElementById('mTotal') || {}).textContent !== '-';
 
 /* What the committed records add up to, recomputed here from the ledgers
  * rather than read back from the page.
@@ -142,11 +142,11 @@ test('the unchecked backlog is counted, not absorbed into the good news', () => 
   const now = Date.parse('2026-09-20T21:01:00Z');
   const { records } = V.joinVerdicts(OUTLOOKS, LEDGER.verifications);
   const t = V.tally(records.concat(LEDGER.observedEvents), now);
-  assert.ok(t.awaiting > 100, `only ${t.awaiting} awaiting — check the fixture`);
+  assert.ok(t.awaiting > 100, `only ${t.awaiting} awaiting - check the fixture`);
   /* The graded count must be the verdicts, not the whole ledger. */
   assert.equal(t.graded, t.verified + t.partial + t.falseAlarm);
   assert.ok(t.graded < t.awaiting,
-    'more records are graded than are waiting — the backlog has been miscounted');
+    'more records are graded than are waiting - the backlog has been miscounted');
 });
 
 /* ---------- rates carry their denominators ---------- */
@@ -208,7 +208,7 @@ test('no headline rate is shown as a bare percentage', async () => {
   for (const id of ['ipPrecision', 'ipRecall', 'ipF1', 'cdPrecision']) {
     const txt = doc.getElementById(id).textContent;
     assert.match(txt, /\([^)]*\d+[^)]*\)|Cannot be calculated|Not enough/,
-      `${id} reads "${txt}" — a rate with no denominator`);
+      `${id} reads "${txt}" - a rate with no denominator`);
   }
   window.close();
 });
@@ -275,8 +275,8 @@ test('no shared module leaks a bare top-level binding', () => {
      "Identifier 'V' has already been declared" and killed the entire inline
      script, blanking the page.
 
-     Asserted by running each module the way a browser does — as a classic
-     script in a fresh context — and looking at what it left behind, rather
+     Asserted by running each module the way a browser does - as a classic
+     script in a fresh context - and looking at what it left behind, rather
      than by pattern-matching the source. */
   const vm = require('node:vm');
   for (const mod of ['search.js', 'verdicts.js']) {

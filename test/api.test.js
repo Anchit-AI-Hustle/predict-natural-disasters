@@ -93,7 +93,7 @@ test('outlook ids are deterministic across refreshes', async () => {
   const b = await runEvents();
   const ids = r => r.body.events.filter(e => e.forecast).map(e => e.id).sort();
   assert.deepEqual(ids(a), ids(b),
-    'outlook ids changed between refreshes — detail links would 404');
+    'outlook ids changed between refreshes - detail links would 404');
 });
 
 test('every outlook explains its evidence, confidence and grading rule', async () => {
@@ -493,11 +493,11 @@ test('volcanoes are placed inline or by following the notice URL', async () => {
   assert.equal(kilauea.alert, 'Red', 'WARNING maps to red');
 
   // This one carries no coordinates at all; they come from the fetched notice,
-  // which also describes Shishaldin — the volcano must be matched by identity,
+  // which also describes Shishaldin - the volcano must be matched by identity,
   // not by whichever coordinate pair the walker happens to reach first.
   const sitkin = volc.find(e => /Great Sitkin/.test(e.title));
   assert.ok(Math.abs(sitkin.lat - 52.076) < 0.01,
-    'Great Sitkin was placed at ' + sitkin.lat + ',' + sitkin.lon + ' — wrong volcano in the notice');
+    'Great Sitkin was placed at ' + sitkin.lat + ',' + sitkin.lon + ' - wrong volcano in the notice');
   assert.ok(Math.abs(sitkin.lon + 176.13) < 0.01);
   assert.ok(!volc.some(a => volc.some(b => a !== b && a.lat === b.lat && a.lon === b.lon)),
     'two volcanoes were placed at identical coordinates');

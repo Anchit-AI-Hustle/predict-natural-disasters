@@ -3,8 +3,8 @@
  * Places and abbreviations are written out.
  *
  * The homepage listed an earthquake in "CA". Expanding a two-letter code in
- * free text is unsafe — "Toronto, CA" is Canada and "Malibu, CA" is California
- * — so the glossary deliberately left those alone. The fix belongs in the
+ * free text is unsafe - "Toronto, CA" is Canada and "Malibu, CA" is California
+ * - so the glossary deliberately left those alone. The fix belongs in the
  * parsers, where the source already tells us the country.
  *
  * The same lookup found something underneath it: the last comma-separated part
@@ -32,7 +32,7 @@ const TRAILING_CODE = /,\s*([A-Z]{2})\s*$/;
 test('no record publishes a bare two-letter code as its country', async () => {
   const { events } = await feed();
   const bad = events.filter(e => BARE_CODE.test(String(e.country || '')));
-  assert.deepEqual(bad.map(e => e.country + ' — ' + e.title), [],
+  assert.deepEqual(bad.map(e => e.country + ' - ' + e.title), [],
     'a reader cannot be expected to expand a postal code');
 });
 

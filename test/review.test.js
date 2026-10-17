@@ -10,11 +10,11 @@
  *    with the free-text matcher, so typing USGS listed every USGS record while
  *    the adjacent button opened a region page for a region that does not exist.
  *  - verdicts.js keyed a window by its start alone, so a reissue with the same
- *    start and a revised end collapsed onto one key — the multi-window
+ *    start and a revised end collapsed onto one key - the multi-window
  *    misgrading the helper exists to prevent.
  *  - and it spread the verdict over the frozen row, letting a verdict rewrite
- *    the claim it was judging: ND-001's frozen "Huế–Đà Nẵng corridor" was
- *    displayed as the verdict's wider "Hue–Da Nang–Quang Ngai corridor".
+ *    the claim it was judging: ND-001's frozen "Huế-Đà Nẵng corridor" was
+ *    displayed as the verdict's wider "Hue-Da Nang-Quang Ngai corridor".
  *  - the NWS source link used the mean of the polygon's vertices, which for a
  *    concave or multipart warning area is outside it, so the point forecast it
  *    opened could show an unalerted location.
@@ -96,7 +96,7 @@ test('a geography filter does not match hazard words in a title', () => {
   /* title was in the place field list because a few records carry their place
      only there. Measured against the live feed of 792 records, that made
      "flood" match 323 of them through their titles, while only 2 records have
-     no country, region or location at all — and both are named storms. */
+     no country, region or location at all - and both are named storms. */
   assert.equal(S.matchesPlace({ country: 'Japan', title: 'Flood warning' }, 'flood'), false);
   assert.equal(S.matchesPlace({ country: 'Japan', title: 'Flood warning' }, 'japan'), true);
   assert.equal(S.PLACE_FIELDS.includes('title'), false,
@@ -150,7 +150,7 @@ test('the shipped ND-001 record keeps the corridor it froze', () => {
 
 test('what the comparison calls "predicted" is what was recorded', async () => {
   const { window } = await renderPage('accuracy.html', { timeoutMs: 20000,
-    waitFor: d => (d.getElementById('mTotal') || {}).textContent !== '—' });
+    waitFor: d => (d.getElementById('mTotal') || {}).textContent !== '-' });
   const doc = window.document;
   const card = [...doc.querySelectorAll('#cmpList .cmp')]
     .find(c => c.textContent.includes('ND-001'));
@@ -194,7 +194,7 @@ test('a multipart warning area is linked from inside one of its parts', () => {
 test('a hole is outside the warned area, and the link respects that', () => {
   /* A warning area with a hole in it: the mean of the vertices lands in the
      hole. The first version of this accepted it, because it flattened every
-     ring and asked only whether the point was inside any of them — and a point
+     ring and asked only whether the point was inside any of them - and a point
      in a hole is inside the exterior. GeoJSON says a hole is outside the
      geometry, so the link still opened an unwarned location. */
   const donut = { type: 'Polygon', coordinates: [
@@ -236,7 +236,7 @@ test('a convex area keeps its centroid rather than moving for no reason', () => 
 test('a hole large enough to swallow every sample is still handled', () => {
   /* The first hole fix sampled five fixed scanlines through the exterior only.
      An outer square from -10 to 10 with a hole from -9 to 9 leaves a one-unit
-     rim that no sampled midpoint lands in, so it fell back to the mean — the
+     rim that no sampled midpoint lands in, so it fell back to the mean - the
      very coordinate it had already rejected. */
   const rim = { type: 'Polygon', coordinates: [
     [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]],
@@ -274,7 +274,7 @@ test('insidePoint never returns a point it has itself rejected', () => {
 test('an alert placed from its zone is checked against that zone', () => {
   /* The zone fallback was the path nobody looked at. When an alert carries no
      inline geometry its coordinate comes from the fetched zone, but the call
-     passed f.geometry — null — to insidePoint, which then accepted the mean
+     passed f.geometry - null - to insidePoint, which then accepted the mean
      unchecked. A concave forecast zone could still send the reader somewhere
      that is not under the warning. */
   const src = read(path.join('api', 'events.js'));
@@ -298,7 +298,7 @@ test('a null geometry yields no verified point, so no point link', () => {
   /* Given the shape, it finds a real interior point. */
   const good = api.insidePoint(concave, mean);
   assert.equal(api.inPolygon(good.lon, good.lat, polys[0]), true);
-  /* Given nothing, it can only echo the mean — which is why the shape has to
+  /* Given nothing, it can only echo the mean - which is why the shape has to
      be passed. */
   assert.deepEqual(api.insidePoint(null, mean), mean);
 });

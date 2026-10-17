@@ -47,7 +47,7 @@ async function searchFor(page) {
 
 const settled = id => doc => {
   const n = doc.getElementById(id);
-  return n && n.textContent.trim() && !/^(Loading|—)/.test(n.textContent.trim());
+  return n && n.textContent.trim() && !/^(Loading|-)/.test(n.textContent.trim());
 };
 const enriched = doc => {
   const n = doc.getElementById('newsBody');
@@ -70,7 +70,7 @@ test('every page in the site renders with no uncaught JavaScript error', async (
 });
 
 // Route coverage moved to routes.test.js: this test asserted that every detail
-// page is named as a rewrite destination, which is what was wrong — cleanUrls
+// page is named as a rewrite destination, which is what was wrong - cleanUrls
 // serves them directly, and the rewrites that named them were dead in production.
 
 /* ------------------------------------------------------- incident detail */
@@ -83,7 +83,7 @@ test('incident detail page fills in when, where and impact', async () => {
   assert.equal(doc.getElementById('title').textContent, official.title);
   assert.ok(doc.getElementById('recordId').textContent.includes(official.id));
   assert.match(doc.getElementById('startedAt').textContent, /\d{4}|not supplied|did not give a start time/i);
-  assert.notEqual(doc.getElementById('updated').textContent, '—');
+  assert.notEqual(doc.getElementById('updated').textContent, '-');
   assert.ok(doc.getElementById('originText').textContent.length > 2);
   assert.ok(doc.getElementById('locationText').textContent.length > 2);
   assert.match(doc.getElementById('coords').textContent, /-?\d+\.\d+, -?\d+\.\d+/);
@@ -110,7 +110,7 @@ test('the action panel answers all seven questions, and names whose claim it is'
     ['aWho', 'who says this'], ['actionUpdated', 'when updated']]) {
     const el = doc.getElementById(id);
     assert.ok(el, 'the panel does not answer ' + what);
-    assert.ok(el.textContent.trim().length > 1 && el.textContent.trim() !== '\u2014',
+    assert.ok(el.textContent.trim().length > 1 && el.textContent.trim() !== '-',
       'the panel leaves "' + what + '" unanswered: ' + JSON.stringify(el.textContent));
   }
   assert.ok(doc.getElementById('actionSteps').textContent.length > 20,
@@ -257,7 +257,7 @@ test('every experimental outlook has a working detail page', async () => {
     assert.equal(doc.getElementById('title').textContent, expandAlways(o.title),
       'wrong record resolved for ' + o.id);
     assert.equal(doc.getElementById('rid').textContent, o.id);
-    assert.notEqual(doc.getElementById('forecastWindow').textContent, '—');
+    assert.notEqual(doc.getElementById('forecastWindow').textContent, '-');
     assert.ok(doc.getElementById('confidence').textContent.length > 5, 'no confidence on ' + o.id);
     assert.ok(doc.getElementById('evidence').textContent.length > 10, 'no evidence on ' + o.id);
     assert.ok(doc.getElementById('rule').textContent.length > 10, 'no verification rule on ' + o.id);
@@ -543,7 +543,7 @@ test('the homepage carries its own sort implementation', async () => {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.match(html, /const SORTS=\{/, 'index.html no longer defines its own sort table');
   assert.ok(!/PND\.(initSort|sortBy|sortValue|applySort)\b/.test(html),
-    'index.html now sorts through portal.js — keep the homepage list self-contained');
+    'index.html now sorts through portal.js - keep the homepage list self-contained');
   const r = await renderPage('index.html', {
     waitFor: doc => doc.getElementById('sortBy').options.length > 1 &&
       doc.getElementById('topEvents').children.length > 1
@@ -556,7 +556,7 @@ test('the homepage carries its own sort implementation', async () => {
   sel.dispatchEvent(new r.window.Event('change'));
   const after = orderOf(doc, 'topEvents');
   // This panel shows the top N, so re-sorting legitimately changes which rows
-  // appear — what must hold is that the rows shown are in the chosen order.
+  // appear - what must hold is that the rows shown are in the chosen order.
   assert.equal(after.length, before.length, 'row count changed');
   const alphabetical = [...after].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   assert.deepEqual(after, alphabetical, 'homepage title sort is not A-Z');
@@ -660,7 +660,7 @@ test('every homepage headline figure is measured, not written into the page', as
   const shown = Number(doc.getElementById('kEvents').textContent);
   assert.ok(shown > 0 && shown < evs.length, 'the filter did not narrow the feed: ' + shown);
 
-  // The note tracks the filter too — the split is of what is on screen now.
+  // The note tracks the filter too - the split is of what is on screen now.
   const inView = evs.filter(e => String(e.type).toLowerCase().includes(flood.value.toLowerCase()));
   const badIn = inView.filter(e => e.severityRank >= 4).length;
   const routineIn = inView.filter(e => e.severityRank === 1).length;

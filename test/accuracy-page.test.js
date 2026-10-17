@@ -2,7 +2,7 @@
 /*
  * What the verification page is allowed to publish.
  *
- * It published one hit rate over everything it had graded — "17% (1 of 6)" —
+ * It published one hit rate over everything it had graded - "17% (1 of 6)" -
  * computed entirely from outlooks about hazards that were already happening.
  * It is now driven by the verification engine, which refuses to grade a window
  * the record of observed disasters does not cover, and the page has to carry
@@ -21,7 +21,7 @@ test.after(closeAllWindows);
 
 const ROOT = path.join(__dirname, '..');
 const open = () => renderPage('accuracy.html', {
-  waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '—'
+  waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-'
 });
 const text = (r, id) => (r.document.getElementById(id) || {}).textContent;
 
@@ -256,7 +256,7 @@ function gradingFixture() {
 function openWith({ scan, observed }) {
   return renderPage('accuracy.html', {
     mock: {},
-    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
       const real = w.fetch;
       w.fetch = async (input) => {
@@ -400,12 +400,12 @@ test('a hand-recorded verdict the engine cannot reproduce is kept, shown and exc
 test('a ledger it could not read is not a ledger that is empty', async () => {
   /* Both new fetches caught into a valid-looking empty ledger, so a transient
      network or deployment error was indistinguishable from "nothing has been
-     recorded yet" — and the page then explained at length that an empty
+     recorded yet" - and the page then explained at length that an empty
      record is not a claim that nothing happened, while itself making exactly
      that substitution. */
   const r = await renderPage('accuracy.html', {
     mock: {},
-    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
       const real = w.fetch;
       w.fetch = async (input) => {
@@ -496,7 +496,7 @@ test('two claims under one id keep their own verdicts', async () => {
   const ledger = [base, revised];
   const r = await renderPage('accuracy.html', {
     mock: {},
-    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
       const real = w.fetch;
       w.fetch = async (input) => {
@@ -542,7 +542,7 @@ test('a ledger it could not read is not graded against', async () => {
   const fx = gradingFixture();
   const r = await renderPage('accuracy.html', {
     mock: {},
-    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '\u2014',
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
       const real = w.fetch;
       w.fetch = async (input) => {
@@ -629,7 +629,7 @@ test('the ledger is shown a page at a time, and every row is still there', async
 test('a record that could not be read is announced above the answer, never folded away', async () => {
   const r = await renderPage('accuracy.html', {
     mock: {},
-    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '—',
+    waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
       const real = w.fetch;
       w.fetch = async (input) => {

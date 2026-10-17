@@ -38,7 +38,7 @@ test('the grid reference is the one a standard MGRS converter gives', async () =
   for (const [lat, lon, want] of cases) assert.equal(G.mgrs(lat, lon), want, lat + ',' + lon);
   assert.equal(G.mgrs(85, 0), '', 'MGRS is not defined past UTM’s latitudes');
   assert.equal(G.dms(24.086856, 'N', 'S'), '24°05′12.68″N');
-  assert.equal(G.magnitudeOf('M 6.1 — 80 km ENE of Tadine'), 6.1);
+  assert.equal(G.magnitudeOf('M 6.1 - 80 km ENE of Tadine'), 6.1);
   assert.equal(G.magnitudeOf('Hurricane Polo'), null);
   r.close();
 });

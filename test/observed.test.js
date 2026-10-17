@@ -2,7 +2,7 @@
 /*
  * One physical disaster, however many providers reported it.
  *
- * Recall — "of the disasters that happened, how many did anything forecast?" —
+ * Recall - "of the disasters that happened, how many did anything forecast?" -
  * needs a denominator of real-world events, and this project had none. It had
  * a feed of provider records, in which the same flood arrives as a GDACS alert
  * and a ReliefWeb country declaration. Counting those as two disasters
@@ -84,7 +84,7 @@ test('a canonical id identifies exactly one disaster', async () => {
 test('an area-level record is never matched to another by distance', () => {
   /* Two floods a thousand kilometres apart, one placed at a country centroid.
      The kilometres between them are a fact about the centroid, not the flood,
-     so the only thing left to match on is the country — and these differ. */
+     so the only thing left to match on is the country - and these differ. */
   const a = { id: 'a', type: 'Flood', country: 'India', lat: 22, lon: 79,
     locationPrecision: 'country', updated: '2026-09-10T00:00:00Z', startedAt: '2026-09-10T00:00:00Z' };
   const b = { id: 'b', type: 'Flood', country: 'Nepal', lat: 28, lon: 84,
@@ -440,7 +440,7 @@ test('a superseded row never receives another write', () => {
   /* A record the ledger has not seen before, placed where the superseded row
      was, so the id it derives is that row's. */
   const fresh = Object.assign(floodAt('rw-new', 26.2, 92.9, '2026-09-11T00:00:00Z', 9),
-    { title: 'Flooding in Assam — updated' });
+    { title: 'Flooding in Assam - updated' });
   assert.equal(OBS.canonicalise([fresh])[0].canonicalEventId, dead.canonicalEventId,
     'control: this record has to derive the superseded row\'s id to prove anything');
   recordObserved([fresh], led, 'd');
@@ -519,7 +519,7 @@ test('a forecast cannot be verified by the snapshot it was derived from', () => 
       deaths: 4, startedAt: new Date(now - 30 * 36e5).toISOString(), updated: at,
       locationPrecision: 'incident', evidenceState: 'observed' };
     const outlook = { id: 'OUT-tc-1', type: 'Tropical Cyclone',
-      title: '2-day Tropical Cyclone outlook \u2014 Eastern Visayas', source: 'Derived',
+      title: '2-day Tropical Cyclone outlook - Eastern Visayas', source: 'Derived',
       sourceUrl: 'https://gdacs.example/tc1', country: 'Philippines', region: 'Eastern Visayas',
       lat: 11.2, lon: 125.0, forecast: true, forecastKind: 'signal-derived-outlook',
       forecastOf: 'gdacs-tc-1', forecastScope: 'event', severity: 'SEVERE', alert: 'Orange',
@@ -654,7 +654,7 @@ test('an observation a frozen claim is graded on is kept, and only that one', ()
     locationPrecision: 'incident', evidenceState: 'observed', severity: 'SEVERE'
   });
   const outlook = { id: 'OUT-af-1', type: 'Earthquake aftershock sequence',
-    title: 'Aftershock-sequence outlook \u2014 Bagmati', country: 'Nepal', region: 'Bagmati',
+    title: 'Aftershock-sequence outlook - Bagmati', country: 'Nepal', region: 'Bagmati',
     lat: 27.7, lon: 85.3, forecast: true, forecastKind: 'aftershock-sequence',
     forecastOf: 'usgs-main', forecastScope: 'event', targetStart: at(0), targetEnd: at(168),
     source: 'Derived',
@@ -750,7 +750,7 @@ test('a figure moving between rows is not an impact that occurred', () => {
   };
 
   const outlook = { id: 'OUT-af-merge', type: 'Earthquake aftershock sequence',
-    title: 'Aftershock-sequence outlook \u2014 Bagmati', country: 'Nepal', region: 'Bagmati',
+    title: 'Aftershock-sequence outlook - Bagmati', country: 'Nepal', region: 'Bagmati',
     lat: 27.7, lon: 85.3, forecast: true, forecastKind: 'aftershock-sequence',
     forecastOf: 'usgs-main', forecastScope: 'event', targetStart: at(-72), targetEnd: at(96),
     source: 'Derived',
@@ -828,7 +828,7 @@ test('an official warning is not a disaster that happened', async () => {
   /* Excluding forecasts was not enough. A National Weather Service alert is
      neither a forecast nor an observation: it carries evidenceState
      'official-warning' and a red or orange level, so it cleared the
-     significance bar and entered the ledger as a disaster that occurred —
+     significance bar and entered the ledger as a disaster that occurred -
      when what it says is that severe weather is expected. Each one inflates
      the recall denominator and manufactures a false negative against
      forecasts that had nothing to miss. */
@@ -854,7 +854,7 @@ test('an official warning is not a disaster that happened', async () => {
   const recorded = new Set(led.events.flatMap(e => (e.evidence || []).map(x => x.id)));
   for (const w of warnings) {
     assert.equal(recorded.has(w.id), false,
-      'a warning was recorded as a disaster that happened: ' + w.id + ' — ' + w.title);
+      'a warning was recorded as a disaster that happened: ' + w.id + ' - ' + w.title);
   }
   const ids = new Set(led.events.map(e => e.canonicalEventId));
   for (const c of wouldHaveCounted) {
@@ -932,7 +932,7 @@ test('a colour this site computed is not an alert an authority issued', async ()
 test('a volcano alert level is a status, not a disaster that happened', async () => {
   /* The finding after warnings were excluded: a USGS volcano record carries
      sourceType 'official' and no expiry, so it was classified as an
-     observation — and its WATCH or WARNING colour cleared the significance
+     observation - and its WATCH or WARNING colour cleared the significance
      bar on its own. Kilauea and Great Sitkin were recorded as disasters that
      occurred, on the strength of an alert level that says an eruption is
      "imminent, under way or suspected" and does not establish which. */
@@ -959,7 +959,7 @@ test('a volcano alert level is a status, not a disaster that happened', async ()
   const recorded = new Set(led.events.flatMap(e => (e.evidence || []).map(x => x.id)));
   for (const v of levels) {
     assert.equal(recorded.has(v.id), false,
-      'an alert level was recorded as a disaster that happened: ' + v.id + ' — ' + v.title);
+      'an alert level was recorded as a disaster that happened: ' + v.id + ' - ' + v.title);
   }
   /* An eruption that does cause harm is reported as an event by a provider
      that reports events, and that record is still eligible. */
@@ -1064,7 +1064,7 @@ test('a hazard family is a whole word, not a substring', async () => {
   /* "hail" and "wind" both sit inside "Thailand", so a flood outlook for
      Thailand named two hazard families and a complex-emergency declaration
      there was classified as severe weather outright. */
-  assert.deepEqual(OBS.familiesOf('', '3-day Flood risk outlook — Thailand'), ['flood'],
+  assert.deepEqual(OBS.familiesOf('', '3-day Flood risk outlook - Thailand'), ['flood'],
     'a place name was read as a hazard');
   assert.deepEqual(OBS.familiesOf('', 'Thailand: Complex Emergency'), ['other']);
   assert.deepEqual(OBS.familiesOf('', 'Winding River advisory'), ['other']);
@@ -1150,7 +1150,7 @@ test('a hazard this table has no family for is not filed under one from the titl
      could bear out an earthquake outlook. */
   assert.equal(OBS.familyOf('Tsunami', 'Tsunami advisory after M7.1 earthquake'), 'other',
     'a tsunami was filed as the earthquake that caused it');
-  assert.equal(OBS.familyOf('Tsunami', 'Tsunami warning \u2014 Pacific'), 'other',
+  assert.equal(OBS.familyOf('Tsunami', 'Tsunami warning - Pacific'), 'other',
     'the same hazard lands in two families depending on its title');
   assert.equal(OBS.familyOf('Epidemic', 'Cholera outbreak after floods'), 'other');
   assert.equal(OBS.familyOf('Extreme Cold', 'Cold wave after the storm'), 'other');
@@ -1162,12 +1162,12 @@ test('a hazard this table has no family for is not filed under one from the titl
       JSON.stringify(generic) + ' stopped the title being read');
   }
   // And an unclassified type with an unclassifiable title is still 'other'.
-  assert.equal(OBS.familyOf('Natural Hazard', 'Situation report \u2014 Sindh'), 'other');
+  assert.equal(OBS.familyOf('Natural Hazard', 'Situation report - Sindh'), 'other');
 });
 
 test('a country-wide record does not bridge two regional disasters', async () => {
   /* After the pairwise fix, a national declaration was still compatible with
-     every regional record in its country — so India, Assam and Gujarat all
+     every regional record in its country - so India, Assam and Gujarat all
      joined one group through the record that matched both, and a real
      disaster left the denominator again. */
   const rec = (region, t, id, precision) => ({ id: id, type: 'Flood', title: 'Flood in ' + region,
@@ -1202,7 +1202,7 @@ test('a country-wide record does not bridge two regional disasters', async () =>
 test('provider records learned on earlier runs are not forgotten', async () => {
   /* The evidence list was replaced with whatever this run's feed carried, and
      those ids are the index the ledger reconciles on. A disaster seen from A
-     and B, then from B alone, lost A — and the next A-only feed appended the
+     and B, then from B alone, lost A - and the next A-only feed appended the
      same physical disaster a second time. */
   const { events } = await feed();
   const observed = events.filter(e => e && !e.forecast && e.evidenceState === 'observed');

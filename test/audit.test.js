@@ -2,9 +2,9 @@
 /**
  * Whole-page audit.
  *
- * Renders every page in the site and checks the *visible* output — script and
+ * Renders every page in the site and checks the *visible* output - script and
  * style source excluded, which is what made an earlier pass report phantom
- * "null" and "${" findings — against the defect classes that reach a reader:
+ * "null" and "${" findings - against the defect classes that reach a reader:
  * junk values, stuck placeholders, dead links, duplicate ids, empty controls
  * and impossible counts.
  */

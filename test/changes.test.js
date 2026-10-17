@@ -11,7 +11,7 @@
  * The schedule was worse. The workflow asked for every five minutes and the
  * feed advertised "refreshTarget: 5 minutes". Measured from the ledger's own
  * write times across 15-20 September, GitHub ran it every 2.02 to 5.57 hours,
- * median 3.66 — about a fortieth of the declared rate. The site published the
+ * median 3.66 - about a fortieth of the declared rate. The site published the
  * intention as though it were the outcome.
  */
 const test = require('node:test');
@@ -199,8 +199,8 @@ test('no scheduled run is committed in a way that stops it deploying', () => {
   /* /api/events reads data/forecast-changes.json out of the deployed bundle,
      and vercel.json skips any deployment whose commit carries "[ledger]". The
      first attempt at this deployed only runs that saw movement, which left
-     production presenting the last movement as the latest check — stale
-     timestamp, stale cadence, stale active count — for as many quiet hours as
+     production presenting the last movement as the latest check - stale
+     timestamp, stale cadence, stale active count - for as many quiet hours as
      followed. A check nobody can see is worth less than a deployment. */
   const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows',
     'refresh-disaster-data.yml'), 'utf8');
@@ -281,8 +281,8 @@ test('a volcano outage is an outage, not a withdrawal', () => {
 });
 
 test('an upstream outage is not reported as a withdrawn forecast', () => {
-  /* /api/events deliberately serves a partial feed when a provider is down —
-     ReliefWeb has been answering HTTP 406 for days — so every outlook derived
+  /* /api/events deliberately serves a partial feed when a provider is down -
+     ReliefWeb has been answering HTTP 406 for days - so every outlook derived
      from it simply vanishes. Read as a withdrawal, an outage would claim the
      signal stopped, and the provider recovering would claim a fresh forecast. */
   const d = tmp();
@@ -318,7 +318,7 @@ test('a snapshot written before providers existed is not accused of vanishing', 
   /* The committed baseline was written before snap() carried a provider. On
      the first scheduled run after deploying the outage handling, every entry
      would have failed the guard and been recorded as withdrawn, then re-added
-     on the next run — the exact pair of false statements the outage work
+     on the next run - the exact pair of false statements the outage work
      exists to prevent, delivered on day one. */
   const d = tmp();
   const log = path.join(d, 'changes.json');
@@ -487,7 +487,7 @@ test('every kind of change is put into words', async () => {
 
 test('a quiet run still reports a source it could not check', async () => {
   /* An outage is deliberately not counted as a change to the forecasts, so on
-     an otherwise quiet run total is zero — and the panel returned early on
+     an otherwise quiet run total is zero - and the panel returned early on
      total alone, reporting "nothing changed" and dropping the outage rows.
      That is the opposite of what recording them was for. */
   const { window } = await renderPage('forecasts.html', { timeoutMs: 15000,
@@ -542,7 +542,7 @@ test('no file claims a cadence the record contradicts', () => {
   /* The coverage rule was justified in a comment as being "beyond the slowest
      cycle observed", from a hand measurement over 15-20 September. The job's
      own record has since written down a 35-hour gap, which made that
-     justification false while nothing failed — a measurement in prose goes
+     justification false while nothing failed - a measurement in prose goes
      stale silently, and this is what catches the next one.
 
      The rule is: anything that states a range of hours between runs must not
@@ -558,7 +558,7 @@ test('no file claims a cadence the record contradicts', () => {
     const p = path.join(ROOT, f);
     if (!fs.existsSync(p)) continue;
     const text = fs.readFileSync(p, 'utf8');
-    for (const m of text.matchAll(/every\s+([\d.]+)\s*(?:to|-|–|and)\s*([\d.]+)\s*hours/gi)) {
+    for (const m of text.matchAll(/every\s+([\d.]+)\s*(?:to|-|\u2013|and)\s*([\d.]+)\s*hours/gi)) {
       claims.push({ file: f, low: Number(m[1]), high: Number(m[2]), text: m[0] });
     }
     for (const m of text.matchAll(/(?:slowest|longest|worst)[^.]{0,40}(?:cycle|gap|run)[^.]{0,60}/gi)) {

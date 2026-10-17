@@ -2,7 +2,7 @@
 /**
  * One physical disaster, however many providers reported it.
  *
- * Recall — "of the disasters that happened, how many did we forecast?" — needs
+ * Recall - "of the disasters that happened, how many did we forecast?" - needs
  * a denominator of real-world events. What this project has instead is a feed
  * of provider records, and the same flood arrives as a GDACS alert, a
  * ReliefWeb country declaration and sometimes an EONET entry. Counting those
@@ -12,7 +12,7 @@
  *
  * The rules here are deliberately conservative, because the two mistakes are
  * not symmetric. Wrongly splitting one disaster into two costs an inflated
- * denominator. Wrongly merging two disasters hides one of them completely —
+ * denominator. Wrongly merging two disasters hides one of them completely -
  * a real event that nobody can then ask whether anything predicted. So
  * records are only merged on evidence that they are the same event, and
  * anything unclear stays separate and says so.
@@ -403,7 +403,7 @@
   /**
    * Group provider records into canonical disasters.
    *
-   * `records` are feed events that already describe something observed — the
+   * `records` are feed events that already describe something observed - the
    * caller decides that, because "is this a forecast" is the feed's business,
    * not this file's.
    */

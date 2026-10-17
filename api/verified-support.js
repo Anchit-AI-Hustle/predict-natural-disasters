@@ -23,7 +23,7 @@
 const GLOBAL_RELIEF = [
   {
     name: 'IFRC / Red Cross Red Crescent',
-    kind: 'Emergency relief network — 191 national societies',
+    kind: 'Emergency relief network - 191 national societies',
     url: 'https://www.ifrc.org/emergencies/all',
     donate: 'https://www.ifrc.org/donate',
     contactUrl: 'https://www.ifrc.org/contact',
@@ -127,7 +127,7 @@ const COUNTRY_SUPPORT = {
       { name: 'National Disaster Management Authority (NDMA)', url: 'https://ndma.gov.in/', contactUrl: 'https://ndma.gov.in/Contact-Us' },
       { name: 'National Disaster Response Force (NDRF)', url: 'https://www.ndrf.gov.in/', contactUrl: 'https://www.ndrf.gov.in/contact-us' },
       { name: 'India Meteorological Department (IMD)', url: 'https://mausam.imd.gov.in/' },
-      { name: 'Central Water Commission — flood forecasting', url: 'https://ffs.india-water.gov.in/' }
+      { name: 'Central Water Commission - flood forecasting', url: 'https://ffs.india-water.gov.in/' }
     ],
     relief: [
       { name: 'Indian Red Cross Society', url: 'https://indianredcross.org/', donate: 'https://indianredcross.org/donate/' },
@@ -147,7 +147,7 @@ const COUNTRY_SUPPORT = {
     authorities: [
       { name: 'National Disaster Risk Reduction and Management Authority', url: 'https://bipad.gov.np/' },
       { name: 'Department of Hydrology and Meteorology', url: 'https://www.dhm.gov.np/' },
-      { name: 'Ministry of Home Affairs — Nepal', url: 'https://www.moha.gov.np/' }
+      { name: 'Ministry of Home Affairs - Nepal', url: 'https://www.moha.gov.np/' }
     ],
     relief: [
       { name: 'Nepal Red Cross Society', url: 'https://nrcs.org/' }
@@ -179,9 +179,9 @@ const COUNTRY_SUPPORT = {
       n('Ambulance / medical emergency', '119')
     ],
     authorities: [
-      { name: 'BNPB — National Disaster Management Authority', url: 'https://www.bnpb.go.id/' },
-      { name: 'BMKG — Meteorology, Climatology and Geophysics Agency', url: 'https://www.bmkg.go.id/' },
-      { name: 'PVMBG — Volcanology and Geological Hazard Mitigation', url: 'https://magma.esdm.go.id/' }
+      { name: 'BNPB - National Disaster Management Authority', url: 'https://www.bnpb.go.id/' },
+      { name: 'BMKG - Meteorology, Climatology and Geophysics Agency', url: 'https://www.bmkg.go.id/' },
+      { name: 'PVMBG - Volcanology and Geological Hazard Mitigation', url: 'https://magma.esdm.go.id/' }
     ],
     relief: [
       { name: 'Palang Merah Indonesia (Indonesian Red Cross)', url: 'https://www.pmi.or.id/' }
@@ -194,9 +194,9 @@ const COUNTRY_SUPPORT = {
       n('National emergency hotline', '911', 'Police, fire and medical emergencies')
     ],
     authorities: [
-      { name: 'NDRRMC — National Disaster Risk Reduction and Management Council', url: 'https://ndrrmc.gov.ph/' },
-      { name: 'PAGASA — weather and flood warnings', url: 'https://www.pagasa.dost.gov.ph/' },
-      { name: 'PHIVOLCS — volcano and earthquake', url: 'https://www.phivolcs.dost.gov.ph/' }
+      { name: 'NDRRMC - National Disaster Risk Reduction and Management Council', url: 'https://ndrrmc.gov.ph/' },
+      { name: 'PAGASA - weather and flood warnings', url: 'https://www.pagasa.dost.gov.ph/' },
+      { name: 'PHIVOLCS - volcano and earthquake', url: 'https://www.phivolcs.dost.gov.ph/' }
     ],
     relief: [
       { name: 'Philippine Red Cross', url: 'https://redcross.org.ph/' }
@@ -328,7 +328,7 @@ const COUNTRY_SUPPORT = {
     iso2: 'MY',
     emergency: [n('Police and ambulance', '999'), n('Emergency from a mobile phone', '112')],
     authorities: [
-      { name: 'NADMA — National Disaster Management Agency', url: 'https://www.nadma.gov.my/' },
+      { name: 'NADMA - National Disaster Management Agency', url: 'https://www.nadma.gov.my/' },
       { name: 'Malaysian Meteorological Department', url: 'https://www.met.gov.my/' }
     ],
     relief: [{ name: 'Malaysian Red Crescent Society', url: 'https://www.redcrescent.org.my/' }]
@@ -383,7 +383,7 @@ const COUNTRY_SUPPORT = {
     emergency: [n('Emergency services', '911')],
     authorities: [
       { name: 'Public Safety Canada', url: 'https://www.publicsafety.gc.ca/' },
-      { name: 'Environment and Climate Change Canada — weather', url: 'https://weather.gc.ca/' }
+      { name: 'Environment and Climate Change Canada - weather', url: 'https://weather.gc.ca/' }
     ],
     relief: [{ name: 'Canadian Red Cross', url: 'https://www.redcross.ca/', donate: 'https://donate.redcross.ca/' }]
   },
@@ -409,8 +409,8 @@ const COUNTRY_SUPPORT = {
     ],
     authorities: [
       { name: 'Defesa Civil Nacional', url: 'https://www.gov.br/mdr/pt-br/assuntos/protecao-e-defesa-civil' },
-      { name: 'INMET — national meteorology', url: 'https://portal.inmet.gov.br/' },
-      { name: 'CEMADEN — natural disaster monitoring', url: 'https://www.gov.br/cemaden/pt-br' }
+      { name: 'INMET - national meteorology', url: 'https://portal.inmet.gov.br/' },
+      { name: 'CEMADEN - natural disaster monitoring', url: 'https://www.gov.br/cemaden/pt-br' }
     ],
     relief: [{ name: 'Cruz Vermelha Brasileira', url: 'https://www.cruzvermelha.org.br/' }]
   },
@@ -429,7 +429,7 @@ const COUNTRY_SUPPORT = {
     iso2: 'CL',
     emergency: [n('Police (Carabineros)', '133'), n('Ambulance (SAMU)', '131'), n('Fire brigade', '132')],
     authorities: [
-      { name: 'SENAPRED — disaster prevention and response', url: 'https://senapred.cl/' },
+      { name: 'SENAPRED - disaster prevention and response', url: 'https://senapred.cl/' },
       { name: 'Dirección Meteorológica de Chile', url: 'https://www.meteochile.gob.cl/' },
       { name: 'Centro Sismológico Nacional', url: 'https://www.sismologia.cl/' }
     ],
@@ -440,8 +440,8 @@ const COUNTRY_SUPPORT = {
     iso2: 'CO',
     emergency: [n('Emergency services', '123')],
     authorities: [
-      { name: 'UNGRD — disaster risk management', url: 'https://portal.gestiondelriesgo.gov.co/' },
-      { name: 'IDEAM — meteorology and hydrology', url: 'http://www.ideam.gov.co/' }
+      { name: 'UNGRD - disaster risk management', url: 'https://portal.gestiondelriesgo.gov.co/' },
+      { name: 'IDEAM - meteorology and hydrology', url: 'http://www.ideam.gov.co/' }
     ],
     relief: [{ name: 'Cruz Roja Colombiana', url: 'https://www.cruzrojacolombiana.org/' }]
   },
@@ -450,8 +450,8 @@ const COUNTRY_SUPPORT = {
     iso2: 'PE',
     emergency: [n('Police', '105'), n('Fire brigade', '116'), n('Civil defence (INDECI)', '115')],
     authorities: [
-      { name: 'INDECI — National Civil Defence Institute', url: 'https://www.gob.pe/indeci' },
-      { name: 'SENAMHI — meteorology and hydrology', url: 'https://www.senamhi.gob.pe/' }
+      { name: 'INDECI - National Civil Defence Institute', url: 'https://www.gob.pe/indeci' },
+      { name: 'SENAMHI - meteorology and hydrology', url: 'https://www.senamhi.gob.pe/' }
     ],
     relief: [{ name: 'Cruz Roja Peruana', url: 'https://cruzroja.org.pe/' }]
   },
@@ -484,55 +484,55 @@ const COUNTRY_SUPPORT = {
   france: {
     name: 'France', iso2: 'FR',
     emergency: [n('European emergency number', '112'), n('Medical emergencies (SAMU)', '15'), n('Police', '17'), n('Fire and rescue', '18')],
-    authorities: [{ name: 'Météo-France vigilance', url: 'https://vigilance.meteofrance.fr/' }, { name: 'Ministère de l’Intérieur — sécurité civile', url: 'https://www.interieur.gouv.fr/Le-ministere/Securite-civile' }],
+    authorities: [{ name: 'Météo-France vigilance', url: 'https://vigilance.meteofrance.fr/' }, { name: 'Ministère de l’Intérieur - sécurité civile', url: 'https://www.interieur.gouv.fr/Le-ministere/Securite-civile' }],
     relief: [{ name: 'Croix-Rouge française', url: 'https://www.croix-rouge.fr/' }]
   },
   germany: {
     name: 'Germany', iso2: 'DE',
     emergency: [n('Fire, rescue and ambulance', '112'), n('Police', '110')],
-    authorities: [{ name: 'BBK — Federal Office of Civil Protection', url: 'https://www.bbk.bund.de/' }, { name: 'Deutscher Wetterdienst warnings', url: 'https://www.dwd.de/EN/weather/warnings/warnings_node.html' }],
+    authorities: [{ name: 'BBK - Federal Office of Civil Protection', url: 'https://www.bbk.bund.de/' }, { name: 'Deutscher Wetterdienst warnings', url: 'https://www.dwd.de/EN/weather/warnings/warnings_node.html' }],
     relief: [{ name: 'Deutsches Rotes Kreuz', url: 'https://www.drk.de/' }]
   },
   italy: {
     name: 'Italy', iso2: 'IT',
     emergency: [n('European emergency number', '112')],
-    authorities: [{ name: 'Protezione Civile', url: 'https://www.protezionecivile.gov.it/' }, { name: 'INGV — earthquakes and volcanoes', url: 'https://www.ingv.it/' }],
+    authorities: [{ name: 'Protezione Civile', url: 'https://www.protezionecivile.gov.it/' }, { name: 'INGV - earthquakes and volcanoes', url: 'https://www.ingv.it/' }],
     relief: [{ name: 'Croce Rossa Italiana', url: 'https://cri.it/' }]
   },
   spain: {
     name: 'Spain', iso2: 'ES',
     emergency: [n('European emergency number', '112')],
-    authorities: [{ name: 'Protección Civil y Emergencias', url: 'https://www.proteccioncivil.es/' }, { name: 'AEMET — meteorology', url: 'https://www.aemet.es/' }],
+    authorities: [{ name: 'Protección Civil y Emergencias', url: 'https://www.proteccioncivil.es/' }, { name: 'AEMET - meteorology', url: 'https://www.aemet.es/' }],
     relief: [{ name: 'Cruz Roja Española', url: 'https://www2.cruzroja.es/' }]
   },
   portugal: {
     name: 'Portugal', iso2: 'PT',
     emergency: [n('European emergency number', '112')],
-    authorities: [{ name: 'ANEPC — civil protection', url: 'https://prociv.gov.pt/' }, { name: 'IPMA — meteorology and seismology', url: 'https://www.ipma.pt/' }],
+    authorities: [{ name: 'ANEPC - civil protection', url: 'https://prociv.gov.pt/' }, { name: 'IPMA - meteorology and seismology', url: 'https://www.ipma.pt/' }],
     relief: [{ name: 'Cruz Vermelha Portuguesa', url: 'https://www.cruzvermelha.pt/' }]
   },
   greece: {
     name: 'Greece', iso2: 'GR',
     emergency: [n('European emergency number', '112'), n('Fire brigade', '199'), n('Ambulance (EKAB)', '166')],
-    authorities: [{ name: 'General Secretariat for Civil Protection', url: 'https://www.civilprotection.gov.gr/' }, { name: 'National Observatory of Athens — seismology', url: 'https://www.gein.noa.gr/' }],
+    authorities: [{ name: 'General Secretariat for Civil Protection', url: 'https://www.civilprotection.gov.gr/' }, { name: 'National Observatory of Athens - seismology', url: 'https://www.gein.noa.gr/' }],
     relief: [{ name: 'Hellenic Red Cross', url: 'https://www.redcross.gr/' }]
   },
   turkey: {
     name: 'Türkiye', iso2: 'TR',
     emergency: [n('Emergency call centre', '112')],
-    authorities: [{ name: 'AFAD — Disaster and Emergency Management', url: 'https://en.afad.gov.tr/' }, { name: 'Turkish State Meteorological Service', url: 'https://www.mgm.gov.tr/eng/forecast-cities.aspx' }],
+    authorities: [{ name: 'AFAD - Disaster and Emergency Management', url: 'https://en.afad.gov.tr/' }, { name: 'Turkish State Meteorological Service', url: 'https://www.mgm.gov.tr/eng/forecast-cities.aspx' }],
     relief: [{ name: 'Türk Kızılay (Turkish Red Crescent)', url: 'https://www.kizilay.org.tr/' }]
   },
   netherlands: { name: 'Netherlands', iso2: 'NL', emergency: [n('European emergency number', '112')], authorities: [{ name: 'KNMI weather warnings', url: 'https://www.knmi.nl/nederland-nu/weer/waarschuwingen' }], relief: [{ name: 'Het Nederlandse Rode Kruis', url: 'https://www.rodekruis.nl/' }] },
   belgium: { name: 'Belgium', iso2: 'BE', emergency: [n('European emergency number', '112'), n('Police', '101')], authorities: [{ name: 'National Crisis Centre', url: 'https://crisiscentrum.be/' }, { name: 'RMI weather warnings', url: 'https://www.meteo.be/' }], relief: [{ name: 'Croix-Rouge de Belgique', url: 'https://www.croix-rouge.be/' }] },
   switzerland: { name: 'Switzerland', iso2: 'CH', emergency: [n('European emergency number', '112'), n('Police', '117'), n('Fire', '118'), n('Ambulance', '144')], authorities: [{ name: 'MeteoSwiss warnings', url: 'https://www.meteoswiss.admin.ch/' }, { name: 'Federal Office for Civil Protection', url: 'https://www.babs.admin.ch/' }], relief: [{ name: 'Swiss Red Cross', url: 'https://www.redcross.ch/' }] },
   austria: { name: 'Austria', iso2: 'AT', emergency: [n('European emergency number', '112'), n('Ambulance', '144'), n('Fire', '122')], authorities: [{ name: 'GeoSphere Austria warnings', url: 'https://www.geosphere.at/' }], relief: [{ name: 'Österreichisches Rotes Kreuz', url: 'https://www.roteskreuz.at/' }] },
-  poland: { name: 'Poland', iso2: 'PL', emergency: [n('European emergency number', '112')], authorities: [{ name: 'IMGW — meteorology and water management', url: 'https://www.imgw.pl/' }, { name: 'Government Centre for Security', url: 'https://www.gov.pl/web/rcb' }], relief: [{ name: 'Polski Czerwony Krzyż', url: 'https://pck.pl/' }] },
-  norway: { name: 'Norway', iso2: 'NO', emergency: [n('Fire', '110'), n('Police', '112'), n('Ambulance', '113')], authorities: [{ name: 'MET Norway warnings', url: 'https://www.yr.no/en' }, { name: 'NVE — flood and landslide warnings', url: 'https://varsom.no/en/' }], relief: [{ name: 'Røde Kors Norge', url: 'https://www.rodekors.no/' }] },
-  sweden: { name: 'Sweden', iso2: 'SE', emergency: [n('Emergency services', '112')], authorities: [{ name: 'SMHI warnings', url: 'https://www.smhi.se/' }, { name: 'MSB — civil contingencies', url: 'https://www.msb.se/' }], relief: [{ name: 'Svenska Röda Korset', url: 'https://www.rodakorset.se/' }] },
+  poland: { name: 'Poland', iso2: 'PL', emergency: [n('European emergency number', '112')], authorities: [{ name: 'IMGW - meteorology and water management', url: 'https://www.imgw.pl/' }, { name: 'Government Centre for Security', url: 'https://www.gov.pl/web/rcb' }], relief: [{ name: 'Polski Czerwony Krzyż', url: 'https://pck.pl/' }] },
+  norway: { name: 'Norway', iso2: 'NO', emergency: [n('Fire', '110'), n('Police', '112'), n('Ambulance', '113')], authorities: [{ name: 'MET Norway warnings', url: 'https://www.yr.no/en' }, { name: 'NVE - flood and landslide warnings', url: 'https://varsom.no/en/' }], relief: [{ name: 'Røde Kors Norge', url: 'https://www.rodekors.no/' }] },
+  sweden: { name: 'Sweden', iso2: 'SE', emergency: [n('Emergency services', '112')], authorities: [{ name: 'SMHI warnings', url: 'https://www.smhi.se/' }, { name: 'MSB - civil contingencies', url: 'https://www.msb.se/' }], relief: [{ name: 'Svenska Röda Korset', url: 'https://www.rodakorset.se/' }] },
   finland: { name: 'Finland', iso2: 'FI', emergency: [n('Emergency services', '112')], authorities: [{ name: 'Finnish Meteorological Institute warnings', url: 'https://en.ilmatieteenlaitos.fi/warnings' }], relief: [{ name: 'Suomen Punainen Risti', url: 'https://www.punainenristi.fi/' }] },
   denmark: { name: 'Denmark', iso2: 'DK', emergency: [n('Emergency services', '112')], authorities: [{ name: 'DMI warnings', url: 'https://www.dmi.dk/' }], relief: [{ name: 'Røde Kors Danmark', url: 'https://www.rodekors.dk/' }] },
-  iceland: { name: 'Iceland', iso2: 'IS', emergency: [n('Emergency services', '112')], authorities: [{ name: 'Icelandic Met Office — volcano and weather', url: 'https://en.vedur.is/' }, { name: 'Department of Civil Protection', url: 'https://www.almannavarnir.is/' }], relief: [{ name: 'Icelandic Red Cross', url: 'https://www.raudikrossinn.is/' }] },
+  iceland: { name: 'Iceland', iso2: 'IS', emergency: [n('Emergency services', '112')], authorities: [{ name: 'Icelandic Met Office - volcano and weather', url: 'https://en.vedur.is/' }, { name: 'Department of Civil Protection', url: 'https://www.almannavarnir.is/' }], relief: [{ name: 'Icelandic Red Cross', url: 'https://www.raudikrossinn.is/' }] },
   ukraine: { name: 'Ukraine', iso2: 'UA', emergency: [n('Emergency services', '112'), n('State Emergency Service', '101')], authorities: [{ name: 'State Emergency Service of Ukraine', url: 'https://dsns.gov.ua/' }], relief: [{ name: 'Ukrainian Red Cross Society', url: 'https://redcross.org.ua/' }] },
   russia: { name: 'Russia', iso2: 'RU', emergency: [n('Emergency services', '112'), n('EMERCOM', '101')], authorities: [{ name: 'EMERCOM of Russia', url: 'https://mchs.gov.ru/' }], relief: [{ name: 'Russian Red Cross', url: 'https://www.redcross.ru/' }] },
   australia: {
@@ -551,7 +551,7 @@ const COUNTRY_SUPPORT = {
     authorities: [
       { name: 'National Emergency Management Agency', url: 'https://www.civildefence.govt.nz/' },
       { name: 'MetService warnings', url: 'https://www.metservice.com/warnings/home' },
-      { name: 'GeoNet — earthquake, volcano, tsunami', url: 'https://www.geonet.org.nz/' }
+      { name: 'GeoNet - earthquake, volcano, tsunami', url: 'https://www.geonet.org.nz/' }
     ],
     relief: [{ name: 'New Zealand Red Cross', url: 'https://www.redcross.org.nz/' }]
   },
@@ -564,8 +564,8 @@ const COUNTRY_SUPPORT = {
     relief: [{ name: 'South African Red Cross Society', url: 'https://www.redcross.org.za/' }, { name: 'Gift of the Givers', url: 'https://giftofthegivers.org/' }]
   },
   kenya: { name: 'Kenya', iso2: 'KE', emergency: [n('Emergency services', '999'), n('Emergency services', '112')], authorities: [{ name: 'Kenya Meteorological Department', url: 'https://meteo.go.ke/' }, { name: 'National Disaster Operations Centre', url: 'https://www.ndoc.go.ke/' }], relief: [{ name: 'Kenya Red Cross Society', url: 'https://www.redcross.or.ke/' }] },
-  nigeria: { name: 'Nigeria', iso2: 'NG', emergency: [n('National emergency number', '112', 'Police, fire and medical emergencies')], authorities: [{ name: 'NEMA — National Emergency Management Agency', url: 'https://nema.gov.ng/' }, { name: 'NiMet — Nigerian Meteorological Agency', url: 'https://nimet.gov.ng/' }], relief: [{ name: 'Nigerian Red Cross Society', url: 'https://www.redcrossnigeria.org/' }] },
-  ghana: { name: 'Ghana', iso2: 'GH', emergency: [n('National emergency number', '112'), n('Police', '191'), n('Ambulance', '193')], authorities: [{ name: 'NADMO — National Disaster Management Organisation', url: 'https://nadmo.gov.gh/' }, { name: 'Ghana Meteorological Agency', url: 'https://www.meteo.gov.gh/' }], relief: [{ name: 'Ghana Red Cross Society', url: 'https://www.ghanaredcross.org/' }] },
+  nigeria: { name: 'Nigeria', iso2: 'NG', emergency: [n('National emergency number', '112', 'Police, fire and medical emergencies')], authorities: [{ name: 'NEMA - National Emergency Management Agency', url: 'https://nema.gov.ng/' }, { name: 'NiMet - Nigerian Meteorological Agency', url: 'https://nimet.gov.ng/' }], relief: [{ name: 'Nigerian Red Cross Society', url: 'https://www.redcrossnigeria.org/' }] },
+  ghana: { name: 'Ghana', iso2: 'GH', emergency: [n('National emergency number', '112'), n('Police', '191'), n('Ambulance', '193')], authorities: [{ name: 'NADMO - National Disaster Management Organisation', url: 'https://nadmo.gov.gh/' }, { name: 'Ghana Meteorological Agency', url: 'https://www.meteo.gov.gh/' }], relief: [{ name: 'Ghana Red Cross Society', url: 'https://www.ghanaredcross.org/' }] },
   ethiopia: { name: 'Ethiopia', iso2: 'ET', emergency: [], authorities: [{ name: 'Ethiopian Meteorology Institute', url: 'http://www.ethiomet.gov.et/' }], relief: [{ name: 'Ethiopian Red Cross Society', url: 'https://redcrosseth.org/' }] },
   tanzania: { name: 'Tanzania', iso2: 'TZ', emergency: [n('Emergency services', '112')], authorities: [{ name: 'Tanzania Meteorological Authority', url: 'https://www.meteo.go.tz/' }], relief: [{ name: 'Tanzania Red Cross National Society', url: 'https://trcs.or.tz/' }] },
   uganda: { name: 'Uganda', iso2: 'UG', emergency: [n('Emergency services', '999'), n('Emergency services', '112')], authorities: [{ name: 'Uganda National Meteorological Authority', url: 'https://www.unma.go.ug/' }], relief: [{ name: 'Uganda Red Cross Society', url: 'https://www.redcrossug.org/' }] },
@@ -574,17 +574,17 @@ const COUNTRY_SUPPORT = {
   tunisia: { name: 'Tunisia', iso2: 'TN', emergency: [n('Police', '197'), n('Ambulance (SAMU)', '190'), n('Civil protection', '198')], authorities: [{ name: 'Institut National de la Météorologie', url: 'http://www.meteo.tn/' }], relief: [{ name: 'Croissant-Rouge Tunisien', url: 'https://www.croissant-rouge.tn/' }] },
   algeria: { name: 'Algeria', iso2: 'DZ', emergency: [n('Police', '17'), n('Gendarmerie', '1055'), n('Civil protection', '14')], authorities: [{ name: 'Office National de la Météorologie', url: 'https://www.meteo.dz/' }], relief: [{ name: 'Croissant-Rouge Algérien', url: 'https://www.cra-dz.org/' }] },
   saudi_arabia: { name: 'Saudi Arabia', iso2: 'SA', emergency: [n('Unified emergency number', '911'), n('Red Crescent ambulance', '997'), n('Civil defence', '998')], authorities: [{ name: 'National Center for Meteorology', url: 'https://ncm.gov.sa/' }, { name: 'General Directorate of Civil Defense', url: 'https://www.998.gov.sa/' }], relief: [{ name: 'Saudi Red Crescent Authority', url: 'https://www.srca.org.sa/' }] },
-  united_arab_emirates: { name: 'United Arab Emirates', iso2: 'AE', emergency: [n('Police', '999'), n('Ambulance', '998'), n('Civil defence / fire', '997')], authorities: [{ name: 'National Center of Meteorology', url: 'https://www.ncm.gov.ae/' }, { name: 'NCEMA — emergency and crisis management', url: 'https://www.ncema.gov.ae/' }], relief: [{ name: 'Emirates Red Crescent', url: 'https://www.emiratesrc.ae/' }] },
+  united_arab_emirates: { name: 'United Arab Emirates', iso2: 'AE', emergency: [n('Police', '999'), n('Ambulance', '998'), n('Civil defence / fire', '997')], authorities: [{ name: 'National Center of Meteorology', url: 'https://www.ncm.gov.ae/' }, { name: 'NCEMA - emergency and crisis management', url: 'https://www.ncema.gov.ae/' }], relief: [{ name: 'Emirates Red Crescent', url: 'https://www.emiratesrc.ae/' }] },
   israel: { name: 'Israel', iso2: 'IL', emergency: [n('Police', '100'), n('Ambulance (Magen David Adom)', '101'), n('Fire and rescue', '102')], authorities: [{ name: 'Israel Meteorological Service', url: 'https://ims.gov.il/' }, { name: 'National Emergency Authority', url: 'https://www.gov.il/en/departments/rachel' }], relief: [{ name: 'Magen David Adom', url: 'https://www.mdais.org/en' }] },
   jordan: { name: 'Jordan', iso2: 'JO', emergency: [n('Emergency services', '911')], authorities: [{ name: 'Jordan Meteorological Department', url: 'http://jometeo.gov.jo/' }], relief: [{ name: 'Jordan National Red Crescent Society', url: 'https://www.jnrcs.org/' }] },
   iran: { name: 'Iran', iso2: 'IR', emergency: [n('Police', '110'), n('Emergency medical services', '115'), n('Fire', '125')], authorities: [{ name: 'Iran Meteorological Organization', url: 'https://www.irimo.ir/' }], relief: [{ name: 'Iranian Red Crescent Society', url: 'https://www.rcs.ir/' }] },
   iraq: { name: 'Iraq', iso2: 'IQ', emergency: [n('Police', '104'), n('Ambulance', '122'), n('Fire', '115')], authorities: [{ name: 'Iraqi Meteorological Organization', url: 'http://www.meteoseism.gov.iq/' }], relief: [{ name: 'Iraqi Red Crescent Society', url: 'https://www.ircs.org.iq/' }] },
   haiti: { name: 'Haiti', iso2: 'HT', emergency: [], authorities: [{ name: 'Direction Générale de la Protection Civile', url: 'https://www.protectioncivile.gouv.ht/' }], relief: [{ name: 'Croix-Rouge Haïtienne', url: 'https://www.croixrouge.ht/' }] },
-  dominican_republic: { name: 'Dominican Republic', iso2: 'DO', emergency: [n('Emergency services', '911')], authorities: [{ name: 'ONAMET — meteorology', url: 'https://onamet.gob.do/' }, { name: 'Defensa Civil', url: 'https://defensacivil.gob.do/' }], relief: [{ name: 'Cruz Roja Dominicana', url: 'https://cruzroja.org.do/' }] },
+  dominican_republic: { name: 'Dominican Republic', iso2: 'DO', emergency: [n('Emergency services', '911')], authorities: [{ name: 'ONAMET - meteorology', url: 'https://onamet.gob.do/' }, { name: 'Defensa Civil', url: 'https://defensacivil.gob.do/' }], relief: [{ name: 'Cruz Roja Dominicana', url: 'https://cruzroja.org.do/' }] },
   cuba: { name: 'Cuba', iso2: 'CU', emergency: [n('Police', '106'), n('Ambulance', '104'), n('Fire', '105')], authorities: [{ name: 'Instituto de Meteorología', url: 'http://www.insmet.cu/' }], relief: [{ name: 'Cuban Red Cross (via IFRC)', url: 'https://www.ifrc.org/national-societies-directory' }] },
-  jamaica: { name: 'Jamaica', iso2: 'JM', emergency: [n('Police', '119'), n('Fire and ambulance', '110')], authorities: [{ name: 'ODPEM — disaster preparedness', url: 'https://www.odpem.org.jm/' }, { name: 'Meteorological Service Jamaica', url: 'https://metservice.gov.jm/' }], relief: [{ name: 'Jamaica Red Cross', url: 'https://www.jamaicaredcross.org/' }] },
-  mozambique: { name: 'Mozambique', iso2: 'MZ', emergency: [], authorities: [{ name: 'INAM — national meteorology', url: 'https://www.inam.gov.mz/' }, { name: 'INGD — disaster management', url: 'https://www.ingd.gov.mz/' }], relief: [{ name: 'Cruz Vermelha de Moçambique', url: 'https://www.redcross.org.mz/' }] },
-  madagascar: { name: 'Madagascar', iso2: 'MG', emergency: [], authorities: [{ name: 'BNGRC — disaster risk management', url: 'https://www.bngrc.mg/' }], relief: [{ name: 'Malagasy Red Cross (via IFRC)', url: 'https://www.ifrc.org/national-societies-directory' }] },
+  jamaica: { name: 'Jamaica', iso2: 'JM', emergency: [n('Police', '119'), n('Fire and ambulance', '110')], authorities: [{ name: 'ODPEM - disaster preparedness', url: 'https://www.odpem.org.jm/' }, { name: 'Meteorological Service Jamaica', url: 'https://metservice.gov.jm/' }], relief: [{ name: 'Jamaica Red Cross', url: 'https://www.jamaicaredcross.org/' }] },
+  mozambique: { name: 'Mozambique', iso2: 'MZ', emergency: [], authorities: [{ name: 'INAM - national meteorology', url: 'https://www.inam.gov.mz/' }, { name: 'INGD - disaster management', url: 'https://www.ingd.gov.mz/' }], relief: [{ name: 'Cruz Vermelha de Moçambique', url: 'https://www.redcross.org.mz/' }] },
+  madagascar: { name: 'Madagascar', iso2: 'MG', emergency: [], authorities: [{ name: 'BNGRC - disaster risk management', url: 'https://www.bngrc.mg/' }], relief: [{ name: 'Malagasy Red Cross (via IFRC)', url: 'https://www.ifrc.org/national-societies-directory' }] },
   zimbabwe: { name: 'Zimbabwe', iso2: 'ZW', emergency: [n('Emergency services', '999'), n('Emergency from a mobile phone', '112')], authorities: [{ name: 'Meteorological Services Department', url: 'https://www.weather.co.zw/' }], relief: [{ name: 'Zimbabwe Red Cross Society', url: 'https://www.redcrosszim.org.zw/' }] },
   zambia: { name: 'Zambia', iso2: 'ZM', emergency: [n('Police', '999')], authorities: [{ name: 'Zambia Meteorological Department', url: 'https://www.zmd.gov.zm/' }, { name: 'Disaster Management and Mitigation Unit', url: 'https://www.dmmu.gov.zm/' }], relief: [{ name: 'Zambia Red Cross Society', url: 'https://zambiaredcross.org/' }] }
 };
@@ -672,7 +672,7 @@ function supportFor(rawCountry, rawRegion) {
     directories: GLOBAL_DIRECTORIES,
     fallbackNote: emergency.length
       ? 'Numbers shown are nationally published emergency numbers. Confirm on the linked official authority site before relying on them.'
-      : 'No verified national emergency number is stored for this country. 112 reaches emergency services from a mobile phone in many countries, and 911 across North America — but confirm with the linked national authority or your local emergency service.'
+      : 'No verified national emergency number is stored for this country. 112 reaches emergency services from a mobile phone in many countries, and 911 across North America - but confirm with the linked national authority or your local emergency service.'
   };
 }
 

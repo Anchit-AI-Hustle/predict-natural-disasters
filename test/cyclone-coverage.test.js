@@ -171,7 +171,7 @@ test('a storm the typhoon warning centre tracks is published as a tropical cyclo
   const out = evs.find(e => e.forecast && e.forecastOf === 'eonet-EONET_24785');
   assert.ok(out, 'the Bay of Bengal cyclone has no outlook');
   assert.equal(out.type, 'Tropical Cyclone');
-  assert.match(out.title, /^Storm risk from Tropical Cyclone 01B — 5-day forecast$/);
+  assert.match(out.title, /^Storm risk from Tropical Cyclone 01B - 5-day forecast$/);
   assert.match(out.title + ' ' + out.region, /Bay of Bengal/);
 });
 

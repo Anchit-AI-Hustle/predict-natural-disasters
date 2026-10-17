@@ -3,7 +3,7 @@
  * The globe in a real browser, which nothing else here can do.
  *
  * The test suite stubs Cesium and WebGL, because jsdom has neither. That is
- * enough to check the wiring and nothing else — and it is how a guard that
+ * enough to check the wiring and nothing else - and it is how a guard that
  * emptied the globe of every hazard shipped with three green tests. This runs
  * the actual page in real Chromium, with real WebGL and the real published
  * CesiumJS, and asks the page what it ended up with.
@@ -46,7 +46,7 @@ fs.mkdirSync(SHOTS, { recursive: true });
 const CESIUM = process.env.CESIUM_BUILD;
 const LEAFLET = process.env.LEAFLET_DIST;
 if (!CESIUM || !LEAFLET) {
-  console.error('set CESIUM_BUILD and LEAFLET_DIST — see the header of this file');
+  console.error('set CESIUM_BUILD and LEAFLET_DIST - see the header of this file');
   process.exit(2);
 }
 const eventsHandler = require(path.join(ROOT, 'api', 'events.js'));
@@ -273,7 +273,7 @@ async function captureGlobe(page) {
       /* What the globe LOOKS like, which is the part every earlier assertion
          here missed: it passed on entity counts while the globe was a
          featureless sphere, zoomed in far enough to be cut off by the panel.
-         The rendered pixels answer both — space all round the edge means the
+         The rendered pixels answer both - space all round the edge means the
          globe fits, and a lit centre means something was actually drawn. */
       if (canvas) {
         try {
@@ -289,7 +289,7 @@ async function captureGlobe(page) {
              A globe framed to show the whole world has space along every
              edge; one zoomed into a region fills every edge. Bright along
              one axis and dark along the other is the globe spilling out of
-             its panel — the live map had the poles off the top and bottom
+             its panel - the live map had the poles off the top and bottom
              while the left and right sat in black. */
           let tb = 0, lr = 0;
           for (let k = 1; k < 20; k++) {
@@ -344,7 +344,7 @@ async function captureGlobe(page) {
       /* The map is supposed to fill the panel it sits in. It did not: .map
          set an aspect-ratio and a max-height but no width, so on a short
          viewport the height cap shrank the WIDTH and left a band of dead
-         panel beside the map — on the flat map as much as the globe. */
+         panel beside the map - on the flat map as much as the globe. */
       const mapEl = document.querySelector('.leaflet-container');
       if (mapEl && mapEl.parentElement) {
         const pe = mapEl.parentElement;
@@ -386,7 +386,7 @@ async function captureGlobe(page) {
          never asserted on: it is the provider's configured ceiling, which a
          globe fetching nothing still reports. */
       r.satOnScreen === true && r.ionLogo === false &&
-      /* Framed: space all round, or filled all round — never one and not the
+      /* Framed: space all round, or filled all round - never one and not the
          other. 38 samples per axis. */
       ((r.edgeTB <= 3 && r.edgeLR <= 3) || (r.edgeTB >= 30 && r.edgeLR >= 30)) &&
       /* And the map fills the panel it sits in. Measured across all sixteen

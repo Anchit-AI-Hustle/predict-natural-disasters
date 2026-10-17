@@ -3,7 +3,7 @@
  * How far ahead this site looks, which it never said.
  *
  * Every outlook carries its own target window, and the furthest of them is the
- * horizon — but nothing published it, so "until when have predictions been
+ * horizon - but nothing published it, so "until when have predictions been
  * made" could only be answered by opening all thirty records and comparing
  * their windows by hand. Against the live feed of 2026-09-20 the answer was
  * 27 September: 6.9 days, in windows of 2, 3, 4, 5 and 7 days.

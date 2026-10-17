@@ -4,7 +4,7 @@
  * Does the risk scale actually reach the pixels?
  *
  * The offline suite can check that one palette is declared, that each level
- * resolves to its own class and that every ink clears AA — but jsdom has no
+ * resolves to its own class and that every ink clears AA - but jsdom has no
  * cascade and no layout, so it cannot tell whether a badge on a live page is
  * painted with the colour the stylesheet names, whether the shape is drawn at
  * all, or whether two levels end up looking the same after everything else on

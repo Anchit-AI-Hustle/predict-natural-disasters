@@ -4,7 +4,7 @@
  * Append this run's scan to the coverage ledger.
  *
  * Without a written record of what was examined, "no forecast existed for this
- * disaster" cannot be told apart from "nothing ever looked there" — and the
+ * disaster" cannot be told apart from "nothing ever looked there" - and the
  * difference is the whole distinction between a forecasting failure and a
  * coverage failure. The feed reported which upstreams answered, but only for
  * the instant it was serving; nothing survived the request.
@@ -15,7 +15,7 @@
  * auditable and tamper-evident. Rows already written are never revisited.
  *
  * Retention: an hourly run writes about 8,760 rows a year, so the detailed
- * window is bounded at RETAIN scans. Nothing is lost when a row ages out — the
+ * window is bounded at RETAIN scans. Nothing is lost when a row ages out - the
  * per-provider totals it contributed to are carried in `aggregate`, which
  * covers every scan ever recorded, and `retention` states plainly that
  * per-scan detail before `detailFrom` is no longer held. A question about a
@@ -142,6 +142,6 @@ G.writeChecked(ledgerPath, ledger, v => {
   return last ? G.missingKeys(last, ['scanId', 'scanTimestamp', 'providerVersion']).map(k => 'the new scan has no ' + k) : ['no scans'];
 });
 const counts = scan.providers.reduce((m, p) => { m[p.status] = (m[p.status] || 0) + 1; return m; }, {});
-console.log('scan ledger: recorded ' + scan.scanId + ' — ' +
+console.log('scan ledger: recorded ' + scan.scanId + ' - ' +
   Object.keys(counts).map(k => counts[k] + ' ' + k).join(', ') +
   ' (' + ledger.scans.length + ' scans retained' + (trimmed ? ', ' + trimmed + ' aged out' : '') + ')');

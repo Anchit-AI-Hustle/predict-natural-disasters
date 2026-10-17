@@ -3,7 +3,7 @@
 /**
  * Maintain the canonical ledger of significant observed disasters.
  *
- * Recall — "of the disasters that happened, how many did anything forecast?" —
+ * Recall - "of the disasters that happened, how many did anything forecast?" -
  * needs a denominator of real-world events, and this project had none. It had
  * a feed of provider records in which one flood arrives as a GDACS alert, a
  * ReliefWeb country declaration and sometimes an EONET entry. Three records is
@@ -13,7 +13,7 @@
  *
  * What an event IS is frozen the first time it is recorded: its canonical id,
  * hazard, onset, and the geography it was first seen at. What is still being
- * learned about it is not frozen — death tolls rise for days after a
+ * learned about it is not frozen - death tolls rise for days after a
  * disaster, and a ledger that refused the later figure would be preserving an
  * early guess, not an original claim. So impact, end, evidence and confidence
  * may be updated, and every update is appended to that event's `revisions`
@@ -741,7 +741,7 @@ G.writeChecked(ledgerPath, ledger, v => (Array.isArray(v.events) ? [] : ['no eve
 console.log('observed ledger: ' + added + ' new, ' + updated + ' seen again, ' + changes +
   ' figure(s) revised, ' + reidentified + ' re-identified, ' + distinguished +
   ' id collision(s) distinguished, ' + superseded + ' superseded, ' + supportingKept +
-  ' supporting observation(s) kept — ' +
+  ' supporting observation(s) kept - ' +
   ledger.events.filter(e => !e.supersededBy).length + ' significant disasters recorded ' +
   '(' + observed.length + ' provider records → ' + canonical.length + ' events, ' +
   (canonical.length - significant.length) + ' below the bar; ' +

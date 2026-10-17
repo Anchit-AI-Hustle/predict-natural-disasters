@@ -161,7 +161,7 @@
    */
   function markerIcon(value, label) {
     var lv = level(value);
-    var name = (label ? label + ' — ' : '') + lv.label + ' risk';
+    var name = (label ? label + ' - ' : '') + lv.label + ' risk';
     /* Low is the smallest mark and each level up is larger, so the few
        serious events stand out from the many routine ones around them. */
     var size = 9 + lv.rank * 3;

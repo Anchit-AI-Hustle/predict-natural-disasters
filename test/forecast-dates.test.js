@@ -51,7 +51,7 @@ test('a whole-day edge reads as its day, in every time zone', async () => {
     'a window from midnight to a real moment lost its start time');
   assert.equal(P.fmtWhen('2026-10-19T00:00:00Z', '2026-10-21T23:59:59Z'), '19 Oct 2026');
   assert.equal(P.windowText({ targetStart: '2026-10-19T00:00:00Z', targetEnd: '2026-10-19T06:30:00Z' }).indexOf('18 Oct 2026, 8:00 PM'), 7);
-  assert.equal(P.fmtWhen(''), '\u2014');
+  assert.equal(P.fmtWhen(''), '-');
   assert.equal(P.fmtWhen('not a date'), 'not a date');
   r.close();
 });

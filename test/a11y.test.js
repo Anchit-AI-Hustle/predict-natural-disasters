@@ -6,8 +6,8 @@
  * pages had at least one control with no accessible name: every search box on
  * the site, every hazard and alert-level filter, every sort control, and the
  * latitude and longitude fields on the personal risk page. A placeholder is
- * not a name — it is a hint that disappears the moment anything is typed, and
- * a <select> is not named by the options inside it — so a screen reader
+ * not a name - it is a hint that disappears the moment anything is typed, and
+ * a <select> is not named by the options inside it - so a screen reader
  * announced most of this site's controls as "edit text" and "combo box".
  *
  * That is a static property of the markup, so it is held here rather than in

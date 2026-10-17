@@ -12,8 +12,8 @@
  * globe could be tested at all revealed that /live-map has been dead in
  * production: draw() reassigns a const and throws, load() swallows it, and the
  * page reports "Feed unavailable · retrying automatically" over a feed
- * answering 8/8 sources online. It predates this work — origin/main has it,
- * from 438962b — and the existing "renders with no uncaught error" test could
+ * answering 8/8 sources online. It predates this work - origin/main has it,
+ * from 438962b - and the existing "renders with no uncaught error" test could
  * never see it, because the exception is caught. So the rule is behavioural:
  * no page may blame the feed while the feed is healthy.
  */
@@ -55,7 +55,7 @@ function loadGlobe() {
 }
 /* Leaflet's own defaults, which the first version of these fixtures omitted.
    A real Marker carries pane 'markerPane' and a CircleMarker 'overlayPane',
-   both set by Leaflet whether or not the caller asks — so a bare {} fixture
+   both set by Leaflet whether or not the caller asks - so a bare {} fixture
    tested a shape that never reaches this code, and a guard that rejected
    every layer with a pane passed here while emptying the globe in production. */
 function pt(lat, lng, options, pane) {
@@ -213,8 +213,8 @@ test('a mounted globe reveals itself only once ready', async () => {
 
 test('the globe covers everything Leaflet draws, toggle included', () => {
   /* Leaflet 1.9.4's stylesheet, read rather than remembered: the panes run
-     tile 200 … control 800, but .leaflet-top and .leaflet-bottom — the
-     containers the zoom and layers controls live in — are at 1000.
+     tile 200 … control 800, but .leaflet-top and .leaflet-bottom - the
+     containers the zoom and layers controls live in - are at 1000.
      The first version of this test asserted only "above 800", so a globe at
      900 passed while a real browser screenshot showed the zoom and layers
      controls sitting on top of the globe. The pane list is not the whole
@@ -291,8 +291,8 @@ test('globe.js only calls Cesium symbols that exist in the pinned version', () =
      so nothing here could tell whether the symbols it calls are real: a
      misremembered class or option would fail only in a reader's browser while
      the stubbed tests stayed green. The manifest is extracted from the
-     published type definitions of the exact version globe.js loads — see
-     tools/cesium-manifest.js — so the check is against Cesium rather than
+     published type definitions of the exact version globe.js loads - see
+     tools/cesium-manifest.js - so the check is against Cesium rather than
      against my memory of it. */
   const api = JSON.parse(read(path.join('test', 'cesium-api.json')));
   const src = read('globe.js');
@@ -326,7 +326,7 @@ test('the Viewer options and point graphics it passes are real options', () => {
 
   /* Top-level keys of an object literal, found by tracking depth rather than
      by line. The first version of this matched one key per line, and globe.js
-     puts several on a line — so ten of the fourteen Viewer options were never
+     puts several on a line - so ten of the fourteen Viewer options were never
      checked, and a deliberately misspelled one sailed through the control. */
   function topLevelKeys(source, openAt) {
     const start = source.indexOf('{', openAt);
@@ -345,7 +345,7 @@ test('the Viewer options and point graphics it passes are real options', () => {
   }
 
   /* Comments stripped first. Prose inside the options object matched the key
-     pattern — "no way to read it: clicking a hazard…" produced Viewer.it —
+     pattern - "no way to read it: clicking a hazard…" produced Viewer.it -
      which is the third time on this branch that a comment of mine has
      defeated a test of mine. */
   const code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
@@ -437,7 +437,7 @@ test('the globe paints the flat map\'s own countries, not a blank sphere', async
       w.__pndViewers[0].imageryLayers.length });
   /* Every fill the world texture made, recorded by the canvas stub. The ocean
      goes down first and then one fill per landmass, each in a palette colour
-     the flat map itself uses — so a globe painted from some other palette, or
+     the flat map itself uses - so a globe painted from some other palette, or
      from nothing, is not mistaken for this. */
   const ops = (r.window.__pndPaints || [])
     .slice().sort((a, b) => b.fills.length - a.fills.length)[0];

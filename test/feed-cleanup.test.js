@@ -46,7 +46,7 @@ test('storm codes are written out and provider suffixes dropped', () => {
 
 test('shouted names and repeated words are tidied, and bearings are left alone', () => {
   const t = (type, title) => api.plainTitle({ type, title });
-  assert.equal(t('Earthquake', 'M 4.5 — VANCOUVER ISLAND, CANADA REGION'), 'M 4.5 — Vancouver Island, Canada region');
+  assert.equal(t('Earthquake', 'M 4.5 - VANCOUVER ISLAND, CANADA REGION'), 'M 4.5 - Vancouver Island, Canada region');
   assert.equal(t('Earthquake', 'M 2.8 - 8 km SSW of Pāhala, Hawaii'), 'M 2.8 - 8 km SSW of Pāhala, Hawaii');
   assert.equal(t('Wildfire', 'Prescribed Fire CRAWFORD CORRAL Prescribed Fire, Tulare, California'),
     'Prescribed Fire Crawford Corral, Tulare, California');
@@ -62,7 +62,7 @@ test('a place is never the record\'s own title', () => {
   assert.equal(p({ type: 'Drought', title: 'Drought in Madagascar', region: '', country: 'Madagascar' }), 'Madagascar');
   assert.equal(p({ type: 'Drought', title: 'x', country: 'Kenya, Somalia, Uganda, Ethiopia,' }),
     'Kenya, Somalia and 2 other countries');
-  assert.equal(p({ type: 'Flood', title: 'Flood Warning — Monmouth', country: 'United States',
+  assert.equal(p({ type: 'Flood', title: 'Flood Warning - Monmouth', country: 'United States',
     region: 'Monmouth, New Jersey; Ocean, New Jersey; Middlesex, New Jersey' }),
   'Monmouth, New Jersey and 2 nearby areas, United States');
   assert.equal(p({ type: 'Volcano', title: 'Kilauea', country: 'United States', region: 'Hawaiian Volcano Observatory' }),
@@ -253,7 +253,7 @@ test('the published feed carries each storm once, nothing dated ahead, and a rea
   assert.ok(fiona[0].corroboratedBy.includes('GDACS'));
   const fionaOutlooks = evs.filter(e => e.forecast && e.type === 'Tropical Cyclone' && /fiona/i.test(e.title));
   assert.equal(fionaOutlooks.length, 1, 'one storm, one outlook');
-  assert.match(fionaOutlooks[0].title, /^Storm risk from Hurricane Fiona — 5-day forecast$/);
+  assert.match(fionaOutlooks[0].title, /^Storm risk from Hurricane Fiona - 5-day forecast$/);
 
   for (const e of evs) {
     if (e.forecast) continue;
@@ -289,10 +289,10 @@ test('the NHC fixture still reaches the feed', () => {
 });
 
 test('a GDACS "Forest fires in Brazil" is not a place, and nautical miles are spelled out', () => {
-  assert.equal(api.placeLabel({ type: 'Wildfire', title: 'Wildfire risk in Brazil — 3-day forecast',
+  assert.equal(api.placeLabel({ type: 'Wildfire', title: 'Wildfire risk in Brazil - 3-day forecast',
     region: 'Forest fires in Brazil', country: 'Brazil', lat: -10, lon: -55 }), 'Brazil');
-  assert.equal(api.plainTitle({ type: 'Severe Storm', title: 'Special Marine Warning — Waters from Pensacola FL out 20 to 60 NM' }),
-    'Special Marine Warning — Waters from Pensacola FL out 20 to 60 nautical miles');
+  assert.equal(api.plainTitle({ type: 'Severe Storm', title: 'Special Marine Warning - Waters from Pensacola FL out 20 to 60 NM' }),
+    'Special Marine Warning - Waters from Pensacola FL out 20 to 60 nautical miles');
   assert.equal(api.placeLabel({ type: 'Severe Storm', title: 'x', country: 'United States',
     region: 'Coastal waters from Pascagoula Mississippi out 20 to 60 NM', lat: 30, lon: -88 }),
   'Coastal waters from Pascagoula Mississippi out 20 to 60 nautical miles, United States');

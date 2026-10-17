@@ -504,7 +504,7 @@
         var ha = Number(e.areaHa);
         var ok = isFinite(ha) && ha > 0;
         // group() rounds to a whole number, so dividing first turned 150 ha
-        // into "2 km²" — a third more ground than burned. Below 100 km² the
+        // into "2 km²" - a third more ground than burned. Below 100 km² the
         // fraction is kept; above it, rounding is under one percent.
         var km = ha / 100;
         var area = ha < 100 ? group(ha) + ' ha'
@@ -660,7 +660,7 @@
   /**
    * The evidence bands, strongest claim first. Each one states what it is
    * allowed to assert, because that is what decides which records may enter
-   * it — not how alarming they look.
+   * it - not how alarming they look.
    */
   var RISK_BANDS = [
     { key: 'A', title: 'Confirmed events nearby',
