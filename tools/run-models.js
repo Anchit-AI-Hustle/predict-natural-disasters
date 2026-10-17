@@ -34,6 +34,10 @@ const ROOT = path.join(__dirname, '..');
 const CLIM = process.argv[2] || path.join(ROOT, 'data', 'climatology.json');
 const OUT = process.argv[3] || path.join(ROOT, 'data', 'model-outlooks.json');
 const RUNS = process.argv[4] || path.join(ROOT, 'data', 'model-runs.json');
+/* Every forecast ever published, frozen as it was, and how each turned out. */
+const LEDGER = process.argv[5] || path.join(ROOT, 'data', 'model-ledger.json');
+const VERDICTS = process.argv[6] || path.join(ROOT, 'data', 'model-verdicts.json');
+const BACKTEST = path.join(ROOT, 'data', 'model-backtest.json');
 const PAST = 60, AHEAD = 9, LEAD_MIN = 1, LEAD_MAX = 7, MAX_RUNS_KEPT = 1000;
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -90,6 +94,26 @@ const HAZARD = {
 };
 
 const fmtDay = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/*
+ * How well this kind of forecast has done, measured, in place of a
+ * confidence word. The outlooks used to say "Higher" or "Moderate", which
+ * nothing measured. This is the backtest's result for the same hazard at
+ * the nearer of its two lead times.
+ */
+let backtest = null;
+try { backtest = JSON.parse(fs.readFileSync(BACKTEST, 'utf8')); } catch (e) { backtest = null; }
+const pct = v => Math.round(v * 100) + '%';
+function skillText(hazard, leadDays) {
+  const lead = leadDays <= 4 ? 3 : 5;
+  const r = backtest && backtest.results && backtest.results[hazard + '@' + lead];
+  const w = backtest && backtest.window;
+  const flagged = r && r.hits + r.falseAlarms, happened = r && r.hits + r.misses;
+  if (!r || !w || !(flagged > 0) || !(happened > 0) || !(r.days > 0)) return 'Not yet measured.';
+  return 'Tested on forecasts made ' + lead + ' days ahead, on days from ' + fmtDay(w.from) + ' to ' + fmtDay(w.to) + ': ' +
+    pct(r.hits / flagged) + ' of the days this model flagged did cross the line (' + pct(happened / r.days) + ' would by chance), ' +
+    'and it flagged ' + pct(r.hits / happened) + ' of the days that crossed it.';
+}
 function span(a, b) { return a === b ? fmtDay(a) : fmtDay(a) + ' to ' + fmtDay(b); }
 
 /** The forecast record for one flagged run of days. */
@@ -103,7 +127,8 @@ function outlook(place, f, ctx) {
     return fmtDay(d.day) + ': index ' + d.value + ' (' + d.level + ') against a usual worst of ' + d.p95;
   });
   const why = {
-    heat: 'Forecast daily highs, corrected by ' + ctx.deltaT.toFixed(1) + ' °C for the difference between the forecast service and the 30-year record, reach this place\'s 95th percentile for the time of year on ' + f.days + ' days in a row' + (f.severe ? ', and its 99th on at least one' : '') + '.',
+    heat: 'Forecast daily highs, corrected by ' + ctx.deltaT.toFixed(1) + ' °C for the difference between the forecast service and the 30-year record, reach this place\'s 95th percentile for the time of year on ' + f.days + ' days in a row' + (f.severe ? ', and its 99th on at least one' : '') + '.' +
+      (f.detail[0] && f.detail[0].shift ? ' That line is moved up ' + f.detail[0].shift.toFixed(1) + ' °C for the warming this place\'s record shows since its middle year.' : ''),
     rain: 'Forecast rain, scaled by ' + ctx.rainRatio.toFixed(2) + ' to match the 30-year record, reaches this place\'s 99th percentile for the month.' +
       (isFinite(ctx.soil.p) ? ' The topsoil was wetter than ' + Math.round(ctx.soil.p * 100) + '% of the same month in ' + ctx.period + ' when last measured (' + fmtDay(ctx.soil.day) + ')' + (f.severe ? ', so more of the rain is likely to run off.' : '.') : ' How wet the soil is now could not be measured.'),
     fire: 'The Fire Weather Index, computed from the last ' + PAST + ' days of measured weather and the corrected forecast, reaches the "very high" class and this place\'s 95th percentile for the month on ' + f.days + ' days in a row. Fire also needs fuel and a spark, which no weather index can see.'
@@ -120,10 +145,12 @@ function outlook(place, f, ctx) {
     issuedAt: ctx.runAt, updated: ctx.runAt, targetStart: f.start + 'T00:00:00Z', targetEnd: f.end + 'T23:59:59Z',
     issuedAtBasis: 'Timestamp of the numerical weather prediction model run, issued before the target window.',
     forecast: true, forecastKind: 'model-advance', forecastScope: 'regional', precision: 'regional',
-    confidence: f.severe ? 'Higher: past this place\'s 99th percentile, or on already-wet ground' : 'Moderate: past this place\'s 95th percentile',
+    confidence: skillText(f.hazard, Math.round((Date.parse(f.start) - Date.parse(ctx.runDay)) / 864e5)),
     details: 'Our own forecast, made before the period it covers. ' + why + ' ' + days.join('. ') + '.',
     evidence: 'Open-Meteo forecast issued for ' + ctx.runDay + ', compared with NASA POWER daily records for ' + where + ', ' + ctx.period + '. Bias measured over ' + ctx.overlap + ' shared days.',
-    verificationRule: 'Checked against the ' + H.what + ' NASA POWER records for these days once they are available: correct if the threshold was reached on at least one day of the window, a false alarm if it was not. Separately checked against any disaster others report there.',
+    /* Graded by tools/run-models.js into data/model-verdicts.json. It is not
+       checked against reported disasters: a weather line is not a disaster. */
+    verificationRule: 'Checked against the ' + H.what + ' NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.',
     sourceUrl: '/accuracy',
     model: { hazard: f.hazard, days: f.detail, peak: f.peak, severe: f.severe, placeId: place.id, geonameId: place.geonameId,
       bias: { tmax: M.round(ctx.deltaT, 2), dew: M.round(ctx.deltaDew, 2), rainRatio: M.round(ctx.rainRatio, 2), windRatio: M.round(ctx.windRatio, 2), overlapDays: ctx.overlap },
@@ -159,6 +186,15 @@ async function runPlace(place, fc, runAt, period) {
   const fwi = M.fwiSeries(days, series.map(s => ({ temp: s.tmax, rh: M.rhFrom(s.tmax, s.dew), wind: s.wind, rain: s.rain })), place.lat);
   const soil = soilPercentile(place, past, ref);
 
+  /* What was measured over the last sixty days, and the models' own events
+     in it: what the published forecasts are graded against. */
+  const pastIdx = days.map((d, i) => d < today ? i : -1).filter(i => i >= 0);
+  const val = (i, k) => series[i].measured ? series[i][k] : NaN;
+  const ev = M.observedEvents(place, pastIdx.map(i => days[i]), {
+    tmax: pastIdx.map(i => val(i, 'tmax')), rain: pastIdx.map(i => val(i, 'rain')),
+    fwi: pastIdx.map(i => series[i].measured && isFinite(fwi[i]) ? fwi[i] : NaN) });
+  const observed = Object.assign({ measured: new Set(pastIdx.filter(i => series[i].measured).map(i => days[i])) }, ev);
+
   const first = ymd(Date.parse(today) + LEAD_MIN * 864e5), last = ymd(Date.parse(today) + LEAD_MAX * 864e5);
   const ahead = days.map((d, i) => (d >= first && d <= last) ? i : -1).filter(i => i >= 0);
   const aDays = ahead.map(i => days[i]);
@@ -169,13 +205,13 @@ async function runPlace(place, fc, runAt, period) {
     .concat(M.rainModel(place, days, series.map(s => s.rain), soil.p).filter(r => r.start >= first && r.start <= last))
     .concat(M.fireModel(place, aDays, ahead.map(i => fwi[i])));
   const ctx = { runAt, runDay: today, period, deltaT: bt.delta, deltaDew: bd.delta, rainRatio: rr.ratio, windRatio, overlap: bt.n, soil };
-  return { outlooks: flagged.map(f => outlook(place, f, ctx)), overlap: bt.n };
+  return { outlooks: flagged.map(f => outlook(place, f, ctx)), overlap: bt.n, observed };
 }
 
 (async () => {
   const clim = JSON.parse(fs.readFileSync(CLIM, 'utf8'));
   const runAt = new Date().toISOString();
-  const outlooks = [], skipped = [], checked = [];
+  const outlooks = [], skipped = [], checked = [], observed = {};
   const places = clim.places;
   for (let b = 0; b < places.length; b += 50) {
     const batch = places.slice(b, b + 50);
@@ -188,7 +224,7 @@ async function runPlace(place, fc, runAt, period) {
         try {
           const r = await runPlace(p, daily[i + k], runAt, clim.period);
           if (r.skipped) skipped.push({ id: p.id, why: r.skipped });
-          else { checked.push(p.id); outlooks.push(...r.outlooks); }
+          else { checked.push(p.id); outlooks.push(...r.outlooks); observed[p.id] = r.observed; }
         } catch (e) { skipped.push({ id: p.id, why: e.message }); }
       }));
     }
@@ -210,4 +246,35 @@ async function runPlace(place, fc, runAt, period) {
   runs.push({ at: runAt, checked, skipped: skipped.map(s => s.id), leadDays: [LEAD_MIN, LEAD_MAX],
     outlooks: outlooks.map(o => o.id) });
   fs.writeFileSync(RUNS, JSON.stringify(runs.slice(-MAX_RUNS_KEPT)) + '\n');
+
+  /* The ledger: every forecast published, as it was when first published.
+     Appended to, never changed: a forecast issued again by a later run keeps
+     its first record, which is the proof it was made in advance. */
+  const ledger = G.readLedger(LEDGER, Array.isArray, () => []);
+  const known = new Set(ledger.map(o => o.id));
+  let added = 0;
+  for (const o of outlooks) if (!known.has(o.id)) { ledger.push(Object.assign({ recordedAt: runAt }, o)); known.add(o.id); added++; }
+  fs.writeFileSync(LEDGER, JSON.stringify(ledger, null, 1) + '\n');
+
+  /* Graded against the last sixty days measured. A verdict reached once is
+     kept: the measurements behind it fall out of that window later. Only a
+     run whose forecasts were all published counts as watching a place. */
+  let prev = null;
+  try { prev = JSON.parse(fs.readFileSync(VERDICTS, 'utf8')); } catch (e) { prev = null; }
+  const published = runs.filter(r => (r.outlooks || []).every(id => known.has(id)));
+  const g = M.gradePublished(ledger, observed, published);
+  const before = new Map(((prev && prev.outlooks) || []).filter(o => o.verdict !== 'pending').map(o => [o.id, o]));
+  const graded = g.outlooks.map(o => (o.verdict === 'pending' && before.has(o.id)) ? before.get(o.id) : o);
+  const missKey = m => m.placeId + '|' + m.hazard + '|' + m.day;
+  const misses = new Map(((prev && prev.misses) || []).map(m => [missKey(m), m]));
+  g.misses.forEach(m => misses.set(missKey(m), m));
+  const missList = [...misses.values()].sort((a, b) => a.day < b.day ? -1 : a.day > b.day ? 1 : 0);
+  const counts = { issued: ledger.length, correct: 0, falseAlarms: 0, pending: 0, missedDays: missList.length };
+  graded.forEach(o => { counts[o.verdict === 'correct' ? 'correct' : o.verdict === 'false alarm' ? 'falseAlarms' : 'pending']++; });
+  const verdicts = {
+    note: 'How each published model forecast turned out, by tools/run-models.js: correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day has been measured by NASA POWER. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it.',
+    generatedAt: runAt, counts, outlooks: graded, misses: missList
+  };
+  fs.writeFileSync(VERDICTS, JSON.stringify(verdicts, null, 1) + '\n');
+  console.log('ledger: ' + ledger.length + ' published (' + added + ' new); graded ' + JSON.stringify(counts));
 })().catch(e => { console.error(e); process.exit(1); });

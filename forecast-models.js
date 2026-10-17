@@ -418,7 +418,7 @@
       var severe = idx.some(function (i) { return tmaxCorrected[i] >= p99[i]; });
       return {
         hazard: 'heat', start: days[r[0]], end: days[r[1]], days: idx.length, severe: severe,
-        detail: idx.map(function (i) { return { day: days[i], value: round(tmaxCorrected[i], 1), p95: round(p95[i], 1), p99: round(p99[i], 1) }; }),
+        detail: idx.map(function (i) { return { day: days[i], value: round(tmaxCorrected[i], 1), p95: round(p95[i], 1), p99: round(p99[i], 1), shift: round(lines[i].shift, 2) }; }),
         peak: round(peak, 1)
       };
     });
@@ -480,6 +480,99 @@
   }
 
   /** Where a value falls in a sorted reference distribution, 0..1. */
+  /* --------------------------------------- grading published forecasts */
+
+  /*
+   * What happened, in the models' own terms: the days a model would have
+   * flagged had it been shown the measurements instead of a forecast. Two
+   * hot days in a row past the (shifted) heat line, a day or three days of
+   * rain past the rain line, two days in a row of fire weather. measured is
+   * { tmax, rain, fwi }, arrays matching days; a gap is NaN.
+   */
+  function observedEvents(clim, days, measured) {
+    var set = function (found) {
+      var s = new Set();
+      found.forEach(function (f) { f.detail.forEach(function (d) { s.add(d.day); }); });
+      return s;
+    };
+    return {
+      heat: set(heatModel(clim, days, measured.tmax)),
+      rain: set(rainModel(clim, days, measured.rain, NaN)),
+      fire: set(fireModel(clim, days, measured.fwi))
+    };
+  }
+
+  function ymdOf(t) { return new Date(t).toISOString().slice(0, 10); }
+  /** The UTC days a window covers; a midnight end excludes its own day. */
+  function windowDays(start, end) {
+    var a = Date.parse(start), b = Date.parse(end);
+    if (!isFinite(a) || !isFinite(b)) return [];
+    if (/T00:00:00(\.0+)?Z$/.test(String(end))) b -= 1;
+    var out = [];
+    for (var t = Date.UTC(+ymdOf(a).slice(0, 4), +ymdOf(a).slice(5, 7) - 1, +ymdOf(a).slice(8, 10)); t <= b; t += 864e5) out.push(ymdOf(t));
+    return out;
+  }
+
+  /*
+   * Grade the published model forecasts.
+   *
+   * ledger: every model forecast ever published, as frozen when it was.
+   * observed: { placeId: { measured: Set (or from, through), heat: Set,
+   *   rain: Set, fire: Set } }, the measured days and the observed events.
+   * runs: every model run, { at, checked: [placeId], leadDays: [lo, hi] }.
+   *
+   * A forecast is correct when its event happened on at least one day of its
+   * window and a false alarm when it did not - the rule it was published
+   * with - and pending until every day of the window has been measured. A
+   * day with an observed event is a miss when some run was watching that
+   * place on that day (it was 1 to 7 days ahead of the run, and the run
+   * checked the place) and no forecast for it was published beforehand. A
+   * day no run was watching is not counted at all: silence about a place
+   * nobody checked is not a forecast of calm.
+   */
+  function gradePublished(ledger, observed, runs) {
+    var outlooks = [], misses = [], seen = {};
+    /* Measured: in the set of measured days where one is given, else in the range. */
+    function measuredOn(obs, d) { return obs.measured ? obs.measured.has(d) : d >= obs.from && d <= obs.through; }
+    var counts = { issued: ledger.length, correct: 0, falseAlarms: 0, pending: 0, missedDays: 0 };
+    ledger.forEach(function (o) {
+      var m = o.model || {}, obs = observed[m.placeId], days = windowDays(o.targetStart, o.targetEnd);
+      var verdict = 'pending', crossed = [];
+      if (obs && days.length && obs[m.hazard] && days.every(function (d) { return measuredOn(obs, d); })) {
+        crossed = days.filter(function (d) { return obs[m.hazard].has(d); });
+        verdict = crossed.length ? 'correct' : 'false alarm';
+      }
+      counts[verdict === 'correct' ? 'correct' : verdict === 'false alarm' ? 'falseAlarms' : 'pending']++;
+      outlooks.push({ id: o.id, hazard: m.hazard, placeId: m.placeId, verdict: verdict, crossed: crossed });
+    });
+    function forecastBefore(placeId, hazard, day) {
+      return ledger.some(function (o) {
+        var m = o.model || {};
+        return m.placeId === placeId && m.hazard === hazard && Date.parse(o.issuedAt) < Date.parse(day + 'T00:00:00Z') &&
+          windowDays(o.targetStart, o.targetEnd).indexOf(day) >= 0;
+      });
+    }
+    (runs || []).forEach(function (r) {
+      var runDay = Date.parse(ymdOf(Date.parse(r.at)) + 'T00:00:00Z'), lo = (r.leadDays || [1, 7])[0], hi = (r.leadDays || [1, 7])[1];
+      for (var L = lo; L <= hi; L++) {
+        var day = ymdOf(runDay + L * 864e5);
+        (r.checked || []).forEach(function (pid) {
+          var obs = observed[pid];
+          if (!obs || !measuredOn(obs, day)) return;
+          ['heat', 'rain', 'fire'].forEach(function (hz) {
+            var key = pid + '|' + hz + '|' + day;
+            if (seen[key] || !obs[hz] || !obs[hz].has(day) || forecastBefore(pid, hz, day)) return;
+            seen[key] = true;
+            misses.push({ placeId: pid, hazard: hz, day: day });
+          });
+        });
+      }
+    });
+    misses.sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : (a.placeId + a.hazard < b.placeId + b.hazard ? -1 : 1); });
+    counts.missedDays = misses.length;
+    return { outlooks: outlooks, misses: misses, counts: counts };
+  }
+
   function percentileOf(sortedRef, v) {
     if (!sortedRef || !sortedRef.length || !isFinite(v)) return NaN;
     var lo = 0; while (lo < sortedRef.length && sortedRef[lo] <= v) lo++;
@@ -497,6 +590,7 @@
     MIN_OVERLAP: MIN_OVERLAP, BIAS_WINDOW: BIAS_WINDOW, MAX_SHIFT_C: MAX_SHIFT_C, biasDelta: biasDelta, rainRatio: rainRatio,
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
     warmingTrend: warmingTrend, heatShift: heatShift, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
+    observedEvents: observedEvents, gradePublished: gradePublished, windowDays: windowDays,
     HEAT_MIN_DAYS: HEAT_MIN_DAYS, FIRE_MIN_DAYS: FIRE_MIN_DAYS, FIRE_FLOOR: FIRE_FLOOR,
     percentileOf: percentileOf, round: round, mean: mean
   };
