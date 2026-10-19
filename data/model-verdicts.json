@@ -1,12 +1,12 @@
 {
  "note": "How each published model forecast turned out, by tools/run-models.js: correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day has been measured by NASA POWER. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it.",
- "generatedAt": "2026-10-18T09:04:05.431Z",
+ "generatedAt": "2026-10-19T10:16:19.687Z",
  "counts": {
-  "issued": 74,
+  "issued": 86,
   "correct": 0,
-  "falseAlarms": 0,
-  "pending": 74,
-  "missedDays": 7
+  "falseAlarms": 2,
+  "pending": 84,
+  "missedDays": 11
  },
  "outlooks": [
   {
@@ -62,7 +62,7 @@
    "id": "model-heat-baghdad-iq-2026-10-15",
    "hazard": "heat",
    "placeId": "baghdad-iq",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": []
   },
   {
@@ -111,7 +111,7 @@
    "id": "model-rain-mogadishu-so-2026-10-15",
    "hazard": "rain",
    "placeId": "mogadishu-so",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": []
   },
   {
@@ -526,6 +526,90 @@
    "placeId": "quito-ec",
    "verdict": "pending",
    "crossed": []
+  },
+  {
+   "id": "model-heat-dhaka-bd-2026-10-21",
+   "hazard": "heat",
+   "placeId": "dhaka-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-dhaka-bd-2026-10-25",
+   "hazard": "heat",
+   "placeId": "dhaka-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-chittagong-bd-2026-10-20",
+   "hazard": "heat",
+   "placeId": "chittagong-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-dubai-ae-2026-10-22",
+   "hazard": "heat",
+   "placeId": "dubai-ae",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-hanoi-vn-2026-10-20",
+   "hazard": "heat",
+   "placeId": "hanoi-vn",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-addis-ababa-et-2026-10-23",
+   "hazard": "heat",
+   "placeId": "addis-ababa-et",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-10-20",
+   "hazard": "heat",
+   "placeId": "niamey-ne",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-berlin-de-2026-10-25",
+   "hazard": "rain",
+   "placeId": "berlin-de",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-miami-us-2026-10-24",
+   "hazard": "rain",
+   "placeId": "miami-us",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lima-pe-2026-10-20",
+   "hazard": "heat",
+   "placeId": "lima-pe",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-quito-ec-2026-10-20",
+   "hazard": "rain",
+   "placeId": "quito-ec",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-manaus-br-2026-10-20",
+   "hazard": "rain",
+   "placeId": "manaus-br",
+   "verdict": "pending",
+   "crossed": []
   }
  ],
  "misses": [
@@ -563,6 +647,26 @@
    "placeId": "wuhan-cn",
    "hazard": "rain",
    "day": "2026-10-15"
+  },
+  {
+   "placeId": "chennai-in",
+   "hazard": "rain",
+   "day": "2026-10-16"
+  },
+  {
+   "placeId": "colombo-lk",
+   "hazard": "rain",
+   "day": "2026-10-16"
+  },
+  {
+   "placeId": "quito-ec",
+   "hazard": "rain",
+   "day": "2026-10-16"
+  },
+  {
+   "placeId": "s-o-paulo-br",
+   "hazard": "rain",
+   "day": "2026-10-16"
   }
  ]
 }
