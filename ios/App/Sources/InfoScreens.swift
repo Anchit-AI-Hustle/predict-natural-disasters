@@ -21,8 +21,7 @@ struct SourcesView: View {
                 Panel { Text(p.summary).font(.subheadline.bold()).foregroundStyle(Theme.text) }
                 ForEach(p.cards) { c in
                     CardBox {
-                        Pill(text: c.statusText, color: c.statusKind == "ok" ? Theme.ok : c.statusKind == "warn" ? Theme.warn : c.statusKind == "bad" ? Theme.bad : Theme.mutedPill,
-                             border: c.statusKind == "ok" ? Theme.okBorder : c.statusKind == "warn" ? Theme.warnBorder : c.statusKind == "bad" ? Theme.badBorder : Theme.mutedPillBorder)
+                        Pill(text: c.statusText, color: statusColors(c.statusKind).0, border: statusColors(c.statusKind).1)
                         Text(c.label).font(.headline).foregroundStyle(Theme.text)
                         KeyValueRow(key: "Hazards", value: c.hazards)
                         KeyValueRow(key: "Reach", value: c.reach)
@@ -40,6 +39,15 @@ struct SourcesView: View {
                 FlowRow(spacing: 8) { ForEach(Copy.sourceProfiles, id: \.name) { NavigationLink($0.name, value: Route.source($0.name)).buttonStyle(OutlinePillButtonStyle()) } }
             }
         }
+    }
+}
+
+func statusColors(_ kind: String) -> (Color, Color) {
+    switch kind {
+    case "ok": return (Theme.ok, Theme.okBorder)
+    case "warn": return (Theme.warn, Theme.warnBorder)
+    case "bad": return (Theme.bad, Theme.badBorder)
+    default: return (Theme.mutedPill, Theme.mutedPillBorder)
     }
 }
 
@@ -98,9 +106,9 @@ struct InsightsView: View {
             ScreenHeader(eyebrow: "Patterns and background", title: "Insights", subtitle: Copy.insightsIntro)
             TrustNote()
             FeedBanner()
-            StatGrid(items: [("Events and forecasts", failed ? "Unavailable" : (model.feed == nil ? "-" : "\(model.live.count)")),
+            StatGrid(items: [("Events and forecasts", failed ? "Unavailable" : (model.fig(model.live.count))),
                              ("Most reported hazard", failed ? "Unavailable" : (bars.first?.type ?? "-")),
-                             ("Our forecasts", failed ? "Unavailable" : (model.feed == nil ? "-" : "\(model.live.filter { $0.forecast }.count)"))])
+                             ("Our forecasts", failed ? "Unavailable" : (model.fig(model.live.filter { $0.forecast }.count)))])
             if failed { Text("Our data could not be reached").font(.footnote).foregroundStyle(Theme.muted) }
             else if let b = bars.first { Text("\(b.count) event" + (b.count == 1 ? "" : "s") + " in the current data").font(.footnote).foregroundStyle(Theme.muted) }
             ForEach(Copy.insightCards, id: \.title) { c in Panel(c.title) { Text(c.body).font(.footnote).foregroundStyle(Theme.textSoft) } }

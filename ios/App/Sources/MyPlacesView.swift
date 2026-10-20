@@ -150,7 +150,7 @@ struct MyPlacesView: View {
         let coords = (p.lat.map { JS.numberString($0) } ?? "-") + ", " + (p.lon.map { JS.numberString($0) } ?? "-")
         return CardBox {
             Text(p.displayName).font(.headline).foregroundStyle(Theme.text)
-            Text(coords + (p.country.isEmpty ? " \u{00B7} country unknown" : " \u{00B7} " + p.country) + (p.updatedAt.map { " \u{00B7} updated " + Format.age($0) } ?? ""))
+            Text(placeLine(p, coords: coords))
                 .font(.footnote).foregroundStyle(Theme.muted)
             HStack {
                 if a.level == nil { NothingNearbyChip() } else { RiskBadge(level: a.level!, text: a.headline) }
@@ -161,6 +161,26 @@ struct MyPlacesView: View {
                 .accessibilityLabel("Remove " + p.displayName)
         }
         .accessibilityIdentifier("savedPlace")
+    }
+
+    func placeLine(_ p: Place, coords: String) -> String {
+        var t: String = coords
+        t += p.country.isEmpty ? " \u{00B7} country unknown" : " \u{00B7} " + p.country
+        if let u = p.updatedAt { t += " \u{00B7} updated " + Format.age(u) }
+        return t
+    }
+
+    func scopeNote(noCountry: Int, countryWide: Int) -> String {
+        let has: String = noCountry == 1 ? "has" : "have"
+        let fs: String = countryWide == 1 ? "" : "s"
+        let apply: String = countryWide == 1 ? "applies" : "apply"
+        let them: String = noCountry == 1 ? "it" : "them"
+        return "\(noCountry) of your saved places \(has) no country recorded, so we cannot tell whether \(countryWide) forecast\(fs) that cover a whole country \(apply) to \(them). Search for the place by name instead of typing coordinates, and we can check."
+    }
+
+    func rowLine(_ r: DangerRow) -> String {
+        let where_: String = r.row.claimDistance ? JS.numberString(JS.round(r.d)) + " km from " + r.place.name : r.place.name
+        return where_ + " \u{00B7} " + r.record.type
     }
 
     func find() {
@@ -256,9 +276,7 @@ struct MyPlacesView: View {
                 Notice(text: "We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.", stale: true)
             }
             if countryWide > 0 && noCountry > 0 {
-                Notice(text: "\(noCountry) of your saved places " + (noCountry == 1 ? "has" : "have") + " no country recorded, so we cannot tell whether \(countryWide) forecast" +
-                       (countryWide == 1 ? "" : "s") + " that cover a whole country " + (countryWide == 1 ? "applies" : "apply") + " to " + (noCountry == 1 ? "it" : "them") +
-                       ". Search for the place by name instead of typing coordinates, and we can check.")
+                Notice(text: scopeNote(noCountry: noCountry, countryWide: countryWide))
             }
             ForEach(PlaceRisk.bands, id: \.band) { b in
                 let inBand = all.filter { $0.row.band == b.band }
@@ -273,7 +291,7 @@ struct MyPlacesView: View {
                             CardBox {
                                 Pill(text: Format.provenance(r.record))
                                 Text(r.record.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
-                                Text((r.row.claimDistance ? JS.numberString(JS.round(r.d)) + " km from " + r.place.name : r.place.name) + " \u{00B7} " + r.record.type)
+                                Text(rowLine(r))
                                     .font(.footnote).foregroundStyle(Theme.muted)
                                 if !r.row.applicability.isEmpty { Text(r.row.applicability).font(.caption).foregroundStyle(Theme.muted) }
                             }

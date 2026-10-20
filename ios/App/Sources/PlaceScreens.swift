@@ -18,9 +18,9 @@ struct RegionsView: View {
             ScreenHeader(eyebrow: "By place", title: "Regions", subtitle: "Start with the whole world. Then choose a country, a city or a neighbourhood, and then an event.")
             TrustNote(groups: [.feed, .models, .place])
             FeedBanner()
-            StatGrid(items: [("Current events", model.feed == nil ? "-" : "\(current.count)"), ("Countries and areas", model.feed == nil ? "-" : "\(groups.count)"),
-                             ("High alert", model.feed == nil ? "-" : "\(current.filter { ["Red", "Orange", "High"].contains($0.alert) }.count)"),
-                             ("Sources working", model.feed == nil ? "-" : Format.sourcesRatio(model.meta)), ("Updated", Format.age(model.feed?.generatedAt))])
+            StatGrid(items: [("Current events", model.fig(current.count)), ("Countries and areas", model.fig(groups.count)),
+                             ("High alert", model.fig(current.filter { ["Red", "Orange", "High"].contains($0.alert) }.count)),
+                             ("Sources working", model.figText(Format.sourcesRatio(model.meta))), ("Updated", Format.age(model.feed?.generatedAt))])
             SearchField(prompt: "Search a country, region or city", text: $query)
             FlowRow(spacing: 8) {
                 NavigationLink("Open this place", value: Route.region(query.trimmingCharacters(in: .whitespaces).ifEmpty("World"))).buttonStyle(SecondaryButtonStyle())
@@ -93,10 +93,10 @@ struct RegionDetailView: View {
                          subtitle: "Current events, alerts and types of hazard for this place, and which sources cover it.")
             TrustNote()
             FeedBanner()
-            StatGrid(items: [("Current events", model.feed == nil ? "-" : "\(current.count)"),
-                             ("High alert", model.feed == nil ? "-" : "\(current.filter { ["Red", "Orange", "High"].contains($0.alert) }.count)"),
-                             ("Types of hazard", model.feed == nil ? "-" : "\(Set(current.map { $0.type }).count)"),
-                             ("Sources", model.feed == nil ? "-" : "\(Set(current.map { $0.source }).count)"), ("Last checked", Format.age(model.feed?.generatedAt))])
+            StatGrid(items: [("Current events", model.fig(current.count)),
+                             ("High alert", model.fig(current.filter { ["Red", "Orange", "High"].contains($0.alert) }.count)),
+                             ("Types of hazard", model.fig(Set(current.map { $0.type }).count)),
+                             ("Sources", model.fig(Set(current.map { $0.source }).count)), ("Last checked", Format.age(model.feed?.generatedAt))])
             RefreshRow(status: model.statusLine())
             MapCard(records: Array(matching.prefix(250)), height: 260, fitToRecords: !world) { model.push(Route.detail(for: $0)) }
             Panel("Current events here", trailing: AnyView(SortPicker(screen: "region_sortBy", keys: Sorts.eventSorts, selection: $sort))) {
@@ -249,11 +249,19 @@ struct HazardDetailView: View {
                 Text("These are current reports from official agencies about this type of hazard. A hazard that is not listed may still be happening where no source reports it.").font(.footnote).foregroundStyle(Theme.textSoft)
             }
             Text("Help and context").font(.title3.bold()).foregroundStyle(Theme.text)
-            EnrichmentSection(record: Screens.syntheticRecord(title: h + (rr.isEmpty ? "" : " " + rr), country: rr.isEmpty ? (top?.country ?? "") : rr,
-                                                              region: rr.isEmpty ? (top?.region ?? "") : rr, type: h, updated: model.feed?.generatedAt ?? "",
-                                                              lat: top?.lat, lon: top?.lon, source: "Combined from the official sources we read"))
+            EnrichmentSection(record: synthetic(h, rr, top))
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ShareButton(route: .hazard(type: h, region: rr.isEmpty ? nil : rr), title: h) } }
+    }
+}
+
+extension HazardDetailView {
+    func synthetic(_ h: String, _ rr: String, _ top: Record?) -> Record {
+        let title: String = rr.isEmpty ? h : h + " " + rr
+        let country: String = rr.isEmpty ? (top?.country ?? "") : rr
+        let region: String = rr.isEmpty ? (top?.region ?? "") : rr
+        return Screens.syntheticRecord(title: title, country: country, region: region, type: h, updated: model.feed?.generatedAt ?? "",
+                                       lat: top?.lat, lon: top?.lon, source: "Combined from the official sources we read")
     }
 }
 
@@ -277,10 +285,10 @@ struct CalamitiesView: View {
             ScreenHeader(title: "Current disasters and disaster history", subtitle: "Disasters happening now around the world, plus a timeline of major disasters from the past.")
             TrustNote()
             FeedBanner()
-            StatGrid(items: [("Happening now", model.feed == nil ? "-" : "\(list.count)"),
-                             ("High alert", model.feed == nil ? "-" : "\(list.filter { ["Red", "Orange", "High"].contains($0.alert) }.count)"),
-                             ("Countries and territories", model.feed == nil ? "-" : "\(Format.countryCount(list))"),
-                             ("Sources working", model.feed == nil ? "-" : Format.sourcesRatio(model.meta)), ("Past disasters listed", "\(model.history.count)")])
+            StatGrid(items: [("Happening now", model.fig(list.count)),
+                             ("High alert", model.fig(list.filter { ["Red", "Orange", "High"].contains($0.alert) }.count)),
+                             ("Countries and territories", model.fig(Format.countryCount(list))),
+                             ("Sources working", model.figText(Format.sourcesRatio(model.meta))), ("Past disasters listed", "\(model.history.count)")])
             Picker("View", selection: $tab) { Text("Happening now").tag(0); Text("Past disasters").tag(1) }.pickerStyle(.segmented)
             if tab == 0 { now(list) } else { past }
             Text("Times are shown in IST by default. To see them in another time zone, use the time zone setting under More.").font(.footnote).foregroundStyle(Theme.muted)
