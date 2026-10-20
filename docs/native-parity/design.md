@@ -154,6 +154,12 @@ Numbers in tables and keys use tabular figures (`font-variant-numeric: tabular-n
 ### 3.3 Map marker
 - Size `9 + rank*3` (Low 12 up to Extreme 27; Unknown 9), filled with the level colour, with the halo and outline from
   §1.5, and z-index `rank*1000`. Unknown markers are filled `#8FA8A0`.
+- **Tap area** (changelog C24): the mark keeps its size, centred in a square hit area of `max(24, size)` px (the
+  web's WCAG 2.5.8 minimum; native should use 44pt / 48dp hit areas around the same drawn mark).
+- Markers are **not** keyboard / focus stops on the web (each event is reachable in the list beside the map). Native:
+  keep annotations accessible to VoiceOver/TalkBack with the "{title} - {Level} risk" label, but do not make every
+  marker a separate tab stop before the list.
+- Selected marker (home map): a 2px white ring with a 4px `#0B1F19` outer ring around the shape (`.mk-selected`).
 - Use clustering only if it never hides a higher level under lower ones (the website does not cluster).
 - **Map key** button: label "Key", pressed state green. Its body is `rgba(4,18,14,.92)` with a 1px `#1F4A3C`
   border and radius 10. It lists each level with its mark and the count drawn, using muted tabular numbers.
@@ -239,10 +245,15 @@ day number 13px; today's column bg `#0C3527` with the number in `#7EF0C0`. Group
 ink (bars without a level are `#5FD3A6`). A live bar gets a 2px `#7EF0C0` ring. The "now" line is 2px `#7EF0C0`.
 
 ### 4.13 Trust note (top of screen)
-Margin bottom 12, padding `9 × 12`, radius 10, borders as in §1.4. First row: an 18px circle "i" icon (1.5px
-`#FFBF2F` stroke, italic serif "i" 12px `#FFBF2F`), then **bold "Experimental model, not an official warning."**
-followed by the agency links. Then the "when" line, indented 26 (0 on phone), 12px `#9FBCB0`. Then a disclosure
-"Data sources (N): …" with summary text `#8FF0CA`, list items 12px, and the "adds" sentence in `#C4D8CF`.
+Styles now live in `trust.css` (the note is in the page HTML from the first paint; changelog C10). Margin bottom 12,
+padding `8 × 12`, radius 10, 13px text with line height 1.4, borders as in §1.4 (1px `#2B624E`, 3px `#FFBF2F` left
+accent, bg `#071F18`). First row: an 18px circle "i" icon (1.5px `#FFBF2F` stroke, italic serif "i" 12px `#FFBF2F`),
+then **bold "Experimental model, not an official warning."** and "For real alerts, follow your national agency:"
+followed by the agency links. Then the "when" line, indented 26, 12px `#9FBCB0`, with its height reserved (one line;
+2.7em on phone) so the text arriving does not move the screen. Then a disclosure **"Data sources: …"** (names only,
+no count) with summary text `#8FF0CA`, kept to one line with an ellipsis while closed; list items 12px, the "adds"
+sentence in `#C4D8CF`. Phone (under 600px): 12px text, padding `7 × 10`, line height 1.35, the when line and sources
+11.5px and still indented 26. Never insert the note after the screen has drawn.
 
 ### 4.14 Footer (`.sitefoot` + `.trust-foot`)
 bg `#03140F`, top border `#174638`, padding 16, 12px `#9FBCB0`. Nav links `#8FF0CA` in a wrap row with gaps of 8 ×
@@ -252,6 +263,21 @@ bg `#03140F`, top border `#174638`, padding 16, 12px `#9FBCB0`. Nav links `#8FF0
 3-column grid (1 column on phone) with 9 gaps and 10 padding, cards at least 110 tall. Key/value list: 190px label
 column (stacked on phone), labels 12px `#89AB9D`, values 13px. Video thumbnail 16:9, radius 6, bg `#062018`. Phone
 number 24px 850 `#8FF0CA`. Meta text 10px `#91B4A6`. List items 12px `#CFE7DD`.
+
+### 4.15b Selected-event card (home map; features.md §1.6)
+Overlaid at the bottom left of the map (inset 14; 8 on phone, full width minus 16), width `min(360, 100% - 28)`,
+padding `11 × 12`, 1px `#2B7D60` border, radius 10, bg `rgba(3,24,18,.96)`, shadow `0 14 40 rgba(0,0,0,.38)`, hidden
+until something is selected. Eyebrow 9px uppercase tracking .1em `#6DE7B9` ("Selected event on map" or "Search");
+title 13px bold (3 vertical margin); meta in `#9BB8AC`; button "See details →" bg `#25E29C`, text `#032117`, radius 7,
+padding `7 × 10`, 800 weight, 8 top margin (hidden in the "no match" state). Announced politely to screen readers.
+
+### 4.15c Pager and status cards
+- Alerts "Show more" (features.md §3.1): a full-width card (spans the grid) with the muted line "Showing {n} of
+  {N}." and a default `.btn` "Show {k} more". When all are shown: a muted line "Showing all {N}." across the grid.
+- Unavailable card (`PND.unavailableHtml`, features.md §0 rule 10): a normal `.card` with bold "Live data
+  unavailable." and a muted paragraph; role status.
+- Region scope note (features.md §3.2): a muted paragraph above the cards, "Showing only {region}." and a link
+  "Show everywhere →".
 
 ### 4.16 Tables
 11px. Header 9px uppercase `#8EAA9E` tracking .06em. Cell padding `8 × 10`, row divider `#153F33`. A tappable row
@@ -271,7 +297,10 @@ left border `#EF2639`.
 | hit target | native minimum 44pt / 48dp. The web tab items are about 40 tall, so pad them up |
 
 ## 6. Motion and accessibility
-- Only two animations exist: the KPI shimmer and the map "fly to" (0.55 s). Respect Reduce Motion.
+- Only two animations exist: the KPI shimmer and the map "fly to" (0.55 s). Respect Reduce Motion (the web now also
+  turns smooth scrolling off when reduced motion is asked for).
+- On the web, focused controls are scrolled clear of the sticky header (80px) and the phone tab bar; native lists
+  must likewise keep the focused row clear of bars.
 - Every level shows colour, text and shape. Every pill keeps its full meaning in its accessibility label (the full source name, or the badge title sentence).
 - Link colours clear 7:1. Risk inks clear 4.5:1. The test suite (`test/contrast.test.js`, `riskcolour.test.js`) enforces both. Native should add the same contrast assertions to UI tests.
 - Do not expand acronyms inside badges, pills, headings or cards (glossary rule). Expand them in body prose.
