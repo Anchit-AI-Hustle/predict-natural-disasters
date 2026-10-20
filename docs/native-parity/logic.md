@@ -1,10 +1,14 @@
 # Client logic to port exactly (Swift and Kotlin)
 
-Every rule here was read from the website source. Every example was **produced by running that source**: the site
-scripts were loaded into jsdom with `Date.now()` fixed to `2026-10-20T12:00:00Z`. The generator is
-`/tmp/claude-0/-home-user-predict-natural-disasters/7adba1cf-f037-5286-b13d-6ec6fec1d7c2/scratchpad/work/vectors.js`.
-Its output is **`parity/test-vectors.json`**, 67 groups of `{in, out}` pairs. Load that file in XCTest or JUnit and
-assert equality. The JSON keys are given as **[vectors: key]** below.
+Every rule here was read from the website source (branch `claude/website-audit-fixes`, commit `117201b`). Every
+example was **produced by running that source**: the site scripts were loaded into jsdom with `Date.now()` fixed to
+`2026-10-20T12:00:00Z`, page logic was cut out of the pages that hold it and run as it is, and the home, alerts and
+ND-001 check pages were rendered whole with a fixed feed (`test/render.js`). The generator is committed as
+**`tools/make-parity-vectors.js`** (`node tools/make-parity-vectors.js` rewrites the file; `--check` exits 1 when it
+is stale), and `test/parity-vectors.test.js` fails the website's test suite when the file no longer matches the site.
+Its output is **`docs/native-parity/test-vectors.json`**: `meta` plus 102 groups (the first spec's 66 groups, unchanged in
+name, shape and content, plus 36 new ones for the audit fixes; features.md "Changelog"). Load that file in XCTest or
+JUnit and assert equality. The JSON keys are given as **[vectors: key]** below; §11 indexes them.
 
 Suggested module layout, shared by both platforms:
 
@@ -16,6 +20,9 @@ Suggested module layout, shared by both platforms:
 | `AlertRules` | `alert-rules.js`, plus the major-event rule from `portal.js` | §4 |
 | `HazardModel` | `hazard-model.js`: hazards, severity, key facts, lead time, classification | §5 |
 | `Format` | `portal.js` text helpers | §6 |
+| `Counts` | `portal.js` one-answer helpers: `observed`, `openForecasts`, `isHighAlert`, `isOfficialWarning`, `officialWarnings`, `sourcesReporting`, `countryCount`, `liveWord` | §6.11 |
+| `Hazards` | `portal.js hazardKey`, `sameHazard` (on top of `HazardModel.hazardOf`) | §6.10 |
+| `Places` | `continents.js` and `portal.js inPlace` | §6.12 |
 | `ForecastTable` | `forecast-table.js` | §7 |
 | `Sorts` | `PND.SORT_DEFS` and the per-screen extras | §8 |
 | `Search` | `search.js`, plus `glossary.js expandAlways` | §9 |
@@ -37,7 +44,8 @@ Suggested module layout, shared by both platforms:
 - **Number grouping.** `hazard-model.js group()` always groups with commas in threes (`120,000`). `impactText` and
   the detail pages use `Number.toLocaleString()`, which depends on the viewer's locale (en-IN would give
   `1,20,000`). **Native: always use en-US grouping (`1,234`)**, matching `group()` and the test vectors.
-- **Now.** Functions that read "now" (`age`, `alertFor` liveness, `stateOf`, `windowClosed`) must take an injectable clock.
+- **Now.** Functions that read "now" (`age`, `alertFor` liveness, `stateOf`, `windowClosed`, the `windowEnd` sort)
+  must take an injectable clock.
 
 ---
 
@@ -632,6 +640,8 @@ return r || c || fallback
 - `fmtTime(v)`: `"h:mm AM|PM {tzLabel}"`.
 - `tzLabel(tz)`: Asia/Kolkata → IST, UTC → UTC, America/New_York → ET, America/Los_Angeles → PT, Europe/London → UK,
   Asia/Dubai → GST, Asia/Singapore → SGT, Asia/Tokyo → JST, Australia/Sydney → Sydney. Any other zone gives the IANA id.
+- The chosen zone (`PND.timezone`) is the stored `pnd_timezone`, else the device zone, else Asia/Kolkata (§6.13).
+  The trust note's times use this same `fmtDate`, so one screen shows one zone.
 - **[vectors: portal.fmtDate, portal.fmtTime]** cover 5 timezones each.
 
 ### 6.5 `fmtWhen(v, other?, role?)` (forecast window edges)
@@ -672,7 +682,10 @@ gives `"20 Oct 2026, 5:30 AM IST"`.
 - `statusText(meta)`: nil → "Refreshing". When `meta.live` → "Live · {ok} of {total} sources working". Otherwise →
   "Our data sources are not answering · showing saved copies only".
 - `sourcesRatio(meta)` → "{ok}/{total}", for example "2/3" or "0/0".
-- `countryCount(list)`: split each `country` on ",", trim each part, drop empties, lower-case, and count distinct values.
+- `countryCount(list)`: split each `country` on ",", trim each part, drop empties, lower-case, and count distinct
+  values. Every screen that states a number of countries uses it (Home, Alerts, Regions, Hazard detail, and the
+  `emptyHtml` "nothing matches" line through `PNDSearch.countryCount`, which is the same function).
+  **[vectors: portal.countryCount, search.countryCount]**
 - `impactText(e)`: the non-zero (truthy) deaths, displaced and affected, formatted as "{n} deaths · {n} displaced ·
   {n} affected" with en-US grouping. Note that this one uses truthiness, so a 0 is omitted. That is acceptable for
   a card line.
@@ -689,7 +702,9 @@ gives `"20 Oct 2026, 5:30 AM IST"`.
   - The ". Each one covers …" clause is omitted when the list is empty.
   **[vectors: portal.horizonText]**
 - `hazardOptions`: see features.md §0.3. **[vectors: portal.hazardOptions]**
-- `emptyHtml`: see features.md §0.3. **[vectors: search.emptyHtml]**
+- `emptyHtml`: see features.md §0.3. In the "nothing matches" variant, N is the number of `all` records with
+  `live !== false` and not `forecast`, and C is `countryCount` of those. **[vectors: search.emptyHtml,
+  search.emptyHtml.counts]**
 
 ### 6.9 Forecast changes (`changesHtml(meta)`)
 ```
@@ -712,6 +727,93 @@ then sections (each at most 8 rows, then "…and N more"):
   Could not be checked      → "{titleOf(x)} - we could not reach its source this time, so it is unchanged, not withdrawn"
 ```
 Note that `sinceHours` is printed raw (for example "5.24 hours").
+
+### 6.10 Hazard identity: `hazardKey(t)` and `sameHazard(a, b)`
+```
+hazardKey(t):
+  s = String(t ?? "").trimmed()
+  h = hazardOf(s)                            // §5.1
+  if h is not DEFAULT → return the HAZARDS key whose entry is h     // "Volcanic Eruption" → "Volcano"
+  return s                                   // unknown types are only themselves: "Ice", "Special Marine Warning"
+sameHazard(a, b) = hazardKey(a).lowercased() == hazardKey(b).lowercased()
+```
+This replaces the first-word stem match (`type.toLowerCase().includes(stem)`, with "wildfire" → "wild" and "volcano"
+→ "volcan") that the home strip, the home map filter and hazard detail used: under it "Extreme Cold" matched every
+"Extreme Heat" record and an unknown type fell back to Flood. Used by: the home map filter, the home strip (grouping
+reports by key), hazard detail (`fillHazards` and the match). Note the consequences of `hazardOf`'s order:
+"Winter storm" is Extreme Cold (cold before storm), "Severe Thunderstorm Warning" is Severe Storm, "Earthquake
+aftershock sequence" is its own key (not Earthquake), "Flood / Landslide" is its own key (not Flood).
+**[vectors: portal.hazardKey, portal.sameHazard, hazardDetail.fillHazards, hazardDetail.select, home.render]**
+
+### 6.11 One answer per quantity (`portal.js`)
+Each quantity the site states on more than one screen comes from one helper. Use these everywhere; never re-derive.
+```
+observed(list)        = list.filter(e => e && e.live !== false && !e.forecast)            // "reports"
+openForecasts(list)   = list.filter(e => e && e.live !== false && e.forecast && !e.windowClosed)
+isHighAlert(e)        = e && !e.forecast && e.alert in ["Red","Orange","High"]           // exact case
+isOfficialWarning(e):
+  if !e || e.forecast → false
+  s = e.evidenceState
+  return s ? (s == "official-warning") : (e.sourceType == "official" && e.expiresAt is truthy)
+officialWarnings(list) = list.filter(e => e && e.live !== false && isOfficialWarning(e))
+sourcesReporting(list) = count of distinct truthy e.source
+liveWord(e) = !e ? "-" : e.cached ? "Saved copy" : e.forecast ? "Our forecast"
+            : e.live === false ? "Not updated recently" : "Live"
+WARNING_MEANING = "Warnings and watches issued by agencies and in force now. Reports of disasters that already happened are not counted."
+```
+`isOfficialWarning` replaces two older rules: "official and alert Red or Orange" (home tile and table) and "official
+and (Red or Orange, or `source == 'USGS'`)" (official-warnings and alerts-notifications lists). Note that an empty
+`evidenceState` (`""`) falls through to the `expiresAt` rule, and that `observed`/`openForecasts`/`officialWarnings`
+drop `live === false` but `isOfficialWarning`/`isHighAlert` do not look at it.
+Where each is used: features.md §1.3, §1.6, §3.2, §4, §7, §8, §9.2. **[vectors: portal.observed,
+portal.openForecasts, portal.isHighAlert, portal.isOfficialWarning, portal.officialWarnings, portal.WARNING_MEANING,
+portal.sourcesReporting, portal.liveWord, detail.statusWords, collection.keep]**
+
+`collection.js keep(e)` per view: official-warnings and alerts-notifications → `isOfficialWarning(e)`;
+forecast-list and forecast-calendar → `e.forecast === true`; recent-events → `e.sourceType === 'official'`; every
+other view → true. With `?region=X` (X not "world", any case) the kept list is further filtered by `inPlace(e, X)`
+(`scoped()`). The status count for the forecast views is `"{N} forecasts: {openForecasts(scoped).length} open,
+{rest} ended"`; other views give `"{N-fc} {noun} · {fc} forecasts"` when they mix the two, else `"{N} {noun}"`, with
+the noun singular (trailing "s" dropped) for 1.
+
+### 6.12 Place membership: `continents.js` and `inPlace(e, q)`
+```
+CONTINENTS = { Africa: [...], Asia: [...], Europe: [...], North America: [...], South America: [...],
+               Oceania: [...], Antarctica: [...] }          // copy the name lists verbatim from continents.js
+NAMES = ["Africa","Asia","Europe","North America","South America","Oceania","Antarctica"]
+BY_COUNTRY[name.lowercased()] = every continent whose list holds that name   // Russia, Russian Federation,
+                                                                             // Turkey, Türkiye, Turkiye, Georgia,
+                                                                             // Armenia, Azerbaijan, Kazakhstan,
+                                                                             // Cyprus, N. Cyprus and Northern
+                                                                             // Cyprus are in Asia and Europe
+continentNamed(name) = the NAMES entry equal to String(name).trimmed() ignoring case, else ""   // no URL decoding
+countriesOf(e) = (e.countries if a non-empty array, else []) + e.country split on ",", trimmed, empties dropped,
+                 then each with a trailing /\s+region$/i removed ("New Zealand region" → "New Zealand")
+continentsOf(e) = distinct continents of BY_COUNTRY[c.lowercased()] for c in countriesOf(e), in that order
+                  ([] for a record at sea or with no country; the title is never read)
+onContinent(e, name) = continentNamed(name) != "" && continentsOf(e) contains it
+inPlace(e, q):
+  if continentNamed(q) != "" → onContinent(e, q)
+  t = String(q).lowercased().trimmed()
+  return matchesPlace(e, t) || (e.countries is an array && some country lower-cased contains t)
+```
+The lists include the Natural Earth outline names (`Dem. Rep. Congo`, `Bosnia and Herz.`, `Solomon Is.`), provider
+spellings (`DR Congo`, `Viet Nam`, `México`, `MX`, `US`, `USA`, `UK`, `UAE`) and territories. Note that `inPlace(e, "")`
+is true (an empty substring matches) and `inPlace(e, "World")` is a plain text match (false for most records); the
+screens handle "World" before calling it. Region detail: `World` → everything; a continent → `onContinent`; anything
+else → `[country, region, title, details].join(' ')` contains the name (features.md §8.2). Hazard detail's region box
+and the `?region=` list scope use `inPlace`.
+**[vectors: continents.NAMES, continents.continentNamed, continents.continentsOf, continents.onContinent,
+portal.inPlace, regionDetail.matches, fixtures.places.continents]**
+
+### 6.13 Default time zone (`PND.timezone`)
+```
+timezone = storage["pnd_timezone"]
+        ?? (try Intl.DateTimeFormat().resolvedOptions().timeZone, if it is a non-empty string)
+        ?? "Asia/Kolkata"          // also when reading the device zone throws
+```
+Native: `TimeZone.current.identifier` (Swift) / `ZoneId.systemDefault().id` (Kotlin) for the device zone.
+**[vectors: portal.timezoneDefault]** (input `[stored, browserZone]`; `browserZone` `"throws"` means the lookup throws).
 
 ---
 
@@ -771,7 +873,7 @@ Helpers:
 | source | Source (A to Z) | `textOf('source')` A to Z, then newest |
 | title | Name (A to Z) | `textOf('title','name')` A to Z |
 | distance | Nearest first | `_d` asc (a non-finite distance is ∞) |
-| windowEnd | Ending soonest first | `parse(targetEnd)` asc (missing is ∞) |
+| windowEnd | Ending soonest first | `x = parse(targetEnd)` (missing is ∞); `ended(x) = x <= now \|\| windowClosed`. An open window sorts before an ended one. Two open windows: `x` asc (soonest first). Two ended windows: `x` desc (most recently ended first). |
 | yearNew / yearOld | Most recent first / Earliest first | `sort` desc / asc (history) |
 | name | Name (A to Z) | `textOf('name','title')` A to Z |
 | countDesc / countAsc | Most events first / Fewest events first | `count` |
@@ -803,7 +905,7 @@ Per-screen key lists (the **first is the default**):
 | Our sources | curated, name, nameDesc |
 | Track record ledger | recorded, windowEnd, observed, hazard, country, title |
 | Historical detail related | yearNew, yearOld, name, type |
-| Home (index.html own copy) | newest, severity, oldest, deaths, affected, country, type, source, title |
+| Home "Live events" card (index.html own copy, features.md §1.6) | newest, severity, oldest, deaths, affected, country, type, source, title |
 
 **[vectors: sort.fixture, sort.results, sort.rankOf, sort.timeOf, portal.SORT_DEFS.labels]**. For the 5-record fixture:
 
@@ -821,6 +923,18 @@ Per-screen key lists (the **first is the default**):
 | windowEnd | b, a, c, d, e |
 
 In the title sort, c ("M 6.5 - near Teluknaga") sorts as "magnitude 6.5…" because of expandAlways.
+
+`sort.results.windowEnd` is unchanged because every fixture window ends after `now`. The ended-window rule is pinned
+by **[vectors: sort.windowEndEnded]**: for its fixture the order is `open-22, open-25, no-end, closed-flag, ends-now,
+ended-oct1, ended-sep` (`ends-now` ends exactly at `now`, so it has ended; `closed-flag` ends in the future but is
+`windowClosed`; `no-end` is open with ∞ and sorts after the dated open ones).
+
+The home page keeps its own comparators (they differ from `SORT_DEFS`): `when(e) = parse(updated || targetStart)`
+or 0 (no `startedAt`); `rank(e) = severityRank` if finite and > 0, else `{red:5, critical:5, orange:4, high:4,
+moderate:3, watch:2, green:1}[alert lower-cased]` or 0; `numOf` as above; `textOf(e, keys…)` = the first truthy key
+lower-cased (**no** glossary expansion) or `"\uffff"`. Comparators: newest `when` desc; severity `rank` desc then
+newest; oldest `when` asc; deaths and affected desc then newest; country `textOf(place,country,region)` A to Z;
+type, source and title A to Z on that one field. **[vectors: home.render]**
 
 ---
 
@@ -941,6 +1055,26 @@ Count each record by `r._state ?? stateOf(r, now)`. `matured` counts records who
 11. Answer box sentences, honesty paragraph, WHY_NOT reasons and the "Forecast in advance?" labels are verbatim
     strings in the inline `load()` script of `accuracy.html`. Bundle them.
 
+### 10.4b A forecast's grade on its own screen (`forecast-detail.html gradeOf`)
+```
+gradeOf(id):
+  L = GET /data/verification-ledger.json (nil on failure or non-200)
+  v = L.verifications.first(x => x.id == id)
+  if v: k = normalise(v.status); if k != "" && k != PENDING && k != UNKNOWN → {label: LABELS[k] ?? k, summary: v.summary ?? ""}
+  if id starts with "model-":
+    M = GET /data/model-verdicts.json; o = M.outlooks.first(x => x.id == id)
+    o.verdict == "correct"     → {label: LABELS.VERIFIED,    summary: ""}     // "Correct"
+    o.verdict == "false alarm" → {label: LABELS.FALSE_ALARM, summary: ""}     // "Wrong (false alarm)"
+  return nil
+STATUS = grade ? "Checked: " + grade.label : (targetEnd < now ? "Ended, not yet checked" : "Active")
+```
+The ledger wins when an id is in both files. **[vectors: forecastDetail.gradeOf, verdicts.label, verdicts.LABELS,
+fixtures.verdictFiles]**
+
+The ND-001 check screen (`verification-detail.html`) reads its Result differently: `LABELS[VERDICTS[row.status]]`
+with the raw status as the key (no `normalise`), else "Not checked yet" (features.md §14).
+**[vectors: verificationDetail.render]**
+
 ### 10.5 `score(verifications, assessments)` (`verification-model.js`)
 ```
 for v in verifications:
@@ -997,6 +1131,11 @@ For each `results["{h}@{lead}"]` with `h=hits, m=misses, f=falseAlarms, c=correc
 
 ## 11. Test-vector index (`test-vectors.json`)
 
+Regenerate with `node tools/make-parity-vectors.js`; never edit the file by hand. `test/parity-vectors.test.js`
+rebuilds it in memory on every website test run and fails when it differs, and also fails if any of the first
+spec's group names disappears.
+
+**Groups from the first spec (unchanged; keep your harness as it is):**
 `meta`, `risk.levelOf`, `risk.markerIcon`, `portal.riskLabel`, `portal.matchesRiskLevel`, `portal.riskTagHtml`,
 `portal.riskLevelOptions`, `hazards.hazardOf.name`, `hazards.horizonHours`, `hazards.severityOf`,
 `hazards.cycloneCategory`, `hazards.keyFacts`, `portal.keyFactsLine`, `hazards.leadTimeText`,
@@ -1012,6 +1151,50 @@ For each `results["{h}@{lead}"]` with `h=hits, m=misses, f=falseAlarms, c=correc
 `verdicts.normalise`, `verdicts.stateOf`, `verdicts.engineState`, `verdicts.rate`, `verdicts.tally`,
 `verdicts.joinVerdicts`, `verification.score`, `verification.predictingSince`.
 
+**Groups added for the audit fixes** (shape in brackets; `{in,out}[]` unless noted):
+
+| Group | Site code that produced it | What it pins |
+| --- | --- | --- |
+| `sort.windowEndEnded` | `PND.applySort(list,'windowEnd')` | `{fixture, now, out: ids}`: ended windows after open ones (§8) |
+| `search.emptyHtml.counts` | `PNDSearch.emptyHtml` | the "N events from C countries" line counts reports only |
+| `search.countryCount` | `PNDSearch.countryCount` | same rule as `portal.countryCount` |
+| `continents.NAMES` | `PNDContinents.NAMES` | plain array, the order of the continents |
+| `continents.continentNamed` | `PNDContinents.continentNamed` | case and space handling, no URL decoding |
+| `fixtures.places.continents` | (fixture) | records referenced by id in the next four groups |
+| `continents.continentsOf` | `PNDContinents.continentsOf` | in: record id |
+| `continents.onContinent` | `PNDContinents.onContinent` | in: `[record id, name]` |
+| `portal.inPlace` | `PND.inPlace` | in: `[record id, query]` |
+| `regionDetail.matches` | `region-detail.html` continent lines and `matches()` | in: `[region, ids]`; out: `{region (canonical), ids kept}` |
+| `portal.hazardKey` | `PND.hazardKey` | whole-name hazard keys (§6.10) |
+| `portal.sameHazard` | `PND.sameHazard` | Extreme Cold is not Extreme Heat |
+| `hazardDetail.fillHazards` | `hazard-detail.html fillHazards` | in: `[requested type, types in the feed]`; out: `{options, selectedAtStart, selected}` |
+| `fixtures.events.hazards` | (fixture) | records for the next group |
+| `hazardDetail.select` | `hazard-detail.html here` + `PND.observed`/`openForecasts` | in: `[hazard, region]`; out: `{events, openForecasts}` ids |
+| `fixtures.events.warnings` | (fixture) | records referenced by id in the next two groups |
+| `portal.isOfficialWarning` | `PND.isOfficialWarning` | in: record id (or null) |
+| `portal.officialWarnings` | `PND.officialWarnings` | `{in: ids, out: ids}` |
+| `portal.WARNING_MEANING` | `PND.WARNING_MEANING` | plain string |
+| `fixtures.events.mixed` | (fixture) | records for the next four groups |
+| `portal.observed`, `portal.openForecasts` | `PND.observed`, `PND.openForecasts` | `{in: ids, out: ids}` |
+| `portal.isHighAlert` | `PND.isHighAlert` | in: record id (or null) |
+| `portal.sourcesReporting` | `PND.sourcesReporting` | in: `[ids]` |
+| `portal.liveWord` | `PND.liveWord` | DATA STATUS word |
+| `detail.statusWords` | `event-detail.html` eyebrow and Status, `calamity-detail.html` Status, `PND.liveWord` | out: `{eventEyebrow, eventDataStatus, eventRecordState, calamityStatus}` |
+| `fixtures.events.collection` | (fixture) | records for the next group |
+| `collection.keep` | `collection.js keep`, `scoped`, `countText` | in: `[view, region?]`; out: `{kept, scoped, countText}` (noun "items") |
+| `verdicts.LABELS` | `PNDVerdicts.LABELS` | plain object |
+| `verdicts.label` | `LABELS[normalise(status)]` | raw status to label |
+| `fixtures.verdictFiles` | (fixture) | the two data files served to the next group |
+| `forecastDetail.gradeOf` | `forecast-detail.html gradeOf` | in: `[id, targetEnd, filesDown?]`; out: `{grade, status}` (§10.4b) |
+| `portal.timezoneDefault` | `PND.timezone`, `tzLabel`, `fmtDate` | in: `[stored, browserZone]` (§6.13) |
+| `home.render` | `index.html` rendered whole | object: `feed`, `hazardFilterOptions`, `sortOptions`, `warningsTileNote`, `warningsTileTitle`, `liveEventsHeading`, `cases[{in:{hazardFilter, sort}, out:{kEvents, kEventsNote, kWarnings, kForecasts, kForecastsNote, kCountries, liveEvents (ids), latestEvents, officialWarnings, latestForecasts (table cells), hazardStrip[{hazard, text, link}]}}]` |
+| `alerts.pager` | `alerts.html` rendered whole | object: `{feedRecords, officialRecords, pageSize, steps[{action, out:{shown, note, button, kOfficial}}]}` |
+| `verificationDetail.render` | `verification-detail.html` rendered whole | object: `{fixtures:{forecast, reports}, cases[{in:{name, events, ledger}, out:{kVerdict, kEvidence, kTarget, kWindow, rows (8 × [metric, forecast, actual]), evidence (hrefs)}}]}` |
+
 Groups whose entries carry a `tz` field (`portal.fmtDate`, `fmtTime`, `fmtWhen`, `windowText`, `horizonText`) were
-run with that timezone selected. Every other group uses the default `Asia/Kolkata`. The fixed "now" is `meta.now`.
-`riskRow` distances in the vectors are rounded to 0.1 km. Compare with a tolerance of 0.05.
+run with that timezone selected. Every other group was run with `meta.timezoneDefault` (`Asia/Kolkata`) selected
+explicitly; the site's own default is now the device zone (§6.13), so set the zone in your harness rather than
+relying on the device. Numbers formatted with `toLocaleString()` use en-US grouping (§1). The fixed "now" is
+`meta.now`. `riskRow` distances in the vectors are rounded to 0.1 km. Compare with a tolerance of 0.05. Rendered
+pages (`home.render`, `alerts.pager`, `verificationDetail.render`) give the visible text with runs of whitespace
+collapsed to one space.

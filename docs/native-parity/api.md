@@ -8,10 +8,10 @@ the same endpoints the web pages call. **No authentication is needed to read.** 
 Timestamps are ISO-8601 strings in UTC, and most of them end in `Z`. Hand-written ledger rows can carry offsets such
 as `+07:00`. Always parse with a full ISO-8601 parser.
 
-The samples below come from running the real handlers. The script was
-`/tmp/claude-0/-home-user-predict-natural-disasters/7adba1cf-f037-5286-b13d-6ec6fec1d7c2/scratchpad/work/samples.js`,
-and it does the same thing as `test/render.js callApi`: it installs `test/mock-upstreams.js makeFetch({})` as
-`global.fetch` and calls the handler with a mock `res`. Files:
+The samples below come from running the real handlers when the first spec was written (the only handler change since, the
+ReliefWeb provider's `endpoint`, is applied to the sample). The script did the same thing as `test/render.js
+callApi`: it installs `test/mock-upstreams.js makeFetch({})` as `global.fetch` and calls the handler with a mock
+`res`. Files:
 
 - `parity/sample-events.json`: full `GET /api/events` body (63 events, all eight providers mocked).
 - `parity/sample-enrichment.json`: `{request, response}` for `GET /api/event-enrichment` on the GDACS Nepal flood.
@@ -86,7 +86,7 @@ treat them as 0** (logic.md §5).
 | `id` | string | Stable id. Patterns: `gdacs-{TYPE}-{eventid}`, `usgs-{id}`, `emsc-{unid}`, `eonet-{id}`, `nhc-{id}`, `nws-{urn}`, `reliefweb-{slug}`, `usgs-volcano-{id}`, `OUT-{sourceId}` (derived outlooks), `OUT-aftershock-{sourceId}`, `model-{hazard}-{place}-{date}`, `ND-001`, plus the fallback snapshots `gdacs-FL-1104124` and `recent-IDN-20260911-M65`. URL-encode it in paths. |
 | `source` | string | Display name, for example `GDACS`, `USGS`, `EMSC`, `NASA EONET`, `NOAA National Hurricane Center`, `NOAA / National Weather Service`, `ReliefWeb (UN OCHA)`, `USGS Volcano Hazards Program`, `Predict Natural Disasters`, `Predict Natural Disasters · derived from {X}`, `Predict Natural Disasters · forecast model`, `GDACS verified snapshot`, `USGS verified recent snapshot`. Shorten it for pills with `shortSource` (logic.md §6). |
 | `sourceType` | `"official"` or `"forecast"` | |
-| `evidenceState` | `"observed"`, `"official-warning"`, `"forecast"` or `"unknown"` | What kind of statement the record is. Drives provenance (`PND.provenance`) and place-risk banding. |
+| `evidenceState` | `"observed"`, `"official-warning"`, `"forecast"` or `"unknown"` | What kind of statement the record is. Drives provenance (`PND.provenance`) and place-risk banding. **`"official-warning"` is what makes a record an official warning** on every screen (`PND.isOfficialWarning`, logic.md §6.11); with no `evidenceState` at all, an official record with an `expiresAt` counts. The `alert` colour does not. |
 | `forecast` | bool (opt) | `true` on every forecast. |
 | `isForecast` | bool | Always present. `!!forecast`. |
 | `forecastKind` | opt: `signal-derived-outlook`, `aftershock-sequence`, `model-advance`, `frozen-benchmark` | |
@@ -109,7 +109,7 @@ treat them as 0** (logic.md §5).
 | `details` | string | Free text. Can end with the boilerplate "This is our own estimate, not an official warning." |
 | `place` | string | Server-computed place label, for example `"Bagmati Province, Nepal"` or `"Atlantic Ocean"`. Use `placeOf` (logic.md §6.1), which prefers this field. |
 | `country` | string | Can be a comma-separated list (droughts, storms), or empty. |
-| `countries` | string[] | Parsed list of countries, or `[]` at sea. Use it for grouping by country (Regions). |
+| `countries` | string[] | Parsed list of countries, or `[]` at sea. The feed fills it from the map outlines when a provider names none. Use it for grouping by country (Regions), and with `country` for continent membership (`continents.js`, logic.md §6.12) and `PND.inPlace`. |
 | `sea` | string (opt) | Ocean name when there is no country. |
 | `region`, `admin1`, `admin2` | string (opt) | `region` can be a storm name or corridor. |
 | `affectedCountries`, `location` | string (opt) | Searchable. |
@@ -146,7 +146,7 @@ treat them as 0** (logic.md §5).
 | --- | --- | --- |
 | `updated` | ISO | When the provider last updated the record. Used for sorting (`timeOf`). |
 | `startedAt` | ISO or null (opt) | |
-| `expiresAt` | ISO (opt) | Official warning expiry. |
+| `expiresAt` | ISO (opt) | Official warning expiry. Shown as "Warning ends" / "Ends". Also the fallback test for an official warning when `evidenceState` is absent. |
 | `expectedEnd` | ISO (opt) | GDACS future `todate`. |
 | `issuedAt`, `sourceIssuedAt` | ISO (opt) | Forecasts. |
 | `issuedAtBasis` | string (opt) | |
@@ -208,7 +208,7 @@ USGS quake (`live:false`, `quietDays:36`).
 | `sources` | `{ [key]: {ok: bool, checkedAt: ISO, records?: int, error?: string, window?: string, endpoint?, via?, ...} }` | Keys: `gdacs`, `usgs`, `emsc`, `eonet`, `nhc`, `nws`, `reliefweb`, `usgs_volcano`. Used for the source status rows and `sourcesRatio` ("7/8"). Per-provider extras (`byHazard`, `incomplete`, `failed`, `apiError`, `hint`, `query`, and so on) are diagnostic. |
 | `sourceCount`, `sourceTotal` | int | Providers that answered, and all providers. |
 | `scan` | `{scanId, scanTimestamp, engineVersion, coverageLimitation, providers:[Provider], coverage:{SCANNED:n,...}}` | The Our sources screen and the trust note's "newest record". `Provider` = `{provider, label, hazards[], inputKind:'observation'|'forecast', inputBasis, geographicCoverage, coverageResolution, scope:{kind}, completeness:'exhaustive'|'selective', completenessBasis, recordsObservations, endpoint, status:'SCANNED'|'INCOMPLETE_SCAN'|'DATA_UNAVAILABLE'|'NOT_ATTEMPTED', success, failureReason, recordsEvaluated, recordsServed, dataFreshness, checkedAt}` |
-| `modelRun` | `{at: ISO, served: bool, note}` or null | Trust note: "weather models last run …". `served:false` means older than 36 h, so model forecasts are withheld. |
+| `modelRun` | `{at: ISO, served: bool, note}` or null | Trust note: "weather models run …". `served:false` means older than 36 h, so model forecasts are withheld. |
 | `forecastHorizon` | `{nextWindowEnds, furthestWindowEnds, daysAhead, windowLengthDays:number[], note}` or null | `horizonText` and the "Forecasts reach as far as" stat. |
 | `forecastChanges` | `{at, sinceHours, activeOutlooks, baseline, added, raised, lowered, windowMoved, gone, expired, unavailable, sourcesDown[], total, records:{added[],raised[],lowered[],windowMoved[],gone[],expired[],unavailable[]}}` or null | "What changed since our last check" (`changesHtml`). Record = `{id,type,title,country,alert,rank,targetStart,targetEnd,provider, from?, to?, fromEnd?, toEnd?}`. |
 | `refreshRecorded` | `{schedule, runsRecorded, runs, median, min, max, note}` | |
@@ -351,19 +351,23 @@ at most 10 places, 90-day expiry, deletion when switched off.
 ## 5. Static files
 
 Served by the Vercel static CDN. Default headers are `Cache-Control: public, max-age=0, must-revalidate` (always
-revalidate; ETag supported) and `Access-Control-Allow-Origin: *` (seen in production). Exceptions in `vercel.json`:
-`/world-countries.json` sends `public, max-age=86400, stale-while-revalidate=604800`, and `/icons/*` and `/vendor/*`
-are immutable for 1 year. **The web adds `?ts=<now>` and `cache:'no-store'` to ledger reads.** Native: use
-conditional GET (ETag / If-None-Match), or always refetch on screen open.
+revalidate; ETag supported) and `Access-Control-Allow-Origin: *` (seen in production). `vercel.json` now states the
+`/data/(.*)` rule explicitly (`public, max-age=0, must-revalidate`), so an unchanged ledger costs a 304. Other
+exceptions: `/world-countries.json` sends `public, max-age=86400, stale-while-revalidate=604800`; `/icons/*` and
+`/vendor/*` are immutable for 1 year; the shared scripts (`collection.js`, `continents.js`, `hazard-model.js`,
+`trust.js`, `verdicts.js` and the rest; not `portal.js`, which stays `no-store`) and `app-pages.css`, `risk.css`,
+`portal.css` send `public, max-age=60, stale-while-revalidate=600`. **The web now reads ledgers with
+`cache:'no-cache'` and no `?ts=`** (Track record; the ND-001 check screen still uses `cache:'no-store'`, and forecast
+detail a plain GET). Native: use conditional GET (ETag / If-None-Match) on every screen open.
 
 | Path | Size | Used by | Top-level shape |
 | --- | --- | --- | --- |
 | `/data/outlook-ledger.json` | about 3.0 MB | Track record, forecast detail fallback | `LedgerRow[]` (§2) |
-| `/data/verification-ledger.json` | 10 KB | Track record, ND-001 result | `{schemaVersion, updatedAt, rules, verifications:[{id, status, observedSeverity, evidenceConfidence, coverageStatus, country, region, hazard, targetStart, targetEnd, summary, criteria:{…bool}, final}], observedEvents:[{id, status, observedSeverity, evidenceConfidence, coverageStatus, country, region, hazard, observedAt, lastMaterialChangeAt, authoritativeSource, sourceUrl, impacts, …}]}` |
+| `/data/verification-ledger.json` | 10 KB | Track record, ND-001 result, **forecast detail grade** (features.md §7.4) | `{schemaVersion, updatedAt, rules, verifications:[{id, status, observedSeverity, evidenceConfidence, coverageStatus, country, region, hazard, targetStart, targetEnd, summary, criteria:{…bool}, final}], observedEvents:[{id, status, observedSeverity, evidenceConfidence, coverageStatus, country, region, hazard, observedAt, lastMaterialChangeAt, authoritativeSource, sourceUrl, impacts, …}]}` |
 | `/data/observed-disasters.json` | about 1.9 MB | Track record (recall) | `{schemaVersion, note, events:[{eventId, canonicalEventId, hazard, hazardLabel, geography:{country, region, lat, lon,…}, geometry, onset, end, firstAuthoritativeReport, source, sourceUrl, severity, alert, alertBasis, deaths, injuries, missing, affected, displaced, evacuated, infrastructureImpact, impactLastUpdated, evidenceConfidence, significant, significanceReason, matchedPredictionIds, predictionCoverageStatus, evidence, mergeReasons, unattachedReason, firstRecordedAt, significanceAtEntry, geographyAtFirstRecord, lastSeenAt, sightings, revisions, derivedIdHistory, supersededBy?}], supporting:[…], updatedAt, method, lastRun}` |
 | `/data/scan-ledger.json` | 240 KB | Track record (coverage) | `{schemaVersion, note, scans:[{scanId, scanTimestamp, engineVersion, providerVersion, providers}], engineVersion, coverageLimitation, providerVersions, providers, aggregate, retention, updatedAt}` |
 | `/data/model-backtest.json` | 3 KB | Track record backtest | `{note, generatedAt, climatologyPeriod, places, skipped[], window:{from,to}, heatLine:'trend'|…, fireNote, results:{'heat@3':{hits, misses, falseAlarms, correctNegatives, days, …}, 'heat@5', 'rain@3', 'rain@5', 'fire@3', 'fire@5', 'heatUnshifted@3', 'heatUnshifted@5'}}` |
-| `/data/model-verdicts.json` | 17 KB | Track record published model forecasts | `{note, generatedAt, counts:{issued, correct, falseAlarms, pending, missedDays}, outlooks:[{id, hazard:'heat'|'rain'|'fire', placeId, verdict:'correct'|'false alarm'|'pending', crossed}], misses:[{placeId, hazard, day}]}` |
+| `/data/model-verdicts.json` | 17 KB | Track record published model forecasts, **forecast detail grade for `model-` ids** | `{note, generatedAt, counts:{issued, correct, falseAlarms, pending, missedDays}, outlooks:[{id, hazard:'heat'|'rain'|'fire', placeId, verdict:'correct'|'false alarm'|'pending', crossed}], misses:[{placeId, hazard, day}]}` |
 | `/data/forecast-changes.json`, `model-ledger.json`, `model-outlooks.json`, `model-runs.json`, `climatology.json` | | not read by pages (the server and tools use them) | |
 | `/world-countries.json` | 172 KB | Map base layer, and the on-device "which country am I in" lookup | GeoJSON `FeatureCollection` of 177 countries; `properties: {n: name, c: paletteIndex}`; Polygon/MultiPolygon. **Bundle it in the app.** |
 
