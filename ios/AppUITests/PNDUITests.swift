@@ -33,18 +33,65 @@ final class PNDUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
 
+    /// Scrolls the main content up until `e` exists (and, when `hittable`,
+    /// can be tapped). Lazy stacks and lists only build rows near the screen,
+    /// so anything below the fold has to be scrolled to. The drag runs along
+    /// the right edge so it never pans the map card.
+    @discardableResult
+    func scrollTo(_ app: XCUIApplication, _ e: XCUIElement, hittable: Bool = false, swipes: Int = 15, down: Bool = false,
+                  file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+        _ = e.waitForExistence(timeout: 5)
+        var n = 0
+        // isHittable is already true when one edge of a row peeks in at the
+        // bottom, so a tap target must sit well inside the window.
+        func onScreen() -> Bool {
+            guard e.isHittable else { return false }
+            let w = app.windows.firstMatch.frame
+            let f = e.frame
+            return f.minY >= w.minY + 60 && min(f.maxY, f.minY + 120) <= w.maxY - 100
+        }
+        while !(e.exists && (!hittable || onScreen())) && n < swipes {
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.3 : 0.78))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.78 : 0.3))
+            // Holding at the end of the drag leaves no momentum, so a tap that
+            // follows lands on a still page instead of only stopping the scroll.
+            start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
+            n += 1
+        }
+        if hittable && e.exists {
+            // Wait until the element stops moving before anyone taps it.
+            var last = e.frame
+            for _ in 0..<10 {
+                Thread.sleep(forTimeInterval: 0.3)
+                let now = e.frame
+                if now == last { break }
+                last = now
+            }
+        }
+        XCTAssertTrue(e.exists, "missing after scrolling: \(e)", file: file, line: line)
+        return e
+    }
+
     /// Opens a section: the tab bar (or its More list) on iPhone, the sidebar on iPad.
     func open(_ app: XCUIApplication, tab: String, title: String) {
         if isPad {
             let item = el(app, "sidebar-" + tab)
-            if !item.exists {
+            if !(item.exists && item.isHittable) {
                 // Portrait iPad may hide the sidebar behind a button.
-                let toggle = app.navigationBars.buttons["Show Sidebar"]
-                if toggle.exists { toggle.tap() }
+                for name in ["ToggleSidebar", "Show Sidebar", "Sections"] {
+                    let toggle = app.navigationBars.buttons[name].firstMatch
+                    if toggle.exists && toggle.isHittable { toggle.tap(); break }
+                }
             }
-            if item.waitForExistence(timeout: 5) { item.tap(); return }
-            let cell = app.staticTexts[title]
-            if cell.exists { cell.tap() }
+            if item.waitForExistence(timeout: 5) {
+                if item.isHittable { item.tap() } else { item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+            } else {
+                let cell = app.staticTexts[title]
+                if cell.exists { cell.tap() }
+            }
+            // In portrait the sidebar floats over the page; close it so the page can be tapped.
+            let dismiss = el(app, "PopoverDismissRegion")
+            if dismiss.waitForExistence(timeout: 2) && dismiss.isHittable { dismiss.tap() }
             return
         }
         let button = app.tabBars.buttons[title]
@@ -86,7 +133,7 @@ final class PNDUITests: XCTestCase {
         let app = launch()
         open(app, tab: "alerts", title: "Alerts & events")
         let card = el(app, "alertCard")
-        waitFor(card)
+        scrollTo(app, card, hittable: true)
         card.tap()
         waitFor(el(app, "trustNote"))
         waitFor(app.staticTexts["OFFICIAL ALERT"].firstMatch)
@@ -114,7 +161,8 @@ final class PNDUITests: XCTestCase {
             waitFor(app.staticTexts[r.2].firstMatch, 30)
             if r.0 != "history" && r.0 != "notfound" { waitFor(el(app, "trustNote")) }
             if r.0 == "quiet" { waitFor(el(app, "quietNote")) }
-            if r.0 != "notfound" { waitFor(el(app, "enrichment"), 30) }
+            // The source page has no enrichment block (features.md 10.2).
+            if r.0 != "notfound" && r.0 != "source" { scrollTo(app, el(app, "enrichment")) }
             shot(app, "20-detail-" + r.0)
             app.terminate()
         }
@@ -125,18 +173,19 @@ final class PNDUITests: XCTestCase {
         let field = app.textFields["Search city, area or address"]
         waitFor(field)
         field.tap()
-        field.typeText("Kathmandu")
-        el(app, "checkRisk").tap()
+        field.typeText("Kathmandu\n")
         let candidate = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Kathmandu'")).firstMatch
         waitFor(candidate)
         candidate.tap()
         waitFor(el(app, "placeResult"))
-        waitFor(el(app, "placeWhy"))
+        scrollTo(app, el(app, "placeWhy"))
         shot(app, "30-place-result")
-        el(app, "savePlace").tap()
+        let save = el(app, "savePlace")
+        scrollTo(app, save, hittable: true)
+        save.tap()
         waitFor(app.staticTexts["Saved. You can find it on the My places page."])
         open(app, tab: "places", title: "My places")
-        waitFor(el(app, "savedPlace"))
+        scrollTo(app, el(app, "savedPlace"))
         shot(app, "31-my-places-saved")
     }
 
@@ -156,9 +205,13 @@ final class PNDUITests: XCTestCase {
         let more = el(app, "moreButton")
         waitFor(more)
         more.tap()
-        waitFor(el(app, "footerAgencies"))
+        waitFor(el(app, "moreScreen"))
         shot(app, "50-more")
-        app.staticTexts["Settings and time zone"].firstMatch.tap()
+        let settings = app.buttons["Settings and time zone"].firstMatch
+        scrollTo(app, el(app, "footerAgencies"))
+        shot(app, "52-more-footer")
+        scrollTo(app, settings, hittable: true, down: true)
+        settings.tap()
         waitFor(el(app, "settingsScreen"))
         shot(app, "51-settings")
     }
@@ -168,7 +221,7 @@ final class PNDUITests: XCTestCase {
         waitFor(el(app, "trustNote"))
         shot(app, "60-home-axl")
         open(app, tab: "alerts", title: "Alerts & events")
-        waitFor(el(app, "alertCard"))
+        scrollTo(app, el(app, "alertCard"))
         shot(app, "61-alerts-axl")
         let app2 = launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL", "-PNDOpenRoute", "/alerts/gdacs-FL-1104999"])
         waitFor(app2.staticTexts["OFFICIAL ALERT"].firstMatch, 30)

@@ -228,9 +228,9 @@ public enum Hazards {
         public let note: String?
     }
 
-    static let impact = ["deaths", "injuries", "missing", "displaced", "evacuated", "affected"]
+    public static let impact = ["deaths", "injuries", "missing", "displaced", "evacuated", "affected"]
 
-    static let metrics: [String: [String]] = [
+    public static let metrics: [String: [String]] = [
         "Earthquake": ["magnitude", "depthKm", "pagerAlert", "tsunamiFlag"] + impact,
         "Earthquake aftershock sequence": ["mainshockMagnitude"] + impact,
         "Tropical Cyclone": ["windKt", "category", "pressureMb", "movement"] + impact,
@@ -240,7 +240,7 @@ public enum Hazards {
         "Extreme Heat": impact, "Extreme Cold": impact, "Severe Storm": impact, "Tornado": impact, "Tsunami": impact
     ]
 
-    static let labels: [String: String] = [
+    public static let labels: [String: String] = [
         "magnitude": "Magnitude", "mainshockMagnitude": "Mainshock magnitude", "depthKm": "Depth",
         "pagerAlert": "USGS impact alert", "tsunamiFlag": "Tsunami flag", "windKt": "Maximum sustained wind",
         "category": "Category", "pressureMb": "Minimum central pressure", "movement": "Moving",
@@ -249,17 +249,17 @@ public enum Hazards {
         "displaced": "People displaced", "evacuated": "People evacuated", "affected": "People affected"
     ]
 
-    static let compass = ["north", "north-north-east", "north-east", "east-north-east",
+    public static let compass = ["north", "north-north-east", "north-east", "east-north-east",
         "east", "east-south-east", "south-east", "south-south-east",
         "south", "south-south-west", "south-west", "west-south-west",
         "west", "west-north-west", "north-west", "north-north-west"]
 
-    static func published(_ v: JSONValue?) -> Bool {
+    public static func published(_ v: JSONValue?) -> Bool {
         guard let v = v, v.has else { return false }
         return v.jsNumber.isFinite
     }
 
-    static func compassOf(_ v: JSONValue?) -> String? {
+    public static func compassOf(_ v: JSONValue?) -> String? {
         guard published(v), let d = v?.jsNumber else { return nil }
         let norm = (d.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
         return compass[Int(JS.round(norm / 22.5)) % 16]
@@ -276,7 +276,7 @@ public enum Hazards {
         return "Tropical depression"
     }
 
-    static func factOf(_ e: Record, _ key: String) -> KeyFact {
+    public static func factOf(_ e: Record, _ key: String) -> KeyFact {
         let label = labels[key] ?? key
         let v = e[key]
         let has = v?.has ?? false
@@ -389,7 +389,7 @@ public enum Hazards {
             definition: "Presented as made in advance, but nothing shows it existed before the period it covers.", headline: false)
     ]
 
-    static let warningProviders = JSRegex("(?:National Weather Service|Volcano Hazards Program)", caseInsensitive: true)
+    public static let warningProviders = JSRegex("(?:National Weather Service|Volcano Hazards Program)", caseInsensitive: true)
 
     /// `classifyForecast(f, parent)` -> (class, reason), nil for a non-forecast.
     public static func classifyForecast(_ f: Record, parent: Record? = nil) -> (forecastClass: String, reason: String)? {
@@ -422,7 +422,7 @@ public enum Hazards {
         return ("independent-prospective", "Frozen at " + (f["freezeTimestamp"]?.jsString ?? "") + ", before the window opening at " + (f["targetStart"]?.jsString ?? "") + ".")
     }
 
-    static let typeNamesNoHazard = JSRegex("^(?:|natural hazard|other|others|unknown|unspecified|unclassified|complex emergency)$", caseInsensitive: true)
+    public static let typeNamesNoHazard = JSRegex("^(?:|natural hazard|other|others|unknown|unspecified|unclassified|complex emergency)$", caseInsensitive: true)
 
     /// `claimKey(f)`.
     public static func claimKey(_ f: Record) -> String {

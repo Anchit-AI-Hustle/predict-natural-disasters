@@ -21,8 +21,7 @@ struct SourcesView: View {
                 Panel { Text(p.summary).font(.subheadline.bold()).foregroundStyle(Theme.text) }
                 ForEach(p.cards) { c in
                     CardBox {
-                        Pill(text: c.statusText, color: c.statusKind == "ok" ? Theme.ok : c.statusKind == "warn" ? Theme.warn : c.statusKind == "bad" ? Theme.bad : Theme.mutedPill,
-                             border: c.statusKind == "ok" ? Theme.okBorder : c.statusKind == "warn" ? Theme.warnBorder : c.statusKind == "bad" ? Theme.badBorder : Theme.mutedPillBorder)
+                        Pill(text: c.statusText, color: statusColors(c.statusKind).0, border: statusColors(c.statusKind).1)
                         Text(c.label).font(.headline).foregroundStyle(Theme.text)
                         KeyValueRow(key: "Hazards", value: c.hazards)
                         KeyValueRow(key: "Reach", value: c.reach)
@@ -37,9 +36,18 @@ struct SourcesView: View {
                 MessageCard(title: "We could not get the list of sources read this time, so this page cannot show them. This does not mean no sources were read.")
             }
             Panel("Source profiles") {
-                FlowRow(spacing: 8) { ForEach(Copy.sourceProfiles, id: \.name) { NavigationLink($0.name, value: Route.source($0.name)).buttonStyle(OutlinePillButtonStyle()) } }
+                FlowRow(spacing: 8) { ForEach(Copy.sourceProfiles, id: \.name) { RouteLink($0.name, value: Route.source($0.name)).buttonStyle(OutlinePillButtonStyle()) } }
             }
         }
+    }
+}
+
+func statusColors(_ kind: String) -> (Color, Color) {
+    switch kind {
+    case "ok": return (Theme.ok, Theme.okBorder)
+    case "warn": return (Theme.warn, Theme.warnBorder)
+    case "bad": return (Theme.bad, Theme.badBorder)
+    default: return (Theme.mutedPill, Theme.mutedPillBorder)
     }
 }
 
@@ -77,7 +85,7 @@ struct SourceDetailView: View {
                 ForEach(es.prefix(20)) { e in RelatedRow(record: e, line: e.type + " \u{00B7} " + Format.placeOf(e, "Place not given")) }
             }
             Panel("Other sources") {
-                FlowRow(spacing: 8) { ForEach(Copy.sourceProfiles.filter { $0.name != p.name }, id: \.name) { NavigationLink($0.name + " \u{2192}", value: Route.source($0.name)).buttonStyle(OutlinePillButtonStyle()) } }
+                FlowRow(spacing: 8) { ForEach(Copy.sourceProfiles.filter { $0.name != p.name }, id: \.name) { RouteLink($0.name + " \u{2192}", value: Route.source($0.name)).buttonStyle(OutlinePillButtonStyle()) } }
             }
             Panel("How we treat sources") {
                 Text("We show each report as its source published it, with a link to the original. We never present our own forecasts as official reports, and we label saved copies.").font(.footnote).foregroundStyle(Theme.textSoft)
@@ -98,9 +106,9 @@ struct InsightsView: View {
             ScreenHeader(eyebrow: "Patterns and background", title: "Insights", subtitle: Copy.insightsIntro)
             TrustNote()
             FeedBanner()
-            StatGrid(items: [("Events and forecasts", failed ? "Unavailable" : (model.feed == nil ? "-" : "\(model.live.count)")),
+            StatGrid(items: [("Events and forecasts", failed ? "Unavailable" : (model.fig(model.live.count))),
                              ("Most reported hazard", failed ? "Unavailable" : (bars.first?.type ?? "-")),
-                             ("Our forecasts", failed ? "Unavailable" : (model.feed == nil ? "-" : "\(model.live.filter { $0.forecast }.count)"))])
+                             ("Our forecasts", failed ? "Unavailable" : (model.fig(model.live.filter { $0.forecast }.count)))])
             if failed { Text("Our data could not be reached").font(.footnote).foregroundStyle(Theme.muted) }
             else if let b = bars.first { Text("\(b.count) event" + (b.count == 1 ? "" : "s") + " in the current data").font(.footnote).foregroundStyle(Theme.muted) }
             ForEach(Copy.insightCards, id: \.title) { c in Panel(c.title) { Text(c.body).font(.footnote).foregroundStyle(Theme.textSoft) } }
@@ -227,8 +235,8 @@ struct SettingsView: View {
                 Text(Copy.notificationsHonesty).font(.footnote).foregroundStyle(Theme.muted)
             }
             Section("About") {
-                NavigationLink("About this app", value: Route.about)
-                NavigationLink("How it works", value: Route.methodology)
+                RouteLink("About this app", value: Route.about)
+                RouteLink("How it works", value: Route.methodology)
             }
         }
         .scrollContentBackground(.hidden)
@@ -262,7 +270,7 @@ struct VerificationDetailView: View {
             Panel("Matching reports") {
                 if matches.isEmpty { Text("No matching report in our current data.").font(.footnote).foregroundStyle(Theme.muted) }
                 ForEach(matches.prefix(10)) { EventCard(record: $0) }
-                NavigationLink("Forecast details \u{2192}", value: Route.forecast("ND-001")).font(.footnote)
+                RouteLink("Forecast details \u{2192}", value: Route.forecast("ND-001")).font(.footnote)
             }
             Panel("Rules we follow") { ForEach(Copy.nd001Rules, id: \.self) { Text($0).font(.footnote).foregroundStyle(Theme.textSoft) } }
         }

@@ -160,6 +160,10 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// A figure, or "-" before the feed has loaded.
+    func fig(_ n: Int) -> String { feed == nil ? "-" : String(n) }
+    func figText(_ t: String) -> String { feed == nil ? "-" : t }
+
     /// The status line under a list title.
     func statusLine(_ extra: String? = nil) -> String {
         if status == .failed { return Copy.loadError }

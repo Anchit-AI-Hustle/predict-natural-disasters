@@ -3,7 +3,7 @@ import Foundation
 /// `place-search.js` (logic.md section 3.5): levels, labels and candidates
 /// from OpenStreetMap Nominatim results.
 public enum PlaceSearch {
-    static let levels: [(String, JSRegex)] = [
+    public static let levels: [(String, JSRegex)] = [
         ("Area", JSRegex("^(neighbourhood|suburb|quarter|city_district|borough|locality|village|hamlet|isolated_dwelling|croft|allotments|city_block|residential|farm)$")),
         ("City or town", JSRegex("^(city|town|municipality)$")),
         ("District", JSRegex("^(county|district|state_district|subdistrict|district_council)$")),
@@ -27,7 +27,7 @@ public enum PlaceSearch {
         return "Place"
     }
 
-    static func str(_ v: JSONValue?) -> String { (v?.isTruthy ?? false) ? v!.jsString : "" }
+    public static func str(_ v: JSONValue?) -> String { (v?.isTruthy ?? false) ? v!.jsString : "" }
 
     public static func labelOf(_ r: JSONValue) -> String {
         let a = r["address"] ?? .object([:])

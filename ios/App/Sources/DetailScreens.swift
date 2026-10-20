@@ -25,6 +25,7 @@ struct EnrichmentSection: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("enrichment")
         .task(id: record.id + record.updated) { await load() }
         .task(id: record.id) {
@@ -44,7 +45,14 @@ struct EnrichmentSection: View {
         }
     }
 
-    @ViewBuilder func linkRow(_ links: [WebLink]) -> some View {
+    func linkRow(_ links: [WebLink]) -> some View { LinkRow(links: links) }
+
+    func card(_ c: EnrichmentCard) -> some View { EnrichmentCardView(card: c) }
+}
+
+struct LinkRow: View {
+    let links: [WebLink]
+    var body: some View {
         if !links.isEmpty {
             FlowRow(spacing: 10) {
                 ForEach(links, id: \.self) { l in
@@ -55,34 +63,67 @@ struct EnrichmentSection: View {
             }
         }
     }
+}
 
-    @ViewBuilder func card(_ c: EnrichmentCard) -> some View {
-        let inner = VStack(alignment: .leading, spacing: 6) {
-            if !c.tags.isEmpty {
-                FlowRow { ForEach(c.tags, id: \.self) { t in Pill(text: t, color: c.verifiedTags.contains(t) ? Theme.greenText : Theme.sourceText,
-                                                                   border: c.verifiedTags.contains(t) ? Theme.green : Theme.provBorder) } }
-            }
-            if let img = c.imageURL, let u = URL(string: img) {
-                AsyncImage(url: u) { i in i.resizable().scaledToFill() } placeholder: { Color(hex: "#062018") }
-                    .aspectRatio(16 / 9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 6))
-                    .accessibilityHidden(true)
-            }
-            if !c.title.isEmpty { Text(c.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading) }
-            ForEach(c.body, id: \.self) { b in Text(b).font(.footnote).foregroundStyle(Theme.muted).multilineTextAlignment(.leading) }
-            if let l = c.list { ForEach(l, id: \.self) { x in HStack(alignment: .top) { Text("\u{2022}"); Text(x) }.font(.caption).foregroundStyle(Color(hex: "#CFE7DD")) } }
-            if let p = c.phone, let u = URL(string: EnrichmentPanels.tel(p)) {
-                SwiftUI.Link(p, destination: u).font(c.phoneSmall ? .headline : .title.weight(.heavy)).foregroundStyle(Theme.greenText).frame(minHeight: 44)
-                    .accessibilityLabel("Call " + p)
-            }
-            if let e = c.email, let u = URL(string: "mailto:" + e) { SwiftUI.Link(e, destination: u).font(.footnote).foregroundStyle(Theme.link).frame(minHeight: 44) }
-            if let s = c.small { Text(s).font(.caption2).foregroundStyle(Theme.muted) }
-            if let cta = c.cta { Text(cta).font(.footnote.bold()).foregroundStyle(Theme.link) }
-            linkRow(c.links)
-        }
-        if let s = c.url, let u = URL(string: s) {
-            SwiftUI.Link(destination: u) { CardBox { inner } }.buttonStyle(.plain)
+struct EnrichmentCardView: View {
+    let card: EnrichmentCard
+
+    var body: some View {
+        if let s = card.url, let u = URL(string: s) {
+            SwiftUI.Link(destination: u) { CardBox { inner } }.buttonStyle(.plainArea)
         } else {
             CardBox { inner }
+        }
+    }
+
+    var tags: some View {
+        FlowRow {
+            ForEach(card.tags, id: \.self) { t in
+                let verified: Bool = card.verifiedTags.contains(t)
+                Pill(text: t, color: verified ? Theme.greenText : Theme.sourceText, border: verified ? Theme.green : Theme.provBorder)
+            }
+        }
+    }
+
+    @ViewBuilder var media: some View {
+        if let img = card.imageURL, let u = URL(string: img) {
+            AsyncImage(url: u) { i in
+                i.resizable().scaledToFill()
+            } placeholder: {
+                Color(hex: "#062018")
+            }
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder var contact: some View {
+        if let p = card.phone, let u = URL(string: EnrichmentPanels.tel(p)) {
+            let f: Font = card.phoneSmall ? .headline : .title.weight(.heavy)
+            SwiftUI.Link(p, destination: u).font(f).foregroundStyle(Theme.greenText).frame(minHeight: 44)
+                .accessibilityLabel("Call " + p)
+        }
+        if let e = card.email, let u = URL(string: "mailto:" + e) {
+            SwiftUI.Link(e, destination: u).font(.footnote).foregroundStyle(Theme.link).frame(minHeight: 44)
+        }
+    }
+
+    var inner: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if !card.tags.isEmpty { tags }
+            media
+            if !card.title.isEmpty { Text(card.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading) }
+            ForEach(card.body, id: \.self) { b in Text(b).font(.footnote).foregroundStyle(Theme.muted).multilineTextAlignment(.leading) }
+            if let l = card.list {
+                ForEach(l, id: \.self) { x in
+                    HStack(alignment: .top) { Text("\u{2022}"); Text(x) }.font(.caption).foregroundStyle(Color(hex: "#CFE7DD"))
+                }
+            }
+            contact
+            if let s = card.small { Text(s).font(.caption2).foregroundStyle(Theme.muted) }
+            if let cta = card.cta { Text(cta).font(.footnote.bold()).foregroundStyle(Theme.link) }
+            LinkRow(links: card.links)
         }
     }
 }
@@ -129,14 +170,15 @@ struct RecordDetailView: View {
                                 : "The source may no longer list this event. See all events to find the latest ones.")
                 Text(Copy.notFound).font(.subheadline).foregroundStyle(Theme.textSoft)
                 FlowRow(spacing: 8) {
-                    NavigationLink("Events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Official warnings", value: Route.collection(.officialWarnings, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Regions", value: Route.regions).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Official warnings", value: Route.collection(.officialWarnings, query: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Regions", value: Route.regions).buttonStyle(SecondaryButtonStyle())
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("notFound")
     }
 
@@ -232,6 +274,7 @@ struct RecordDetailView: View {
                              ("People affected", Screens.impactFigure(e, "affected"))] + (status.map { [("Data status", $0)] } ?? []))
             Text(note).font(.footnote).foregroundStyle(Theme.muted)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("impactPanel")
     }
 
@@ -366,8 +409,9 @@ struct ForecastDetailView: View {
                 Notice(text: Copy.loadError, stale: true)
             } else {
                 ScreenHeader(title: "Forecast not found", subtitle: "We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or go to the forecasts list.")
+                    .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("notFound")
-                NavigationLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
             }
         }
         .toolbar {

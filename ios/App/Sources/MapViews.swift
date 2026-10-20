@@ -258,6 +258,7 @@ struct MapKey: View {
         .padding(10)
         .background(Color(hex: "#04120E").opacity(0.92), in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#1F4A3C"), lineWidth: 1))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("mapKey")
     }
 }

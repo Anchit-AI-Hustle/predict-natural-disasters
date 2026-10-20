@@ -29,7 +29,7 @@ public struct Place: Codable, Hashable, Sendable, Identifiable {
                   countryCode: r.s("countryCode"), updatedAt: r.opt("updatedAt"))
     }
 
-    enum CodingKeys: String, CodingKey { case id, kind, name, lat, lon, country, countryCode, updatedAt, level, full }
+    public enum CodingKeys: String, CodingKey { case id, kind, name, lat, lon, country, countryCode, updatedAt, level, full }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -45,7 +45,7 @@ public struct Place: Codable, Hashable, Sendable, Identifiable {
         full = try? c.decode(String.self, forKey: .full)
     }
 
-    static func lenientDouble(_ c: KeyedDecodingContainer<CodingKeys>, _ k: CodingKeys) -> Double? {
+    public static func lenientDouble(_ c: KeyedDecodingContainer<CodingKeys>, _ k: CodingKeys) -> Double? {
         if let d = try? c.decode(Double.self, forKey: k), d.isFinite { return d }
         if let s = try? c.decode(String.self, forKey: k) {
             let n = JS.number(s)
@@ -68,7 +68,7 @@ public enum PlaceRisk {
     public static let moderateKm = 150.0
 
     public enum Band: String, CaseIterable, Sendable { case A, B, C, D, E
-        var order: Int { ["A": 0, "B": 1, "C": 2, "D": 3, "E": 4][rawValue]! }
+        public var order: Int { ["A": 0, "B": 1, "C": 2, "D": 3, "E": 4][rawValue]! }
     }
 
     public struct BandInfo: Sendable {
@@ -176,7 +176,7 @@ public enum PlaceRisk {
         return l == .unknown ? nil : l
     }
 
-    static func rank(_ k: RiskLevel?) -> Int { k?.rank ?? 0 }
+    public static func rank(_ k: RiskLevel?) -> Int { k?.rank ?? 0 }
 
     /// `nearLevel(e, km)`.
     public static func nearLevel(_ e: Record, _ km: Double) -> RiskLevel? {
@@ -186,7 +186,7 @@ public enum PlaceRisk {
         return r >= RiskLevel.high.rank ? .watch : .low
     }
 
-    static func atLeast(_ a: RiskLevel?, _ b: RiskLevel?) -> RiskLevel? {
+    public static func atLeast(_ a: RiskLevel?, _ b: RiskLevel?) -> RiskLevel? {
         guard let a = a else { return b }
         guard let b = b else { return a }
         return a.rank >= b.rank ? a : b

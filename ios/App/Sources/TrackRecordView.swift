@@ -82,7 +82,7 @@ struct TrackRecordView: View {
         .padding(14)
         .background(Color(hex: "#071C16"), in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "#183F33"), lineWidth: 1))
-        metrics(r.keyFigures).accessibilityIdentifier("keyFigures")
+        metrics(r.keyFigures).accessibilityElement(children: .contain).accessibilityIdentifier("keyFigures")
         DisclosureGroup("What these figures mean", isExpanded: $showMeaning) {
             Text(r.honesty).font(.footnote).foregroundStyle(Theme.textSoft).padding(.top, 6)
         }
@@ -239,6 +239,7 @@ struct TrackRecordView: View {
             if list.isEmpty { Text("No forecasts match these filters.").font(.footnote).foregroundStyle(Theme.muted) }
             LimitedList(items: list, page: 25) { row in ledgerRow(row) }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ledgerTable")
     }
 

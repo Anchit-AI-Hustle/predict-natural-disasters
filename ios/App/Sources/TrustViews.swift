@@ -111,6 +111,7 @@ struct FooterAgencies: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(hex: "#03140F"))
         .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#174638")).frame(height: 1) }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("footerAgencies")
     }
 }

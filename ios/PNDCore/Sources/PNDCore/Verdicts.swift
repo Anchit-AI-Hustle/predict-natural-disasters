@@ -2,7 +2,7 @@ import Foundation
 
 /// `verdicts.js` (logic.md sections 10.1 to 10.3).
 public enum Verdicts {
-    static let verdicts: [String: String] = [
+    public static let verdicts: [String: String] = [
         "VERIFIED": "VERIFIED", "PARTIAL_VERIFICATION": "PARTIAL", "PARTIAL": "PARTIAL",
         "FALSE_ALARM": "FALSE_ALARM", "MISS_FALSE_POSITIVE": "FALSE_ALARM",
         "MISSED_EVENT": "MISSED", "FALSE_NEGATIVE_UNPREDICTED_EVENT": "MISSED",
@@ -28,7 +28,7 @@ public enum Verdicts {
         "UNGRADEABLE": "ungradeable", "NOT_A_PREDICTION": "notprediction", "UNKNOWN": "unknown"
     ]
 
-    static let engineStates = ["HIT": "VERIFIED", "PARTIAL_HIT": "PARTIAL", "MISS_FALSE_POSITIVE": "FALSE_ALARM",
+    public static let engineStates = ["HIT": "VERIFIED", "PARTIAL_HIT": "PARTIAL", "MISS_FALSE_POSITIVE": "FALSE_ALARM",
                                "INVALID_POST_EVENT": "NOT_A_PREDICTION"]
 
     public static func normalise(_ status: String?) -> String {
@@ -147,7 +147,7 @@ public enum Verdicts {
         return Hazards.classifyForecast(Record(raw))?.forecastClass
     }
 
-    static func isForecastRow(_ r: Record) -> Bool {
+    public static func isForecastRow(_ r: Record) -> Bool {
         r.truthy("targetStart") || r.truthy("targetEnd") || r.truthy("forecastKind") || r.truthy("forecastClass")
     }
 
