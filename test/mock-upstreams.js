@@ -318,6 +318,7 @@ function failure(status) {
  *   youtubeVariant: which youtubeHtml* fixture the search page should return
  *   volcanoNoticeMismatch: notice describes volcanoes other than the one asked for
  *   reliefwebEmptyUntil: only the candidate feed URL containing this returns items
+ *   reliefwebEmpty: candidate feed URLs containing any of these answer without items
  *   reliefwebApiStatus: the HTTP status the ReliefWeb API answers with instead of data
  */
 function makeFetch(opts) {
@@ -383,7 +384,8 @@ function makeFetch(opts) {
     }
     if (u.includes('reliefweb.int/disasters')) {
       // Mimic a Drupal miss: 200 with an HTML page and no <item> elements.
-      if (o.reliefwebEmptyUntil && !u.includes(o.reliefwebEmptyUntil)) {
+      if ((o.reliefwebEmptyUntil && !u.includes(o.reliefwebEmptyUntil)) ||
+        (o.reliefwebEmpty || []).some(x => u.includes(x))) {
         return jsonResponse('<html><body>Page not found</body></html>');
       }
       return route('reliefweb', FIXTURES.reliefwebDisastersRss);
