@@ -163,6 +163,12 @@
   function when(iso) {
     var d = new Date(iso);
     if (!iso || isNaN(d)) return '';
+    /* The page's own formatter where the page has one, so the note and the
+       status line beside it write one moment one way. */
+    var P = window.PND;
+    if (P && typeof P.fmtDate === 'function') {
+      return '<time datetime="' + esc(d.toISOString()) + '" title="' + esc(d.toISOString().replace('T', ' ').slice(0, 16) + ' UTC') + '">' + esc(P.fmtDate(d.toISOString())) + '</time>';
+    }
     var text, opts = { day: 'numeric', month: 'short', year: 'numeric',
       hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
     var tz = chosenZone();
@@ -237,7 +243,9 @@
     var all = list();
     var short = [];
     all.forEach(function (s) { if (short.indexOf(s.short) < 0) short.push(s.short); });
-    return '<details class="trust-src"><summary data-keep-acronyms>Data sources (' + all.length + '): ' + esc(short.join(', ')) + '</summary><ul>' +
+    /* Named, not counted: one organisation can supply two datasets, so a
+       count beside the names never matched them. */
+    return '<details class="trust-src"><summary data-keep-acronyms>Data sources: ' + esc(short.join(', ')) + '</summary><ul>' +
       all.map(function (s) {
         var st = statusOf(s);
         var external = /^https?:/.test(s.url);
