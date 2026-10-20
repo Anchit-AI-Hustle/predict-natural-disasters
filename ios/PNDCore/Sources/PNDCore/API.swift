@@ -49,7 +49,7 @@ public enum API {
     }
 
     /// Query component encoding that matches `encodeURIComponent`.
-    static func q(_ s: String) -> String { JS.encodeURIComponent(s) }
+    public static func q(_ s: String) -> String { JS.encodeURIComponent(s) }
 
     /// `URLSearchParams` (form) encoding: space is "+", and only
     /// alphanumerics and `*-._` stay as they are.
@@ -104,7 +104,7 @@ public protocol HTTPTransport: Sendable {
 }
 
 public struct URLSessionTransport: HTTPTransport {
-    let session: URLSession
+    public let session: URLSession
     public init(session: URLSession = .shared) { self.session = session }
 
     public func get(_ url: URL, headers: [String: String], timeout: TimeInterval) async throws -> (Data, Int) {
@@ -126,7 +126,7 @@ public final class APIClient: @unchecked Sendable {
     public let transport: HTTPTransport
     public init(transport: HTTPTransport = URLSessionTransport()) { self.transport = transport }
 
-    var headers: [String: String] { ["Accept": "application/json", "User-Agent": API.userAgent] }
+    public var headers: [String: String] { ["Accept": "application/json", "User-Agent": API.userAgent] }
 
     public func getJSON(_ url: URL, timeout: TimeInterval = 25) async throws -> JSONValue {
         let (data, code) = try await transport.get(url, headers: headers, timeout: timeout)

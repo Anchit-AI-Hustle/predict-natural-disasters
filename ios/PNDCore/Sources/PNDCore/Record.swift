@@ -39,7 +39,7 @@ public struct Record: Hashable, Sendable, Identifiable {
         return Record(r)
     }
 
-    static func firstTruthy(_ raw: [String: JSONValue], _ keys: [String]) -> JSONValue? {
+    public static func firstTruthy(_ raw: [String: JSONValue], _ keys: [String]) -> JSONValue? {
         for k in keys { if let v = raw[k], v.isTruthy { return v } }
         return nil
     }
