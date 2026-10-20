@@ -11,10 +11,50 @@ The companion files cover the rest:
 | `design.md` | Colour tokens, type, spacing, components (dark theme) |
 | `sample-events.json` | Real `/api/events` response produced by running `api/events.js` against `test/mock-upstreams.js` |
 | `sample-enrichment.json` | Real `/api/event-enrichment` request and response from the same harness |
-| `test-vectors.json` | Input and output pairs captured by running the website's own JS. Use them as unit-test fixtures |
+| `test-vectors.json` | Input and output pairs captured by running the website's own JS (`node tools/make-parity-vectors.js`; `test/parity-vectors.test.js` fails when it is stale). Use them as unit-test fixtures |
 
-Source of truth is the website code on branch `claude/disclaimer-sources-updated` as of 20 Oct 2026. Every
-section below names the file that implements it.
+Source of truth is the website code on branch `claude/website-audit-fixes` (PR #65) at commit `117201b`, 20 Oct 2026.
+Every section below names the file that implements it. The first version of this spec (commit `ad275d8`) was taken
+from `claude/disclaimer-sources-updated` at commit `224bde3`, before the audit fixes; the changelog below lists every
+website behaviour that has changed since then.
+
+## Changelog: website changes since the first spec (`ad275d8`)
+
+The native apps were built to the first spec, so they repeat website bugs that the website has since fixed. Each
+row below is a change the apps must port. "Supersedes" names the text of the first spec that is now wrong; the
+sections below have been rewritten to match. "Vectors" names the `test-vectors.json` groups that pin the new
+behaviour (all of them were produced by running the site code with `tools/make-parity-vectors.js`, and
+`test/parity-vectors.test.js` fails when the file goes stale). Website commits: `5992bf0` (audit findings P1 to P16
+and P18), `b9163f6`/`456996e` (one time zone per page, sources named without a count), `f9265cb` (trust note in the
+page HTML), `4c11103` (accessibility, layout and performance), `a94cd45` (dead ReliefWeb address).
+
+| # | Change (old → new) | Website file : function | Supersedes (first spec) | Vectors |
+| --- | --- | --- | --- | --- |
+| C1 | **Continents are the countries on them.** A continent region page (Asia, Africa, Europe, North America, South America, Oceania, Antarctica) used to match the continent's name as text inside each record and so listed nothing for most of the world. Now a record is on every continent that one of its countries (`countries[]` plus the comma-split `country`, with a trailing " region" removed) is on. A record that names no country is on no continent. Any other place name is matched by `matchesPlace` or a substring of `countries[]`. | `continents.js`: `continentNamed`, `continentsOf`, `onContinent`; `portal.js`: `PND.inPlace`; `region-detail.html`: `matches()` | §1.5 (continent chips opened empty pages), §8.2 match rule | `continents.NAMES`, `continents.continentNamed`, `continents.continentsOf`, `continents.onContinent`, `portal.inPlace`, `regionDetail.matches` |
+| C2 | **Hazards are matched whole.** The first word of the type (with "wildfire" cut to "wild", "volcano" to "volcan") made "Extreme Cold" match every "Extreme Heat" record, and an unknown type fell back to Flood. Now a type's key is the `HAZARDS` key that `hazardOf(type)` resolves to ("Volcanic Eruption" is Volcano, "Heat wave" is Extreme Heat), or the trimmed type itself when `hazardOf` gives DEFAULT ("Ice", "Special Marine Warning"). Two types are the same hazard when their keys are equal ignoring case. | `portal.js`: `PND.hazardKey`, `PND.sameHazard`; `index.html`: `hazKey`; `hazard-detail.html`: `here`, `fillHazards` | §1.6 hazard filter, strip and their stem match; §9.2 select list and stem match | `portal.hazardKey`, `portal.sameHazard`, `hazardDetail.select`, `hazardDetail.fillHazards`, `home.render` |
+| C3 | **An official warning is a warning in force.** Was: `sourceType==='official'` and alert Red or Orange (home tile and table), or that OR `source==='USGS'` (lists), which counted hundreds of earthquakes that had already happened. Now: not a forecast, and `evidenceState==='official-warning'`; a record with no `evidenceState` counts when `sourceType==='official'` and it has an `expiresAt`. Lists also drop `live===false`. Tile subline "Issued by agencies, in force now" with the tooltip `PND.WARNING_MEANING`; empty table text "No official warning is in force in our sources right now."; list subtitles rewritten. | `portal.js`: `isOfficialWarning`, `officialWarnings`, `WARNING_MEANING`; `collection.js`: `keep()`; `index.html`: `render()` | §1.3 Official warnings tile; §1.6 Official Warnings table; §3.2 rows official-warnings and alerts-notifications | `portal.isOfficialWarning`, `portal.officialWarnings`, `portal.WARNING_MEANING`, `collection.keep`, `home.render` |
+| C4 | **A graded forecast shows its grade.** STATUS read "Ended, not yet checked" for a forecast already graded (ND-001 is Partly correct). Now the page looks the id up in `/data/verification-ledger.json` (`verifications[].status` through `PNDVerdicts.normalise`, ignoring PENDING and UNKNOWN) and, for ids starting `model-`, in `/data/model-verdicts.json` (`outlooks[].verdict` "correct" or "false alarm"). A grade sets STATUS to "Checked: {label}", the timing row to "Ended" and its text to "The forecast period ran to {end} and has been checked. Result: {label}. {summary}". | `forecast-detail.html`: `gradeOf`, `showGrade` | §7.4 STATUS and the "Inside the locked forecast period" row | `verdicts.LABELS`, `verdicts.label`, `forecastDetail.gradeOf` |
+| C5 | **A record its provider stopped updating is not called live.** `live:false` records showed the eyebrow "LIVE EVENT" and DATA STATUS "Live" under the quiet note. Now: eyebrow "EVENT NO LONGER UPDATED"; DATA STATUS / STATUS from `PND.liveWord` ("Saved copy", "Our forecast", "Not updated recently", "Live"); the event "Status" row and the calamity status give the quiet note. | `portal.js`: `liveWord`; `event-detail.html`, `alert-detail.html`, `calamity-detail.html`: `load()` | §7.1 eyebrow, DATA STATUS and Status; §7.2 STATUS; §7.3 Status | `portal.liveWord`, `detail.statusWords` |
+| C6 | **Alerts shows 40 at a time and says so.** The grid stopped at 40 with nothing to say more existed. Now: 40 cards, then a "Showing {n} of {N}." card with a "Show {min(40, rest)} more" button; when all are shown and there were more than 40, "Showing all {N}."; focus moves to the first new card. A new filter, search or sort goes back to 40; a feed refresh keeps the count. | `alerts.html`: `draw(more)` | §3.1 "grid of the first 40 cards" | `alerts.pager` |
+| C7 | **Home "Live events" lists reports only, in its own sort.** Was "Most serious live events": the top 5 of all records, our forecasts included, always by severity. Now the card is titled "Live events" and shows the first 5 non-forecast records sorted by the card's own sort control (default "Newest first", stored under `pnd_sort_home_sortBy`). "Latest events" is the 5 newest reports (not the current sort); "Latest forecasts" is open forecasts newest first; "Official warnings" is in-force warnings by severity. | `index.html`: `render()` | §1.6 top-5 bullets and "Latest events" | `home.render` |
+| C8 | **Hazard filters are built from the data.** Every non-forecast collection list (events, recent-events, official-warnings, alerts-notifications, hazard-types, historical-events, compare-locations) offered a fixed six (Flood, Earthquake, Wildfire, Volcano, Tropical Cyclone, Drought) and matched by a stem substring; the home map offered a fixed eleven. Now every collection list (forecast-list and forecast-calendar already did) fills its select with `PND.fillHazardSelect(sel, records in the list)` ("All hazards (N)", then "{type} ({n})" by count) and matches the type exactly. The home map filter is filled from the live records and matches with `hazardKey`. The Forecasts tab counts forecasts only (it counted high-alert reports too). | `collection.js`: `load()`, `render()`; `index.html`: `load()`, `render()`; `forecasts.html`: `load()`; `portal.js`: `hazardOptions`, `fillHazardSelect` | §0.3 hazard filter bullet; §1.6 hazard filter list; §3.2 "hazard filter (fixed list)"; §4 hazard filter | `portal.hazardOptions` (unchanged), `home.render` (`hazardFilterOptions`) |
+| C9 | **The time zone defaults to the device's.** Was Asia/Kolkata for everyone. Now `localStorage.pnd_timezone`, else the browser zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`), else Asia/Kolkata. The trust note formats its times with the page's own `PND.fmtDate`, so a page shows one zone. | `portal.js`: `PND.timezone`; `trust.js`: `when()` | §17 default and its last bullet; §15.1 `when()` format | `portal.timezoneDefault` |
+| C10 | **Trust note copy and sources line.** "follow your national weather or disaster agency:" is now "follow your national agency:"; "Live data fetched from the agencies" is now "Live data from the agencies"; "weather models last run" is now "weather models run"; "Data sources (N): …" is now "Data sources: …" (names only). The note is in each page's HTML (no layout shift); the track record page hands its ledger time to the note (`PNDTrust.recorded`). | `trust.js`: `noteHtml`, `updatedLine`, `when`, `recorded`; `tools/trust-markup.js` | §0 rule 1 quote; §15.1 | none (copy) |
+| C11 | **ND-001 check screen: all 8 metrics.** No website change; the first spec called it lower priority and the iOS app ported 3 rows. Section 14 now specifies every row, the stats and the trust group (`feed models`). | `verification-detail.html`: `load()` | §14 | `verificationDetail.render` |
+| C12 | **Selected-event card and search on the home map.** Selecting a marker, or hovering or focusing a "Live events" row, shows the card with eyebrow "Selected event on map", the title, `type · place · source` and "See details →". The map search ignores an empty box, trims the query, and when nothing matches clears the selection and shows eyebrow "Search", "No live event matches "{q}"", "Try a country, a city or a type of hazard." with the details button hidden. | `index.html`: `selectEvent`, `mapSearch` keydown | §1.6 location search and nudge bullets | none (UI) |
+| C13 | **Home hazard strip.** Built from reports only, grouped by `hazardKey`, ordered by count then name, every reported hazard shown (Extreme Heat ☀, Tsunami ≈, any other ◆), labelled "{n} reported" (was "{n} tracked", counting forecasts by first word). | `index.html`: `render()` | §1.6 strip | `home.render` (`hazardStrip`) |
+| C14 | **One count per quantity.** `PND.observed` (live, not forecast), `PND.openForecasts` (live forecast, `!windowClosed`), `PND.isHighAlert` (not forecast, alert Red, Orange or High), `PND.sourcesReporting` (distinct `source`), `PND.countryCount`. Forecasts tab "OPEN FORECASTS" counts open forecasts; Regions "COUNTRIES AND AREAS" is `countryCount(reports)`; region and hazard pages list reports only and count sources with `sourcesReporting` (the region stat is now labelled "SOURCES REPORTING HERE"); forecast-list and calendar status read "{N} forecasts: {open} open, {ended} ended". | `portal.js`; `forecasts.html`, `regions.html`, `region-detail.html`, `hazard-detail.html`, `collection.js`: `countText` | §3.2 countText; §4 FORECASTS stat; §8.1 COUNTRIES AND AREAS; §8.2 SOURCES and record set; §9.2 stats and record set | `portal.observed`, `portal.openForecasts`, `portal.isHighAlert`, `portal.sourcesReporting`, `collection.keep` (`countText`) |
+| C15 | **"Nothing matches" counts reports.** The "Right now we have {N} events from {C} countries" line counted every record, forecasts included, and raw country strings. Now it counts `live!==false && !forecast` records and `countryCount` of them. | `search.js`: `emptyHtml`, `countryCount` | §0.3 empty results | `search.emptyHtml.counts`, `search.countryCount` |
+| C16 | **"Ending soonest first" puts ended windows last.** A window that has ended (`targetEnd <= now` or `windowClosed`) sorts after every open one, most recently ended first; open ones stay soonest first. | `portal.js`: `SORT_DEFS.windowEnd` | logic.md §8 windowEnd row | `sort.windowEndEnded` (`sort.results` unchanged) |
+| C17 | **`/events?region=` is honoured.** Region detail's "See all events →" link opens `/events?region={name}`, which was ignored. Collection lists now keep only records `PND.inPlace(e, region)` (World means everything) and show "Showing only {region}. Show everywhere →". | `collection.js`: `scoped`, `scopeNote` | §8.2 "See all events" | `collection.keep` (`scoped`) |
+| C18 | **The live map moves to a search.** A new search fits the map to the matching records (max zoom 6) and says "{n} event(s) match "{q}". The map shows it/them." or "No event matches "{q}"." A refresh does not move the map. | `live-map.html`: `draw()` | §2 toolbar | none (UI) |
+| C19 | **A failed feed is not an empty world.** Alerts, Forecasts, Region, Hazard, Live map, Home and the dashboard now set their figures to "Unavailable" and lists to the "Live data unavailable." card (`PND.unavailableHtml`) when nothing has loaded, and keep earlier data otherwise. | `portal.js`: `unavailableHtml`, `feedDown`; those pages' `load()`; `index.html`: `down()` | §0.2 load error; §1.7 | none (UI) |
+| C20 | **Not found and not loaded on detail screens.** Event, alert, calamity and forecast detail hide the body and say so ("Event not found" with a link to all events, "Alert not found" with a link to official warnings, "Disaster not found" with a link to current disasters, "Forecast not found" with a link to the forecast list, or "Live data unavailable" when the first load fails). | `event-detail.html`, `alert-detail.html`, `calamity-detail.html`, `forecast-detail.html`: `gone`, `notFound`, `unavailable` | §7.1 to §7.4 not-found lines | none (UI) |
+| C21 | **Hazard detail.** The select holds every `HAZARDS` key, every hazard present and the requested type, A to Z (an unlisted type is offered as itself, not Flood). Current events are reports only; open forecasts of the hazard are counted in a note under the list. The empty text adds "Our sources have no current report of this hazard{ here}. This does not mean there is no danger." The region box uses `inPlace` (continents work). | `hazard-detail.html`: `fillHazards`, `load()` | §9.2 | `hazardDetail.fillHazards`, `hazardDetail.select` |
+| C22 | **Unknown source and topic pages say so.** A source name with no profile and no current report shows "Source not found"; STATUS adds "Named in current reports". An unknown topic shows "Topic not found". | `source-detail.html`, `entity-detail.html` | §10.2; §12 | none |
+| C23 | **My places keeps the country after an Enter search.** The field's change event after a search no longer clears the country the search found; only an edit by the reader does. | `personal-risk.html`: `chosenAs` | §5.2 | none |
+| C24 | **Map markers.** The mark keeps its size (`markerIcon` `iconSize`, 9 to 27 px by level) inside a square tap area of `max(24, size)` px centred on it, and markers are out of the keyboard tab order (the list beside the map is the keyboard path). Phones and save-data readers open on the flat map, not the globe. | `map-setup.js`: `riskMarker`; `globe.js`: `prefers` | design.md §3.3 | none |
+| C25 | **Static data reads revalidate.** `/data/*` is served `max-age=0, must-revalidate`; the track record reads its ledgers with `cache:'no-cache'` and no `?ts=`. The ReliefWeb candidate `/disasters/feed` was dropped (`endpoint` is now `https://reliefweb.int/disasters/rss.xml`). | `vercel.json`; `accuracy.html`: `readLedger`; `api/events.js` | api.md §5; §6 Track record "?ts= cache-busting" | none |
 
 ---
 
@@ -24,8 +64,8 @@ These are the product's invariants. The website's test suite enforces them, and 
 the code. A native build that breaks one of them is not at parity, even if every screen is present.
 
 1. **Experimental, not official.** Every screen that shows a forecast or a risk level carries the trust note
-   (section 15): *"Experimental model, not an official warning. For real alerts, follow your national weather or
-   disaster agency: IMD and NDMA in India, NWS and USGS in the US, GDACS worldwide."*
+   (section 15): *"Experimental model, not an official warning. For real alerts, follow your national agency: IMD
+   and NDMA in India, NWS and USGS in the US, GDACS worldwide."*
 2. **Forecasts are never presented as official.** Every forecast is labelled "Our forecast, not official",
    "OUR FORECAST", "Test case, not made in advance" or "TEST FORECAST" (see `PND.provenance`, logic.md §6).
    Forecasts never get donation links (the enrichment API returns `reliefGroups: []` for `forecast=true`). The
@@ -51,7 +91,11 @@ the code. A native build that breaks one of them is not at parity, even if every
 9. **Empty is not safe.** Every empty list explains that the absence of reports does not mean the absence of risk,
    using the exact copy from the website (see each screen).
 10. **Failure is not empty.** If a fetch fails, say "Live data unavailable. Trying again automatically." (or the
-    screen-specific text). Never render an empty list or a 0 as though the data had loaded.
+    screen-specific text). Never render an empty list or a 0 as though the data had loaded. When nothing has loaded
+    yet, every figure reads **"Unavailable"** and every list shows the card from `PND.unavailableHtml()`:
+    **"Live data unavailable."** / *"We could not load the latest reports, so nothing can be shown here. This does not
+    mean nothing is happening. Trying again automatically."* (`PND.feedDown(kpiIds, listIds)`). When an earlier load
+    succeeded, keep its data and only change the status line.
 11. **The data's time, not the device's.** Every "updated" stamp comes from the response (`generatedAt`,
     `meta.modelRun.at`, a ledger's `updatedAt`). Format it in the user-selected timezone with the zone named
     (section 17). Never show "now" from the device clock as the data time.
@@ -132,7 +176,12 @@ Implemented in `PND.autoRefresh` and `PND.getEvents`.
 - Status line text: `PND.statusText(meta)` gives *"Live · {ok} of {total} sources working"*, or *"Our data sources are
   not answering · showing saved copies only"* when `meta.live` is false, or *"Refreshing"* before any data arrives.
   It is followed by ` · {fmtDate(generatedAt)}` or ` · updated {age(generatedAt)}` depending on the screen.
-- Load error text, everywhere unless noted: **"Live data unavailable. Trying again automatically."**
+- Load error text, everywhere unless noted: **"Live data unavailable. Trying again automatically."** If nothing
+  had loaded before, the screen's figures and lists switch to the unavailable state (rule 10, `PND.feedDown`):
+  Alerts (5 stats, the grid; the source list is emptied), Forecasts (6 stats, both lists; the hazard tiles and horizon
+  note are emptied and "What changed" reads *"Live data unavailable, so we cannot say what changed. Trying again
+  automatically."*), Region detail (5 stats, the list; the coverage line reads *"Live data unavailable, so we cannot
+  say what is reported here right now."*), Hazard detail (4 stats, the list), Map (the list), Home (section 1.7).
 - Loading text: "Loading…" or "Loading the latest data…". The home KPI tiles show an animated shimmer bar (`.kpi strong.pending`)
   that stops ("settles") whether or not the load succeeded.
 
@@ -150,11 +199,16 @@ Implemented in `search.js`, `portal.js` and `collection.js`.
   not match places.
 - **Risk-level filter**: options "All risk levels", then Extreme, Severe, High, Moderate, Watch, Low, Not rated
   (`PND.riskLevelOptions`). It matches the record the same way the badge resolves it (logic.md §2.3).
-- **Hazard filter**: on the forecast screens the options are built from the records, as `"All hazards (N)"` then
-  `"{type} ({count})"` sorted by count descending and then by name. A previously selected type that is now absent
-  stays selectable with `(0)` (`PND.hazardOptions`). Forecast screens match the type exactly. The fixed-list screens
-  (events, alerts-notifications, hazard-types, historical) offer Flood, Earthquake, Wildfire, Volcano, Tropical
-  Cyclone and Drought, and match on a stem: `type.toLowerCase().includes(option.toLowerCase().replace('s',''))`.
+- **Hazard filter** (changelog C8): on every list screen the options are built from the records the screen lists,
+  as `"All hazards (N)"` (value `""`) then `"{type} ({count})"` (value = the raw `type`) sorted by count descending and
+  then by name. A previously selected type that is now absent stays selectable with `(0)` (`PND.hazardOptions`,
+  `PND.fillHazardSelect`). There is no fixed list any more: Extreme Heat, aftershock sequences, storm warnings or
+  "Ice" are selectable whenever they are present. Matching:
+  - Collection lists (section 3.2) and the Forecasts tab: the type exactly (`String(e.type).toLowerCase() ===
+    value.toLowerCase()` in `collection.js`, `e.type === value` in `forecasts.html`).
+  - Home map (section 1.6): the same hazard by `PND.hazardKey` (logic.md §6.10), so choosing "Volcano" also shows
+    "Volcanic Eruption" records.
+  - Calamities (section 3.3) still has its own fixed list and substring match (unchanged).
 - **Sort control**: a select filled from `PND.SORT_DEFS` with a per-screen key list. The choice is remembered per
   screen (`localStorage['pnd_sort_'+path+'_'+id]`; native: per-screen key in UserDefaults/DataStore). Definitions and
   per-screen lists are in logic.md §8.
@@ -164,9 +218,10 @@ Implemented in `search.js`, `portal.js` and `collection.js`.
     in our current data match(es) this search. This page shows only {noun}."*, then a button *"See it / See all {n} on
     the events page →"* that opens Events with `?q=`.
   - With a query that matches nothing: **"No {noun} match "{q}"."**, then *"Nothing in our current data matches it.
-    Right now we have {N} events from {C} countries and territories. We only show what official sources are
-    reporting. If a place has no current official report, it is not listed here. That does not mean nothing is
-    happening there."*
+    Right now we have {N} event(s) from {C} countries and territories / country or territory. We only show what
+    official sources are reporting. If a place has no current official report, it is not listed here. That does not
+    mean nothing is happening there."* **N counts reports only** (records with `live !== false` and not `forecast`),
+    and **C is `countryCount` of those reports** (a record naming "India, Nepal" names two countries) (changelog C15).
 
 ## 0.4 Shared record card ("event card")
 
@@ -244,11 +299,17 @@ Uses `PNDPlaceRisk.assess(place, liveEvents, {generatedAt})` and `actionsFor()` 
   - **See details**. Opens `eventUrl(lead)`, or My places when there is no lead.
 
 ### 1.3 "Around the world now" KPI tiles
-Counts come from **live, non-forecast** records unless noted.
-- **Live events** = number of non-forecast records. Subline: `"{Extreme+Severe} serious · {Informational} minor"`
-  when either is non-zero, otherwise "From all our sources". With a hazard filter set: "Matching the hazard you chose". Tap opens Events.
-- **Official warnings** = records with `sourceType==='official'` and alert `Red` or `Orange`. Subline "Red or orange level". Tap opens Official warnings.
-- **Open forecasts** = records with `forecast && !windowClosed`. Subline: the count per level, highest first, for
+Counts come from **live, non-forecast** records unless noted. Every tile follows the map's hazard filter
+(section 1.6). **[vectors: home.render]** pins every tile for 8 filter and sort combinations.
+- **Live events** = number of non-forecast records (after the map's hazard filter). Subline: `"{Extreme+Severe}
+  serious · {Informational} minor"` (counting the `severity` field) when there are reports and either count is
+  non-zero, otherwise "From all our sources", or "Matching the hazard you chose" when a hazard filter is set. Tap opens Events.
+- **Official warnings** = `PND.officialWarnings(list)`: warnings **in force**, not forecasts, `evidenceState ===
+  'official-warning'` (or, with no `evidenceState`, `sourceType==='official'` with an `expiresAt`) (logic.md §6.11,
+  changelog C3). Subline **"Issued by agencies, in force now"**, with the accessibility hint / tooltip
+  `PND.WARNING_MEANING`: *"Warnings and watches issued by agencies and in force now. Reports of disasters that already
+  happened are not counted."* Tap opens Official warnings, which lists the same records.
+- **Open forecasts** = records with `forecast && !windowClosed` (the same as `PND.openForecasts`). Subline: the count per level, highest first, for
   example "3 High · 5 Moderate · 2 Watch" (`matchesRiskLevel`), or "Recorded for grading". Tap opens the forecast list.
 - **Countries** = `PND.countryCount(reports)` (split comma-separated country strings, logic.md §6). Subline "Named in live reports". Tap opens Regions.
 - Quote tile: *"Prepared communities save lives." / "Data for a safer, more resilient world."*
@@ -260,27 +321,51 @@ one-line description from `index.html`.
 ### 1.5 Sidebar "Explore" (desktop) / native: a horizontal chip row
 Whole world, Asia, Africa, North America, South America, Europe, Oceania (open Region detail). Tools: My places,
 Risk map, Alerts and notifications, Forecast calendar, Past events, Compare places, Safety guides (Resources).
+The continent chips open Region detail, which counts a continent from the countries each report names (section 8.2,
+changelog C1). They must never open an empty "No current events here" page while the feed has reports there.
 
-### 1.6 Map + "Most serious live events"
-- Map of all live records as risk markers (design.md §3.3). Top toolbar: a location search (Enter selects the first
-  `matches` result and flies to it) and a hazard filter (All hazards, Earthquake, Wildfire, Flood, Drought, Tropical
-  Cyclone, Severe Storm, Volcano, Landslide, Tornado, Extreme Cold). The hazard filter matches with
-  `type.toLowerCase().includes(choice)`.
-- Selecting a marker or row shows a **"Selected event on map"** nudge card (title, `type · place · source`, "See details →").
-- **Most serious live events**: the top 5 by `rank desc, then time desc` (the severity sort), numbered 1 to 5, each
-  showing title, `type · placeOf(e,'Global')` and "Updated {fmtDate}". There is a sort select with `EVENT_SORTS`
-  (index.html keeps its own copy of the definitions and stores the choice under the key `pnd_sort_home_sortBy`). The
-  sort applies to the list feeding the map and tables. The top-5 panel is always ordered by severity.
-- **Live events by type** strip: Earthquake ⌁, Wildfire 🔥, Flood ●, Drought ⌛, Tropical Cyclone ◉, Severe Storm ◈,
-  Volcano ▲, Landslide △, Tornado ✦, Extreme Cold ❄. Each shows a count "N tracked" and is hidden when the count is 0.
-  The count uses the match `type.toLowerCase().includes(stem)`, where the stem is the first word with "wildfire"
-  shortened to "wild" and "volcano" to "volcan". **Earthquake shows "· observed only"**, with the tooltip *"Observed
-  only - no agency forecasts the onset of this hazard"*. Tap opens Hazard detail.
-- **Latest forecasts** table (Starts / Location / Hazard / Risk): open forecasts, first 6. Starts =
-  `fmtWhen(targetStart||updated)`. Empty: *"No open forecasts right now."*
-- **Latest events** table (Time / Location / Event / Source): the first 5 non-forecast records in the current sort.
-- **Official Warnings** table (Agency / Location / Warning / Ends): official records with alert Red or Orange, first
-  5. Ends = `fmtDate(expiresAt||expectedEnd)` or "Not stated". Empty: *"No red or orange official warning right now."*
+### 1.6 Map + "Live events"
+Implemented in `index.html` (`render()`, `selectEvent()`, the `mapSearch` handler). **[vectors: home.render]**
+- Map of all live records (forecasts included) that pass the hazard filter, as risk markers (design.md §3.3).
+  Top toolbar:
+  - **Location search** ("Search location"). Enter with an empty box does nothing. Otherwise the trimmed, lower-cased
+    query is matched with `PND.matches`; the first live record that matches is selected with fly-to and its popup
+    opened. **When nothing matches**: clear the selection (marker ring and list highlight), close any popup, and show
+    the card with eyebrow **"Search"**, title **"No live event matches "{q}""**, meta *"Try a country, a city or a type
+    of hazard."* and the "See details →" button hidden (changelog C12).
+  - **Hazard filter**: "All hazards (N)" (value `""`) then one option per type present in the live records with its
+    count, from `PND.fillHazardSelect(sel, events)` (section 0.3). It is refilled on each load, keeping the choice. A
+    record passes when `PND.hazardKey(e.type)` equals `PND.hazardKey(choice)` ignoring case (so "Extreme Cold" never
+    shows Extreme Heat, and "Volcano" includes "Volcanic Eruption") (changelog C2, C8). The filter applies to the map,
+    the tiles (section 1.3), the "Live events" card, the three tables and the strip.
+- **Selected event on map** card (changelog C12). Selecting an event shows a card over the map: eyebrow **"Selected
+  event on map"**, the title, `[type, placeOf(e), source]` joined with " · " (blanks dropped), and a **"See details →"**
+  button that opens `eventUrl(e)`. It is shown when a marker is tapped (no fly-to, no popup), and when a "Live events"
+  row is hovered or focused (fly-to at zoom `max(current, 5)` over 0.55 s, popup opened). The selected marker gets a
+  ring and the matching row is highlighted. Tapping a row opens its detail. Native: show the card on annotation
+  selection, with the same text and button.
+- **Live events** card (was "Most serious live events"; changelog C7): the **first 5 reports** (non-forecast live
+  records; our forecasts are never listed here) sorted by **the card's own sort select**. The select offers
+  `newest` (default), `severity`, `oldest`, `deaths`, `affected`, `country`, `type`, `source`, `title` with the labels
+  of `PND.SORT_DEFS`, and stores the choice under `pnd_sort_home_sortBy`. index.html keeps its own comparators:
+  `when(e) = parse(updated || targetStart)` (no `startedAt`), `rank(e) = severityRank if > 0, else RANK[alert]` with
+  RANK red 5, critical 5, orange 4, high 4, moderate 3, watch 2, green 1; `country` compares `place || country ||
+  region`, `title` compares `title` only (no glossary expansion), missing text sorts last. Each row: its number 1 to 5,
+  the title, `type · placeOf(e,'Global')` and "Updated {fmtDate(updated)}". "View All →" opens Events.
+- **Live events by type** strip (changelog C13): built from the **reports** (non-forecast) only, grouped by
+  `PND.hazardKey(type)`, ordered by count descending then name A to Z, one chip per hazard present (none at 0). Icons:
+  Earthquake ⌁, Wildfire 🔥, Flood ●, Drought ⌛, Tropical Cyclone ◉, Severe Storm ◈, Volcano ▲, Landslide △, Tornado ✦,
+  Extreme Cold ❄, Extreme Heat ☀, Tsunami ≈, any other hazard ◆. Each chip shows `"{icon} {hazard}"` and
+  **"{n} reported"**; a hazard whose `hazardOf(key).forecastable === false` (Earthquake) adds **" · observed only"** and
+  the tooltip *"Observed only - no agency forecasts the onset of this hazard"*. Tap opens Hazard detail
+  (`/hazards/{key}`).
+- **Latest forecasts** table (Starts / Location / Hazard / Risk): open forecasts (`forecast && !windowClosed`),
+  **newest first** (home `when`), first 6. Starts = `fmtWhen(targetStart||updated)`. Empty: *"No open forecasts right now."*
+- **Latest events** table (Time / Location / Event / Source): the **5 newest reports** (not affected by the card's
+  sort). Time = `fmtDate(updated)`, Location = `placeOf(e,'-')`, Event = `type || 'Event'`.
+- **Official Warnings** table (Agency / Location / Warning / Ends): `PND.officialWarnings(list)` sorted **most serious
+  first** (home `severity` comparator), first 5 (changelog C3). Agency = `source || 'Official'`, Ends =
+  `fmtDate(expiresAt||expectedEnd)` or "Not stated". Empty: *"No official warning is in force in our sources right now."*
 - **Track record teaser**: the ND-001 card ("Covered 13 to 16 Sep 2026. Written after that period began, so it is a
   test case, not an advance forecast.", verdict pill **PARTLY CORRECT**), "What we check" (Timing · Place · Cause ·
   Severity · Official reports) and "How we check forecasts".
@@ -288,7 +373,12 @@ Risk map, Alerts and notifications, Forecast calendar, Past events, Compare plac
 - Header top search (desktop): Enter opens `/events?q=`.
 
 ### 1.7 Home states
-- On load failure, tiles keep "-" and stop shimmering. On native, also show the global error banner.
+- On load failure (`down()`, changelog C19) the tiles stop shimmering. If nothing had loaded: the tile values keep
+  "-" (a failed load is not a zero), every tile subline except the quote reads **"Live data unavailable"**, the three
+  tables show one row *"Live data unavailable. Trying again automatically."*, the "Live events" card shows the
+  `PND.unavailableHtml()` card, the strip shows *"Live data unavailable. Trying again automatically."*, and the
+  "last updated" text reads "Live data unavailable". If an earlier load succeeded, everything stays and the "last
+  updated" text reads "Could not refresh: {fmtDate(last generatedAt)}". On native, also show the global error banner.
 - Notifications: each load calls `PND.evaluateRiskNotifications(liveEvents)` (section 16.2).
 
 ---
@@ -302,6 +392,12 @@ parity requirement.
 - Title "Live disaster map". Subtitle *"Events reported by official agencies, shown on a map. This page refreshes every minute."*
 - Toolbar: search "Search place or hazard" (`matches`), sort (`EVENT_SORTS`), "↻ Refresh now", status line
   `{statusText} · updated {age(generatedAt)}`.
+- **A search moves the map** (changelog C18): when the query is new (not the one the map was last fitted to) and
+  some matching records have coordinates, fit the map to their markers (padding 25%, max zoom 6). A refresh with the
+  same query does not move the map. Under the toolbar a polite live note says *"{n} event(s) match "{q}". The map shows
+  it/them."* (the word is "match" for any n), or *"No event matches "{q}"."* with the list replaced by
+  `emptyHtml(q, all, all, 'events')`. An empty query clears the note.
+- If the first load fails, the list shows the `PND.unavailableHtml()` card.
 - Map: the first **220** records of the filtered, sorted list as risk markers (design.md §3.3). Marker size
   `9 + rank*3` pt. Higher rank draws on top (`zIndex = rank*1000`). Accessible label: `"{title} - {Level} risk"`.
   The popup or callout shows title, `type · source` and "See details".
@@ -326,9 +422,15 @@ Implemented in `alerts.html`.
   AREAS** (`countryCount`), **SOURCES WORKING** (`sourcesRatio`, for example "7/8"), **UPDATED** (`age(generatedAt)`).
 - Toolbar: search "Search by alert, place, hazard or agency", risk-level filter, sort (`EVENT_SORTS`), Refresh, status line.
 - Records: `sourceType==='official'` only.
-- Map of the first 250 as markers. **Current official alerts** grid of the first 40 cards: risk badge, source pill,
-  title, `type · place`, impact line `impactText(e)` in bold when present, and `Source updated {fmtDate} · {age}`.
-  Empty: `emptyHtml(q, all, all, 'official alerts')`.
+- Map of the first 250 as markers. **Current official alerts** grid, **40 cards at a time** (changelog C6): risk badge,
+  source pill, title, `type · place`, impact line `impactText(e)` in bold when present, and `Source updated {fmtDate}
+  · {age}`. When more than the shown number match, a full-width card follows: *"Showing {shown} of {N}."* and a button
+  **"Show {min(40, N - shown)} more"**; pressing it adds 40 and moves focus to the first new card. When everything is
+  shown and N > 40: *"Showing all {N}."* A change of search, level or sort goes back to 40; the 60 s refresh keeps
+  the current number. Empty: `emptyHtml(q, all, all, 'official alerts')`. **[vectors: alerts.pager]**
+- The stats follow the filtered list: OFFICIAL REPORTS = its length, RED OR ORANGE ALERT = alert Red or Orange in it,
+  COUNTRIES AND AREAS = `countryCount` of it. Unchanged from the first spec, but note that RED OR ORANGE ALERT is not
+  the "official warnings" count.
 - Sidebar **Source status**: one row per `meta.sources` key, shown as `KEY` upper-cased with `_` replaced by a space,
   then `Working` or `Not answering`, then `checked {fmtDate(checkedAt)}`.
 - **How to read these alerts**: *"Red and orange are the two highest alert levels. We treat them as the most
@@ -338,16 +440,23 @@ Implemented in `alerts.html`.
 - Links: "See all official warnings →" opens Official warnings.
 
 ### 3.2 Collection lists (shared engine `collection.js`, selected by `data-view`)
-Each list is a card grid (section 0.4) with search, a hazard filter (fixed list), a risk filter, sort, Refresh, and the
-status line `{statusText} · {countText} · updated {age}`. `countText` gives "N events · M forecasts" when a list mixes
-the two, and uses singular forms for 1.
+Each list is a card grid (section 0.4) with search, a hazard filter built from the list's own records (section 0.3,
+changelog C8), a risk filter, sort, Refresh, and the status line `{statusText} · {countText} · updated {age}`.
+`countText` gives "N events · M forecasts" when a list mixes the two, and uses singular forms for 1. On the forecast
+list and calendar it gives **"{N} forecasts: {open} open, {N-open} ended"**, where open is `PND.openForecasts` of the
+list (an ended forecast is still listed) (changelog C14). **[vectors: collection.keep]**
+
+**Region scope** (changelog C17): with `?region={name}` (the link Region detail's "See all events →" opens), every
+list except resources keeps only records with `PND.inPlace(e, name)` (a continent counts its countries; `World`
+means no scope) and shows the note *"Showing only {name}. Show everywhere →"* (the link drops the parameter) above the
+cards. Counts, the hazard options and the empty text use the scoped list.
 
 | View | Web route | Title / subtitle | Records kept | Sort keys | Empty noun |
 | --- | --- | --- | --- | --- | --- |
 | events | `/events` | "Events happening now" / "Disasters reported by official agencies, and our own forecasts of what may happen next." | all live | EVENT_SORTS | events |
 | recent-events | `/recent-events` | "Recent events" / "The latest disasters reported by official agencies." | `sourceType==='official'` | EVENT_SORTS | recent events |
-| official-warnings | `/official-warnings` | "Official warnings" / "The most serious reports from official agencies, plus earthquakes reported by the USGS." | official AND (alert Red or Orange, OR source==='USGS') | EVENT_SORTS | official warnings |
-| alerts-notifications | `/alerts-notifications` | "Current alerts" / "The most serious current reports from official agencies, with a link to each source." | same as official-warnings | EVENT_SORTS | alerts |
+| official-warnings | `/official-warnings` | "Official warnings" / "Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events." | `PND.isOfficialWarning(e)` (changelog C3) | EVENT_SORTS | official warnings |
+| alerts-notifications | `/alerts-notifications` | "Current alerts" / "Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events." | same as official-warnings | EVENT_SORTS | alerts |
 | hazard-types | `/hazard-types` | "Events by type" / "Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought." | all | EVENT_SORTS | events |
 | historical-events | `/historical-events` | "Past and recent events" / "Recent past events from GDACS, plus the events happening now." | all **including not-live** (`getEvents({all:true})`) | newest, oldest, severity, country, type, title | events |
 | compare-locations | `/compare-locations` | "Compare places" / "Search for a place to see its current events. Then search for another place to compare." | all | EVENT_SORTS | events |
@@ -357,7 +466,7 @@ the two, and uses singular forms for 1.
 
 The forecast list and calendar also show a page note above the list: `horizonText(meta) + " Each forecast is our
 own estimate, based on a current official report. It may be wrong. It is not an official warning and does not
-replace one."`
+replace one."` The note keeps acronyms short (no first-use expansion of "UTC").
 
 ### 3.3 Calamities ("Disasters now and in the past")
 Implemented in `calamities.html` and `history-data.js`.
@@ -378,6 +487,9 @@ Implemented in `calamities.html` and `history-data.js`.
   style, anything else the high style). Notice: *"No complete list of every natural disaster in Earth's history
   exists. … Its first entry is not "the first natural disaster ever"."*
 - Footer line: *"Times are shown in IST by default. To see them in another time zone, use the time zone menu at the top of the page."*
+  This is still the website's copy, but since changelog C9 the default is the device's zone, so the sentence is now
+  inaccurate on the web. Native: write *"Times are shown in your device's time zone. To see them in another time
+  zone, use the time zone setting."* and flag the web copy to the website team.
 
 ---
 
@@ -387,12 +499,14 @@ Implemented in `forecasts.html` and `forecast-table.js` (`PNDForecastTable`).
 
 - Eyebrow "OUR OWN ESTIMATES", title "Natural disaster forecasts", subtitle *"These are our forecasts of what may
   happen next, and where. We make them from reports by official agencies. They are not official warnings."*
-- Stat line: FORECASTS (all forecasts), EVENTS ON HIGH ALERT (non-forecast records with alert in Red, Orange or
-  High), KINDS OF HAZARD (distinct forecast types), SOURCES WORKING, UPDATED, FORECASTS REACH AS FAR AS
+- Stat line: **OPEN FORECASTS** (`PND.openForecasts` of the forecasts: the home page's number; ended forecasts are
+  still listed below) (changelog C14), EVENTS ON HIGH ALERT (`PND.isHighAlert`: non-forecast records with alert in
+  Red, Orange or High), KINDS OF HAZARD (distinct forecast types), SOURCES WORKING, UPDATED, FORECASTS REACH AS FAR AS
   (`fmtWhen(meta.forecastHorizon.furthestWindowEnds, null, 'end')` with the trailing `, time` removed, or "-").
   Then `horizonText(meta)` as a paragraph.
 - Sticky toolbar: search "Search by forecast, country, city, sea or hazard", hazard filter (dynamic, built from
-  forecasts plus high-alert records), risk filter, sort `['severity','windowEnd','newest','oldest','country','type','title']`,
+  **forecasts only**, so its counts add up to the forecasts and match the tiles; it still filters the high-alert
+  list below by exact type) (changelog C8), risk filter, sort `['severity','windowEnd','newest','oldest','country','type','title']`,
   "↻ Refresh live data", status line.
 - Map of forecasts plus high-alert observed records (first 300).
 - **Forecasts by hazard** tiles: the count of forecasts per type that pass the search and risk filters, sorted by
@@ -411,6 +525,7 @@ Implemented in `forecasts.html` and `forecast-table.js` (`PNDForecastTable`).
 - **How we make forecasts**: 1. Spot, 2. Where and when, 3. Keep them apart (*"We never show an official report as
   our forecast, or our forecast as an official report."*), 4. Check.
 - **Checking our forecasts**: the ND-001 blurb and a "See the ND-001 forecast →" link.
+- The horizon paragraph keeps acronyms short. Load failure: see section 0.2.
 
 ### 4.1 Forecast list (full table)
 Implemented in the `/forecast-list` view of `collection.js`. All 10 columns: Risk, Forecast, Place, Hazard, Starts,
@@ -457,8 +572,10 @@ Implemented in `personal-risk.html`, `place-risk.js`, `alert-rules.js`, `alerts-
   it does not save.
 - Choosing a candidate fills lat and lon to 6 decimals and records `country` and `countryCode`. Note: *"Chosen:
   {name} ({level lower-case}). Choose the kind of place and press Save."*
-- **Any edit to name, lat or lon after choosing clears the remembered country**, with the note *"You changed the
-  place, so we no longer know its country. Search for it by name again to record the country."*
+- **Any edit the reader makes to name, lat or lon after choosing clears the remembered country**, with the note
+  *"You changed the place, so we no longer know its country. Search for it by name again to record the country."*
+  The values the search itself filled are remembered (`chosenAs = name|lat|lon`); a change event whose values still
+  equal them (for example the one fired on blur after pressing Enter) does **not** clear the country (changelog C23).
 - Search failures: "Type a place first.", the not-found copy as on Home, and *"Place search is not working right now. You can type the latitude and longitude instead."*
 - Storage: `pnd_saved_locations`, a JSON array of `{id:'loc-'+epochMs, kind, name, lat, lon, country, countryCode, updatedAt?}`
   (native: local persistent store; data model in logic.md §3.6).
@@ -494,7 +611,8 @@ Implemented in `personal-risk.html`, `place-risk.js`, `alert-rules.js`, `alerts-
 ## 6. Track record (tab)
 
 Implemented in `accuracy.html`, `verdicts.js`, `verification-model.js`, `observed-model.js`, `hazard-model.js` and
-`backtest-view.js`. Trust group `ledger`. It reads four static files with `?ts=` cache-busting:
+`backtest-view.js`. Trust group `ledger`. It reads four static files with `fetch(path, {cache:'no-cache'})`
+(revalidated with the server, no `?ts=`; changelog C25):
 `/data/outlook-ledger.json` (about 3 MB), `/data/verification-ledger.json`, `/data/observed-disasters.json` (about
 1.9 MB) and `/data/scan-ledger.json`, plus `/data/model-backtest.json` and `/data/model-verdicts.json`.
 
@@ -529,6 +647,9 @@ Implemented in `accuracy.html`, `verdicts.js`, `verification-model.js`, `observe
 - "What we forecast compared with what happened" disclosure (side-by-side cards for graded forecasts).
 - "Full details" disclosure: the advance (headline) metrics including precision, recall and F1, the other-forecasts
   metrics, the disasters-and-misses metrics, the methodology note, the counts by class, and the label legend.
+- The trust note's "Track record last recorded {time}" uses the newest `updatedAt`/`generatedAt` among the ledgers
+  this page loaded, handed to the note (`PNDTrust.recorded(iso)`), or *"The track record did not load, so no update
+  time can be shown"* when none could be read.
 - **Failure state**: if any of the four core ledgers fails to load, show the red alert *"Some track record data could
   not be loaded: {list}. So no figure on this page tells you what happened. This is not the same as nothing having
   been recorded."* above the answer, set **every graded figure to "Unavailable"**, and grade nothing.
@@ -542,10 +663,12 @@ All four detail screens (7.1 to 7.4) load `getEvents({all:true})`, resolve the i
 
 ### 7.1 Event detail
 Implemented in `event-detail.html`.
-- Breadcrumb Home › Events › {title}. Eyebrow `LIVE EVENT`, or `OUR FORECAST, NOT OFFICIAL` for a forecast.
-  Title, then `{type} · {placeOf}`.
-- KPI row: RISK LEVEL (riskTag), TYPE, SOURCE, SOURCE LAST UPDATED (age), DATA STATUS ("Saved copy" if `cached`,
-  "Our forecast", or "Live").
+- Breadcrumb Home › Events › {title}. Eyebrow `OUR FORECAST, NOT OFFICIAL` for a forecast, **`EVENT NO LONGER
+  UPDATED` when `live === false`**, otherwise `LIVE EVENT` (changelog C5). Title, then `{type} · {placeOf}`. The screen
+  title is the record's title.
+- KPI row: RISK LEVEL (riskTag), TYPE, SOURCE, SOURCE LAST UPDATED (age), DATA STATUS = `PND.liveWord(e)`: "Saved
+  copy" if `cached`, "Our forecast" if `forecast`, **"Not updated recently" if `live === false`**, otherwise "Live".
+  **[vectors: portal.liveWord, detail.statusWords]**
 - **"What should I do now?" action panel** (amber left border): provenance pill, "Updated {age}", then
   WHAT (type) / WHERE (`region · country` or "See the map") / HOW SERIOUS (`riskLabel`) / HOW RELIABLE ("OFFICIAL
   SOURCE" / "OUR OWN ESTIMATE" / "NOT YET CONFIRMED") / WHO SAYS THIS (`{source} · {voice}`, where voice is
@@ -566,25 +689,33 @@ Implemented in `event-detail.html`.
 - **Reported impact**: LIVES LOST, PEOPLE DISPLACED and PEOPLE AFFECTED, each showing a grouped number or **"Not
   reported"** (a reported 0 shows "0"). Note *"If the source gives no figure, we show "Not reported". We never assume it is zero."*
 - How up to date and reliable: Last update, Type of source ("Official source" / "Our own forecast, not official" /
-  "Collected from other sources"), Status ("Saved copy, not live" / "Forecast in progress" / "Live, as the source last reported it").
+  "Collected from other sources"), Status ("Saved copy, not live" / "Forecast in progress" / **`quietNote(e)` when
+  `live === false`** / "Live, as the source last reported it").
 - Who may need help (3 context cards). Timeline (source report time, then "This page updated").
 - Map centred on the record (zoom 7 for earthquakes, 6 otherwise) with a marker.
 - **Other events nearby**: non-forecast records within 1,200 km, sort keys newest, distance, severity, oldest, type
   and title; at most 6; each shows "{km} km away · {type}". Empty: *"No other current events nearby."*
-- Not found: title "Event not found", subtitle *"The source may no longer list this event. See all events to find the latest ones."*
-- Error: *"We could not update this event just now."*
+- Not found (changelog C20): eyebrow "EVENT", title and breadcrumb **"Event not found"**, subtitle *"The source may no
+  longer list this event. [See all events] to find the latest ones."* (link to Events), and the KPI row, body and
+  enrichment block hidden. Only on the first load: once a record has been shown, a later miss leaves it.
+- Error: when a record is already shown, *"We could not update this event just now."* in the subtitle. On a first load
+  that fails: title **"Live data unavailable"**, subtitle *"We could not load this event just now. Trying again
+  automatically. [See all events]."*, body hidden.
 
 ### 7.2 Alert detail
 Implemented in `alert-detail.html`. Used when the record is official and its alert is Red or Orange.
-- Eyebrow "OFFICIAL ALERT". Stats: ALERT LEVEL (riskTag), AGENCY OR SOURCE, UPDATED, STATUS (Live / Saved copy).
+- Eyebrow "OFFICIAL ALERT". Stats: ALERT LEVEL (riskTag), AGENCY OR SOURCE, UPDATED, STATUS = `PND.liveWord(e)`
+  (Live / Saved copy / Not updated recently; changelog C5).
 - Alert summary: key facts grid, Hazard, Place, Areas affected, When it started, Issued or last updated, **Warning
   ends** (`expiresAt` or "The source did not give an end time"), What the alert says (details), Source report ID
   (`rawId||id`), and the "Open the original report ↗" button.
-- Reported impact, the same three figures plus DATA STATUS, with the note *"We show impact figures only when the source gives them. A missing figure does not mean there was no impact."*
+- Reported impact, the same three figures plus DATA STATUS (`PND.liveWord(e)`), with the note *"We show impact figures only when the source gives them. A missing figure does not mean there was no impact."*
 - Source checks: Official source named? **Yes**. Source's update time shown? **Yes**. Is this a saved copy? ("Yes, and it is labelled" / "No"). Link to the original report? ("Yes" / "No, the source gave none").
 - Safety: *"This page sums up a report from an official agency or source. It is not a new government warning."*
 - **Other events in the same country or area**: `matchesPlace(x, country||region)`, non-forecast, at most 9, sorted with EVENT_SORTS.
-- Not found: "Alert not found".
+- Not found (first load only; changelog C20): title **"Alert not found"**, subtitle *"The source may no longer list this
+  alert. [See all official warnings]."*, stats, body and enrichment hidden. First load fails: **"Live data
+  unavailable"** / *"We could not load this alert just now. Trying again automatically."*
 
 ### 7.3 Calamity detail
 Implemented in `calamity-detail.html`. Reached from the Calamities context and `/calamities/{id}`.
@@ -593,19 +724,37 @@ Implemented in `calamity-detail.html`. Reached from the Calamities context and `
   This contradicts rule 8.** Native should apply rule 8 here (treat 0 as reported) and the web team should be told.
 - Detail list: Event, Type, Country or area, Alert level, Official source, When it started, Last updated by the
   source, Coordinates, the three impact figures, and "Latest details from the source".
-- How up to date: Source last updated, We last checked (`generatedAt`), Age of the data, Status.
+- How up to date: Source last updated, We last checked (`generatedAt`), Age of the data, Status ("A saved copy, shown
+  because the source did not list it this time" if `cached`, **`quietNote(e)` if `live === false`** (changelog C5),
+  otherwise "Live, as the source last reported it").
 - Related events: same country OR same type, at most 6.
-- Not found: "Disaster not found" / *"The source may no longer list this event. It may have ended."*
+- Not found (first load only; changelog C20): **"Disaster not found"** / *"The source may no longer list this event. It
+  may have ended. [See current disasters]."*, body hidden. First load fails: **"Live data unavailable"** / *"We could
+  not load this disaster just now. Trying again automatically."*
 
 ### 7.4 Forecast detail
 Implemented in `forecast-detail.html`. The id defaults to `ND-001`.
 - If the id is not in the feed, request `/api/events?ledger=1` and use the **last ledger row with that id**
   (`forecast:true`), with the note *"This forecast is no longer being published. It is shown exactly as it was
   recorded on {fmtDate(recordedAt||freezeTimestamp)}."* **Never substitute a different forecast.** If it is not
-  found there either: "Forecast not found" / *"We cannot find this forecast in our current data or in our record of
-  past forecasts. Check the link, or go to the forecasts list."*
-- Eyebrow "FORECAST DETAILS". Title `titleOf(e)`. Factors: RISK, LOCATION, LAST UPDATED, STATUS ("Ended, not yet
-  checked" if `targetEnd < now`, otherwise "Active").
+  found there either: **"Forecast not found"** / *"We cannot find this forecast in our current data or in our record
+  of past forecasts. Check the link, or [see all our forecasts]."*, with the factors, body and enrichment hidden. A
+  first load that fails: **"Live data unavailable"** / *"We could not load our forecasts, so this one cannot be shown
+  right now. Trying again automatically. [See all our forecasts]."* (changelog C20).
+- Eyebrow "FORECAST DETAILS". Title `titleOf(e)`. Factors: RISK, LOCATION, LAST UPDATED, STATUS.
+- **STATUS and the grade** (changelog C4; `gradeOf(id)`, `showGrade(e)`). STATUS is first "Ended, not yet checked" if
+  `targetEnd < now`, otherwise "Active". Then the grade is looked up:
+  1. `GET /data/verification-ledger.json`; take the row in `verifications[]` with `id === e.id`. If
+     `k = PNDVerdicts.normalise(row.status)` is set and is not `PENDING` or `UNKNOWN`, the grade is
+     `{label: PNDVerdicts.LABELS[k] || k, summary: row.summary || ''}`.
+  2. Otherwise, if the id starts with `model-`: `GET /data/model-verdicts.json`, row in `outlooks[]` with that id;
+     `verdict === 'correct'` gives `LABELS.VERIFIED` ("Correct"), `verdict === 'false alarm'` gives
+     `LABELS.FALSE_ALARM` ("Wrong (false alarm)"), anything else no grade.
+  3. A failed or non-200 read gives no grade.
+  With a grade: STATUS **"Checked: {label}"**, the "Inside the locked forecast period" row reads **"Ended"** with the
+  text *"The forecast period ran to {dayOf(targetEnd, targetStart, 'end') or 'its end'} and has been checked.
+  Result: {label}."* followed by `" " + summary` when there is one. ND-001 reads "Checked: Partly correct".
+  **[vectors: forecastDetail.gradeOf, verdicts.label, verdicts.LABELS]**
 - The forecast: key facts; Hazard; Place; Description; Last updated; **Forecast period** (`windowText`); **Kind of
   forecast** (`frozen-benchmark` "Test case, locked but not made in advance", `signal-derived-outlook` "Short-term
   forecast based on an official report", `aftershock-sequence` "Aftershock forecast", otherwise "Our own estimate");
@@ -624,7 +773,8 @@ Implemented in `forecast-detail.html`. The id defaults to `ND-001`.
   record in the feed reads "We did not make this forecast on our own. It follows {report}…", and one without reads
   "This forecast follows a report from {agency} that is no longer in our current data…". Bundle these strings.
 - **What we will check** matrix (each line stays open until the period ends):
-  - Inside the locked forecast period: Open / Ended, with the "Runs {span}" text.
+  - Inside the locked forecast period: Open / Ended, with the "Runs {span}" text (replaced by the grade text above
+    once the forecast is graded).
   - Inside the forecast area: Open / Ended, *"Set to {place} when we made the forecast, and never widened. Damage just outside it does not count."*
   - Hazard reported: `{n} reported` / "None yet". This counts official non-forecast records within 1,000 km, of the
     same family (aftershock and earthquake are treated as earthquake; otherwise the first part of the type before
@@ -675,7 +825,8 @@ Loading: each panel shows "Loading…".
 ### 8.1 Regions list
 Implemented in `regions.html`.
 - Eyebrow "BY PLACE". Title "Regions". *"Start with the whole world. Then choose a country, a city or a neighbourhood, and then an event."*
-- Stats: CURRENT EVENTS (non-forecast), COUNTRIES AND AREAS (number of groups), HIGH ALERT, SOURCES WORKING, UPDATED.
+- Stats: CURRENT EVENTS (non-forecast), COUNTRIES AND AREAS (**`PND.countryCount(reports)`**, the same number as every
+  other screen; the group count also counts seas) (changelog C14), HIGH ALERT (`PND.isHighAlert`), SOURCES WORKING, UPDATED.
 - Toolbar: search (`matchesPlace`, filters the map), **Open this place** (opens Region detail for the typed name,
   or World), **Find a city or area** (Nominatim chooser). A Country result opens Region detail. Any other level
   opens Location detail with `lat`, `lon`, `level`, `country` and `cc`.
@@ -688,12 +839,22 @@ Implemented in `regions.html`.
 
 ### 8.2 Region detail
 Implemented in `region-detail.html`. The region name comes from the path or from `?region=`/`?country=` (default World).
-- Match rule: `World` matches everything. Otherwise `[country, region, title, details].join(' ')` lower-cased **contains** the region name lower-cased.
-- Title "Disasters around the world" or "Disasters in {region}". Stats: CURRENT EVENTS, HIGH ALERT, TYPES OF HAZARD,
-  SOURCES (distinct sources), LAST CHECKED. The map fits the markers (max zoom 6).
+- Match rule (`matches()`, changelog C1): `World` matches everything. If the name is a continent
+  (`PNDContinents.continentNamed(name)`, case-insensitive: Africa, Asia, Europe, North America, South America, Oceania,
+  Antarctica), the region becomes that canonical name and a record matches when `PNDContinents.onContinent(e, name)`:
+  one of the record's countries is on that continent (logic.md §6.12). Otherwise `[country, region, title,
+  details].join(' ')` lower-cased **contains** the region name lower-cased. **[vectors: regionDetail.matches]**
+- The listed records are **reports only**: `PND.observed(events).filter(matches)` (no forecasts, no `live:false`)
+  (changelog C14).
+- Title "Disasters around the world" or "Disasters in {region}". Stats: CURRENT EVENTS, HIGH ALERT
+  (`PND.isHighAlert`), TYPES OF HAZARD, **SOURCES REPORTING HERE** (`PND.sourcesReporting`), LAST CHECKED. The map
+  fits the markers (max zoom 6).
 - Current events list (EVENT_SORTS). Empty: *"No current events here. Our sources have no current report for this place. This does not mean there is no danger."*
 - Types of hazard tiles (count per type, opening Hazard detail with the region), "What we cover" ("Sources working
-  now: N. Current events here: M."), popular places, and "See all events →" (`/events?region=`).
+  now: N. Current events here: M."), popular places, and "See all events →" (`/events?region={name}`, which now
+  scopes the list; section 3.2). For a continent the coverage line adds *" {Continent} is counted from the countries
+  each report names. {n} report(s) is/are at sea or name no country, so it is/they are on no continent's page."*,
+  where n counts reports (`PND.observed`) with no continent.
 - Enrichment block with a synthetic event: title "{region} natural disaster" (World: "global natural disaster
   response"), country and region set to the region, type of the first non-forecast record, and that record's lat and lon.
 
@@ -716,14 +877,25 @@ Implemented in `location-detail.html`. Comes from Find a city or area.
 The `hazard-types` collection view (section 3.2).
 
 ### 9.2 Hazard detail
-Implemented in `hazard-detail.html`.
-- Hazard select: Flood, Earthquake, Wildfire, Volcano, Tropical Cyclone, Drought, Landslide, Severe Storm, Tornado
-  and Extreme Cold. An optional region box. **Show** applies them.
-- Match: `type.toLowerCase().includes(stem)`, where the stem is the first word with wildfire shortened to "wild"
-  and volcano to "volcan", AND (if a region is given) `matchesPlace`.
+Implemented in `hazard-detail.html` (changelog C2, C21). **[vectors: hazardDetail.fillHazards, hazardDetail.select]**
+- Hazard select (`fillHazards`): every key of `PNDHazards.HAZARDS` (Earthquake, Earthquake aftershock sequence,
+  Tropical Cyclone, Flood, Flood / Landslide, Landslide, Wildfire, Drought, Volcano, Extreme Heat, Extreme Cold, Severe
+  Storm, Tornado, Tsunami), plus `hazardKey` of every type in the feed, plus `hazardKey` of the requested type,
+  de-duplicated and sorted A to Z. The requested type is selected as its key: `/hazards/Volcanic Eruption` opens
+  "Volcano", `/hazards/Ice` opens "Ice". **An unknown type is offered as itself, never replaced by Flood.** The select
+  is refilled on each load and keeps the reader's choice. An optional region box. **Show** applies them.
+- Match (`here`): `PND.sameHazard(e.type, choice)` AND (if a region is given) `PND.inPlace(e, region)` (a continent
+  counts its countries; other text matches the place fields or `countries[]`).
+- Current events = `PND.observed(events).filter(here)`: **reports only**. Open forecasts of the hazard
+  (`PND.openForecasts(events).filter(here)`) are not listed; when there are some, a note under the list says
+  *"We also have {n} open forecast(s) of {hazard lower-case}{ here}. They are our own estimates, not events. See our
+  forecasts →"* (link to the forecast list).
 - Hazard definition box (`hazardOf`): definition, How it starts, How long it lasts, How much warning there is, How severity is measured.
-- Stats: CURRENT EVENTS, HIGH ALERT, COUNTRIES AND AREAS, SOURCES. A "How to read this page" panel. The events list
-  shows `place · details`. Empty: *"No current events of this type match."* Enrichment block.
+- Stats: CURRENT EVENTS, HIGH ALERT (`PND.isHighAlert`), COUNTRIES AND AREAS (`countryCount`), SOURCES
+  (`PND.sourcesReporting`). A "How to read this page" panel. The events list shows `place · details`. Empty:
+  **"No current events of this type match."** plus *"Our sources have no current report of this hazard{ here}. This
+  does not mean there is no danger."* Enrichment block. The screen title is "{hazard} events".
+- Load failure: the four stats read "Unavailable", the list shows the unavailable card, the forecast note is cleared.
 
 ---
 
@@ -750,7 +922,11 @@ Implemented in the `resources` view of `collection.js`. It uses `meta.scan.provi
 Implemented in `source-detail.html`. It has static profiles for GDACS, USGS, NASA EONET and WMO (WMO is
 "Reference only … this site does not read" it). Each profile has Name, Type of source, What it covers, How we use
 it, How often we check it, Limits and an external link. An unknown source gets a generic profile.
-- Stats: STATUS (`meta.sources[key].ok`: "Working" / "Not answering" / "Not read live"), CURRENT REPORTS, LATEST UPDATE (age), TYPE.
+- Stats: STATUS (`meta.sources[key].ok`: "Working" / "Not answering"; with no status entry, **"Named in current
+  reports"** when some current record names it, else "Not read live"), CURRENT REPORTS, LATEST UPDATE (age), TYPE.
+- A name with no profile and no current report (changelog C22): title **"Source not found"**, subtitle *"None of our
+  current reports names a source called "{name}". See every source we read."* (link to Our sources), body hidden. The
+  generic profile's type reads "Source named in our current reports".
 - Current reports from this source: the first 20 records whose `source` contains the name. "Other sources" links.
 - "How we treat sources" copy.
 
@@ -783,7 +959,10 @@ Implemented in `insights.html`.
   could not be reached, so we cannot show which hazards are being reported. We do not fill this panel with estimates."*
 - Static prose cards (floods and landslides, where matters most, how we judge forecasts), "How to read this" and the Background notes table (copy in `insights.html`).
 - Topic detail pages (`entity-detail.html`, `kind=insight|methodology|metric|resource|about`) are a static catalogue
-  of short notes with links. Bundle the catalogue; it is low priority.
+  of short notes with links. Bundle the catalogue; it is low priority. An unknown id shows **"Topic not found"**
+  (scope "Not found", status "Not found", body *"We have no page for this topic. For live information, open the
+  events, regions, hazards, sources or forecasts pages."*, links Home, Current events, How it works); only the id
+  `overview` falls back to the group's first topic (changelog C22).
 
 ## 13. Methodology ("How it works") and About
 
@@ -803,12 +982,44 @@ Implemented in `methodology.html` and `about.html`. Both are static prose; bundl
 
 ## 14. Verification detail (ND-001)
 
-Implemented in `verification-detail.html`. The locked terms of ND-001 are hard-coded (issued 13 Sept 2026, main
-corridor Huế to Đà Nẵng, the Correct / Partly correct / Wrong rules). The Result comes from
-`/data/verification-ledger.json` through `PNDVerdicts.LABELS[VERDICTS[status]]`, currently **"Partly correct"**. A
-comparison table (Area, Start date, Start time, Duration, How widespread, Strength or severity, Lives lost, Missing
-people) is built from live records matching `/vietnam|đà nẵng|huế|quảng|quang/i`. "Not reported by any of our
-sources" is distinct from 0. Lower priority. It can be a static detail with the ledger lookup.
+Implemented in `verification-detail.html` (no website change since the first spec; changelog C11 makes it required
+in full). **[vectors: verificationDetail.render]** Trust group **`feed models`** (not `ledger`).
+- Hero: eyebrow "Forecast check", title **"ND-001 · Central Vietnam flood and landslide forecast"** (any other id:
+  "Checking forecast {id}"). The id defaults to `ND-001`.
+- Stats: **ID**; **Result** = `PNDVerdicts.LABELS[PNDVerdicts.VERDICTS[row.status]]` for the `verifications[]` row
+  with that id in `/data/verification-ledger.json` (exact status key, not `normalise`); "Not checked yet" when there
+  is no such row, its status has no label, or the file answers non-200; "Not available" when the request itself
+  fails (ND-001 currently reads **"Partly correct"**); **Starts** = the
+  date part of `fmtWhen(fcStart)` or "Not stated"; **Lasts** = `duration(fcStart, fc.targetEnd)` or "Not stated";
+  **Matching reports** = the number of matching records.
+- "The forecast, as recorded": a static list (Forecast ID, Issued 13 Sept 2026, Target date 14 Sept 2026, Period we
+  check "Starts 13 Sept 2026 · expected duration 4 days", Area (locked), Expected chain of events (locked), Correct
+  if, Partly correct if, Wrong if). Copy it verbatim from the page.
+- Data: `getEvents({all:true})`. `fc = findEvent(events, id)`. Matching records `ev` = every record (the forecast
+  itself included) whose `[title, country, region, details].join(' ')` matches
+  `/[Vv]ietnam|[Đđ]à [Nn]ẵng|[Hh]uế|[Qq]uảng|[Qq]uang/`. `fcStart = fc.targetStart || fc.startedAt || fc.updated`.
+  `times` = the parseable `startedAt` of `ev`, ascending (never `updated`); `firstSeen`/`lastSeen` = first/last.
+  `places` = distinct `country || region` of `ev`.
+- **"Forecast compared with what happened": all 8 rows, in this order** (Metric / Forecast / Actual). NR below is
+  *"Not reported by any of our sources"* and NF is *"Not included. This forecast does not predict casualties."*
+  1. **Area**: `fc.region || fc.country` or "Not stated in the recorded forecast" / `places` joined " · ", or NR.
+  2. **Start date**: date part of `fmtWhen(fcStart)` or "Not stated" / date part of `fmtWhen(firstSeen)`, or NR.
+  3. **Start time**: `fmtTime(fcStart)` or "Not stated" / `fmtTime(firstSeen)`, or NR.
+  4. **Duration**: `duration(fcStart, fc.targetEnd)` or "Not stated" / `duration(firstSeen, lastSeen)`, else "Still
+     developing" when there is at least one time, else NR.
+  5. **How widespread**: `fc.details` or "Not measured in the recorded forecast" / "{ev.length} matching report(s)
+     from {places.length} area(s)", or NR when `ev` is empty.
+  6. **Strength or severity**: `fc.alert` or "Not stated" / "Highest magnitude reported: {max}" when any title has
+     `\bM\s*(\d+(\.\d+)?)\b` or "magnitude N", else the distinct `alert` values joined " · ", else NR.
+  7. **Lives lost**: NF / the sum of `deaths` over the records that carry the field (a reported 0 counts, so the
+     answer can be "0"), en-US grouping, or NR when no record carries it.
+  8. **Missing people**: NF / NR (no source reports it).
+  Footnote: *"Each row shows what we forecast next to what our sources have reported since. "Not reported" means none
+  of our sources has reported that figure yet. That is not the same as a reported zero. If the same hazard happens
+  again later in the same place, we check it as a separate event."*
+- "Matching reports" panel: `ev` sorted with `EVENT_SORTS` (default newest) as event cards linking to `eventUrl`, or
+  *"None of our sources has a matching report."*; "Forecast details →" opens `/forecasts/ND-001`.
+- "Rules we follow" panel (static copy). Load error: status line *"Could not load reports. Trying again…"*
 
 ---
 
@@ -822,15 +1033,20 @@ Region, Location and Hazard detail, Source detail, Event, Alert, Calamity and Fo
 and Track record. It is **not** shown on About, Methodology, Historical detail, Entity detail or 404 (these have no
 prediction or risk level).
 - Amber-bordered box with an italic "i" icon:
-  **"Experimental model, not an official warning."** *For real alerts, follow your national weather or disaster agency:*
-  [IMD] and [NDMA] in India, [NWS] and [USGS] in the US, [GDACS] worldwide.
-- "When" line. Groups `feed` and `models`: *"Live data fetched from the agencies {when(generatedAt)}"*, plus *" (they
-  were not answering, so saved copies are shown)"* when `meta.live===false`, then *" · weather models last run
+  **"Experimental model, not an official warning."** *For real alerts, follow your national agency:*
+  [IMD] and [NDMA] in India, [NWS] and [USGS] in the US, [GDACS] worldwide. (changelog C10)
+- "When" line. Groups `feed` and `models`: *"Live data from the agencies {when(generatedAt)}"*, plus *" (they
+  were not answering, so saved copies are shown)"* when `meta.live===false`, then *" · weather models run
   {when(meta.modelRun.at)}"*, plus *" (over 36 hours ago, so their forecasts are not shown)"* when `modelRun.served`
-  is false. On failure: *"The live data did not load, so no update time can be shown"*. While loading: *"Live data: loading…"*.
-  Group `ledger`: *"Track record last recorded {latest updatedAt among loaded ledgers}"*, or *"The track record did not load, so no update time can be shown"*.
-  The `when()` format is `d MMM yyyy, h:mm a {zone abbreviation}` in the chosen timezone (Intl `timeZoneName:'short'`).
-- **"Data sources (N): GDACS, USGS, …"** disclosure. One row per source in the page's groups: name (link), status
+  is false. On failure (the feed request fails before any feed arrived): *"The live data did not load, so no update
+  time can be shown"*. Before data: *"Live data: loading…"* (or *"Track record: loading…"* on a `ledger`-only screen).
+  Group `ledger`: *"Track record last recorded {when(time handed over by the Track record screen)}"*, or *"The track
+  record did not load, so no update time can be shown"* (section 6).
+  The `when()` text is **`PND.fmtDate(iso)`**, the same format and zone as every other time on the screen
+  (`dd MMM yyyy, h:mm AM {tzLabel}`), with the UTC time `yyyy-MM-dd HH:mm UTC` as its tooltip / accessibility value
+  (changelog C9). One screen shows one zone.
+- **"Data sources: GDACS, USGS, …"** disclosure (names only, **no count**: one organisation can supply two
+  datasets, so a count never matched the names; changelog C10). One row per source in the page's groups: name (link), status
   ("answered" in green or "not answering" in amber, plus " · newest record {when(scan.dataFreshness)}") for the eight
   feed providers, "used in the run of {when}" for model sources, and the "adds" sentence. Then *"What each source can
   and cannot see: Our sources · How it works"*. The source list and wording are in `trust.js` `SOURCES`:
@@ -842,9 +1058,11 @@ prediction or risk level).
 | place | OpenStreetMap Nominatim |
 | ledger | The live feed, as recorded; NASA POWER; Open-Meteo Previous Runs API |
 
-Page groups: most pages use `feed models`. Home, My places and Regions use `feed models place`. Track record uses
-`ledger` and places the note after the hero paragraph. Home places it directly under the "Use my location" row
-(`data-trust-after=".hero .checkalt"`), above the place result.
+Page groups: most pages use `feed models` (verification detail included). Home, My places and Regions use `feed
+models place`. Track record uses `ledger` and places the note after the hero paragraph. Home places it directly under
+the "Use my location" row, above the place result. The note is part of each page's HTML from the first paint
+(`tools/trust-markup.js` writes it from `trust.js noteHtml(groups)`), so it never pushes the page down; `trust.js`
+only fills in the "when" line and the source rows. Native: lay the note out with the screen, never insert it after load.
 
 ### 15.2 Footer agencies (every screen, on native the More screen and the bottom of long screens)
 **"This is an experimental model, not an official warning service."** *For real alerts and what to do in an emergency, follow your national meteorological or disaster agency:*
@@ -904,15 +1122,18 @@ apps should implement:
 ## 17. Timezone setting
 
 Implemented in `PND.timezone`, `PND.timezoneOptions` and `PND.setTimezone` (`portal.js`).
-- Default: **Asia/Kolkata (IST)**, even for users outside India. This is the site's behaviour. On native, default to
-  IST for parity, or ask the product owner whether to default to the device zone.
+- Default (changelog C9): the stored choice (`pnd_timezone`), else **the device's own zone**
+  (`Intl.DateTimeFormat().resolvedOptions().timeZone`), else Asia/Kolkata when the platform gives none. Native:
+  `TimeZone.current.identifier` / `ZoneId.systemDefault().id`, falling back to Asia/Kolkata. A zone without a short
+  label shows its IANA id (for example "Asia/Kathmandu"). **[vectors: portal.timezoneDefault]**
 - Picker: the current zone first, then Asia/Kolkata (labelled "IST · India"), UTC, America/New_York,
   America/Los_Angeles, Europe/London, Europe/Paris, Asia/Dubai, Asia/Singapore, Asia/Tokyo, Australia/Sydney, then
   every IANA zone. Stored in `pnd_timezone`. Changing it re-renders every screen (the web reloads the page).
 - Zone labels shown after times (`tzLabel`): Asia/Kolkata IST, UTC UTC, America/New_York ET, America/Los_Angeles PT,
   Europe/London UK, Asia/Dubai GST, Asia/Singapore SGT, Asia/Tokyo JST, Australia/Sydney Sydney. Any other zone shows
   the raw IANA id (for example "Europe/Paris"). The formats are in logic.md §6.
-- The trust note's `when()` uses the platform short zone name instead (for example "GMT+5:30" or "IST", depending on platform data).
+- The trust note formats with the same `fmtDate` and `tzLabel` as the rest of the screen (one zone per screen). Do
+  not use the platform's short zone name ("GMT+5:30").
 
 ## 18. Screens on the website not required for parity
 
