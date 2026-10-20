@@ -33,7 +33,9 @@
   /* Where the real warnings come from, for the places this site covers most:
      India, the United States (where two of its providers publish only), and
      everywhere through GDACS. Everyone else is pointed at their own national
-     service through the WMO's list of members rather than at a guess. */
+     service through the WMO's list of members rather than at a guess. The WMO
+     is named only in the link's title: it is a directory, not a data source,
+     and no page may read as if it were one (test/sources.test.js). */
   var OFFICIAL = [
     { region: 'India', agencies: [
       { name: 'IMD', full: 'India Meteorological Department', url: 'https://mausam.imd.gov.in/' },
@@ -274,7 +276,7 @@
             esc(a.url.replace(/^https:\/\//, '').replace(/\/$/, '')) + '</small>';
         }).join(', ') + '</li>';
       }).join('') +
-      '<li><span>Elsewhere:</span> <a href="' + esc(WMO.url) + '" target="_blank" rel="noopener">your country’s weather service</a>, from the ' + esc(WMO.full) + '.</li>' +
+      '<li><span>Elsewhere:</span> <a href="' + esc(WMO.url) + '" target="_blank" rel="noopener" title="' + esc(WMO.full) + '">find your country’s national weather service</a>.</li>' +
       '</ul></div>';
   }
 
