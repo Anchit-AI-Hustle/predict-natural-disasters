@@ -22,7 +22,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    testOptions { unitTests { isIncludeAndroidResources = true } }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { it.maxHeapSize = "3g"; it.jvmArgs("-Xss8m") }
+        }
+    }
 }
 
 dependencies {
@@ -30,6 +35,8 @@ dependencies {
     implementation(compose)
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.3")
+    // play-services pulls an old fragment; the activity-result API needs 1.3+.
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
