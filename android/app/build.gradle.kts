@@ -43,6 +43,8 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    // Runs the website's own grading scripts (verification-model.js and friends) on device and in JVM tests.
+    implementation("org.mozilla:rhino:1.7.15")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.13")
