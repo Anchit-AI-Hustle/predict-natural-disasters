@@ -654,7 +654,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
   /* A skip link, and every part of the page inside a named landmark. Each
      page's hero and the enrichment section sat outside <main>, unnamed, and
      no page had a way past the header and its links. */
-  function landmarks(){const main=document.querySelector('main');if(!main)return;if(!main.id)main.id='main';if(!main.hasAttribute('tabindex'))main.setAttribute('tabindex','-1');
+  function landmarks(){const main=document.querySelector('main');if(!main)return;if(!main.id)main.id=document.getElementById('main')?'main-content':'main';if(!main.hasAttribute('tabindex'))main.setAttribute('tabindex','-1');
     if(!document.querySelector('a.skip'))document.body.insertAdjacentHTML('afterbegin','<a class="skip" href="#'+main.id+'">Skip to main content</a>');
     document.querySelectorAll('body > section').forEach(sec=>{if(sec.hasAttribute('aria-label')||sec.hasAttribute('aria-labelledby'))return;const h=sec.querySelector('h1,h2');
       if(h){if(!h.id)h.id='h-'+Math.random().toString(36).slice(2,8);sec.setAttribute('aria-labelledby',h.id)}else sec.setAttribute('aria-label',sec.id==='eventEnrichment'?'More about this':'Summary')});}
