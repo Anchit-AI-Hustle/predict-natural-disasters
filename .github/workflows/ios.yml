@@ -37,6 +37,11 @@ jobs:
     name: App on iPhone and iPad simulators
     runs-on: macos-15
     timeout-minutes: 75
+    env:
+      # Ad hoc signing, which a simulator accepts with no team. Turning
+      # signing off altogether (CODE_SIGNING_ALLOWED=NO) left the UI-test
+      # runner without a bundle ID, and the simulator refused to install it.
+      SIM_SIGNING: CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=
     steps:
       - uses: actions/checkout@v5
 
@@ -107,7 +112,7 @@ jobs:
           xcodebuild build-for-testing \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.phone }}" -destination "id=${{ steps.sims.outputs.pad }}" \
-            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tail -n 200
+            -derivedDataPath "$RUNNER_TEMP/dd" $SIM_SIGNING | tail -n 200
 
       - name: UI tests on iPhone (${{ steps.sims.outputs.phone_name }})
         working-directory: ios
@@ -116,7 +121,7 @@ jobs:
           xcodebuild test-without-building \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.phone }}" -derivedDataPath "$RUNNER_TEMP/dd" \
-            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" CODE_SIGNING_ALLOWED=NO | tail -n 200
+            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" $SIM_SIGNING | tail -n 200
 
       - name: UI tests on iPad (${{ steps.sims.outputs.pad_name }})
         if: always()
@@ -126,7 +131,7 @@ jobs:
           xcodebuild test-without-building \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.pad }}" -derivedDataPath "$RUNNER_TEMP/dd" \
-            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" CODE_SIGNING_ALLOWED=NO | tail -n 200
+            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" $SIM_SIGNING | tail -n 200
 
       - name: Export screenshots
         if: always()
