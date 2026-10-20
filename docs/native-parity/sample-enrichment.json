@@ -1,0 +1,367 @@
+{
+  "request": "/api/event-enrichment?title=Flood+in+Bagmati+Province%2C+Nepal&country=Nepal&region=Bagmati+Province&type=Flood&updated=2026-10-20T11%3A24%3A19.511Z&forecast=false&lat=27.7&lon=85.3",
+  "response": {
+    "generatedAt": "2026-10-20T11:24:19.655Z",
+    "refreshSeconds": 300,
+    "query": "Flood in Bagmati Province, Nepal Flood Nepal Bagmati Province",
+    "event": {
+      "title": "Flood in Bagmati Province, Nepal",
+      "type": "Flood",
+      "country": "Nepal",
+      "region": "Bagmati Province",
+      "updated": "2026-10-20T11:24:19.511Z",
+      "lat": 27.7,
+      "lon": 85.3,
+      "forecast": false
+    },
+    "when": {
+      "reportedAt": "2026-10-20T11:24:19.511Z",
+      "label": "Latest timestamp supplied by the reporting source",
+      "note": "The time shown is when the source last updated its report. That can be later than when the event began."
+    },
+    "where": {
+      "originArea": "Kathmandu, Bagmati Province, Nepal",
+      "resolvedPlace": {
+        "country": "Nepal",
+        "countryCode": "NP",
+        "state": "Bagmati Province",
+        "city": "Kathmandu",
+        "locality": "Kathmandu",
+        "continent": "Asia",
+        "administrativeChain": [
+          "Nepal",
+          "Bagmati Province",
+          "Kathmandu District"
+        ],
+        "resolvedBy": "BigDataCloud reverse geocoding"
+      },
+      "coordinates": {
+        "lat": 27.7,
+        "lon": 85.3
+      },
+      "affectedRegions": [
+        "Bagmati Province",
+        "Kathmandu",
+        "Nepal"
+      ],
+      "affectedAreaText": "Bagmati Province · Kathmandu · Nepal",
+      "mapLinks": {
+        "openStreetMap": "https://www.openstreetmap.org/?mlat=27.7&mlon=85.3#map=9/27.7/85.3",
+        "googleMaps": "https://www.google.com/maps/search/?api=1&query=27.7,85.3",
+        "windy": "https://www.windy.com/?27.7,85.3,7"
+      }
+    },
+    "distressGroups": [
+      "People in low-lying, riverbank and floodplain communities",
+      "Households cut off by damaged roads, bridges or washed-out tracks",
+      "Children, older adults, pregnant women and people with disabilities",
+      "People in informal settlements and single-storey housing",
+      "Farming households whose crops, seed stores and livestock are submerged",
+      "People dependent on wells or piped water now contaminated"
+    ],
+    "immediateNeeds": [
+      "Evacuation, boat rescue and temporary shelter",
+      "Clean drinking water, water purification and sanitation",
+      "Dry food, cooking fuel, essential medicines and hygiene kits",
+      "Restoration of road access, power and mobile communications",
+      "Cash assistance and livelihood/livestock support"
+    ],
+    "secondaryRisks": [
+      "Water-borne disease outbreaks from contaminated supplies",
+      "Secondary landslides on saturated slopes",
+      "Bridge, embankment and road collapse days after peak water",
+      "Prolonged displacement and loss of the current harvest"
+    ],
+    "safetyActions": [
+      "Move to higher ground before water rises; never drive or walk through moving floodwater",
+      "Switch off electricity at the mains before water enters a building",
+      "Boil or treat all drinking water until authorities confirm the supply is safe",
+      "Follow the evacuation routes and shelter list published by the local authority"
+    ],
+    "news": [
+      {
+        "title": "Floods displace thousands in Bagmati province",
+        "link": "https://www.reuters.com/world/asia-pacific/nepal-floods-2026",
+        "outlet": "Reuters",
+        "publishedAt": "Sun, 14 Sep 2026 03:00:00 GMT",
+        "summary": "Rescue teams reached cut-off villages overnight.",
+        "via": "Google News",
+        "established": true
+      },
+      {
+        "title": "Nepal army deploys helicopters for flood rescue",
+        "link": "https://kathmandupost.com/national/2026/09/14/flood-rescue",
+        "outlet": "The Kathmandu Post",
+        "publishedAt": "Sun, 14 Sep 2026 02:10:00 GMT",
+        "summary": "Helicopter sorties resumed at first light.",
+        "via": "Google News",
+        "established": true
+      },
+      {
+        "title": "Aid agencies appeal for flood relief funds",
+        "link": "https://www.aljazeera.com/news/2026/9/14/flood-appeal",
+        "outlet": "Al Jazeera",
+        "publishedAt": "Sun, 14 Sep 2026 01:00:00 GMT",
+        "summary": "An emergency appeal was launched.",
+        "via": "Google News",
+        "established": true
+      }
+    ],
+    "situationReports": [
+      {
+        "title": "Nepal: Floods and Landslides Situation Report No. 4",
+        "link": "https://reliefweb.int/report/nepal/sitrep-4",
+        "outlet": "OCHA",
+        "publishedAt": "Sat, 13 Sep 2026 12:00:00 GMT",
+        "summary": "Humanitarian partners scaled up water and sanitation support.",
+        "via": "ReliefWeb (UN OCHA)",
+        "established": true
+      },
+      {
+        "title": "IFRC Emergency Appeal: Nepal Floods",
+        "link": "https://reliefweb.int/report/nepal/ifrc-appeal",
+        "outlet": "IFRC",
+        "publishedAt": "Fri, 12 Sep 2026 09:00:00 GMT",
+        "summary": "The appeal seeks CHF 5 million.",
+        "via": "ReliefWeb (UN OCHA)",
+        "established": true
+      }
+    ],
+    "videos": [
+      {
+        "id": "AAAAAAAAAAA",
+        "title": "Nepal floods: rescue operations continue",
+        "url": "https://www.youtube.com/watch?v=AAAAAAAAAAA",
+        "thumbnail": "https://i.ytimg.com/vi/AAAAAAAAAAA/hqdefault.jpg"
+      },
+      {
+        "id": "BBBBBBBBBBB",
+        "title": "Aerial footage of flooded districts",
+        "url": "https://www.youtube.com/watch?v=BBBBBBBBBBB",
+        "thumbnail": "https://i.ytimg.com/vi/BBBBBBBBBBB/hqdefault.jpg"
+      }
+    ],
+    "helplines": {
+      "country": "Nepal",
+      "matched": true,
+      "emergency": [
+        {
+          "label": "Police",
+          "phone": "100",
+          "note": ""
+        },
+        {
+          "label": "Fire brigade",
+          "phone": "101",
+          "note": ""
+        },
+        {
+          "label": "Ambulance",
+          "phone": "102",
+          "note": ""
+        },
+        {
+          "label": "National Emergency Operation Centre (NEOC)",
+          "phone": "1149",
+          "note": "Toll-free disaster hotline"
+        }
+      ],
+      "note": "Numbers shown are nationally published emergency numbers. Confirm on the linked official authority site before relying on them."
+    },
+    "authorities": [
+      {
+        "name": "National Disaster Risk Reduction and Management Authority",
+        "url": "https://bipad.gov.np/"
+      },
+      {
+        "name": "Department of Hydrology and Meteorology",
+        "url": "https://www.dhm.gov.np/"
+      },
+      {
+        "name": "Ministry of Home Affairs - Nepal",
+        "url": "https://www.moha.gov.np/"
+      }
+    ],
+    "supportGroups": [
+      {
+        "name": "Nepal Red Cross Society",
+        "url": "https://nrcs.org/"
+      }
+    ],
+    "reliefGroups": [
+      {
+        "name": "IFRC / Red Cross Red Crescent",
+        "kind": "Emergency relief network - 191 national societies",
+        "url": "https://www.ifrc.org/emergencies/all",
+        "donate": "https://www.ifrc.org/donate",
+        "contactUrl": "https://www.ifrc.org/contact",
+        "email": "secretariat@ifrc.org",
+        "phone": "+41 22 730 4222"
+      },
+      {
+        "name": "UNICEF",
+        "kind": "Children, family, water and sanitation emergency support",
+        "url": "https://www.unicef.org/emergencies",
+        "donate": "https://help.unicef.org/en/give-now",
+        "contactUrl": "https://www.unicef.org/contact-us"
+      },
+      {
+        "name": "UN World Food Programme",
+        "kind": "Emergency food assistance and humanitarian logistics",
+        "url": "https://www.wfp.org/emergencies",
+        "donate": "https://www.wfp.org/support-us",
+        "contactUrl": "https://www.wfp.org/contact"
+      },
+      {
+        "name": "UNHCR",
+        "kind": "Displacement, shelter and protection support",
+        "url": "https://www.unhcr.org/emergencies",
+        "donate": "https://donate.unhcr.org/",
+        "contactUrl": "https://www.unhcr.org/contact-us"
+      },
+      {
+        "name": "UN Crisis Relief / CERF",
+        "kind": "UN pooled humanitarian crisis funding",
+        "url": "https://crisisrelief.un.org/",
+        "donate": "https://crisisrelief.un.org/",
+        "contactUrl": "https://www.unocha.org/contact-us"
+      },
+      {
+        "name": "Médecins Sans Frontières (Doctors Without Borders)",
+        "kind": "Emergency medical response",
+        "url": "https://www.msf.org/",
+        "donate": "https://www.msf.org/donate",
+        "contactUrl": "https://www.msf.org/contact-us"
+      },
+      {
+        "name": "Direct Relief",
+        "kind": "Emergency medical supplies and disaster health logistics",
+        "url": "https://www.directrelief.org/emergency/",
+        "donate": "https://www.directrelief.org/emergency/",
+        "contactUrl": "https://www.directrelief.org/about/contact/"
+      },
+      {
+        "name": "GlobalGiving Disaster Response",
+        "kind": "Vetted local-organisation disaster funds",
+        "url": "https://www.globalgiving.org/disaster-recovery/",
+        "donate": "https://www.globalgiving.org/disaster-recovery/",
+        "contactUrl": "https://www.globalgiving.org/aboutus/contact/"
+      },
+      {
+        "name": "Save the Children",
+        "kind": "Child-focused emergency response",
+        "url": "https://www.savethechildren.net/what-we-do/emergencies",
+        "donate": "https://www.savethechildren.net/donate",
+        "contactUrl": "https://www.savethechildren.net/contact-us"
+      },
+      {
+        "name": "CARE International",
+        "kind": "Emergency relief, food security and women-led response",
+        "url": "https://www.care-international.org/",
+        "donate": "https://www.care-international.org/donate",
+        "contactUrl": "https://www.care-international.org/contact-us"
+      }
+    ],
+    "directories": [
+      {
+        "name": "ReliefWeb (UN OCHA)",
+        "kind": "Situation reports, maps and humanitarian updates",
+        "url": "https://reliefweb.int/"
+      },
+      {
+        "name": "GDACS",
+        "kind": "Global Disaster Alert and Coordination System",
+        "url": "https://www.gdacs.org/"
+      },
+      {
+        "name": "IFRC national society directory",
+        "kind": "Find the Red Cross / Red Crescent society for any country",
+        "url": "https://www.ifrc.org/national-societies-directory"
+      },
+      {
+        "name": "UN OCHA",
+        "kind": "UN humanitarian coordination",
+        "url": "https://www.unocha.org/"
+      },
+      {
+        "name": "WHO Emergencies",
+        "kind": "Health emergency guidance and response",
+        "url": "https://www.who.int/emergencies"
+      }
+    ],
+    "donationPolicy": "Donation links go to each organisation’s own official website. Before you give, check that the organisation has an appeal for this emergency.",
+    "searches": {
+      "googleNews": "https://news.google.com/search?q=Flood%20in%20Bagmati%20Province%2C%20Nepal%20Flood%20Nepal%20Bagmati%20Province",
+      "youtube": "https://www.youtube.com/results?search_query=Flood%20in%20Bagmati%20Province%2C%20Nepal%20Flood%20Nepal%20Bagmati%20Province%20disaster%20news%20report",
+      "reliefweb": "https://reliefweb.int/updates?search=Flood%20in%20Bagmati%20Province%2C%20Nepal%20Flood%20Nepal%20Bagmati%20Province",
+      "gdacs": "https://www.gdacs.org/",
+      "ocha": "https://www.unocha.org/",
+      "ifrc": "https://www.ifrc.org/emergencies/all"
+    },
+    "sources": [
+      {
+        "name": "Google News",
+        "role": "Live press coverage aggregation",
+        "url": "https://news.google.com/",
+        "items": 3
+      },
+      {
+        "name": "Bing News",
+        "role": "Secondary press coverage aggregation",
+        "url": "https://www.bing.com/news",
+        "items": 2
+      },
+      {
+        "name": "ReliefWeb (UN OCHA)",
+        "role": "Official situation reports and humanitarian updates",
+        "url": "https://reliefweb.int/",
+        "items": 2
+      },
+      {
+        "name": "YouTube",
+        "role": "Video and field reporting search",
+        "url": "https://www.youtube.com/",
+        "items": 2,
+        "note": ""
+      },
+      {
+        "name": "BigDataCloud",
+        "role": "Reverse geocoding of the source coordinates",
+        "url": "https://www.bigdatacloud.com/",
+        "items": 1
+      },
+      {
+        "name": "Verified support directory",
+        "role": "National emergency numbers, authorities and relief organisations",
+        "url": "https://www.ifrc.org/national-societies-directory",
+        "items": 7
+      }
+    ],
+    "coverage": {
+      "refreshTarget": "Events are at most 90 seconds old when a page opens. News and help information is refreshed by a scheduled job",
+      "scope": "Every event in the live feed, worldwide",
+      "newsProviders": [
+        "Google News",
+        "Bing News",
+        "ReliefWeb (UN OCHA)"
+      ],
+      "videoProviders": [
+        "YouTube"
+      ],
+      "humanitarian": [
+        "IFRC",
+        "UNICEF",
+        "WFP",
+        "UNHCR",
+        "UN Crisis Relief",
+        "MSF",
+        "Direct Relief",
+        "Save the Children",
+        "CARE",
+        "ReliefWeb",
+        "OCHA"
+      ]
+    },
+    "disclaimer": "The groups, needs and safety steps listed are general guidance for this kind of disaster. They do not mean every group listed is confirmed to be affected by this event. We show only emergency numbers that a government has published; where we have none, we link to the national authority instead and never guess a number. News and videos come from other outlets, shown with their name and a link. Check with the official source before you act."
+  }
+}

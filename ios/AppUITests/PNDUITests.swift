@@ -1,0 +1,177 @@
+import XCTest
+import UIKit
+
+/// UI tests run in fixture mode (`-PNDFixtureMode`): every request is answered
+/// from the app bundle, so CI needs no network. Each test attaches
+/// screenshots that the workflow exports as PNGs.
+final class PNDUITests: XCTestCase {
+    override func setUp() {
+        continueAfterFailure = true
+    }
+
+    func launch(_ extra: [String] = []) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-PNDFixtureMode"] + extra
+        app.launch()
+        return app
+    }
+
+    var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
+    func shot(_ app: XCUIApplication, _ name: String) {
+        let a = XCTAttachment(screenshot: app.screenshot())
+        a.name = (isPad ? "iPad" : "iPhone") + "-" + name
+        a.lifetime = .keepAlways
+        add(a)
+    }
+
+    func waitFor(_ e: XCUIElement, _ timeout: TimeInterval = 20, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(e.waitForExistence(timeout: timeout), "missing: \(e)", file: file, line: line)
+    }
+
+    func el(_ app: XCUIApplication, _ id: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: id).firstMatch
+    }
+
+    /// Opens a section: the tab bar (or its More list) on iPhone, the sidebar on iPad.
+    func open(_ app: XCUIApplication, tab: String, title: String) {
+        if isPad {
+            let item = el(app, "sidebar-" + tab)
+            if !item.exists {
+                // Portrait iPad may hide the sidebar behind a button.
+                let toggle = app.navigationBars.buttons["Show Sidebar"]
+                if toggle.exists { toggle.tap() }
+            }
+            if item.waitForExistence(timeout: 5) { item.tap(); return }
+            let cell = app.staticTexts[title]
+            if cell.exists { cell.tap() }
+            return
+        }
+        let button = app.tabBars.buttons[title]
+        if button.exists { button.tap(); return }
+        app.tabBars.buttons["More"].tap()
+        let cell = app.tables.cells.staticTexts[title].firstMatch
+        if cell.waitForExistence(timeout: 5) { cell.tap() } else { app.staticTexts[title].firstMatch.tap() }
+    }
+
+    func testHomeShowsTrustNoteAndFigures() {
+        let app = launch()
+        waitFor(el(app, "trustNote"))
+        XCTAssertTrue(app.staticTexts["Experimental model, not an official warning."].exists)
+        waitFor(app.staticTexts["Is a place you care about at risk?"])
+        waitFor(el(app, "kpi-Live events"))
+        shot(app, "01-home")
+    }
+
+    func testEveryTabRendersFromFixtures() {
+        let app = launch()
+        waitFor(el(app, "trustNote"))
+        let tabs: [(String, String, String)] = [
+            ("alerts", "Alerts & events", "Current reports from official agencies. Open any alert to see its details and its source."),
+            ("forecasts", "Forecasts", "Natural disaster forecasts"),
+            ("places", "My places", "Your saved places, and the dangers reported near them."),
+            ("map", "Map", "Live disaster map"),
+            ("track", "Track record", "Track record")
+        ]
+        for (i, t) in tabs.enumerated() {
+            open(app, tab: t.0, title: t.1)
+            waitFor(app.staticTexts[t.2].firstMatch)
+            if t.0 != "track" { waitFor(el(app, "trustNote")) }
+            if t.0 == "track" { waitFor(el(app, "answerLead"), 60) }
+            shot(app, String(format: "%02d-", i + 2) + t.0)
+        }
+    }
+
+    func testDetailNavigationFromAlerts() {
+        let app = launch()
+        open(app, tab: "alerts", title: "Alerts & events")
+        let card = el(app, "alertCard")
+        waitFor(card)
+        card.tap()
+        waitFor(el(app, "trustNote"))
+        waitFor(app.staticTexts["OFFICIAL ALERT"].firstMatch)
+        waitFor(el(app, "shareButton"))
+        shot(app, "10-alert-from-list")
+    }
+
+    /// One screenshot per detail kind, opened as the site's own paths.
+    func testEveryDetailKind() {
+        let routes: [(String, String, String)] = [
+            ("event", "/disasters/usgs-us7000efgh", "LIVE EVENT"),
+            ("alert", "/alerts/gdacs-FL-1104999", "OFFICIAL ALERT"),
+            ("calamity", "/calamities/gdacs-FL-1104999", "CURRENT DISASTER"),
+            ("forecast", "/forecasts/OUT-gdacs-FL-1104999", "FORECAST DETAILS"),
+            ("region", "/regions/Nepal", "Disasters in Nepal"),
+            ("location", "/locations/Kathmandu?lat=27.7172&lon=85.324&level=City%20or%20town&country=Nepal&cc=NP", "Disasters near Kathmandu"),
+            ("hazard", "/hazards/Flood", "Flood events"),
+            ("history", "/history/mount-vesuvius-eruption", "Mount Vesuvius eruption"),
+            ("source", "/sources/USGS", "USGS"),
+            ("quiet", "/disasters/usgs-us7000ijkl", "LIVE EVENT"),
+            ("notfound", "/disasters/no-such-record", "Event not found")
+        ]
+        for r in routes {
+            let app = launch(["-PNDOpenRoute", r.1])
+            waitFor(app.staticTexts[r.2].firstMatch, 30)
+            if r.0 != "history" && r.0 != "notfound" { waitFor(el(app, "trustNote")) }
+            if r.0 == "quiet" { waitFor(el(app, "quietNote")) }
+            if r.0 != "notfound" { waitFor(el(app, "enrichment"), 30) }
+            shot(app, "20-detail-" + r.0)
+            app.terminate()
+        }
+    }
+
+    func testSearchAndSavePlace() {
+        let app = launch()
+        let field = app.textFields["Search city, area or address"]
+        waitFor(field)
+        field.tap()
+        field.typeText("Kathmandu")
+        el(app, "checkRisk").tap()
+        let candidate = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Kathmandu'")).firstMatch
+        waitFor(candidate)
+        candidate.tap()
+        waitFor(el(app, "placeResult"))
+        waitFor(el(app, "placeWhy"))
+        shot(app, "30-place-result")
+        el(app, "savePlace").tap()
+        waitFor(app.staticTexts["Saved. You can find it on the My places page."])
+        open(app, tab: "places", title: "My places")
+        waitFor(el(app, "savedPlace"))
+        shot(app, "31-my-places-saved")
+    }
+
+    func testOfflineShowsTheSiteWording() {
+        let app = launch(["-PNDFixtureFail"])
+        waitFor(el(app, "feedError"))
+        XCTAssertTrue(app.staticTexts["Live data unavailable. Trying again automatically."].firstMatch.exists)
+        waitFor(app.staticTexts["The live data did not load, so no update time can be shown"].firstMatch)
+        shot(app, "40-offline-home")
+        open(app, tab: "alerts", title: "Alerts & events")
+        waitFor(el(app, "feedError"))
+        shot(app, "41-offline-alerts")
+    }
+
+    func testMoreScreenAndSettings() {
+        let app = launch()
+        let more = el(app, "moreButton")
+        waitFor(more)
+        more.tap()
+        waitFor(el(app, "footerAgencies"))
+        shot(app, "50-more")
+        app.staticTexts["Settings and time zone"].firstMatch.tap()
+        waitFor(el(app, "settingsScreen"))
+        shot(app, "51-settings")
+    }
+
+    func testAccessibilityExtraLargeText() {
+        let app = launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"])
+        waitFor(el(app, "trustNote"))
+        shot(app, "60-home-axl")
+        open(app, tab: "alerts", title: "Alerts & events")
+        waitFor(el(app, "alertCard"))
+        shot(app, "61-alerts-axl")
+        let app2 = launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL", "-PNDOpenRoute", "/alerts/gdacs-FL-1104999"])
+        waitFor(app2.staticTexts["OFFICIAL ALERT"].firstMatch, 30)
+        shot(app2, "62-alert-detail-axl")
+    }
+}

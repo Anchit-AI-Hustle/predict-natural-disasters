@@ -1,0 +1,117 @@
+name: PredictNaturalDisasters
+options:
+  bundleIdPrefix: com.anchittandon
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    # Swift 5 language mode. Xcode accepts only 4, 4.2, 5 or 6 here; "5.10"
+    # is not a valid value, so "5.0" selects the Swift 5 mode of the Swift 6
+    # compiler, which avoids the strict-concurrency errors of Swift 6 mode.
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEAD_CODE_STRIPPING: YES
+packages:
+  PNDCore:
+    path: PNDCore
+targets:
+  PredictNaturalDisasters:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: App/Sources
+      - path: App/Assets.xcassets
+      - path: PNDCore/Tests/PNDCoreTests/Fixtures
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: PNDCore
+    postCompileScripts:
+      - name: Copy the site's grading code and data
+        script: '"${SRCROOT}/scripts/copy-web-assets.sh"'
+        inputFiles:
+          - $(SRCROOT)/../hazard-model.js
+          - $(SRCROOT)/../observed-model.js
+          - $(SRCROOT)/../verification-model.js
+          - $(SRCROOT)/../verdicts.js
+          - $(SRCROOT)/../history-data.js
+          - $(SRCROOT)/../world-countries.json
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Web/hazard-model.js
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Web/observed-model.js
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Web/verification-model.js
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Web/verdicts.js
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Web/history-data.js
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Web/world-countries.json
+    entitlements:
+      path: App/PredictNaturalDisasters.entitlements
+      properties:
+        com.apple.developer.associated-domains:
+          - applinks:predict-natural-disasters.anchit-tandon.com
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Predict Natural Disasters
+        CFBundleName: Predict Natural Disasters
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIUserInterfaceStyle: Dark
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.anchittandon.pnd.refresh
+        NSLocationWhenInUseUsageDescription: "Your position is used on this device to check for dangers near you and to work out which country you are in. It is never sent anywhere."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anchittandon.pnd
+        PRODUCT_NAME: PredictNaturalDisasters
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+  PredictNaturalDisastersUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: AppUITests
+    dependencies:
+      - target: PredictNaturalDisasters
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anchittandon.pnd.uitests
+        TEST_TARGET_NAME: PredictNaturalDisasters
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  PredictNaturalDisasters:
+    build:
+      targets:
+        PredictNaturalDisasters: all
+        PredictNaturalDisastersUITests: [test]
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - name: PredictNaturalDisastersUITests
+    run:
+      config: Debug
