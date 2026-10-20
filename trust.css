@@ -1,0 +1,40 @@
+/* The trust note (trust.js), styled before the page draws so the note is in
+   place from the first paint. Injected by the script after DOMContentLoaded,
+   these rules arrived after the page had been laid out and the note moved
+   everything below it.
+
+   The update line's height is reserved for the text it will hold, so the
+   moment the data arrives does not move the page either. On a phone the note
+   is kept to about a fifth of the first screen: it pushed the first alert
+   down to the bottom bar at 360 px. */
+.trust{margin:0 0 12px;padding:8px 12px;border:1px solid #2b624e;border-left:3px solid #ffbf2f;border-radius:10px;background:#071f18;color:#d9ebe3;font-size:13px;line-height:1.4}
+main:not([class])>.trust{margin:12px 16px}
+.trust p{margin:0}
+.trust-warn{display:flex;gap:8px;align-items:flex-start}
+.trust-ico{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1.5px solid #ffbf2f;color:#ffbf2f;font:700 12px/15px Georgia,serif;text-align:center;font-style:italic;margin-top:1px;box-sizing:border-box}
+.trust a{color:#6fe3ff}
+.trust a:visited{color:#d7b8ff}
+.trust-when{margin-top:3px!important;color:#9fbcb0;font-size:12px;padding-left:26px;min-height:1.4em}
+.trust-src{margin-top:2px;padding-left:26px;font-size:12px;color:#9fbcb0}
+.trust-src summary{cursor:pointer;color:#8ff0ca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trust-src[open] summary{white-space:normal}
+.trust-src ul{margin:6px 0;padding-left:18px}
+.trust-src li{margin:0 0 5px}
+.trust-adds{color:#c4d8cf}
+.trust-st{color:#9fbcb0}
+.trust-ok{color:#25e29c}
+.trust-down{color:#ffbf2f}
+.trust-more{margin-top:4px!important}
+.trust-foot{margin-top:10px;color:#c4d8cf;font-size:12px;max-width:90ch}
+.trust-foot p{margin:0 0 4px}
+.trust-foot ul{margin:0;padding-left:18px}
+.trust-foot li{margin:2px 0}
+.trust-foot a{color:#8ff0ca}
+.trust-foot small{color:#9fbcb0;margin-left:2px}
+.trust-foot li>span{color:#e6f2ec;font-weight:600}
+@media (max-width:600px){
+  .trust{font-size:12px;padding:7px 10px;line-height:1.35}
+  .trust-when,.trust-src{padding-left:26px}
+  .trust-when{font-size:11.5px;min-height:2.7em}
+  .trust-src{font-size:11.5px}
+}
