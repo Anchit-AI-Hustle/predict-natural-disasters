@@ -42,7 +42,15 @@ final class PNDUITests: XCTestCase {
                   file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
         _ = e.waitForExistence(timeout: 5)
         var n = 0
-        while !(e.exists && (!hittable || e.isHittable)) && n < swipes {
+        // isHittable is already true when one edge of a row peeks in at the
+        // bottom, so a tap target must sit well inside the window.
+        func onScreen() -> Bool {
+            guard e.isHittable else { return false }
+            let w = app.windows.firstMatch.frame
+            let f = e.frame
+            return f.minY >= w.minY + 60 && min(f.maxY, f.minY + 120) <= w.maxY - 100
+        }
+        while !(e.exists && (!hittable || onScreen())) && n < swipes {
             let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.3 : 0.78))
             let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.78 : 0.3))
             start.press(forDuration: 0.05, thenDragTo: end)
