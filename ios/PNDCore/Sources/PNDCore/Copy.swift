@@ -188,9 +188,37 @@ public enum Copy {
                       limits: "Most official weather warnings come from each country\u{2019}s own weather service.", url: "https://wmo.int/")
     ]
 
+    /// Whether a name has one of the static profiles (case-insensitive).
+    public static func hasSourceProfile(_ raw: String) -> Bool {
+        sourceProfiles.contains { $0.name.lowercased() == raw.lowercased() }
+    }
+
+    /// Current reports from a source: `source` contains the profile name
+    /// (with "nasa " dropped), or equals the raw name.
+    public static func sourceReports(_ raw: String, in list: [Record]) -> [Record] {
+        let p = sourceProfile(raw)
+        let needle = p.name.lowercased().replacingOccurrences(of: "nasa ", with: "")
+        return list.filter { $0.source.lowercased().contains(needle) || $0.source.lowercased() == raw.lowercased() }
+    }
+
+    /// Source detail STATUS (changelog C22).
+    public static func sourceStatus(_ raw: String, meta: JSONValue?, reports: Int) -> String {
+        let p = sourceProfile(raw)
+        let key = p.name == "NASA EONET" ? "eonet" : p.name.lowercased()
+        if let sm = meta?["sources"]?[key] { return (sm["ok"]?.isTruthy ?? false) ? "Working" : "Not answering" }
+        return reports > 0 ? "Named in current reports" : "Not read live"
+    }
+
+    /// A name with no profile and no current report is not a source.
+    public static func sourceNotFound(_ raw: String, reports: Int) -> Bool { !hasSourceProfile(raw) && reports == 0 }
+
+    public static func sourceNotFoundText(_ raw: String) -> String {
+        "None of our current reports names a source called \u{201C}" + raw + "\u{201D}."
+    }
+
     public static func sourceProfile(_ raw: String) -> SourceProfile {
         sourceProfiles.first { $0.name.lowercased() == raw.lowercased() } ??
-            SourceProfile(name: raw, cls: "Other source we read or mention", coverage: "Depends on the source.", use: "Used where it has reports.",
+            SourceProfile(name: raw, cls: "Source named in our current reports", coverage: "Depends on the source.", use: "Used where it has reports.",
                           fresh: "Varies by source.", limits: "Check the source itself for what it covers and its limits.", url: "")
     }
 

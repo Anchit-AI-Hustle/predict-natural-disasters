@@ -201,7 +201,8 @@ final class RouteTests: XCTestCase {
     func testCollectionRules() {
         let feed = Feed(json: Fixtures.json("sample-events.json"))
         let ow = feed.live.filter { CollectionView.officialWarnings.keep($0) }
-        XCTAssertTrue(ow.allSatisfy { $0.isOfficial && ($0.isRedOrOrange || $0.source == "USGS") })
+        XCTAssertTrue(ow.allSatisfy { Format.isOfficialWarning($0) })
+        XCTAssertFalse(ow.contains { $0.source == "USGS" && $0.evidenceState == "observed" }, "earthquakes that already happened are not warnings")
         XCTAssertTrue(CollectionView.fixedHazardMatches(Record(["type": "Tropical Cyclone"]), "Tropical Cyclone"))
         XCTAssertTrue(CollectionView.fixedHazardMatches(Record(["type": "Flood"]), "Floods"))
         let kept = feed.live.filter { CollectionView.events.keep($0) }
@@ -213,16 +214,17 @@ final class RouteTests: XCTestCase {
 
 final class TrustTests: XCTestCase {
     func testNoteText() {
-        XCTAssertEqual(Trust.noteText, "Experimental model, not an official warning. For real alerts, follow your national weather or disaster agency: IMD and NDMA in India, NWS and USGS in the US, GDACS worldwide.")
-        XCTAssertEqual(Trust.summary([.feed, .models]), "Data sources (11): GDACS, USGS, EMSC, NASA EONET, NOAA NHC, NOAA NWS, ReliefWeb, USGS Volcanoes, Open-Meteo, NASA POWER")
+        XCTAssertEqual(Trust.noteText, "Experimental model, not an official warning. For real alerts, follow your national agency: IMD and NDMA in India, NWS and USGS in the US, GDACS worldwide.")
+        XCTAssertEqual(Trust.summary([.feed, .models]), "Data sources: GDACS, USGS, EMSC, NASA EONET, NOAA NHC, NOAA NWS, ReliefWeb, USGS Volcanoes, Open-Meteo, NASA POWER")
         XCTAssertEqual(Trust.wmo.url, "https://wmo.int/about/governance/wmo-members")
     }
 
     func testWhenLineUsesDataTime() {
         let feed = Feed(json: Fixtures.json("sample-events.json"))
         let line = Trust.updatedLine(groups: [.feed, .models], feed: .loaded(generatedAt: feed.generatedAt, meta: feed.meta), tz: "Asia/Kolkata")
-        XCTAssertTrue(line.hasPrefix("Live data fetched from the agencies 20 Oct 2026, 4:54 PM"), line)
-        XCTAssertTrue(line.contains("weather models last run 20 Oct 2026, 3:07 PM"), line)
+        XCTAssertTrue(line.hasPrefix("Live data from the agencies 20 Oct 2026, 4:54 PM IST"), line)
+        XCTAssertTrue(line.contains("weather models run 20 Oct 2026, 3:07 PM IST"), line)
+        XCTAssertFalse(line.contains("GMT"), "one zone per screen, never the platform's short name: " + line)
         XCTAssertEqual(Trust.updatedLine(groups: [.feed], feed: .failed), "The live data did not load, so no update time can be shown")
         XCTAssertEqual(Trust.updatedLine(groups: [.ledger], feed: .loading, ledgerTimes: [], ledgerFailed: true), "The track record did not load, so no update time can be shown")
         let st = Trust.status(Trust.sources[.feed]![0], meta: feed.meta, tz: "UTC")
@@ -237,7 +239,7 @@ final class ScreenTests: XCTestCase {
     func testHomeKPIsAndStrip() {
         let k = Screens.homeKPIs(feed.live)
         XCTAssertEqual(k.liveEvents, feed.live.filter { !$0.forecast }.count)
-        XCTAssertEqual(k.warnings, feed.live.filter { $0.isOfficial && $0.isRedOrOrange }.count)
+        XCTAssertEqual(k.warnings, Format.officialWarnings(feed.live).count)
         XCTAssertFalse(k.forecastSub.isEmpty)
         let strip = Screens.hazardStrip(feed.live)
         XCTAssertTrue(strip.allSatisfy { $0.count > 0 })

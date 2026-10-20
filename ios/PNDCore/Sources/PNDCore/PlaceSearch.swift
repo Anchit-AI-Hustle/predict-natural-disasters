@@ -87,4 +87,19 @@ public enum PlaceSearch {
     public static let failedPlaces = "Place search is not working right now. You can type the latitude and longitude instead."
     public static func foundMany(_ n: Int) -> String { "We found \(n) places with that name. Choose one." }
     public static let chooserHeading = "Which place do you mean?"
+
+    /// `chosenAs`: the name, latitude and longitude the search filled in.
+    public static func chosenAs(name: String, lat: String, lon: String) -> String { [name, lat, lon].joined(separator: "|") }
+
+    /// Whether an edit forgets the country a search found (changelog C23):
+    /// only when one was found and the fields no longer hold what the search
+    /// filled in. A change event whose values still equal them (the one fired
+    /// after pressing Enter) keeps it.
+    public static func editForgetsCountry(chosenAs: String, now: String, hasCountry: Bool) -> Bool {
+        if !hasCountry { return false }
+        if !chosenAs.isEmpty && now == chosenAs { return false }
+        return true
+    }
+
+    public static let countryForgotten = "You changed the place, so we no longer know its country. Search for it by name again to record the country."
 }

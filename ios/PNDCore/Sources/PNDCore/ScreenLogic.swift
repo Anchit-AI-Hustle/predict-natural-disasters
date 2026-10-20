@@ -3,7 +3,7 @@ import Foundation
 /// The per-screen computations, kept here so they run and are tested on any
 /// platform. The SwiftUI views only lay these out.
 public enum Screens {
-    public static func isHighAlert(_ e: Record) -> Bool { ["Red", "Orange", "High"].contains(e.alert) }
+    public static func isHighAlert(_ e: Record) -> Bool { Format.isHighAlert(e) }
 
     // MARK: Home (features.md section 1.3)
 
@@ -14,32 +14,36 @@ public enum Screens {
         public let countries: Int
     }
 
+    /// The tiles, after the map's hazard filter (`Home.render`).
     public static func homeKPIs(_ live: [Record], hazardFilter: String = "") -> HomeKPIs {
-        let reports = live.filter { !$0.forecast && (hazardFilter.isEmpty || $0.type.lowercased().contains(hazardFilter.lowercased())) }
-        let serious = reports.filter { [.extreme, .severe].contains(RiskScale.level(of: $0)) }.count
-        let minor = reports.filter { $0.severity == "Informational" }.count
-        let liveSub = !hazardFilter.isEmpty ? "Matching the hazard you chose"
-            : (serious > 0 || minor > 0 ? "\(serious) serious \u{00B7} \(minor) minor" : "From all our sources")
-        let warnings = live.filter { $0.isOfficial && $0.isRedOrOrange }.count
-        let open = live.filter { $0.forecast && !$0.windowClosed }
-        let byLevel = RiskLevel.filterOptions.compactMap { l -> String? in
-            let n = open.filter { RiskScale.matches($0, l.rawValue) }.count
-            return n > 0 ? "\(n) \(l.label)" : nil
-        }
-        return HomeKPIs(liveEvents: reports.count, liveSub: liveSub, warnings: warnings, openForecasts: open.count,
-                        forecastSub: byLevel.isEmpty ? "Recorded for grading" : byLevel.joined(separator: " \u{00B7} "),
-                        countries: Format.countryCount(reports))
+        let r = Home.render(live, hazardFilter: hazardFilter, sort: "newest")
+        return HomeKPIs(liveEvents: r.kEvents, liveSub: r.kEventsNote, warnings: r.kWarnings, openForecasts: r.kForecasts,
+                        forecastSub: r.kForecastsNote, countries: r.kCountries)
     }
 
-    public struct HazardTile: Equatable, Sendable { public let type: String; public let count: Int; public let observedOnly: Bool }
+    public struct HazardTile: Equatable, Sendable {
+        public let type: String
+        public let count: Int
+        public let observedOnly: Bool
+        public var icon: String { Home.icons[type] ?? "\u{25C6}" }
+        /// "{n} reported", plus " · observed only" for a hazard no agency forecasts.
+        public var text: String { "\(count) reported" + (observedOnly ? " \u{00B7} observed only" : "") }
+        public var link: String { "/hazards/" + JS.encodeURIComponent(type) }
+    }
 
-    /// "Live events by type": hidden when zero; Earthquake is observed only.
-    public static func hazardStrip(_ live: [Record]) -> [HazardTile] {
-        Copy.homeHazards.compactMap { t in
-            let stem = Hazards.stem(t)
-            let n = live.filter { $0.type.lowercased().contains(stem) }.count
-            return n > 0 ? HazardTile(type: t, count: n, observedOnly: !Hazards.hazardOf(t).forecastable) : nil
+    /// "Live events by type" (changelog C13): reports only, grouped by
+    /// `hazardKey`, by count then name, every reported hazard shown.
+    public static func hazardStrip(_ list: [Record]) -> [HazardTile] {
+        var counts: [String: Int] = [:]
+        for e in list where !e.forecast {
+            let k = Format.hazardKey(e.type)
+            if !k.isEmpty { counts[k, default: 0] += 1 }
         }
+        let keys = counts.keys.sorted { a, b in
+            if counts[a]! != counts[b]! { return counts[a]! > counts[b]! }
+            return JS.localeCompare(a, b) < 0
+        }
+        return keys.map { HazardTile(type: $0, count: counts[$0]!, observedOnly: !Hazards.hazardOf($0).forecastable) }
     }
 
     // MARK: Regions (features.md section 8.1)
@@ -72,11 +76,36 @@ public enum Screens {
                 "\(t) type" + (t == 1 ? "" : "s") + " of hazard \u{00B7} latest " + Format.age(g.updated, now: now))
     }
 
-    /// Region detail match: World matches all; otherwise country, region,
-    /// title and details joined contain the name.
+    /// Region detail (`region-detail.html matches()`, changelog C1): the
+    /// region name, made canonical when it is a continent, and its match.
+    /// World matches all; a continent is the countries on it; anything else
+    /// is a text match on country, region, title and details.
+    public static func regionMatcher(_ name: String) -> (region: String, matches: (Record) -> Bool) {
+        let continent = Continents.continentNamed(name)
+        let region = continent.isEmpty ? name : continent
+        return (region, { e in
+            if region == "World" { return true }
+            if !continent.isEmpty { return Continents.onContinent(e, continent) }
+            return [e.country, e.region, e.title, e.details].joined(separator: " ").lowercased().contains(region.lowercased())
+        })
+    }
+
     public static func regionMatches(_ e: Record, _ region: String) -> Bool {
         if region.isEmpty || region.lowercased() == "world" { return true }
-        return [e.country, e.region, e.title, e.details].joined(separator: " ").lowercased().contains(region.lowercased())
+        return regionMatcher(region).matches(e)
+    }
+
+    /// Reports with no continent (at sea, or naming no country).
+    public static func atSea(_ live: [Record]) -> Int { Format.observed(live).filter { Continents.continentsOf($0).isEmpty }.count }
+
+    /// The region coverage line ("What we cover").
+    public static func regionCoverage(region: String, continent: String, sourcesRatio: String, here: Int, atSea: Int) -> String {
+        var t = "Sources working now: \(sourcesRatio). Current events here: \(here)."
+        if !continent.isEmpty {
+            t += " \(continent) is counted from the countries each report names. \(atSea) report" + (atSea == 1 ? " is" : "s are") +
+                " at sea or name no country, so " + (atSea == 1 ? "it is" : "they are") + " on no continent\u{2019}s page."
+        }
+        return t
     }
 
     public static func typeCounts(_ list: [Record]) -> [(type: String, count: Int)] {
@@ -96,12 +125,87 @@ public enum Screens {
 
     // MARK: Hazard detail
 
-    public static let hazardOptions = ["Flood", "Earthquake", "Wildfire", "Volcano", "Tropical Cyclone", "Drought", "Landslide", "Severe Storm", "Tornado", "Extreme Cold"]
+    /// `fillHazards(present)` (changelog C21): every `HAZARDS` key, the key
+    /// of every type in the feed and of the requested type, A to Z. `current`
+    /// is the reader's choice, kept when still offered.
+    public static func hazardChoices(requested: String, present: [String], current: String? = nil) -> (options: [String], selected: String) {
+        var keys: [String] = []
+        for k in Hazards.list.map({ $0.key }) + present.map({ Format.hazardKey($0) }) + [Format.hazardKey(requested)] where !k.isEmpty && !keys.contains(k) {
+            keys.append(k)
+        }
+        keys = keys.sorted { JS.localeCompare($0, $1) < 0 }
+        let was = current ?? Format.hazardKey(requested)
+        return (keys, keys.contains(was) ? was : Format.hazardKey(requested))
+    }
 
+    /// Hazard detail `here`: the same hazard, and in the region when one is given.
     public static func hazardMatches(_ e: Record, hazard: String, region: String) -> Bool {
-        let target = hazard.lowercased().replacingOccurrences(of: "wildfire", with: "wild").replacingOccurrences(of: "volcano", with: "volcan")
-        let first = target.components(separatedBy: " ")[0]
-        return e.type.lowercased().contains(first) && (region.isEmpty || Search.matchesPlace(e, region.lowercased()))
+        let rr = JS.trim(region).lowercased()
+        return Format.sameHazard(e.type, hazard) && (rr.isEmpty || Format.inPlace(e, rr))
+    }
+
+    public static func hazardForecastNote(count: Int, hazard: String, here: Bool) -> String? {
+        guard count > 0 else { return nil }
+        return "We also have \(count) open forecast" + (count == 1 ? "" : "s") + " of " + hazard.lowercased() + (here ? " here" : "") +
+            ". They are our own estimates, not events."
+    }
+
+    public static func hazardEmptyDetail(here: Bool) -> String {
+        "Our sources have no current report of this hazard" + (here ? " here" : "") + ". This does not mean there is no danger."
+    }
+
+    // MARK: Alerts (features.md section 3.1, changelog C6)
+
+    public static let alertsPage = 40
+
+    public struct Pager: Equatable, Sendable {
+        public let shown: Int
+        public let note: String?
+        public let button: String?
+    }
+
+    /// `alerts.html draw(more)`: 40 at a time, and says how many exist.
+    public static func alertsPager(total: Int, limit: Int, page: Int = alertsPage) -> Pager {
+        if total > limit {
+            return Pager(shown: limit, note: "Showing \(limit) of \(total).", button: "Show \(min(page, total - limit)) more")
+        }
+        return Pager(shown: total, note: total > page ? "Showing all \(total)." : nil, button: nil)
+    }
+
+    // MARK: Map searches (changelog C12 and C18)
+
+    public struct MapNudge: Equatable, Sendable {
+        public let eyebrow: String
+        public let title: String
+        public let meta: String
+        public let record: Record?
+    }
+
+    /// The home map's selected-event card.
+    public static func selectedNudge(_ e: Record) -> MapNudge {
+        let meta = [e.type, Format.placeOf(e), e.source].filter { !$0.isEmpty }.joined(separator: " \u{00B7} ")
+        return MapNudge(eyebrow: "Selected event on map", title: e.title.isEmpty ? "Selected event" : e.title, meta: meta, record: e)
+    }
+
+    /// The home map search: nil for an empty box; the first live record that
+    /// matches; or the "No live event matches" card with no record.
+    public static func homeMapSearch(_ events: [Record], query: String) -> MapNudge? {
+        let q = JS.trim(query.lowercased())
+        if q.isEmpty { return nil }
+        if let x = events.first(where: { Search.matches($0, q) }) { return selectedNudge(x) }
+        return MapNudge(eyebrow: "Search", title: "No live event matches \u{201C}" + JS.trim(query) + "\u{201D}",
+                        meta: "Try a country, a city or a type of hazard.", record: nil)
+    }
+
+    /// The live map's search note: "{n} event(s) match ..." or "No event
+    /// matches ...", nil for an empty query.
+    public static func mapSearchNote(query: String, matching: [Record]) -> String? {
+        let q = JS.trim(query)
+        if q.isEmpty { return nil }
+        let pts = matching.filter { $0.hasCoordinates }.count
+        if pts == 0 { return "No event matches \u{201C}" + q + "\u{201D}." }
+        let n = matching.count
+        return "\(n) event" + (n == 1 ? "" : "s") + " match \u{201C}" + q + "\u{201D}. The map shows " + (pts == 1 ? "it" : "them") + "."
     }
 
     // MARK: nearby lists

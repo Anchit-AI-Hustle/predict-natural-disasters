@@ -10,6 +10,8 @@ struct MyPlacesView: View {
     @State var latText = ""
     @State var lonText = ""
     @State var chosen: Place?
+    /// What the search filled in (`chosenAs = name|lat|lon`, changelog C23).
+    @State var chosenAs = ""
     @State var candidates: [Place] = []
     @State var formNote: String?
     @State var alertNote: String?
@@ -207,15 +209,20 @@ struct MyPlacesView: View {
         name = c.name
         latText = JS.toFixed(c.lat ?? 0, 6)
         lonText = JS.toFixed(c.lon ?? 0, 6)
+        chosenAs = PlaceSearch.chosenAs(name: c.name, lat: JS.toFixed(c.lat ?? 0, 6), lon: JS.toFixed(c.lon ?? 0, 6))
         formNote = "Chosen: \(c.name) (\((c.level ?? "place").lowercased())). Choose the kind of place and press Save."
     }
 
-    /// Any edit after choosing clears the remembered country.
+    /// An edit by the reader forgets the country the search found. A change
+    /// whose values still equal what the search filled in (the one that
+    /// follows pressing Enter) keeps it (changelog C23).
     func edited() {
         guard let c = chosen else { return }
-        if name != c.name || latText != JS.toFixed(c.lat ?? 0, 6) || lonText != JS.toFixed(c.lon ?? 0, 6) {
+        let now = PlaceSearch.chosenAs(name: name, lat: latText, lon: lonText)
+        if PlaceSearch.editForgetsCountry(chosenAs: chosenAs, now: now, hasCountry: !c.country.isEmpty || !c.countryCode.isEmpty) {
             chosen = nil
-            formNote = "You changed the place, so we no longer know its country. Search for it by name again to record the country."
+            chosenAs = ""
+            formNote = PlaceSearch.countryForgotten
         }
     }
 
@@ -228,7 +235,7 @@ struct MyPlacesView: View {
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
         model.savePlace(Place(kind: kind, name: n.isEmpty ? kind : n, lat: la, lon: lo, country: chosen?.country ?? "", countryCode: chosen?.countryCode ?? ""))
         formNote = "Saved."
-        name = ""; latText = ""; lonText = ""; chosen = nil
+        name = ""; latText = ""; lonText = ""; chosen = nil; chosenAs = ""
     }
 
     // MARK: dangers near your places (5.3)

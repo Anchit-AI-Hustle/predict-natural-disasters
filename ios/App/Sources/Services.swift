@@ -54,10 +54,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, @un
         task.expirationHandler = { work.cancel() }
     }
 
-    /// Fetches the feed and posts what the alert rules allow. Returns success.
+    /// Fetches the feed and posts what the alert rules allow: place alerts
+    /// for saved places and the major global events, which need no place
+    /// (features.md section 16.3). Returns success.
     static func checkNow() async -> Bool {
         let places = PlacesStore().places
-        guard !places.isEmpty else { return true }
         do {
             let (feed, data) = try await APIClient().events(fresh: false)
             FeedCache.defaultCache().save(data)
@@ -85,13 +86,21 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, @un
         }
     }
 
-    /// Foreground evaluation on every feed load, when alerts are on and allowed.
+    /// Foreground evaluation on every feed load, as the site's
+    /// `evaluateRiskNotifications` does on /alerts and every other feed page
+    /// (features.md section 16.2): whenever notifications are allowed, with or
+    /// without saved places. Place alerts need a saved place; major global
+    /// events (official Red, M6.5+, tsunami, severe cyclone) do not. The site
+    /// skips this when its push service is on only so that nothing is said
+    /// twice; here the background check and this share one 6-hour memory
+    /// (`pnd_notified`), so nothing is said twice either way.
     @MainActor
     func evaluateForeground(model: AppModel) {
-        guard model.alertsEnabled, !model.places.isEmpty, !model.fixtureMode else { return }
+        guard !model.fixtureMode else { return }
         let events = model.live, places = model.places
         Task {
-            guard await self.authorizationStatus() == .authorized else { return }
+            let status = await self.authorizationStatus()
+            guard status == .authorized || status == .provisional || status == .ephemeral else { return }
             await Self.post(events: events, places: places)
         }
     }

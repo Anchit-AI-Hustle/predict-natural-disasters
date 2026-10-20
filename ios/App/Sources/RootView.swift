@@ -27,7 +27,7 @@ struct PNDApp: App {
         .onChange(of: phase) { _, p in
             if p == .active { model.start() } else if p == .background {
                 model.stop()
-                NotificationService.shared.scheduleBackgroundRefresh(enabled: model.alertsEnabled && !model.places.isEmpty)
+                NotificationService.shared.scheduleBackgroundRefresh(enabled: model.alertsEnabled)
             }
         }
     }
@@ -50,18 +50,76 @@ struct RootView: View {
     }
 }
 
-/// iPhone: a tab bar. iOS keeps four tabs and moves the rest under "More".
+/// iPhone: the site's five tabs in a bar of our own (features.md section
+/// 0.1). A system TabView with six tabs hid Map and Track record under its
+/// own "More" tab; Home opens from the logo button instead, as on the site.
 struct TabRoot: View {
     @EnvironmentObject var model: AppModel
+    /// Tabs are built when first opened, then kept, so each keeps its place.
+    @State var opened: Set<AppTab> = []
+
     var body: some View {
-        TabView(selection: $model.selectedTab) {
+        ZStack {
             ForEach(AppTab.allCases) { tab in
-                TabStack(tab: tab)
-                    .tabItem { Label(tab.title, systemImage: tab.icon) }
-                    .tag(tab)
-                    .accessibilityIdentifier("tab-" + tab.rawValue)
+                if opened.contains(tab) || model.selectedTab == tab {
+                    TabLayer(tab: tab, active: model.selectedTab == tab)
+                }
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) { PhoneTabBar() }
+        .onAppear { opened.insert(model.selectedTab) }
+        .onChange(of: model.selectedTab) { _, t in opened.insert(t) }
+    }
+}
+
+/// One tab's stack, shown only while its tab is selected.
+struct TabLayer: View {
+    let tab: AppTab
+    let active: Bool
+    var body: some View {
+        TabStack(tab: tab)
+            .opacity(active ? 1 : 0)
+            .allowsHitTesting(active)
+            .accessibilityHidden(!active)
+    }
+}
+
+/// The bottom bar: Map, Alerts & events, Forecasts, My places, Track record.
+struct PhoneTabBar: View {
+    @EnvironmentObject var model: AppModel
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(AppTab.barTabs) { t in
+                PhoneTabButton(tab: t, selected: model.selectedTab == t) { model.selectTab(t) }
+            }
+        }
+        .padding(.top, 4)
+        .background(Color(hex: "#02110D").opacity(0.97).ignoresSafeArea(edges: .bottom))
+        .overlay(alignment: .top) { Rectangle().fill(Theme.divider).frame(height: 0.5) }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tabBar")
+    }
+}
+
+struct PhoneTabButton: View {
+    let tab: AppTab
+    let selected: Bool
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: tab.icon).font(.system(size: 18, weight: .semibold))
+                Text(tab.title).font(.system(size: 10, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.6)
+            }
+            .foregroundStyle(selected ? Theme.green : Theme.muted)
+            .frame(maxWidth: .infinity, minHeight: 49)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityIdentifier("tab-" + tab.rawValue)
     }
 }
 
@@ -77,9 +135,29 @@ struct TabStack: View {
     }
 }
 
+/// The logo: opens Home / Check a place from every tab, as the site's logo does.
+struct LogoButton: View {
+    @EnvironmentObject var model: AppModel
+    var body: some View {
+        Button { model.goHome() } label: {
+            HStack(spacing: 4) {
+                Text("\u{25CE}").font(.headline).foregroundStyle(Theme.green)
+                Text("Check a place").font(.footnote.weight(.bold)).foregroundStyle(Theme.text)
+            }
+        }
+        .accessibilityLabel("Predict Natural Disasters: check a place")
+        .accessibilityIdentifier("logoButton")
+    }
+}
+
+extension Route {
+    /// The root screen of a tab (or Home): it carries the logo button.
+    var isTabRoot: Bool { AppTab.allCases.contains { $0.rootRoute == self } }
+}
+
 enum SidebarItem: Hashable { case tab(AppTab), more }
 
-/// iPad: a sidebar with every section.
+/// iPad: a sidebar with the logo (Home), the same five tabs and More pages.
 struct SplitRoot: View {
     @EnvironmentObject var model: AppModel
     @State var selection: SidebarItem? = .tab(.home)
@@ -88,7 +166,7 @@ struct SplitRoot: View {
         NavigationSplitView {
             List(selection: $selection) {
                 Section {
-                    ForEach(AppTab.allCases) { t in
+                    ForEach(AppTab.barTabs) { t in
                         // Tagged rows, not value links: a value link in the sidebar makes
                         // the split view claim every value link on the page as well.
                         Label(t.title, systemImage: t.icon)
@@ -103,12 +181,7 @@ struct SplitRoot: View {
                         .accessibilityIdentifier("sidebar-more")
                         .tag(SidebarItem.more)
                 } header: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Predict Natural Disasters").font(.headline).foregroundStyle(Theme.text)
-                        Text("Check a place \u{00B7} live hazards \u{00B7} forecasts").font(.caption2).foregroundStyle(Theme.muted)
-                    }
-                    .textCase(nil)
-                    .padding(.bottom, 6)
+                    SidebarLogo { selection = .tab(.home) }
                 }
             }
             .navigationTitle("Sections")
@@ -132,12 +205,38 @@ struct SplitRoot: View {
     }
 }
 
+/// The sidebar's logo: Home / Check a place.
+struct SidebarLogo: View {
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 8) {
+                Text("\u{25CE}").font(.title3).foregroundStyle(Theme.green)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Predict Natural Disasters").font(.headline).foregroundStyle(Theme.text)
+                    Text("Check a place \u{00B7} live hazards \u{00B7} forecasts").font(.caption2).foregroundStyle(Theme.muted)
+                }
+            }
+            .frame(minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .textCase(nil)
+        .padding(.bottom, 6)
+        .accessibilityLabel("Predict Natural Disasters: check a place")
+        .accessibilityIdentifier("sidebar-home")
+    }
+}
+
 /// Every screen, by route.
 struct RouteView: View {
     let route: Route
     var body: some View {
         content
             .toolbar {
+                if route.isTabRoot {
+                    ToolbarItem(placement: .topBarLeading) { LogoButton() }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     RouteLink(value: Route.more) {
                         Image(systemName: "ellipsis.circle").accessibilityLabel("More pages and settings")
@@ -169,6 +268,8 @@ struct RouteView: View {
         case .source(let name): SourceDetailView(name: name)
         case .collection(let v, let q):
             if v == .resources { SourcesView() } else if v == .forecastCalendar { CalendarScreen(query: q ?? "") } else { CollectionScreen(view: v, initialQuery: q ?? "") }
+        case .scopedCollection(let v, let q, let r):
+            if v == .resources { SourcesView() } else if v == .forecastCalendar { CalendarScreen(query: q ?? "", region: r) } else { CollectionScreen(view: v, initialQuery: q ?? "", region: r) }
         case .calamities: CalamitiesView()
         case .regions: RegionsView()
         case .insights: InsightsView()

@@ -27,6 +27,7 @@ struct TrustNote: View {
             Text(Trust.updatedLine(groups: groups, feed: model.trustFeedState, ledgerTimes: ledgerTimes, ledgerFailed: ledgerFailed, tz: model.zoneID))
                 .font(.footnote).foregroundStyle(Theme.trustWhen)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityValue(Trust.utc(model.feed?.generatedAt))
                 .accessibilityIdentifier("trustWhen")
             DisclosureGroup(isExpanded: $expanded) {
                 VStack(alignment: .leading, spacing: 8) {

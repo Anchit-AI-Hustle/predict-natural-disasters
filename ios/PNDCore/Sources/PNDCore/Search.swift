@@ -102,6 +102,9 @@ public enum Search {
         public let query: String
     }
 
+    /// `PNDSearch.countryCount`: the same count as `PND.countryCount`.
+    public static func countryCount(_ list: [Record]) -> Int { Format.countryCount(list) }
+
     public static func empty(query: String?, all: [Record], noun: String) -> Empty {
         let q = (query ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if q.isEmpty { return Empty(title: "No \(noun) to show right now.", detail: nil, elsewhere: 0, buttonText: nil, query: "") }
@@ -113,13 +116,12 @@ public enum Search {
             let button = "See " + (elsewhere == 1 ? "it" : "all \(elsewhere)") + " on the events page \u{2192}"
             return Empty(title: title, detail: detail, elsewhere: elsewhere, buttonText: button, query: q)
         }
-        var countries: [String] = []
-        for e in all {
-            let c = e.country
-            if !c.isEmpty && !countries.contains(c) { countries.append(c) }
-        }
-        let detail = "Nothing in our current data matches it. Right now we have \(all.count) event" + (all.count == 1 ? "" : "s") +
-            " from \(countries.count)" + (countries.count == 1 ? " country or territory" : " countries and territories") + ". " +
+        // Reports only (no forecasts, no live:false), and a record naming two
+        // countries names two (changelog C15).
+        let reports = Format.observed(all)
+        let n = countryCount(reports)
+        let detail = "Nothing in our current data matches it. Right now we have \(reports.count) event" + (reports.count == 1 ? "" : "s") +
+            " from \(n)" + (n == 1 ? " country or territory" : " countries and territories") + ". " +
             "We only show what official sources are reporting. If a place has no current official report, it is not listed here. That does not mean nothing is happening there."
         return Empty(title: title, detail: detail, elsewhere: 0, buttonText: nil, query: q)
     }

@@ -46,6 +46,16 @@ public enum Sorts {
         return v == 0 ? .infinity : v
     }
 
+    /// `SORT_DEFS.windowEnd` (changelog C16): open windows first, soonest
+    /// ending first; then ended ones (`targetEnd <= now` or `windowClosed`),
+    /// most recently ended first. A missing end is open and last.
+    public static func windowEndCompare(_ a: Record, _ b: Record, now: Double) -> Double {
+        let x = windowEndMs(a), y = windowEndMs(b)
+        let xa = x <= now || a.windowClosed, ya = y <= now || b.windowClosed
+        if xa != ya { return xa ? 1 : -1 }
+        return xa ? sub(y, x) : sub(x, y)
+    }
+
     public static let observedRank: [String: Int] = ["CATASTROPHIC": 6, "EXTREME": 5, "SEVERE": 4, "SIGNIFICANT": 3, "MODERATE": 2, "MINOR": 1]
 
     public static func recordedMs(_ e: Record) -> Double {
@@ -78,7 +88,7 @@ public enum Sorts {
             let x = a.num("_d") ?? .infinity, y = b.num("_d") ?? .infinity
             return sub(x, y)
         }
-        add("windowEnd", "Ending soonest first") { a, b in sub(windowEndMs(a), windowEndMs(b)) }
+        add("windowEnd", "Ending soonest first") { a, b in windowEndCompare(a, b, now: Format.now()) }
         add("yearNew", "Most recent first") { a, b in b.numOf("sort") - a.numOf("sort") }
         add("yearOld", "Earliest first") { a, b in a.numOf("sort") - b.numOf("sort") }
         add("name", "Name (A to Z)") { a, b in Double(JS.localeCompare(textOf(a, "name", "title"), textOf(b, "name", "title"))) }

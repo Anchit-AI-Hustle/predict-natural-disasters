@@ -347,7 +347,12 @@ final class VectorTests: XCTestCase {
             "search.emptyHtml", "glossary.expandAlways", "placeSearch.levelOf", "placeSearch.labelOf", "placeSearch.candidates",
             "verdicts.normalise", "verdicts.stateOf", "verdicts.engineState", "verdicts.rate", "verdicts.tally", "verdicts.joinVerdicts",
             "verification.score", "verification.predictingSince"]
+        // A group that only the website can use would be listed here with the
+        // reason. There is none: every group has a native port and a test.
+        let webOnly: [String: String] = [:]
         let all = Set((Fixtures.vectors.objectValue ?? [:]).keys)
-        XCTAssertEqual(all.subtracting(covered), [], "vector groups without a test")
+        let tested = covered.union(ParityVectorTests.groups).union(webOnly.keys)
+        XCTAssertEqual(all.subtracting(tested), [], "vector groups without a test")
+        XCTAssertEqual(tested.subtracting(all), [], "tests for vector groups that no longer exist")
     }
 }

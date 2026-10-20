@@ -215,3 +215,13 @@ struct QuietNote: View {
         if !text.isEmpty { Notice(text: text, stale: true).accessibilityIdentifier("quietNote") }
     }
 }
+
+/// `PND.unavailableHtml()`: the card a list shows when nothing has loaded
+/// (changelog C19). A failed load is not an empty world.
+struct UnavailableCard: View {
+    var body: some View {
+        MessageCard(title: Format.unavailableTitle, detail: Format.unavailableBody)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("unavailableCard")
+    }
+}
