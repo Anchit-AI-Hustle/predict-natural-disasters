@@ -88,10 +88,16 @@ struct SplitRoot: View {
             List(selection: $selection) {
                 Section {
                     ForEach(AppTab.allCases) { t in
-                        NavigationLink(value: SidebarItem.tab(t)) { Label(t.title, systemImage: t.icon) }
+                        // Tagged rows, not value links: a value link in the sidebar makes
+                        // the split view claim every value link on the page as well.
+                        Label(t.title, systemImage: t.icon)
+                            .tag(SidebarItem.tab(t))
+                            .accessibilityAddTraits(.isButton)
                             .accessibilityIdentifier("sidebar-" + t.rawValue)
                     }
-                    NavigationLink(value: SidebarItem.more) { Label("More pages", systemImage: "ellipsis.circle") }
+                    Label("More pages", systemImage: "ellipsis.circle")
+                        .tag(SidebarItem.more)
+                        .accessibilityAddTraits(.isButton)
                         .accessibilityIdentifier("sidebar-more")
                 } header: {
                     VStack(alignment: .leading, spacing: 2) {
