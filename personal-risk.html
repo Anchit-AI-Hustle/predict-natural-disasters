@@ -57,15 +57,21 @@ let foundCountryCode='';
    pasting Tokyo's coordinates saved Tokyo as being in France - and a
    country-wide French outlook would then have been shown for it while every
    Japanese one was withheld. Any change to the place clears it. */
+/* Only a change the reader made: the field's "change" event also fires on
+   blur after the search itself filled the boxes while focus stayed in the
+   name box, which is what Enter does, and that wiped the country the search
+   had just found. What the search set is remembered and compared. */
+let chosenAs='';const placeNow=()=>[placeName.value,lat.value,lon.value].join('|');
 ['input','change'].forEach(ev=>[placeName,lat,lon].forEach(f=>f.addEventListener(ev,()=>{
   if(!foundCountry&&!foundCountryCode)return;
+  if(chosenAs&&placeNow()===chosenAs)return;
   foundCountry='';foundCountryCode='';
   placeResult.textContent='You changed the place, so we no longer know its country. Search for it by name again to record the country.';
 })));
 findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.textContent='Type a place first.';return}placeResult.textContent='Finding the place…';PNDPlaceSearch.renderChoices(placeChoices,[]);
   /* Every match, at every level, for the reader to choose from; the country
      is kept with the coordinates it came back with. */
-  const use=c=>{lat.value=(+c.lat).toFixed(6);lon.value=(+c.lon).toFixed(6);placeName.value=c.name;foundCountry=c.country||'';foundCountryCode=c.countryCode||'';placeResult.textContent='Chosen: '+c.name+' ('+c.level.toLowerCase()+'). Choose the kind of place and press Save.'};
+  const use=c=>{lat.value=(+c.lat).toFixed(6);lon.value=(+c.lon).toFixed(6);placeName.value=c.name;foundCountry=c.country||'';foundCountryCode=c.countryCode||'';chosenAs=placeNow();placeResult.textContent='Chosen: '+c.name+' ('+c.level.toLowerCase()+'). Choose the kind of place and press Save.'};
   try{const list=await PNDPlaceSearch.search(q);
     if(!list.length){foundCountry='';foundCountryCode='';placeResult.textContent='We could not find that place. Check the spelling, or add the city or country, for example “Andheri, Mumbai”.';return}
     if(list.length===1){use(list[0]);return}

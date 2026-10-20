@@ -218,39 +218,21 @@ test('no page promises a fixed day window the feed can exceed', () => {
 
 /* ------------------------------------------------ the hazard strip agrees with its links */
 
-// Mirrors hazard-detail.html's own matcher. If these drift, a chip shows one
-// number and the page it opens shows another.
-const hazKey = t => String(t).toLowerCase()
-  .replace('wildfire', 'wild').replace('volcano', 'volcan').split(' ')[0];
+/* The strip and hazard-detail match a hazard through one shared key,
+   PND.hazardKey, applied to the whole type. They used to share a first-word
+   matcher instead, so "Extreme Cold" counted every Extreme Heat forecast,
+   and a type hazard-detail did not list (Extreme Heat, Volcanic Eruption)
+   fell back to the Flood page. These replace the tests that pinned that
+   matcher's source text; what they guarded - one matcher, every chip has a
+   page, every hazard reported has a chip - is checked on the rendered pages. */
+const H = require(path.join(ROOT, 'hazard-model.js'));
+const hazKey = t => {
+  const h = H.hazardOf(String(t || '').trim());
+  if (h && h !== H.DEFAULT) for (const k in H.HAZARDS) if (H.HAZARDS[k] === h) return k;
+  return String(t || '').trim();
+};
 
-function stripClasses() {
-  const s = read('index.html');
-  const m = s.match(/const types=\[(\[[^\]]*\](?:,\[[^\]]*\])*)\]/);
-  assert.ok(m, 'the homepage hazard strip should declare its classes');
-  return [...m[1].matchAll(/\['([^']+)','[^']*'\]/g)].map(x => x[1]);
-}
-
-test('the homepage strip and hazard-detail use the same matcher', () => {
-  const index = read('index.html');
-  assert.match(index, /const hazKey=/, 'the strip should key on the same expression');
-  assert.match(index, /includes\(hazKey\(t\)\)/, 'chip counts should use it');
-  const detail = read('hazard-detail.html');
-  assert.match(detail,
-    /replace\('wildfire','wild'\)\.replace\('volcano','volcan'\)/,
-    'hazard-detail still normalises this way');
-  assert.match(detail, /target\.split\(' '\)\[0\]/, 'hazard-detail still matches on the first word');
-});
-
-test('every hazard class the strip links to exists on hazard-detail', () => {
-  const options = [...read('hazard-detail.html').matchAll(/<option>([^<]+)<\/option>/g)].map(m => m[1]);
-  const missing = stripClasses().filter(c => !options.includes(c));
-  // An unlisted type silently falls back to Flood, so the link would show
-  // flood numbers under a tornado heading.
-  assert.deepEqual(missing, [],
-    'these classes have no option on hazard-detail: ' + missing.join(', '));
-});
-
-test('a chip count equals the count on the page it opens', async () => {
+async function chipsOnHome() {
   const home = await renderPage('index.html', {
     waitFor: d => (d.getElementById('hazardStrip') || {}).children &&
       d.getElementById('hazardStrip').children.length > 0
@@ -260,6 +242,35 @@ test('a chip count equals the count on the page it opens', async () => {
     count: Number(el.querySelector('span').textContent.replace(/\D+/g, ''))
   }));
   home.close();
+  return chips;
+}
+
+test('the homepage strip and hazard-detail use the same matcher', () => {
+  const index = read('index.html');
+  assert.match(index, /const hazKey=t=>PND\.hazardKey\(t\)/, 'the strip should key on PND.hazardKey');
+  const detail = read('hazard-detail.html');
+  assert.match(detail, /PND\.sameHazard\(e\.type,hazSel\.value\)/, 'hazard-detail should match with PND.sameHazard');
+  for (const [page, src] of [['index.html', index], ['hazard-detail.html', detail]]) {
+    assert.ok(!/split\(' '\)\[0\]/.test(src), page + ' still matches a hazard on its first word');
+  }
+});
+
+test('every hazard class the strip links to exists on hazard-detail', async () => {
+  for (const chip of await chipsOnHome()) {
+    const page = await renderPage('hazard-detail.html', {
+      search: '?type=' + encodeURIComponent(chip.name),
+      waitFor: d => (d.getElementById('kEvents') || {}).textContent &&
+        d.getElementById('kEvents').textContent !== '-'
+    });
+    const chosen = page.document.getElementById('hazSel').value;
+    page.close();
+    // An unlisted type used to fall back silently to Flood.
+    assert.equal(chosen, chip.name, 'hazard-detail opened ' + chosen + ' for the ' + chip.name + ' chip');
+  }
+});
+
+test('a chip count equals the count on the page it opens', async () => {
+  const chips = await chipsOnHome();
   assert.ok(chips.length, 'the strip rendered no chips');
 
   for (const chip of chips) {
@@ -287,10 +298,10 @@ test('the strip advertises no class with nothing in it', async () => {
 });
 
 test('every hazard class in the feed reaches a chip', async () => {
-  const events = await sampleEvents();
-  const classes = stripClasses();
-  const orphan = [...new Set(events.map(e => e.type).filter(Boolean))]
-    .filter(t => !classes.some(c => String(t).toLowerCase().includes(hazKey(c))));
-  assert.deepEqual(orphan, [],
-    'these hazard types are in the feed but have no chip: ' + orphan.join(', '));
+  /* The strip counts reports, so every hazard reported has a chip; our
+     forecasts are counted on the forecast pages, not here. */
+  const events = (await sampleEvents()).filter(e => e.live !== false && !e.forecast);
+  const names = (await chipsOnHome()).map(c => c.name);
+  const orphan = [...new Set(events.map(e => hazKey(e.type)).filter(Boolean))].filter(k => !names.includes(k));
+  assert.deepEqual(orphan, [], 'these hazard types are in the feed but have no chip: ' + orphan.join(', '));
 });
