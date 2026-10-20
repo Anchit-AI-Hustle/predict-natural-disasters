@@ -34,7 +34,7 @@ object Fixtures {
 }
 
 /** Answers from fixtures by URL; [failEvents] makes the feed fail as a network error does. */
-class FakeHttp(var failEvents: Boolean = false, var failEnrichment: Boolean = false, var eventsBody: String? = null) : Http {
+class FakeHttp(var failEvents: Boolean = false, var failEnrichment: Boolean = false, var eventsBody: String? = null, var failData: Boolean = false) : Http {
     val requests = mutableListOf<String>()
     val headers = mutableListOf<Map<String, String>>()
     override suspend fun get(url: String, headers: Map<String, String>): HttpResult {
@@ -45,6 +45,7 @@ class FakeHttp(var failEvents: Boolean = false, var failEnrichment: Boolean = fa
             url.startsWith("https://nominatim.openstreetmap.org/") -> HttpResult(200, Fixtures.NOMINATIM)
             path == "/api/events" -> if (failEvents) HttpResult(0, null) else HttpResult(200, eventsBody ?: Fixtures.events)
             path == "/api/event-enrichment" -> if (failEnrichment) HttpResult(503, "{}") else HttpResult(200, Fixtures.enrichment["response"].toString())
+            failData && path.startsWith("/data/") -> HttpResult(503, null)
             path == "/api/alerts" -> HttpResult(200, """{"available":false,"reason":"Background alerts are not switched on for this site yet.","schedule":null,"keeps":"For each place: its kind and its position rounded to about 1 km.","rules":{"nearKm":30,"severeNearKm":100,"recentHours":72},"publicKey":null,"lastRun":null}""")
             path == "/data/outlook-ledger.json" -> HttpResult(200, Fixtures.ledgers["outlook"].toString())
             path == "/data/verification-ledger.json" -> HttpResult(200, Fixtures.ledgers["verification"].toString())

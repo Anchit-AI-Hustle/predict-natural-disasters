@@ -46,6 +46,7 @@ import com.anchittandon.pnd.logic.AppClock
 import com.anchittandon.pnd.logic.HomeModel
 import com.anchittandon.pnd.logic.MapSearch
 import com.anchittandon.pnd.logic.Portal
+import com.anchittandon.pnd.logic.PlaceAnswer
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.Level
@@ -158,7 +159,7 @@ fun HomeScreen() {
                 modifier = Modifier.padding(bottom = 8.dp).testTag("checkNote").semantics { liveRegion = LiveRegionMode.Polite })
         }
         if (choices.isNotEmpty()) item(key = "choices") { PlaceChooser(choices) { choices = emptyList(); note = ""; checked = it } }
-        checked?.let { p -> item(key = "answer") { PlaceAnswerCard(p, feed.events, feed.feed?.generatedAt, onNote = { note = it }) } }
+        checked?.let { p -> item(key = "answer") { PlaceAnswerCard(p, feed, onNote = { note = it }) } }
 
         item(key = "kpis") {
             Panel("Around the world now", subtitle = "What our sources are reporting right now.") {
@@ -343,39 +344,44 @@ fun PlaceChooser(list: List<Place>, onPick: (Place) -> Unit) {
 
 /** The place answer (`answer()` in index.html). */
 @Composable
-fun PlaceAnswerCard(place: Place, events: List<Event>, generatedAt: String?, onNote: (String) -> Unit) {
+fun PlaceAnswerCard(place: Place, feed: com.anchittandon.pnd.data.FeedState, onNote: (String) -> Unit) {
     val env = LocalApp.current
     val c = env.container
     val scope = rememberCoroutineScope()
-    val a = remember(place, events) { PlaceRisk.assess(place.json(), events.map { it.json }, generatedAt) }
-    val act = remember(a) { PlaceRisk.actionsFor(a) }
-    val lead = a.lead?.e?.let { Event(it) }
+    // Before any feed has loaded the answer is "Checking…" or "Live data unavailable", never an all-clear (C26).
+    // It answers again by itself when the data arrives; a later failed refresh keeps the last answer.
+    val state = PlaceAnswer.feedState(feed.feed != null, feed.failed)
+    val v = remember(place, feed.feed, state) { PlaceAnswer.view(place.json(), state, feed.events.map { it.json }, feed.feed?.generatedAt) }
+    val lead = v.lead?.let { Event(it) }
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 10.dp).clip(RoundedCornerShape(12.dp)).background(Pnd.panelTop).border(1.dp, Pnd.panelBorder, RoundedCornerShape(12.dp)).padding(14.dp).testTag("placeResult"),
+        Modifier.fillMaxWidth().padding(bottom = 10.dp).clip(RoundedCornerShape(12.dp)).background(Pnd.panelTop).border(1.dp, Pnd.panelBorder, RoundedCornerShape(12.dp)).padding(14.dp)
+            .semantics { if (v.busy) stateDescription = "Busy" }.testTag("placeResult"),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Eyebrow("Current risk", Pnd.label)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (a.level != null) RiskBadge(a.level, a.level.label, "Current risk: ${a.level.label}") else NothingNearbyChip()
+            if (v.level != null) RiskBadge(v.level, v.level.label, "Current risk: ${v.level.label}")
+            else if (state == PlaceAnswer.State.LOADED) NothingNearbyChip()
+            else RiskBadge(com.anchittandon.pnd.logic.Level.UNKNOWN, v.badge, v.badge, Modifier.testTag("placeBadge"))
             Text(place.name, color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 17.sp)
         }
         Block("What's happening") {
-            if (lead != null) {
-                Text(lead.displayTitle, color = Pnd.body, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                val pl = Format.placeOf(lead.json)
-                Text("${lead.type.ifEmpty { "Hazard" }}" + (if (pl.isNotEmpty()) " · $pl" else "") + " · reported ${Format.age(lead.updated)}", color = Pnd.body, fontSize = 14.sp)
-            } else Text("None of our sources reports anything at this place right now.", color = Pnd.body, fontSize = 14.sp)
+            if (v.unavailableCard) UnavailableCard("placeUnavailable")
+            else {
+                if (v.happeningTitle != null) Text(v.happeningTitle, color = Pnd.body, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(v.happening, color = Pnd.body, fontSize = 14.sp, modifier = Modifier.testTag("placeHappening"))
+            }
         }
-        Block("Why we're showing this") { Text(a.why, color = Pnd.body, fontSize = 14.sp, modifier = Modifier.testTag("placeWhy")) }
+        if (v.why != null) Block("Why we're showing this") { Text(v.why, color = Pnd.body, fontSize = 14.sp, modifier = Modifier.testTag("placeWhy")) }
         Block("What should I do?") {
-            act.steps.forEach { Text("• $it", color = Pnd.body, fontSize = 14.sp) }
-            Text(act.authority, color = Pnd.authority, fontSize = 14.sp)
+            v.steps.forEach { Text("• $it", color = Pnd.body, fontSize = 14.sp) }
+            Text(v.authority, color = Pnd.authority, fontSize = 14.sp)
         }
-        Block("Source") {
+        if (state == PlaceAnswer.State.LOADED) Block("Source") {
             Text(if (lead != null) "${Format.provenance(lead.json)} · ${lead.source.ifEmpty { "Source not stated" }}" else "No report was used for this answer.", color = Pnd.body, fontSize = 14.sp)
             if (lead != null && lead.sourceUrl.isNotEmpty()) LinkButton("Open the original report →") { c.platform.openUrl(com.anchittandon.pnd.data.Api.absolute(lead.sourceUrl)) }
         }
-        Block("Last checked") { Text(if (generatedAt != null) Format.fmtDate(generatedAt) + " · " + Format.age(generatedAt) else "not yet: the data is still loading", color = Pnd.body, fontSize = 14.sp) }
+        Block("Last checked") { Text(v.lastChecked, color = Pnd.body, fontSize = 14.sp, modifier = Modifier.testTag("placeLastChecked")) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             PrimaryButton("Save place", Modifier.testTag("savePlace")) {
                 c.settings.addPlace(place.copy(kind = place.kind.takeIf { it != "Searched" } ?: "Place", full = "", level = ""), AppClock.now())

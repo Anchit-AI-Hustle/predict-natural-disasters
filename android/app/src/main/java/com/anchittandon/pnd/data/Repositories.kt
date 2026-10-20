@@ -109,9 +109,14 @@ class DataRepository(private val http: Http) {
     }
 
     /** The last ledger row for a forecast id that has left the feed (features.md §7.4). Never a different forecast. */
-    suspend fun ledgerRow(id: String): JsonObject? {
-        val l = json("outlook-ledger.json") as? JsonArray ?: return null
-        return l.objects().lastOrNull { it.str("id") == id }
+    suspend fun ledgerRow(id: String): JsonObject? = ledgerLookup(id).row
+
+    /** The ledger row, and whether the ledger could not be read at all (then the screen says the data is unavailable, not "not found"). */
+    data class LedgerLookup(val row: JsonObject?, val failed: Boolean)
+
+    suspend fun ledgerLookup(id: String): LedgerLookup {
+        val l = json("outlook-ledger.json") as? JsonArray ?: return LedgerLookup(null, true)
+        return LedgerLookup(l.objects().lastOrNull { it.str("id") == id }, false)
     }
 }
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -59,10 +60,10 @@ import org.robolectric.annotation.Config
 class ParityFlowTest {
     @get:Rule val rule = createComposeRule()
 
-    private fun start(route: String, http: FakeHttp = FakeHttp(), settings: Map<String, String> = emptyMap(), platform: FakePlatform = FakePlatform(), before: (() -> Unit)? = null): AppContainer {
+    private fun start(route: String, http: FakeHttp = FakeHttp(), settings: Map<String, String> = emptyMap(), platform: FakePlatform = FakePlatform(), before: (() -> Unit)? = null, load: Boolean = true): AppContainer {
         val c = testContainer(http, settings, platform)
         before?.invoke()
-        runBlocking { c.feed.refresh() }
+        if (load) runBlocking { c.feed.refresh() }
         rule.setContent { CompositionLocalProvider(LocalLiveMap provides false) { PndApp(c, startRoute = route, poll = false) } }
         rule.waitForIdle()
         return c
@@ -395,5 +396,149 @@ class ParityFlowTest {
         rule.onNodeWithTag("lat").performTextReplacement("27.7")
         scrollTo("placeResultNote")
         rule.onNodeWithTag("placeResultNote").assertTextContains("You changed the place", substring = true)
+    }
+
+    /* ------------------------------------------------------------- C26: no false all-clear */
+
+    private fun feedWith(edit: (JsonObject) -> JsonObject?): String {
+        val root = PndJson.parseToJsonElement(Fixtures.events).jsonObject
+        val evs = (root["events"] as JsonArray).mapNotNull { edit(it.jsonObject) }
+        return JsonObject(LinkedHashMap(root).apply { put("events", JsonArray(evs)) }).toString()
+    }
+
+    @Test fun c26HomeSaysCheckingThenAnswersWhenTheDataArrives() {
+        val c = start("home", settings = mapOf("pnd_saved_locations" to com.anchittandon.pnd.SAVED_PLACES), load = false)
+        scrollTo("placeResult")
+        rule.onNodeWithText("Checking…", useUnmergedTree = true).assertExists()
+        rule.onNodeWithTag("placeHappening").assertTextContains("Checking the latest reports for this place.")
+        rule.onNodeWithTag("placeLastChecked").assertTextContains("not yet: the data is still loading")
+        rule.onNodeWithText("Nothing reported nearby").assertDoesNotExist()
+        assertTrue(rule.onAllNodesWithTag("placeWhy").fetchSemanticsNodes().isEmpty())
+        // The data arrives: the place is answered again, by itself.
+        runBlocking { c.feed.refresh() }
+        rule.waitForIdle()
+        scrollTo("placeWhy")
+        rule.onNodeWithText("Checking…", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test fun c26AFailedFirstLoadIsUnavailableNotNothingNearby() {
+        start("home", http = FakeHttp(failEvents = true), settings = mapOf("pnd_saved_locations" to com.anchittandon.pnd.SAVED_PLACES))
+        scrollTo("placeResult")
+        rule.onNodeWithTag("placeBadge", useUnmergedTree = true).assertExists()
+        rule.onAllNodesWithText("Live data unavailable", useUnmergedTree = true).fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
+        scrollTo("placeLastChecked")
+        rule.onNodeWithTag("placeLastChecked").assertTextContains("not yet: the latest data could not be loaded")
+        rule.onNodeWithText("Nothing reported nearby").assertDoesNotExist()
+        rule.onNodeWithText("No report was used for this answer.").assertDoesNotExist()
+    }
+
+    @Test fun c26ALaterFailedRefreshKeepsTheLastAnswer() {
+        val http = FakeHttp()
+        val c = start("home", http = http, settings = mapOf("pnd_saved_locations" to com.anchittandon.pnd.SAVED_PLACES))
+        scrollTo("placeWhy")
+        http.failEvents = true
+        runBlocking { c.feed.refresh() }
+        rule.waitForIdle()
+        scrollTo("placeWhy")
+        rule.onNodeWithText("Checking…", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test fun c26MyPlacesChipsBeforeTheFeed() {
+        start("personal-risk", settings = mapOf("pnd_saved_locations" to com.anchittandon.pnd.SAVED_PLACES), load = false)
+        scrollTo("summary:Kathmandu")
+        rule.onNodeWithTag("summary:Kathmandu").assertTextContains("CHECKING…", substring = true)
+    }
+
+    @Test fun c26MyPlacesFailedShowsTheUnavailableCard() {
+        start("personal-risk", http = FakeHttp(failEvents = true), settings = mapOf("pnd_saved_locations" to com.anchittandon.pnd.SAVED_PLACES))
+        scrollTo("summary:Kathmandu")
+        rule.onNodeWithTag("summary:Kathmandu").assertTextContains("LIVE DATA UNAVAILABLE", substring = true)
+        scrollTo("unavailable")
+        rule.onNodeWithText("Do not rely on this page in an emergency. Check with your local authorities.").assertExists()
+        assertTrue(rule.onAllNodesWithTag("band:A").fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test fun c26ThePlacePageSaysCheckingThenUnavailable() {
+        start("locations/Kathmandu?lat=27.7172&lon=85.324&level=City%20or%20town&country=Nepal&cc=NP", http = FakeHttp(failEvents = true))
+        scrollTo("placeAnswer")
+        rule.onNodeWithTag("placeAnswer").assertTextContains("We could not load the latest reports", substring = true)
+        rule.onNodeWithTag("placeAnswer").assert(androidx.compose.ui.test.hasContentDescription("Live data unavailable", substring = true))
+        rule.onNodeWithText("Nothing reported nearby").assertDoesNotExist()
+    }
+
+    /* ------------------------------------------------------------------- C27: zone labels */
+
+    @Test fun c27TheTopBarNeverShowsAnIanaId() {
+        start("events", before = { AppClock.deviceZone = { "America/Argentina/Buenos_Aires" } })
+        rule.onNodeWithTag("tzButton").assertTextContains("GMT-3")
+        rule.onNodeWithContentDescription("Display time zone: GMT-3 · Buenos Aires. Change it").assertExists()
+        assertTrue(rule.onAllNodesWithText("America/Argentina/Buenos_Aires", substring = true).fetchSemanticsNodes().isEmpty())
+        AppClock.deviceZone = { "Asia/Kolkata" }
+    }
+
+    /* --------------------------------------------------------------------- review defects */
+
+    @Test fun aRecordWithALatitudeButNoLongitudeOpens() {
+        val body = feedWith { e -> if (e["id"]?.toString()?.trim('"') in setOf("gdacs-FL-1104999", "eonet-EONET_7003", "gdacs-DR-1105003", "ND-001")) JsonObject(LinkedHashMap(e).apply { remove("lon") }) else e }
+        listOf("alerts/gdacs-FL-1104999" to "Flood in Bagmati Province, Nepal").forEach { (route, _) ->
+            start(route, http = FakeHttp(eventsBody = body))
+            rule.onNodeWithTag("detailTitle").assertExists()
+            scrollToText("Map of the affected area")
+        }
+    }
+
+    @Test fun anEventWithALatitudeButNoLongitudeOpens() {
+        val body = feedWith { e -> if (e["id"]?.toString()?.trim('"') == "eonet-EONET_7003") JsonObject(LinkedHashMap(e).apply { remove("lon") }) else e }
+        start("disasters/eonet-EONET_7003", http = FakeHttp(eventsBody = body))
+        rule.onNodeWithTag("detailTitle").assertExists()
+        scrollToText("Open the live map →")
+    }
+
+    @Test fun aForecastAndACalamityWithALatitudeButNoLongitudeOpen() {
+        val body = feedWith { e -> if (e["id"]?.toString()?.trim('"') in setOf("gdacs-DR-1105003", "ND-001")) JsonObject(LinkedHashMap(e).apply { remove("lon") }) else e }
+        start("forecasts/ND-001", http = FakeHttp(eventsBody = body))
+        scrollToText("Forecast area map")
+    }
+
+    @Test fun aCalamityWithALatitudeButNoLongitudeOpens() {
+        val body = feedWith { e -> if (e["id"]?.toString()?.trim('"') == "gdacs-DR-1105003") JsonObject(LinkedHashMap(e).apply { remove("lon") }) else e }
+        start("calamities/gdacs-DR-1105003", http = FakeHttp(eventsBody = body))
+        scrollToText("Open the live map →")
+    }
+
+    @Test fun anOpenRecordStaysWhenARefreshDropsIt() {
+        val http = FakeHttp()
+        val c = start("disasters/emsc-20260913_0000123", http = http)
+        rule.onNodeWithTag("detailTitle").assertExists()
+        http.eventsBody = feedWith { e -> if (e["id"]?.toString()?.trim('"') == "emsc-20260913_0000123") null else e }
+        runBlocking { c.feed.refresh() }
+        rule.waitForIdle()
+        rule.onNodeWithText("Event not found").assertDoesNotExist()
+        rule.onNodeWithTag("detailTitle").assertExists()
+    }
+
+    @Test fun theLiveMapDoesNotSayItShowsMatchesWithoutCoordinates() {
+        val body = feedWith { e -> JsonObject(LinkedHashMap(e).apply { remove("lat"); remove("lon") }) }
+        start("live-map", http = FakeHttp(eventsBody = body))
+        rule.onNodeWithTag("search").performTextInput("Nepal")
+        rule.waitForIdle()
+        rule.onNodeWithTag("mapNote").assertTextContains("No event matches “Nepal”.")
+    }
+
+    @Test fun changingTheTimeZoneKeepsTheScreen() {
+        val c = start("events")
+        rule.onNodeWithText("Events happening now").assertExists()
+        c.settings.setTimezone("UTC")
+        rule.waitForIdle()
+        rule.onNodeWithText("Events happening now").assertExists()
+        rule.onNodeWithTag("tzButton").assertTextContains("UTC")
+        rule.onNodeWithText("Is a place you care about at risk?").assertDoesNotExist()
+    }
+
+    @Test fun aFailedLedgerReadIsUnavailableNotNotFound() {
+        start("forecasts/OUT-not-a-forecast", http = FakeHttp(failData = true))
+        rule.waitUntil(10_000) { rule.onAllNodesWithTag("detailError").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Live data unavailable").assertExists()
+        rule.onNodeWithText("Forecast not found").assertDoesNotExist()
     }
 }

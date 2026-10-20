@@ -367,7 +367,7 @@ fun SettingsScreen() {
     PndScreen(trust = null, feedBanner = false, header = { item { ScreenHeader(null, "Settings", null) } }) {
         item(key = "tz") {
             Panel("Time zone", subtitle = "Every time in the app is shown in this zone, with the zone named. Your device's time zone is the default, as on the website.") {
-                Select("Display time zone", zones.map { it to if (it == "Asia/Kolkata") "IST · India" else it }, tz, tag = "tzSelect") { c.settings.setTimezone(it) }
+                Select("Display time zone", zones.map { it to if (it == "Asia/Kolkata" || it == tz) Format.tzMenuLabel(it) else it }, tz, tag = "tzSelect") { c.settings.setTimezone(it) }
                 Muted("Times are shown as, for example, " + Format.fmtDate("2026-10-20T11:24:19Z", tz) + ".")
             }
         }

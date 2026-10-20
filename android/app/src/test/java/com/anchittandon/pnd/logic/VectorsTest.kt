@@ -490,6 +490,58 @@ class VectorsTest {
         }
     }
 
+
+    /* ---------------------------------------------------- C26 and C27 (spec commit 63d74bf) */
+
+    @Test fun zoneLabels() = group("portal.zoneLabel").forEach { c ->
+        val i = c["in"]!!.jsonObject; val out = c["out"]!!.jsonObject
+        val tz = s(i["tz"])!!; val at = s(i["at"])!!
+        val t = JsDate.parse(at)!!
+        assertEquals(c.toString(), s(out["label"]), Format.tzLabel(tz, t))
+        assertEquals(c.toString(), s(out["fmtDate"]), Format.fmtDate(at, tz))
+        assertEquals(c.toString(), s(out["fmtTime"]), Format.fmtTime(at, tz))
+        assertEquals(c.toString(), s(out["menuLabel"]), Format.tzMenuLabel(tz, t))
+    }
+
+    /** The two records the generator serves (tools/make-parity-vectors.js placeAnswerVectors); the vectors name them by id. */
+    private val answerRecords: Map<String, JsonObject> by lazy {
+        val hour = JsDate.iso(NOW - 3_600_000)
+        listOf(
+            com.anchittandon.pnd.model.jsonObjectOf("id" to "usgs-dl", "type" to "Earthquake", "title" to "M 5.6 - 12 km N of Delhi, India", "source" to "USGS", "sourceType" to "official",
+                "evidenceState" to "observed", "proximityEligible" to true, "magnitude" to 5.6, "alert" to "Orange", "severity" to "Severe", "severityRank" to 4,
+                "country" to "India", "region" to "Delhi", "lat" to 28.7, "lon" to 77.2, "updated" to hour),
+            com.anchittandon.pnd.model.jsonObjectOf("id" to "usgs-jp", "type" to "Earthquake", "title" to "M 5.1 - 20 km E of Miyako, Japan", "source" to "USGS", "sourceType" to "official",
+                "evidenceState" to "observed", "alert" to "Green", "severityRank" to 2, "country" to "Japan", "lat" to 39.6, "lon" to 142.2, "updated" to hour),
+        ).associateBy { s(it["id"])!! }
+    }
+
+    @Test fun placeAnswerStates() {
+        val g = V["home.placeAnswerStates"]!!.jsonObject
+        assertEquals(ids(g["placeAnswerStates"]), PlaceAnswer.State.entries.map { it.name.lowercase() })
+        g["cases"]!!.jsonArray.objects().forEach { c ->
+            val i = c["in"]!!.jsonObject; val out = c["out"]!!.jsonObject; val tag = s(i["state"])
+            // Replay the feed steps: "hang" never answers, "fail" fails, a list of ids loads.
+            var loaded = false; var failed = false; var events = emptyList<JsonObject>()
+            i["feed"]!!.jsonArray.forEach { st ->
+                when {
+                    st is JsonPrimitive && st.content == "hang" -> {}
+                    st is JsonPrimitive && st.content == "fail" -> if (!loaded) failed = true
+                    else -> { loaded = true; failed = false; events = st.jsonArray.map { answerRecords.getValue(s(it)!!) } }
+                }
+            }
+            val v = PlaceAnswer.view(i["place"]!!.jsonObject, PlaceAnswer.feedState(loaded, failed), events, if (loaded) JsDate.iso(NOW) else null)
+            assertEquals(tag, s(out["eyebrow"]), "Current risk")
+            assertEquals(tag, s(out["badge"]), v.badge)
+            assertEquals(tag, s(out["heading"]), s(i["place"]!!.jsonObject["name"]))
+            assertEquals(tag, s(out["happening"]), v.happeningText)
+            assertEquals(tag, out["unavailableCard"]!!.jsonPrimitive.booleanOrNull, v.unavailableCard)
+            assertEquals(tag, s(out["why"]), v.why)
+            assertEquals(tag, ids(out["steps"]), v.steps)
+            assertEquals(tag, s(out["lastChecked"]), v.lastChecked)
+            assertEquals(tag, s(out["busy"]), v.busy.toString())
+        }
+    }
+
     @Test fun everyVectorGroupIsCovered() {
         val covered = setOf("meta", "risk.levelOf", "risk.markerIcon", "portal.riskLabel", "portal.matchesRiskLevel", "portal.riskTagHtml",
             "portal.riskLevelOptions", "hazards.hazardOf.name", "hazards.horizonHours", "hazards.severityOf", "hazards.cycloneCategory",
@@ -509,7 +561,9 @@ class VectorsTest {
             "fixtures.events.warnings", "portal.isOfficialWarning", "portal.officialWarnings", "portal.WARNING_MEANING", "fixtures.events.mixed",
             "portal.observed", "portal.openForecasts", "portal.isHighAlert", "portal.sourcesReporting", "portal.liveWord", "detail.statusWords",
             "fixtures.events.collection", "collection.keep", "verdicts.LABELS", "verdicts.label", "fixtures.verdictFiles", "forecastDetail.gradeOf",
-            "portal.timezoneDefault", "home.render", "alerts.pager", "verificationDetail.render")
+            "portal.timezoneDefault", "home.render", "alerts.pager", "verificationDetail.render",
+            // C26 and C27.
+            "home.placeAnswerStates", "portal.zoneLabel")
         // Groups that only describe the web page's DOM and have nothing to port, each with its reason. None so far.
         val webOnly = emptyMap<String, String>()
         val uncovered = V.keys - covered - audit - webOnly.keys

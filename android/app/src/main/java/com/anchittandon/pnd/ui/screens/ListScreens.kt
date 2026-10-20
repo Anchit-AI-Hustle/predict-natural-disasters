@@ -141,8 +141,9 @@ fun MapScreen() {
     val list = remember(feed, q, sort) { Sorts.sort(feed.events.filter { Search.matches(it.json, q, it.searchText) }, sort) { it.json } }
     // A new search fits the map to what it found (max zoom 6); a refresh with the same query leaves the map where it is.
     val qt = q.trim()
-    val fit = if (qt.isEmpty()) null else MapFit(qt.lowercase(), list.filter { it.lat != null && it.lon != null }.map { it.lat!! to it.lon!! })
-    val note = if (feed.feed == null) null else MapSearch.liveMapNote(q, list.size)
+    val pts = list.mapNotNull { it.point }
+    val fit = if (qt.isEmpty()) null else MapFit(qt.lowercase(), pts)
+    val note = if (feed.feed == null) null else MapSearch.liveMapNote(q, list.size, pts.size)
     PndScreen(header = { item { ScreenHeader(null, "Live disaster map", "Events reported by official agencies, shown on a map. This page refreshes every minute.") } }) {
         item(key = "tools") {
             Column {
@@ -155,8 +156,8 @@ fun MapScreen() {
         item(key = "map") { RiskMap(list.take(220), height = 420.dp, fit = fit?.takeIf { it.points.isNotEmpty() }) { env.navigate(Format.eventUrl(it.json)) } }
         item(key = "latestHead") { Row(verticalAlignment = Alignment.CenterVertically) { SubHeading("Latest events"); LinkButton("See all →") { env.navigate("/recent-events") } } }
         if (!notLoaded(feed)) {
-            if (list.isEmpty()) item { EmptyCard(Search.emptyState(q, feed.events.map { it.json }, feed.events.map { it.json }, "events")) { env.navigate("/events?q=" + Format.enc(it)) } }
-            eventCards(list.take(30), "m", { env.navigate(Format.eventUrl(it.json)) })
+            if (list.isEmpty() || (qt.isNotEmpty() && pts.isEmpty())) item { EmptyCard(Search.emptyState(q, feed.events.map { it.json }, feed.events.map { it.json }, "events")) { env.navigate("/events?q=" + Format.enc(it)) } }
+            else eventCards(list.take(30), "m", { env.navigate(Format.eventUrl(it.json)) })
         }
     }
 }

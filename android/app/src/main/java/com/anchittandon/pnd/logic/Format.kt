@@ -159,7 +159,39 @@ object Format {
         "Australia/Sydney" to "Sydney",
     )
 
-    fun tzLabel(tz: String = AppClock.zone): String = TZ_ALIASES[tz] ?: tz
+    /**
+     * The zone's name beside a time (changelog C27): the nine aliases, else the en-US short name for that moment
+     * (`Intl.DateTimeFormat('en-US', {timeZoneName: 'short'})`). en-US has short names only for the North American
+     * zones (EST/EDT, CST/CDT, MST/MDT, PST/PDT, AKST/AKDT, HST/HDT, AST/ADT); every other zone is its offset
+     * ("GMT-3", "GMT+5:45", "GMT"). Never the raw IANA id; "local time" if the zone is unknown.
+     */
+    fun tzLabel(tz: String = AppClock.zone, at: Long = AppClock.now()): String {
+        TZ_ALIASES[tz]?.let { return it }
+        val zid = try { ZoneId.of(tz) } catch (e: Exception) { return "local time" }
+        val inst = Instant.ofEpochMilli(at)
+        val dst = zid.rules.isDaylightSavings(inst)
+        val long = java.util.TimeZone.getTimeZone(zid).getDisplayName(dst, java.util.TimeZone.LONG, Locale.US)
+        US_SHORT[long]?.let { return it }
+        val secs = zid.rules.getOffset(inst).totalSeconds
+        if (secs == 0) return "GMT"
+        val a = Math.abs(secs) / 60
+        return "GMT" + (if (secs < 0) "-" else "+") + (a / 60) + (if (a % 60 != 0) ":" + (a % 60).toString().padStart(2, '0') else "")
+    }
+
+    private val US_SHORT = mapOf(
+        "Eastern Standard Time" to "EST", "Eastern Daylight Time" to "EDT", "Central Standard Time" to "CST", "Central Daylight Time" to "CDT",
+        "Mountain Standard Time" to "MST", "Mountain Daylight Time" to "MDT", "Pacific Standard Time" to "PST", "Pacific Daylight Time" to "PDT",
+        "Alaska Standard Time" to "AKST", "Alaska Daylight Time" to "AKDT", "Hawaii-Aleutian Standard Time" to "HST", "Hawaii-Aleutian Daylight Time" to "HDT",
+        "Hawaii Standard Time" to "HST", "Hawaii Daylight Time" to "HDT", "Atlantic Standard Time" to "AST", "Atlantic Daylight Time" to "ADT",
+    )
+
+    /** The time zone menu's words for a zone (`tzMenuLabel`): "IST · India", else "{label} · {city}", or the label alone. */
+    fun tzMenuLabel(tz: String, at: Long = AppClock.now()): String {
+        if (tz == "Asia/Kolkata") return "IST \u00b7 India"
+        val l = tzLabel(tz, at)
+        val city = if (Regex("^(Etc|SystemV)/").containsMatchIn(tz)) "" else tz.split('/').last().replace('_', ' ')
+        return if (city.isNotEmpty() && city != l) "$l \u00b7 $city" else l
+    }
 
     private fun zoneId(tz: String): ZoneId = try { if (tz == "UTC") ZoneOffset.UTC else ZoneId.of(tz) } catch (e: Exception) { ZoneId.of("Asia/Kolkata") }
 
@@ -174,7 +206,7 @@ object Format {
         val t = JsDate.parse(v) ?: return v
         val z = Instant.ofEpochMilli(t).atZone(zoneId(tz))
         return z.dayOfMonth.toString().padStart(2, '0') + " " + MONTHS[z.monthValue - 1] + " " + z.year + ", " +
-            clock12(z.hour, z.minute) + " " + tzLabel(tz)
+            clock12(z.hour, z.minute) + " " + tzLabel(tz, t)
     }
 
     fun fmtDateMs(ms: Long, tz: String = AppClock.zone): String = fmtDate(JsDate.iso(ms), tz)
@@ -183,7 +215,7 @@ object Format {
         if (v.isNullOrEmpty()) return "-"
         val t = JsDate.parse(v) ?: return v
         val z = Instant.ofEpochMilli(t).atZone(zoneId(tz))
-        return clock12(z.hour, z.minute) + " " + tzLabel(tz)
+        return clock12(z.hour, z.minute) + " " + tzLabel(tz, t)
     }
 
     private val EDGE = Regex("^(\\d{4})-(\\d\\d)-(\\d\\d)T(00:00:00|23:59:59)(\\.0+|\\.9+)?Z$")

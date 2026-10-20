@@ -29,10 +29,25 @@ class ParityLogicTest {
     }
 
     @Test fun c18LiveMapSearchNote() {
-        assertNull(MapSearch.liveMapNote("  ", 3))
-        assertEquals("1 event match “nepal”. The map shows it.", MapSearch.liveMapNote(" nepal ", 1))
-        assertEquals("4 events match “flood”. The map shows them.", MapSearch.liveMapNote("flood", 4))
-        assertEquals("No event matches “mars”.", MapSearch.liveMapNote("mars", 0))
+        assertNull(MapSearch.liveMapNote("  ", 3, 3))
+        assertEquals("1 event match \u201cnepal\u201d. The map shows it.", MapSearch.liveMapNote(" nepal ", 1, 1))
+        assertEquals("4 events match \u201cflood\u201d. The map shows them.", MapSearch.liveMapNote("flood", 4, 4))
+        assertEquals("No event matches \u201cmars\u201d.", MapSearch.liveMapNote("mars", 0, 0))
+        // Matches the map cannot show (no coordinates) are not said to be on it (live-map.html draw()).
+        assertEquals("No event matches \u201cocean\u201d.", MapSearch.liveMapNote("ocean", 3, 0))
+        assertEquals("3 events match \u201cnepal\u201d. The map shows it.", MapSearch.liveMapNote("nepal", 3, 1))
+    }
+
+    @Test fun c27ZoneLabelsAreNeverIanaIds() {
+        val at = com.anchittandon.pnd.model.JsDate.parse("2026-10-20T11:24:19Z")!!
+        listOf("Asia/Kathmandu", "America/Argentina/Buenos_Aires", "Europe/Berlin", "Asia/Shanghai", "Africa/Abidjan", "Pacific/Honolulu").forEach { z ->
+            val l = Format.tzLabel(z, at)
+            assertFalse("$z gave $l", l.contains('/'))
+        }
+        assertEquals("GMT", Format.tzLabel("Africa/Abidjan", at))
+        assertEquals("GMT+8", Format.tzLabel("Asia/Shanghai", at))
+        assertEquals("HST", Format.tzLabel("Pacific/Honolulu", at))
+        assertEquals("local time", Format.tzLabel("Not/AZone", at))
     }
 
     @Test fun c23OnlyTheReadersOwnEditClearsTheCountry() {

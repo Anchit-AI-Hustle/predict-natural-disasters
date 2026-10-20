@@ -25,6 +25,8 @@ class Event(val json: JsonObject) {
     val sourceUrl: String get() = json.text("sourceUrl")
     val lat: Double? get() = json.num("lat")
     val lon: Double? get() = json.num("lon")
+    /** Both coordinates, or null: a record with one of them has no place on a map. */
+    val point: Pair<Double, Double>? get() { val a = lat; val b = lon; return if (a != null && b != null) a to b else null }
     /** `e.forecast` (truthy). */
     val forecast: Boolean get() = json.truthy("forecast")
     val isForecastAny: Boolean get() = json.truthy("forecast") || json.truthy("isForecast")

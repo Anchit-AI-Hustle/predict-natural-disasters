@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -156,7 +157,11 @@ fun RecordDetailScreen(kind: DetailKind, id: String) {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
     val all = feed.all
-    val e = Format.findEvent(all, id) { it.json }
+    // Once shown, a record stays shown: a later refresh that no longer lists it does not turn the page into "not found" (C20).
+    val found = Format.findEvent(all, id) { it.json }
+    val last = remember(id) { arrayOfNulls<Event>(1) }
+    if (found != null) last[0] = found
+    val e = found ?: last[0]
     val (sort, setSort) = rememberSort(when (kind) { DetailKind.EVENT -> "event_sortBy"; DetailKind.ALERT -> "alert_sortBy"; DetailKind.CALAMITY -> "calamity_sortBy" },
         if (kind == DetailKind.EVENT) Sorts.NEARBY else Sorts.EVENT_SORTS)
     val path = when (kind) { DetailKind.EVENT -> "/disasters/"; DetailKind.ALERT -> "/alerts/"; DetailKind.CALAMITY -> "/calamities/" } + Format.enc(e?.id ?: id)
@@ -243,7 +248,7 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
     item(key = "map") {
         val env = LocalApp.current
         Panel("Map", trailing = { LinkButton("Open the live map →") { env.navigate("/live-map") } }) {
-            RiskMap(listOf(e), height = 240.dp, center = e.lat?.let { it to e.lon!! }, zoom = if (Regex("earthquake", RegexOption.IGNORE_CASE).containsMatchIn(e.type)) 7.0 else 6.0) { }
+            RiskMap(listOf(e), height = 240.dp, center = e.point, zoom = if (Regex("earthquake", RegexOption.IGNORE_CASE).containsMatchIn(e.type)) 7.0 else 6.0) { }
         }
     }
     item(key = "safety") {
@@ -341,7 +346,7 @@ private fun LazyListScope.alertBody(e: Event, all: List<Event>, sort: String, se
     }
     item(key = "map") {
         val env = LocalApp.current
-        Panel("Map of the affected area", trailing = { LinkButton("Open the live map →") { env.navigate("/live-map") } }) { RiskMap(listOf(e), height = 240.dp, center = e.lat?.let { it to e.lon!! }, zoom = 6.0) { } }
+        Panel("Map of the affected area", trailing = { LinkButton("Open the live map →") { env.navigate("/live-map") } }) { RiskMap(listOf(e), height = 240.dp, center = e.point, zoom = 6.0) { } }
     }
     item(key = "safety") {
         Panel("Safety") {
@@ -396,7 +401,7 @@ private fun LazyListScope.calamityBody(e: Event, all: List<Event>, feed: FeedSta
     }
     item(key = "map") {
         val env = LocalApp.current
-        Panel("Map", trailing = { LinkButton("Open the live map →") { env.navigate("/live-map") } }) { RiskMap(listOf(e), height = 240.dp, center = e.lat?.let { it to e.lon!! }, zoom = 5.0) { } }
+        Panel("Map", trailing = { LinkButton("Open the live map →") { env.navigate("/live-map") } }) { RiskMap(listOf(e), height = 240.dp, center = e.point, zoom = 5.0) { } }
     }
     item(key = "related") {
         val env = LocalApp.current

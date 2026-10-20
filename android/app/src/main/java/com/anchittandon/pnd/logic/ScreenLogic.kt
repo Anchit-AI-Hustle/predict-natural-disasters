@@ -183,10 +183,11 @@ object MapSearch {
     }
 
     /** live-map.html: the note under the toolbar after a search (changelog C18). */
-    fun liveMapNote(q: String, n: Int): String? {
+    fun liveMapNote(q: String, n: Int, located: Int): String? {
         val t = q.trim()
         if (t.isEmpty()) return null
-        return if (n == 0) "No event matches “$t”." else "$n event" + (if (n == 1) "" else "s") + " match “$t”. The map shows " + (if (n == 1) "it." else "them.")
+        // Matches the map cannot show (no coordinates) are not said to be on it: the page says nothing matches.
+        return if (located == 0) "No event matches “$t”." else "$n event" + (if (n == 1) "" else "s") + " match “$t”. The map shows " + (if (located == 1) "it." else "them.")
     }
 }
 
@@ -329,5 +330,49 @@ object VerificationCheck {
             listOf("Missing people", NF, NR),
         )
         return Check(verdict, ev.size.toString(), dateOf(fcStart).ifEmpty { "Not stated" }, dur.ifEmpty { "Not stated" }, rows, Sorts.sort(ev, sort) { it })
+    }
+}
+
+/**
+ * place-risk.js `feedState`, `PENDING` and `PENDING_STEP` (changelog C26): a place answer before the feed has
+ * loaded is "Checking…" or "Live data unavailable", never an all-clear drawn from an empty list.
+ */
+object PlaceAnswer {
+    enum class State { LOADING, FAILED, LOADED }
+
+    /** [loaded]: any feed has loaded here; [failed]: the last try failed. A later failed refresh keeps the answer. */
+    fun feedState(loaded: Boolean, failed: Boolean): State = if (loaded) State.LOADED else if (failed) State.FAILED else State.LOADING
+
+    data class Pending(val headline: String, val text: String, val lastChecked: String)
+
+    val PENDING = mapOf(
+        State.LOADING to Pending("Checking…", "Checking the latest reports for this place.", "not yet: the data is still loading"),
+        State.FAILED to Pending("Live data unavailable", Portal.UNAVAILABLE_BODY, "not yet: the latest data could not be loaded"),
+    )
+    const val PENDING_STEP = "For official information about this place, check your national or local disaster agency."
+
+    /** What the answer card says, block by block (the `home.placeAnswerStates` vectors read the same blocks). */
+    data class View(
+        val state: State, val badge: String, val level: Level?, val happeningTitle: String?, val happening: String, val unavailableCard: Boolean,
+        val why: String?, val steps: List<String>, val authority: String, val lastChecked: String, val busy: Boolean, val lead: JsonObject?,
+    ) {
+        /** The "What's happening" block as one line of text. */
+        val happeningText: String get() = if (unavailableCard) Portal.UNAVAILABLE_TITLE + " " + happening else listOfNotNull(happeningTitle, happening).joinToString(" ")
+    }
+
+    fun view(place: JsonObject, state: State, events: List<JsonObject>, generatedAt: String?): View {
+        if (state != State.LOADED) {
+            val w = PENDING.getValue(state)
+            return View(state, w.headline, null, null, w.text, state == State.FAILED, null, listOf(PENDING_STEP), PlaceRisk.AUTHORITY_LINE, w.lastChecked, state == State.LOADING, null)
+        }
+        val a = PlaceRisk.assess(place, events, generatedAt)
+        val act = PlaceRisk.actionsFor(a)
+        val lead = a.lead?.e
+        val happening = if (lead != null) {
+            val pl = Format.placeOf(lead)
+            lead.text("type").ifEmpty { "Hazard" } + (if (pl.isNotEmpty()) " · $pl" else "") + " · reported " + Format.age(lead.text("updated"))
+        } else "None of our sources reports anything at this place right now."
+        return View(state, a.level?.label ?: "Nothing reported nearby", a.level, lead?.let { Glossary.expandAlways(Format.titleOf(it)) }, happening, false, a.why,
+            act.steps, act.authority, if (generatedAt != null) Format.fmtDate(generatedAt) + " · " + Format.age(generatedAt) else "not yet: the data is still loading", false, lead)
     }
 }

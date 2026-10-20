@@ -83,11 +83,19 @@ private fun spanText(e: JsonObject): String {
 fun ForecastDetailScreen(id: String) {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
-    val inFeed = Format.findEvent(feed.all, id) { it.json }
+    // Once shown, a forecast stays shown when a later refresh drops it (C20).
+    val found = Format.findEvent(feed.all, id) { it.json }
+    val last = remember(id) { arrayOfNulls<Event>(1) }
+    if (found != null) last[0] = found
+    val inFeed = found ?: last[0]
     var ledger by remember(id) { mutableStateOf<JsonObject?>(null) }
     var ledgerTried by remember(id) { mutableStateOf(false) }
+    var ledgerFailed by remember(id) { mutableStateOf(false) }
     LaunchedEffect(id, feed.feed != null, inFeed == null) {
-        if (feed.feed != null && inFeed == null && !ledgerTried) { ledger = env.container.data.ledgerRow(id); ledgerTried = true }
+        if (feed.feed != null && inFeed == null && !ledgerTried) {
+            val r = env.container.data.ledgerLookup(id)
+            ledger = r.row; ledgerFailed = r.failed; ledgerTried = true
+        }
     }
     val (sort, setSort) = rememberSort("forecast_sortBy", Sorts.NEARBY)
     // A graded forecast shows its grade (forecast-detail.html gradeOf, changelog C4). A failed read gives no grade.
@@ -105,6 +113,13 @@ fun ForecastDetailScreen(id: String) {
         if (feed.failed) item(key = "stale") { StaleBox("Live data unavailable. Trying again automatically.", tag = "detailError") }
         val e: Event = inFeed ?: ledger?.let { Event(JsonObject(LinkedHashMap<String, kotlinx.serialization.json.JsonElement>().apply { put("forecast", JsonPrimitive(true)); putAll(it) })) } ?: run {
             if (!ledgerTried) item(key = "ledgerWait") { Body("Looking for this forecast in our record of past forecasts…") }
+            // A ledger that could not be read is not evidence the forecast does not exist (C20 unavailable).
+            else if (ledgerFailed) item(key = "ledgerDown") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("detailError")) {
+                    Heading("Live data unavailable")
+                    GoneText(GoneLine("We could not load our forecasts, so this one cannot be shown right now. Trying again automatically. ", "See all our forecasts", "/forecast-list", "."), env.navigate)
+                }
+            }
             else notFound("FORECAST DETAILS", "Forecast not found", GoneLine("We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or ", "see all our forecasts", "/forecast-list", "."), env.navigate)
             return@PndScreen
         }
@@ -193,7 +208,7 @@ fun ForecastDetailScreen(id: String) {
         }
         item(key = "map") {
             Panel("Forecast area map", trailing = { LinkButton("Live map →") { env.navigate("/live-map") } }) {
-                RiskMap(listOf(e), height = 240.dp, center = e.lat?.let { it to e.lon!! }, zoom = 5.0, circle = e.lat?.let { MapCircle(it, e.lon!!, 250.0, Pnd.amber, 0.08f) }) { }
+                RiskMap(listOf(e), height = 240.dp, center = e.point, zoom = 5.0, circle = e.point?.let { (la, lo) -> MapCircle(la, lo, 250.0, Pnd.amber, 0.08f) }) { }
             }
         }
         item(key = "means") {

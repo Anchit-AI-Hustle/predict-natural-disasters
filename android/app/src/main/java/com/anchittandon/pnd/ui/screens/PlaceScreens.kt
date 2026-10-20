@@ -21,6 +21,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,7 @@ import com.anchittandon.pnd.logic.AppClock
 import com.anchittandon.pnd.logic.Continents
 import com.anchittandon.pnd.logic.HazardPage
 import com.anchittandon.pnd.logic.Portal
+import com.anchittandon.pnd.logic.PlaceAnswer
 import com.anchittandon.pnd.logic.RegionMatch
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
@@ -258,6 +261,14 @@ fun LocationDetailScreen(name: String, lat: Double?, lon: Double?, level: String
         if (at != null) item(key = "radius") {
             Select("Show events within", listOf(25, 50, 100, 150, 300, 500).map { it.toString() to "Show events within $it km" }, radius.toString(), tag = "radius") {
                 radius = it.toInt(); env.container.settings.setRadius(level, radius)
+            }
+        }
+        // Before the first feed: "Checking…", then "Live data unavailable", never an all-clear from no data (C26).
+        if (at != null && feed.feed == null) item(key = "answer") {
+            val w = PlaceAnswer.PENDING.getValue(PlaceAnswer.feedState(false, feed.failed))
+            CardBox(Modifier.padding(vertical = 8.dp).testTag("placeAnswer").semantics(mergeDescendants = true) { if (!feed.failed) stateDescription = "Busy" }) {
+                RiskBadge(com.anchittandon.pnd.logic.Level.UNKNOWN, w.headline, w.headline)
+                Body(w.text)
             }
         }
         if (notLoaded(feed)) return@PndScreen

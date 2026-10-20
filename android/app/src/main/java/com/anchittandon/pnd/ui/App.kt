@@ -129,12 +129,9 @@ fun PndApp(container: AppContainer, startRoute: String? = null, poll: Boolean = 
                 topBar = { TopBar(route, canGoBack = nav.previousBackStackEntry != null, onBack = { nav.popBackStack() }) },
                 bottomBar = { TabBar(tabFor(route)) { go(nav, it, tab = true) } },
             ) { pad ->
-                // Changing the time zone redraws every screen, as the web reloads the page.
-                androidx.compose.runtime.key(tz) {
-                    NavHost(nav, startDestination = "home", modifier = Modifier.padding(pad)) { routes() }
-                    // After the graph is set (the content is composed after the frame around it).
-                    LaunchedEffect(startRoute) { if (startRoute != null && startRoute != "home") go(nav, startRoute) }
-                }
+                NavHost(nav, startDestination = "home", modifier = Modifier.padding(pad)) { routes() }
+                // After the graph is set (the content is composed after the frame around it).
+                LaunchedEffect(startRoute) { if (startRoute != null && startRoute != "home") go(nav, startRoute) }
             }
         }
     }
@@ -166,42 +163,49 @@ private fun FeedPolling(container: AppContainer) {
     }
 }
 
+/**
+ * Changing the time zone redraws the screen, as the web reloads the page, but keeps the reader on it:
+ * only the screen's content is rebuilt, never the navigation graph.
+ */
+@Composable
+private fun Tz(content: @Composable () -> Unit) = androidx.compose.runtime.key(LocalApp.current.tz) { content() }
+
 private fun androidx.navigation.NavGraphBuilder.routes() {
     val str = { n: String -> navArgument(n) { type = NavType.StringType; nullable = true; defaultValue = null } }
-    composable("home") { HomeScreen() }
-    composable("live-map") { MapScreen() }
-    composable("alerts") { AlertsScreen() }
-    composable("forecasts") { ForecastsScreen() }
-    composable("personal-risk") { MyPlacesScreen() }
-    composable("accuracy") { TrackRecordUi() }
+    composable("home") { Tz { HomeScreen() } }
+    composable("live-map") { Tz { MapScreen() } }
+    composable("alerts") { Tz { AlertsScreen() } }
+    composable("forecasts") { Tz { ForecastsScreen() } }
+    composable("personal-risk") { Tz { MyPlacesScreen() } }
+    composable("accuracy") { Tz { TrackRecordUi() } }
     for (v in CollectionView.entries) {
-        composable(v.route + "?q={q}&region={region}", listOf(str("q"), str("region"))) { b -> CollectionScreen(v, b.arguments?.getString("q") ?: "", b.arguments?.getString("region") ?: "") }
+        composable(v.route + "?q={q}&region={region}", listOf(str("q"), str("region"))) { b -> Tz { CollectionScreen(v, b.arguments?.getString("q") ?: "", b.arguments?.getString("region") ?: "") } }
     }
-    composable("forecast-calendar?region={region}", listOf(str("region"))) { b -> ForecastCalendarScreen(b.arguments?.getString("region") ?: "") }
-    composable("calamities") { CalamitiesScreen() }
-    composable("regions") { RegionsScreen() }
-    composable("resources") { ResourcesScreen() }
-    composable("insights") { InsightsScreen() }
-    composable("methodology") { MethodologyScreen() }
-    composable("about") { AboutScreen() }
-    composable("verification") { VerificationListScreen() }
-    composable("verification-detail") { VerificationDetailScreen() }
-    composable("more") { MoreScreen() }
-    composable("settings") { SettingsScreen() }
-    composable("disasters/{id}", listOf(str("id"))) { b -> RecordDetailScreen(DetailKind.EVENT, b.arguments?.getString("id") ?: "") }
-    composable("alerts/{id}", listOf(str("id"))) { b -> RecordDetailScreen(DetailKind.ALERT, b.arguments?.getString("id") ?: "") }
-    composable("calamities/{id}", listOf(str("id"))) { b -> RecordDetailScreen(DetailKind.CALAMITY, b.arguments?.getString("id") ?: "") }
-    composable("forecasts/{id}", listOf(str("id"))) { b -> ForecastDetailScreen(b.arguments?.getString("id") ?: "ND-001") }
-    composable("regions/{name}", listOf(str("name"))) { b -> RegionDetailScreen(b.arguments?.getString("name") ?: "World") }
+    composable("forecast-calendar?region={region}", listOf(str("region"))) { b -> Tz { ForecastCalendarScreen(b.arguments?.getString("region") ?: "") } }
+    composable("calamities") { Tz { CalamitiesScreen() } }
+    composable("regions") { Tz { RegionsScreen() } }
+    composable("resources") { Tz { ResourcesScreen() } }
+    composable("insights") { Tz { InsightsScreen() } }
+    composable("methodology") { Tz { MethodologyScreen() } }
+    composable("about") { Tz { AboutScreen() } }
+    composable("verification") { Tz { VerificationListScreen() } }
+    composable("verification-detail") { Tz { VerificationDetailScreen() } }
+    composable("more") { Tz { MoreScreen() } }
+    composable("settings") { Tz { SettingsScreen() } }
+    composable("disasters/{id}", listOf(str("id"))) { b -> Tz { RecordDetailScreen(DetailKind.EVENT, b.arguments?.getString("id") ?: "") } }
+    composable("alerts/{id}", listOf(str("id"))) { b -> Tz { RecordDetailScreen(DetailKind.ALERT, b.arguments?.getString("id") ?: "") } }
+    composable("calamities/{id}", listOf(str("id"))) { b -> Tz { RecordDetailScreen(DetailKind.CALAMITY, b.arguments?.getString("id") ?: "") } }
+    composable("forecasts/{id}", listOf(str("id"))) { b -> Tz { ForecastDetailScreen(b.arguments?.getString("id") ?: "ND-001") } }
+    composable("regions/{name}", listOf(str("name"))) { b -> Tz { RegionDetailScreen(b.arguments?.getString("name") ?: "World") } }
     composable("locations/{name}?lat={lat}&lon={lon}&level={level}&country={country}&cc={cc}",
         listOf(str("name"), str("lat"), str("lon"), str("level"), str("country"), str("cc"))) { b ->
         val a = b.arguments
-        LocationDetailScreen(a?.getString("name") ?: "World", a?.getString("lat")?.toDoubleOrNull(), a?.getString("lon")?.toDoubleOrNull(),
-            a?.getString("level") ?: "", a?.getString("country") ?: "", a?.getString("cc") ?: "")
+        Tz { LocationDetailScreen(a?.getString("name") ?: "World", a?.getString("lat")?.toDoubleOrNull(), a?.getString("lon")?.toDoubleOrNull(),
+            a?.getString("level") ?: "", a?.getString("country") ?: "", a?.getString("cc") ?: "") }
     }
-    composable("hazards/{type}?region={region}", listOf(str("type"), str("region"))) { b -> HazardDetailScreen(b.arguments?.getString("type") ?: "Flood", b.arguments?.getString("region") ?: "") }
-    composable("history/{id}", listOf(str("id"))) { b -> HistoryDetailScreen(b.arguments?.getString("id") ?: "") }
-    composable("sources/{name}", listOf(str("name"))) { b -> SourceDetailScreen(b.arguments?.getString("name") ?: "GDACS") }
+    composable("hazards/{type}?region={region}", listOf(str("type"), str("region"))) { b -> Tz { HazardDetailScreen(b.arguments?.getString("type") ?: "Flood", b.arguments?.getString("region") ?: "") } }
+    composable("history/{id}", listOf(str("id"))) { b -> Tz { HistoryDetailScreen(b.arguments?.getString("id") ?: "") } }
+    composable("sources/{name}", listOf(str("name"))) { b -> Tz { SourceDetailScreen(b.arguments?.getString("name") ?: "GDACS") } }
 }
 
 @Composable
@@ -225,7 +229,7 @@ private fun TopBar(route: String?, canGoBack: Boolean, onBack: () -> Unit) {
             }
             Text(Format.tzLabel(env.tz), color = Color(0xFFEAF7F1), fontSize = 12.sp,
                 modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = "Change the time zone") { env.navigate("/settings") }
-                    .semantics { contentDescription = "Display time zone: ${env.tz}. Change it" }.padding(12.dp).testTag("tzButton"))
+                    .semantics { contentDescription = "Display time zone: ${Format.tzMenuLabel(env.tz)}. Change it" }.padding(12.dp).testTag("tzButton"))
             Text("● Live", color = Pnd.greenLive, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = "Open live events") { env.navigate("/events") }
                     .border(1.dp, Color(0xFF187858), RoundedCornerShape(8.dp)).background(Color(0xFF06251B), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 12.dp))

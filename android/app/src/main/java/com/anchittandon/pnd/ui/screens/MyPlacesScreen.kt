@@ -37,6 +37,7 @@ import com.anchittandon.pnd.logic.AppClock
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.PlaceForm
+import com.anchittandon.pnd.logic.PlaceAnswer
 import com.anchittandon.pnd.logic.Place
 import com.anchittandon.pnd.logic.PlaceRisk
 import com.anchittandon.pnd.logic.Sorts
@@ -183,7 +184,9 @@ fun MyPlacesScreen() {
                 CardBox(Modifier.testTag("saved:${p.name}")) {
                     Text(if (p.kind == p.name) p.kind else "${p.kind} · ${p.name}", color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Muted("${com.anchittandon.pnd.model.jsNumText(p.lat)}, ${com.anchittandon.pnd.model.jsNumText(p.lon)}" + (if (p.country.isNotEmpty()) " · ${p.country}" else " · country unknown") + (p.updatedAt?.let { " · updated ${Format.age(it)}" } ?: ""))
-                    if (feed.feed != null) ProvenancePill(PlaceRisk.summarise(a))
+                    // Before the feed loads a saved place is still being checked, or the data is unavailable (C26).
+                    val st = PlaceAnswer.feedState(feed.feed != null, feed.failed)
+                    Box(Modifier.semantics(mergeDescendants = true) {}.testTag("summary:${p.name}")) { ProvenancePill(if (st == PlaceAnswer.State.LOADED) PlaceRisk.summarise(a) else PlaceAnswer.PENDING.getValue(st).headline.uppercase()) }
                     SecondaryButton("Remove", Modifier.testTag("remove:${p.name}")) { c.settings.removePlace(p.id) }
                 }
             }
@@ -199,12 +202,15 @@ fun MyPlacesScreen() {
             }
         }
         if (feed.feed == null) {
-            item(key = "riskErr") {
-                if (feed.failed) StaleBox("We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.", tag = "placesError")
-                else EmptyText("Loading…")
+            // No feed: not a set of empty bands. Loading shows nothing yet; a failed load shows the C19 card.
+            // The app's 60 s poll tries again until it loads (personal-risk.html loadFeed).
+            if (feed.failed) item(key = "riskErr") {
+                Column {
+                    UnavailableCard()
+                    StaleBox("Do not rely on this page in an emergency. Check with your local authorities.", tag = "placesError")
+                }
             }
         } else {
-            if (feed.failed) item(key = "riskStale") { StaleBox("We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.", tag = "placesError") }
             val wide = events.count { it.isForecastAny && it.json.str("forecastScope") == "country" && it.country.isNotEmpty() }
             val placeless = places.count { it.country.isEmpty() }
             if (wide > 0 && placeless > 0) item(key = "scope") {
