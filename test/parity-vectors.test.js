@@ -46,3 +46,23 @@ test('every vector group the native harnesses were built on is still there', asy
   const committed = JSON.parse(fs.readFileSync(OUT, 'utf8'));
   assert.deepEqual(ORIGINAL.filter(k => !(k in committed)), []);
 });
+
+test('the C26 and C27 groups the app ports work from are there, with their states and zones', () => {
+  const committed = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+  const states = committed['home.placeAnswerStates'];
+  assert.ok(states, 'home.placeAnswerStates is missing');
+  const by = Object.fromEntries(states.cases.map(c => [c.in.state, c.out]));
+  assert.deepEqual(Object.keys(by), ['loading', 'failed', 'loaded-empty', 'loaded-with-hits', 'failed-then-loaded']);
+  assert.equal(by.loading.badge, 'Checking…');
+  assert.equal(by.failed.badge, 'Live data unavailable');
+  assert.equal(by['loaded-empty'].badge, 'Nothing reported nearby');
+  for (const s of ['loading', 'failed']) assert.doesNotMatch(JSON.stringify(by[s]), /Nothing reported nearby/);
+  const zones = committed['portal.zoneLabel'];
+  assert.ok(zones, 'portal.zoneLabel is missing');
+  for (const z of ['Asia/Kolkata', 'UTC', 'America/New_York', 'Europe/London', 'America/Argentina/Buenos_Aires', 'Asia/Kathmandu', 'Australia/Lord_Howe']) {
+    assert.ok(zones.some(x => x.in.tz === z), z + ' is not in portal.zoneLabel');
+  }
+  for (const x of zones) {
+    assert.ok(!x.out.label.includes('/') && !x.out.fmtDate.includes(x.in.tz.includes('/') ? x.in.tz : '\u0000'), 'a raw zone id in ' + JSON.stringify(x));
+  }
+});

@@ -4311,22 +4311,22 @@
   {
    "tz": "Europe/Paris",
    "in": "2026-10-20T11:24:19Z",
-   "out": "20 Oct 2026, 1:24 PM Europe/Paris"
+   "out": "20 Oct 2026, 1:24 PM GMT+2"
   },
   {
    "tz": "Europe/Paris",
    "in": "2026-10-20T00:00:00Z",
-   "out": "20 Oct 2026, 2:00 AM Europe/Paris"
+   "out": "20 Oct 2026, 2:00 AM GMT+2"
   },
   {
    "tz": "Europe/Paris",
    "in": "2026-01-05T18:05:00Z",
-   "out": "05 Jan 2026, 7:05 PM Europe/Paris"
+   "out": "05 Jan 2026, 7:05 PM GMT+1"
   },
   {
    "tz": "Europe/Paris",
    "in": "2026-10-20T23:59:59Z",
-   "out": "21 Oct 2026, 1:59 AM Europe/Paris"
+   "out": "21 Oct 2026, 1:59 AM GMT+2"
   },
   {
    "tz": "Europe/Paris",
@@ -4428,22 +4428,22 @@
   {
    "tz": "Europe/Paris",
    "in": "2026-10-20T11:24:19Z",
-   "out": "1:24 PM Europe/Paris"
+   "out": "1:24 PM GMT+2"
   },
   {
    "tz": "Europe/Paris",
    "in": "2026-10-20T00:00:00Z",
-   "out": "2:00 AM Europe/Paris"
+   "out": "2:00 AM GMT+2"
   },
   {
    "tz": "Europe/Paris",
    "in": "2026-01-05T18:05:00Z",
-   "out": "7:05 PM Europe/Paris"
+   "out": "7:05 PM GMT+1"
   },
   {
    "tz": "Europe/Paris",
    "in": "2026-10-20T23:59:59Z",
-   "out": "1:59 AM Europe/Paris"
+   "out": "1:59 AM GMT+2"
   }
  ],
  "portal.fmtWhen": [
@@ -4778,7 +4778,7 @@
     "2026-10-23T11:24:19Z",
     null
    ],
-   "out": "20 Oct 2026, 2:00 AM Europe/Paris"
+   "out": "20 Oct 2026, 2:00 AM GMT+2"
   },
   {
    "tz": "Europe/Paris",
@@ -4787,7 +4787,7 @@
     "2026-10-20T00:00:00Z",
     "end"
    ],
-   "out": "23 Oct 2026, 1:24 PM Europe/Paris"
+   "out": "23 Oct 2026, 1:24 PM GMT+2"
   },
   {
    "tz": "Europe/Paris",
@@ -4999,7 +4999,7 @@
     "targetStart": "2026-10-20T11:24:19.511Z",
     "targetEnd": "2026-10-23T11:24:19.511Z"
    },
-   "out": "Starts 20 Oct 2026, 1:24 PM Europe/Paris · lasts 3 days"
+   "out": "Starts 20 Oct 2026, 1:24 PM GMT+2 · lasts 3 days"
   },
   {
    "tz": "Europe/Paris",
@@ -5014,7 +5014,7 @@
    "in": {
     "startedAt": "2026-10-20T06:00:00Z"
    },
-   "out": "Starts 20 Oct 2026, 8:00 AM Europe/Paris · length not stated"
+   "out": "Starts 20 Oct 2026, 8:00 AM GMT+2 · length not stated"
   },
   {
    "tz": "Europe/Paris",
@@ -5022,7 +5022,7 @@
     "updated": "2026-10-20T06:00:00Z",
     "targetEnd": "2026-10-20T06:30:00Z"
    },
-   "out": "Starts 20 Oct 2026, 8:00 AM Europe/Paris · lasts under an hour"
+   "out": "Starts 20 Oct 2026, 8:00 AM GMT+2 · lasts under an hour"
   },
   {
    "tz": "Europe/Paris",
@@ -5276,7 +5276,7 @@
      ]
     }
    },
-   "out": "Our forecasts reach as far as 19 Nov 2026, 12:24 PM Europe/Paris (30 days from now). Each one covers 1, 2, 3, 4, 5, 7 or 30 days. We do not forecast further ahead than that. It does not mean nothing will happen after that date."
+   "out": "Our forecasts reach as far as 19 Nov 2026, 12:24 PM GMT+1 (30 days from now). Each one covers 1, 2, 3, 4, 5, 7 or 30 days. We do not forecast further ahead than that. It does not mean nothing will happen after that date."
   },
   {
    "tz": "Europe/Paris",
@@ -9241,8 +9241,8 @@
    ],
    "out": {
     "timezone": "Asia/Kathmandu",
-    "tzLabel": "Asia/Kathmandu",
-    "fmtDate": "20 Oct 2026, 5:09 PM Asia/Kathmandu"
+    "tzLabel": "GMT+5:45",
+    "fmtDate": "20 Oct 2026, 5:09 PM GMT+5:45"
    }
   },
   {
@@ -9287,6 +9287,272 @@
     "timezone": "Asia/Tokyo",
     "tzLabel": "JST",
     "fmtDate": "20 Oct 2026, 8:24 PM JST"
+   }
+  }
+ ],
+ "portal.zoneLabel": [
+  {
+   "in": {
+    "tz": "Asia/Kolkata",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "IST",
+    "fmtDate": "20 Oct 2026, 4:54 PM IST",
+    "fmtTime": "4:54 PM IST",
+    "menuLabel": "IST · India"
+   }
+  },
+  {
+   "in": {
+    "tz": "Asia/Kolkata",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "IST",
+    "fmtDate": "05 Jan 2026, 11:35 PM IST",
+    "fmtTime": "11:35 PM IST",
+    "menuLabel": "IST · India"
+   }
+  },
+  {
+   "in": {
+    "tz": "UTC",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "UTC",
+    "fmtDate": "20 Oct 2026, 11:24 AM UTC",
+    "fmtTime": "11:24 AM UTC",
+    "menuLabel": "UTC"
+   }
+  },
+  {
+   "in": {
+    "tz": "UTC",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "UTC",
+    "fmtDate": "05 Jan 2026, 6:05 PM UTC",
+    "fmtTime": "6:05 PM UTC",
+    "menuLabel": "UTC"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/New_York",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "ET",
+    "fmtDate": "20 Oct 2026, 7:24 AM ET",
+    "fmtTime": "7:24 AM ET",
+    "menuLabel": "ET · New York"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/New_York",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "ET",
+    "fmtDate": "05 Jan 2026, 1:05 PM ET",
+    "fmtTime": "1:05 PM ET",
+    "menuLabel": "ET · New York"
+   }
+  },
+  {
+   "in": {
+    "tz": "Europe/London",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "UK",
+    "fmtDate": "20 Oct 2026, 12:24 PM UK",
+    "fmtTime": "12:24 PM UK",
+    "menuLabel": "UK · London"
+   }
+  },
+  {
+   "in": {
+    "tz": "Europe/London",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "UK",
+    "fmtDate": "05 Jan 2026, 6:05 PM UK",
+    "fmtTime": "6:05 PM UK",
+    "menuLabel": "UK · London"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/Argentina/Buenos_Aires",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "GMT-3",
+    "fmtDate": "20 Oct 2026, 8:24 AM GMT-3",
+    "fmtTime": "8:24 AM GMT-3",
+    "menuLabel": "GMT-3 · Buenos Aires"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/Argentina/Buenos_Aires",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "GMT-3",
+    "fmtDate": "05 Jan 2026, 3:05 PM GMT-3",
+    "fmtTime": "3:05 PM GMT-3",
+    "menuLabel": "GMT-3 · Buenos Aires"
+   }
+  },
+  {
+   "in": {
+    "tz": "Asia/Kathmandu",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "GMT+5:45",
+    "fmtDate": "20 Oct 2026, 5:09 PM GMT+5:45",
+    "fmtTime": "5:09 PM GMT+5:45",
+    "menuLabel": "GMT+5:45 · Kathmandu"
+   }
+  },
+  {
+   "in": {
+    "tz": "Asia/Kathmandu",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "GMT+5:45",
+    "fmtDate": "05 Jan 2026, 11:50 PM GMT+5:45",
+    "fmtTime": "11:50 PM GMT+5:45",
+    "menuLabel": "GMT+5:45 · Kathmandu"
+   }
+  },
+  {
+   "in": {
+    "tz": "Australia/Lord_Howe",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "GMT+11",
+    "fmtDate": "20 Oct 2026, 10:24 PM GMT+11",
+    "fmtTime": "10:24 PM GMT+11",
+    "menuLabel": "GMT+11 · Lord Howe"
+   }
+  },
+  {
+   "in": {
+    "tz": "Australia/Lord_Howe",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "GMT+11",
+    "fmtDate": "06 Jan 2026, 5:05 AM GMT+11",
+    "fmtTime": "5:05 AM GMT+11",
+    "menuLabel": "GMT+11 · Lord Howe"
+   }
+  },
+  {
+   "in": {
+    "tz": "Europe/Paris",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "GMT+2",
+    "fmtDate": "20 Oct 2026, 1:24 PM GMT+2",
+    "fmtTime": "1:24 PM GMT+2",
+    "menuLabel": "GMT+2 · Paris"
+   }
+  },
+  {
+   "in": {
+    "tz": "Europe/Paris",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "GMT+1",
+    "fmtDate": "05 Jan 2026, 7:05 PM GMT+1",
+    "fmtTime": "7:05 PM GMT+1",
+    "menuLabel": "GMT+1 · Paris"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/Chicago",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "CDT",
+    "fmtDate": "20 Oct 2026, 6:24 AM CDT",
+    "fmtTime": "6:24 AM CDT",
+    "menuLabel": "CDT · Chicago"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/Chicago",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "CST",
+    "fmtDate": "05 Jan 2026, 12:05 PM CST",
+    "fmtTime": "12:05 PM CST",
+    "menuLabel": "CST · Chicago"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/Phoenix",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "MST",
+    "fmtDate": "20 Oct 2026, 4:24 AM MST",
+    "fmtTime": "4:24 AM MST",
+    "menuLabel": "MST · Phoenix"
+   }
+  },
+  {
+   "in": {
+    "tz": "America/Phoenix",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "MST",
+    "fmtDate": "05 Jan 2026, 11:05 AM MST",
+    "fmtTime": "11:05 AM MST",
+    "menuLabel": "MST · Phoenix"
+   }
+  },
+  {
+   "in": {
+    "tz": "Etc/GMT+5",
+    "at": "2026-10-20T11:24:19Z"
+   },
+   "out": {
+    "label": "GMT-5",
+    "fmtDate": "20 Oct 2026, 6:24 AM GMT-5",
+    "fmtTime": "6:24 AM GMT-5",
+    "menuLabel": "GMT-5"
+   }
+  },
+  {
+   "in": {
+    "tz": "Etc/GMT+5",
+    "at": "2026-01-05T18:05:00Z"
+   },
+   "out": {
+    "label": "GMT-5",
+    "fmtDate": "05 Jan 2026, 1:05 PM GMT-5",
+    "fmtTime": "1:05 PM GMT-5",
+    "menuLabel": "GMT-5"
    }
   }
  ],
@@ -10259,6 +10525,180 @@
        "link": "/hazards/Earthquake"
       }
      ]
+    }
+   }
+  ]
+ },
+ "home.placeAnswerStates": {
+  "placeAnswerStates": [
+   "loading",
+   "failed",
+   "loaded"
+  ],
+  "cases": [
+   {
+    "in": {
+     "state": "loading",
+     "place": {
+      "id": "loc-1",
+      "kind": "Home",
+      "name": "Delhi home",
+      "lat": 28.61,
+      "lon": 77.21,
+      "country": "India",
+      "countryCode": "IN"
+     },
+     "feed": [
+      "hang"
+     ]
+    },
+    "out": {
+     "eyebrow": "Current risk",
+     "badge": "Checking…",
+     "heading": "Delhi home",
+     "happening": "Checking the latest reports for this place.",
+     "unavailableCard": false,
+     "why": null,
+     "steps": [
+      "For official information about this place, check your national or local disaster agency."
+     ],
+     "lastChecked": "not yet: the data is still loading",
+     "busy": "true"
+    }
+   },
+   {
+    "in": {
+     "state": "failed",
+     "place": {
+      "id": "loc-1",
+      "kind": "Home",
+      "name": "Delhi home",
+      "lat": 28.61,
+      "lon": 77.21,
+      "country": "India",
+      "countryCode": "IN"
+     },
+     "feed": [
+      "fail"
+     ]
+    },
+    "out": {
+     "eyebrow": "Current risk",
+     "badge": "Live data unavailable",
+     "heading": "Delhi home",
+     "happening": "Live data unavailable. We could not load the latest reports, so nothing can be shown here. This does not mean nothing is happening. Trying again automatically.",
+     "unavailableCard": true,
+     "why": null,
+     "steps": [
+      "For official information about this place, check your national or local disaster agency."
+     ],
+     "lastChecked": "not yet: the latest data could not be loaded",
+     "busy": "false"
+    }
+   },
+   {
+    "in": {
+     "state": "loaded-empty",
+     "place": {
+      "id": "loc-1",
+      "kind": "Home",
+      "name": "Delhi home",
+      "lat": 28.61,
+      "lon": 77.21,
+      "country": "India",
+      "countryCode": "IN"
+     },
+     "feed": [
+      [
+       "usgs-jp"
+      ]
+     ]
+    },
+    "out": {
+     "eyebrow": "Current risk",
+     "badge": "Nothing reported nearby",
+     "heading": "Delhi home",
+     "happening": "None of our sources reports anything at this place right now.",
+     "unavailableCard": false,
+     "why": "Nothing we track shows a danger at this place right now. No event with an exact location has been reported within 500 km. This does not mean the place is safe. Your national and local disaster agencies have the official information.",
+     "steps": [
+      "You do not need to do anything because of this page right now.",
+      "For official information about this place, check your national or local disaster agency.",
+      "Save the place so it is checked again each time you open this site."
+     ],
+     "lastChecked": "20 Oct 2026, 5:30 PM IST · just now",
+     "busy": "false"
+    }
+   },
+   {
+    "in": {
+     "state": "loaded-with-hits",
+     "place": {
+      "id": "loc-1",
+      "kind": "Home",
+      "name": "Delhi home",
+      "lat": 28.61,
+      "lon": 77.21,
+      "country": "India",
+      "countryCode": "IN"
+     },
+     "feed": [
+      [
+       "usgs-dl",
+       "usgs-jp"
+      ]
+     ]
+    },
+    "out": {
+     "eyebrow": "Current risk",
+     "badge": "Severe",
+     "heading": "Delhi home",
+     "happening": "Magnitude 5.6 - 12 km north of Delhi, India Earthquake · Delhi, India · reported 1 hr ago",
+     "unavailableCard": false,
+     "why": "An event was reported 10 km from your place. That is the distance between two points. It does not mean the affected area reaches you.",
+     "steps": [
+      "Check whether your local authorities have given instructions for this place. This page shows what agencies publish. It does not receive local orders.",
+      "Do not travel into the affected area. Follow any evacuation or shelter instructions given locally.",
+      "Keep following the official agency’s updates. Their instructions are the most current. This page is only as current as the last update shown."
+     ],
+     "lastChecked": "20 Oct 2026, 5:30 PM IST · just now",
+     "busy": "false"
+    }
+   },
+   {
+    "in": {
+     "state": "failed-then-loaded",
+     "place": {
+      "id": "loc-1",
+      "kind": "Home",
+      "name": "Delhi home",
+      "lat": 28.61,
+      "lon": 77.21,
+      "country": "India",
+      "countryCode": "IN"
+     },
+     "feed": [
+      "fail",
+      [
+       "usgs-dl",
+       "usgs-jp"
+      ]
+     ]
+    },
+    "out": {
+     "eyebrow": "Current risk",
+     "badge": "Severe",
+     "heading": "Delhi home",
+     "happening": "Magnitude 5.6 - 12 km north of Delhi, India Earthquake · Delhi, India · reported 1 hr ago",
+     "unavailableCard": false,
+     "why": "An event was reported 10 km from your place. That is the distance between two points. It does not mean the affected area reaches you.",
+     "steps": [
+      "Check whether your local authorities have given instructions for this place. This page shows what agencies publish. It does not receive local orders.",
+      "Do not travel into the affected area. Follow any evacuation or shelter instructions given locally.",
+      "Keep following the official agency’s updates. Their instructions are the most current. This page is only as current as the last update shown."
+     ],
+     "lastChecked": "20 Oct 2026, 5:30 PM IST · just now",
+     "busy": "false"
     }
    }
   ]

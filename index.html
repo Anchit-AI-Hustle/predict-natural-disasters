@@ -115,15 +115,14 @@ const RANK={red:5,critical:5,orange:4,high:4,moderate:3,watch:2,green:1};const r
 const fcSplit=(window.PNDRisk?PNDRisk.LEVELS.slice().reverse():[]).map(l=>[l.label,fc.filter(e=>PND.matchesRiskLevel(e,l.key)).length]).filter(p=>p[1]);document.getElementById('kForecastsNote').textContent=fcSplit.length?fcSplit.map(p=>p[1]+' '+p[0]).join(' · '):'Recorded for grading';document.getElementById('forecastRows').innerHTML=fc.length?fc.slice(0,6).map(e=>{const u=eventUrl(e);return`<tr class="clickable" tabindex="0" onclick="GO('${u.replace(/'/g,"\\'")}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();GO('${u.replace(/'/g,"\\'")}')}"><td>${PND.fmtWhen(e.targetStart||e.updated)}</td><td>${esc(PND.placeOf(e,'-'))}</td><td>${esc(e.type||'Outlook')}</td><td>${PND.riskTag(e)}</td></tr>`}).join(''):'<tr><td colspan="4">No open forecasts right now.</td></tr>';/* Built from the reports present, grouped by hazard, so every hazard reported has a chip and none is shown at 0. Reports only: our forecasts are not live events, and counting 10 aftershock forecasts under an "observed only" earthquake chip labelled a forecast as observed. */const ICONS={'Earthquake':'⌁','Wildfire':'🔥','Flood':'●','Drought':'⌛','Tropical Cyclone':'◉','Severe Storm':'◈','Volcano':'▲','Landslide':'△','Tornado':'✦','Extreme Cold':'❄','Extreme Heat':'☀','Tsunami':'≈'};const byHaz={};reports.forEach(e=>{const k=hazKey(e.type);if(k)byHaz[k]=(byHaz[k]||0)+1});const types=Object.keys(byHaz).sort((a,b)=>byHaz[b]-byHaz[a]||a.localeCompare(b)).map(t=>[t,ICONS[t]||'◆']);document.getElementById('hazardStrip').innerHTML=types.map(([t,ic])=>[t,ic,byHaz[t]]).filter(x=>x[2]>0).map(([t,ic,c])=>{const hz=window.PNDHazards&&window.PNDHazards.hazardOf(t);const never=hz&&hz.forecastable===false;return `<div class="hazard${never?' hazard-observed':''}" tabindex="0" onclick="GO('/hazards/${enc(t)}')" title="${never?'Observed only - no agency forecasts the onset of this hazard':''}"><b>${ic} ${esc(t)}</b><span>${c} reported${never?' · observed only':''}</span></div>`}).join('')}
 function previewById(id){const e=events.find(x=>String(x.id)===String(id));if(e)selectEvent(e,{fly:true,open:true})}
 let lastGeneratedAt=null;
-async function load(){try{/* The shared copy at the edge (api/events.js): the page opens on it at once. */const r=await fetch('/api/events');/* A failed load is not an empty world: without this the tiles read 0 live events. */if(!r.ok)throw new Error('Live feed unavailable ('+r.status+')');const d=await r.json();/* Live records only: one its provider stopped updating still opens on its own page. */events=(d.events||[]).filter(e=>e&&e.live!==false);if(typeof PND!=='undefined'&&PND.evaluateRiskNotifications)PND.evaluateRiskNotifications(events);lastGeneratedAt=d.generatedAt||null;/* A place already answered for is re-answered on the new feed rather than
-   left showing a verdict from a cycle ago. */
-if(typeof checked!=='undefined'&&checked)try{answer(checked)}catch(e){}
-/* A returning reader's own place is answered without being asked for: the
-   first thing on the page is whether where they live, or where they are now,
-   has anything reported at it. Only a place they saved themselves - nothing
-   is looked up to find one. */
-else if(typeof mine==='function'){const own=mine();if(own)try{answer(own,{auto:true})}catch(e){}}
-document.getElementById('lastUpdated').textContent=PND.fmtDate(d.generatedAt);PND.fillHazardSelect(document.getElementById('hazardFilter'),events);render();settled()}catch(err){console.error(err);settled();down()}}/* The feed did not load: every figure and list says so, rather than a dash that reads as none and a table stuck on "Loading…". Figures already shown from an earlier load are kept and the status says they may be out of date. */function down(){const msg='Live data unavailable. Trying again automatically.';if(!events.length){/* The tiles keep their dash (a failed load is not a zero); the line under each says why. */document.querySelectorAll('.kpi .delta').forEach(x=>{if(!x.closest('.quote'))x.textContent='Live data unavailable'});const row='<tr><td colspan="4">'+msg+'</td></tr>';['forecastRows','recentRows','warningRows'].forEach(id=>document.getElementById(id).innerHTML=row);document.getElementById('topEvents').innerHTML=PND.unavailableHtml();document.getElementById('hazardStrip').innerHTML='<p class="muted" style="padding:8px">'+msg+'</p>'}document.getElementById('lastUpdated').textContent=events.length?'Could not refresh: '+PND.fmtDate(lastGeneratedAt):'Live data unavailable'}/* Loaded or not, the tiles stop saying they are loading: a failed load leaves the dash, which is what it means. */function settled(){document.querySelectorAll('.kpi strong.pending').forEach(x=>{x.classList.remove('pending');x.removeAttribute('aria-busy')})}
+/* Whether any feed has loaded here, and whether the last try failed: a place
+   asked about before the first load is answered "Checking…" or "Live data
+   unavailable", never from an empty list (place-risk.js feedState, C26). */
+let feedLoaded=false,feedFailed=false;
+async function load(){try{/* The shared copy at the edge (api/events.js): the page opens on it at once. */const r=await fetch('/api/events');/* A failed load is not an empty world: without this the tiles read 0 live events. */if(!r.ok)throw new Error('Live feed unavailable ('+r.status+')');const d=await r.json();/* Live records only: one its provider stopped updating still opens on its own page. */events=(d.events||[]).filter(e=>e&&e.live!==false);if(typeof PND!=='undefined'&&PND.evaluateRiskNotifications)PND.evaluateRiskNotifications(events);lastGeneratedAt=d.generatedAt||null;feedLoaded=true;feedFailed=false;/* A place already answered for is re-answered on the new feed rather than
+   left showing a verdict from a cycle ago, or "Checking…" from before it. */
+if(typeof checked!=='undefined'&&checked)try{answer(checked,{quiet:true})}catch(e){}
+document.getElementById('lastUpdated').textContent=PND.fmtDate(d.generatedAt);PND.fillHazardSelect(document.getElementById('hazardFilter'),events);render();settled()}catch(err){console.error(err);settled();down();/* Nothing loaded yet: the place shown as "Checking…" now says the data is unavailable. */if(!feedLoaded){feedFailed=true;if(typeof checked!=='undefined'&&checked)try{answer(checked,{quiet:true})}catch(e){}}}}/* The feed did not load: every figure and list says so, rather than a dash that reads as none and a table stuck on "Loading…". Figures already shown from an earlier load are kept and the status says they may be out of date. */function down(){const msg='Live data unavailable. Trying again automatically.';if(!events.length){/* The tiles keep their dash (a failed load is not a zero); the line under each says why. */document.querySelectorAll('.kpi .delta').forEach(x=>{if(!x.closest('.quote'))x.textContent='Live data unavailable'});const row='<tr><td colspan="4">'+msg+'</td></tr>';['forecastRows','recentRows','warningRows'].forEach(id=>document.getElementById(id).innerHTML=row);document.getElementById('topEvents').innerHTML=PND.unavailableHtml();document.getElementById('hazardStrip').innerHTML='<p class="muted" style="padding:8px">'+msg+'</p>'}document.getElementById('lastUpdated').textContent=events.length?'Could not refresh: '+PND.fmtDate(lastGeneratedAt):'Live data unavailable'}/* Loaded or not, the tiles stop saying they are loading: a failed load leaves the dash, which is what it means. */function settled(){document.querySelectorAll('.kpi strong.pending').forEach(x=>{x.classList.remove('pending');x.removeAttribute('aria-busy')})}
 document.getElementById('hazardFilter').onchange=render;/* A map search that finds nothing says so, and drops the earlier selection rather than leaving it shown as if it were the answer. */document.getElementById('mapSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.toLowerCase().trim();if(!q)return;const x=events.find(v=>PND.matches(v,q));if(x){document.getElementById('nudgeDetail').hidden=false;document.querySelector('#mapNudge .eyebrow').textContent='Selected event on map';selectEvent(x,{fly:true,open:true});return}selectedId='';markSelected();document.querySelectorAll('.event.selected').forEach(v=>v.classList.remove('selected'));map.closePopup&&map.closePopup();document.querySelector('#mapNudge .eyebrow').textContent='Search';document.getElementById('nudgeTitle').textContent='No live event matches \u201c'+e.target.value.trim()+'\u201d';document.getElementById('nudgeMeta').textContent='Try a country, a city or a type of hazard.';document.getElementById('nudgeDetail').hidden=true;document.getElementById('mapNudge').classList.add('show')}});document.getElementById('topSearch').addEventListener('keydown',e=>{if(e.key==='Enter')GO('/events?q='+enc(e.target.value))});load();setInterval(load,60000);
 
 /* ------------------------------------------------- place -> risk -> action
@@ -158,21 +157,36 @@ function actionHtml(a){
    asked for that to be kept, otherwise the first place they saved. */
 function mine(){const a=(window.PND&&PND.savedLocations&&PND.savedLocations())||[];
   return a.find(x=>x.id==='loc-current')||a[0]||null}
+/* No feed yet: what the answer says instead of a verdict it does not have. */
+function pendingAnswer(place,state){
+  const W=window.PNDPlaceRisk.PENDING[state];
+  return `<div class="pr-top"><span class="pr-eyebrow">Current risk</span><span class="risk risk-unknown">${esc(W.headline)}</span><h2>${esc(place.name)}</h2></div>`+
+    `<div class="pr-block"><h3>What's happening</h3>`+(state==='failed'?PND.unavailableHtml():`<p>${esc(W.text)}</p>`)+`</div>`+
+    `<div class="pr-block"><h3>What should I do?</h3>${actionHtml({steps:[window.PNDPlaceRisk.PENDING_STEP],authority:window.PNDPlaceRisk.AUTHORITY_LINE})}</div>`+
+    `<div class="pr-block"><h3>Last checked</h3><p>${esc(W.lastChecked)}</p></div>`;
+}
 function answer(place,opts){
   checked=place;
   if(opts&&opts.auto)PR.note.textContent='Showing '+(place.id==='loc-current'?'your current location':'your saved place “'+place.name+'”')+'. Search above to check anywhere else.';
-  const A=window.PNDPlaceRisk.assess(place,events,{generatedAt:lastGeneratedAt});
-  const act=window.PNDPlaceRisk.actionsFor(A);
-  const lead=A.lead&&A.lead.e;
+  const state=window.PNDPlaceRisk.feedState(feedLoaded,feedFailed);
+  const A=state==='loaded'?window.PNDPlaceRisk.assess(place,events,{generatedAt:lastGeneratedAt}):null;
+  const act=A&&window.PNDPlaceRisk.actionsFor(A);
+  const lead=A&&A.lead&&A.lead.e;
   /* No level is not a green badge. This project cannot establish that a place
      is at low risk, only that it holds no qualifying record for it. */
-  const badge=A.level?PNDRisk.badge(PNDRisk.BY_KEY[A.level].label)
+  const badge=!A?'':A.level?PNDRisk.badge(PNDRisk.BY_KEY[A.level].label)
     :'<span class="risk risk-unknown">Nothing reported nearby</span>';
   const src=lead?`${PND.provenance(lead)} · ${esc(lead.source||'Source not stated')}`
     :'No report was used for this answer.';
   const srcLink=lead&&lead.sourceUrl?` <a href="${esc(lead.sourceUrl)}" rel="noopener">Open the original report →</a>`:'';
   PR.out.hidden=false;
-  PR.out.innerHTML=
+  PR.out.setAttribute('aria-busy',state==='loading'?'true':'false');
+  PR.out.innerHTML=!A?pendingAnswer(place,state)+
+    `<div class="pr-actions">`+
+      `<button class="primary" id="savePlace">Save place</button>`+
+      `<button id="alertPlace">Alert me if this changes</button>`+
+      `<a href="/personal-risk" id="viewEvidence">See details</a>`+
+    `</div>`:
     `<div class="pr-top"><span class="pr-eyebrow">Current risk</span>${badge}<h2>${esc(place.name)}</h2></div>`+
     `<div class="pr-block"><h3>What's happening</h3>`+
       (lead?`<p><b>${esc(lead.title)}</b></p><p>${esc(lead.type||'Hazard')}${PND.placeOf(lead)?' · '+esc(PND.placeOf(lead)):''} · reported ${esc(PND.age(lead.updated))}</p>`
@@ -209,7 +223,7 @@ function answer(place,opts){
     PR.note.textContent=(s.reason?s.reason+' ':'')+(perm==='granted'
       ?'Saved. You will get an alert about it only while this site is open in a tab. Nothing is sent once you close it.'
       :'Notifications were not allowed, so nothing will be sent.');};
-  if(opts&&opts.auto)return;   // answered on arrival: no scrolling
+  if(opts&&(opts.auto||opts.quiet))return;   // answered on arrival or re-answered on new data: no scrolling
   PR.out.scrollIntoView({block:'nearest'});
 }
 
@@ -250,6 +264,12 @@ useLoc.onclick=()=>{
   },()=>{PR.note.textContent='Your browser did not share a location, so nothing was checked.';},{timeout:10000});
 };
 quickSaved();
+/* A returning reader's own place is answered without being asked for: the
+   first thing on the page is whether where they live, or where they are now,
+   has anything reported at it. Only a place they saved themselves - nothing
+   is looked up to find one. Until the feed has loaded it says "Checking…";
+   load() answers it again when the data arrives. */
+if(!checked){const own=mine();if(own)try{answer(own,{auto:true})}catch(e){}}
 /* Where the reader keeps a current location, it is refreshed on each visit -
    only if they already allowed it, so arriving never raises a prompt - and
    background alerts, if on, are told the places again so they do not lapse. */

@@ -99,14 +99,26 @@ const PND={
   pathParam(k){const p=location.pathname.split('/').filter(Boolean);const map={disasters:'id',calamities:'id',alerts:'id',forecasts:'id',history:'id',regions:'region',locations:'location',hazards:'type',sources:'source'};if(p.length>=2&&map[p[0]]===k){try{return decodeURIComponent(p.slice(1).join('/'))}catch(e){return p.slice(1).join('/')}}return ''},
   qs(k){return new URLSearchParams(location.search).get(k)||this.pathParam(k)||'';},
   getTZ(){return this.timezone;},
-  tzLabel(tz=this.timezone){const aliases={'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'};return aliases[tz]||tz;},
+  /* The zone's name beside a time (C27). The short aliases first; any other
+     zone takes its en-US short name for that moment ("CDT", "MST"), which is
+     an offset ("GMT-3", "GMT+5:45") where it has none. Never the raw IANA id:
+     since the site follows the device's zone, that put
+     "America/Argentina/Buenos_Aires" after every time. The locale is fixed so
+     the label does not change with the browser's language. */
+  TZ_ALIASES:{'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
+  tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
+    try{const d=at===undefined?new Date(Date.now()):new Date(at);const p=this._fmt('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(isNaN(d)?new Date(Date.now()):d).find(x=>x.type==='timeZoneName');if(p&&p.value)return p.value}catch(e){}
+    return 'local time';},
+  /* The time zone menu's own words for the chosen zone: its label and its
+     city ("GMT-3 · Buenos Aires"). The other options stay IANA ids. */
+  tzMenuLabel(tz=this.timezone,at){if(tz==='Asia/Kolkata')return 'IST · India';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
   /* One formatter per zone and shape, made once. toLocaleString builds a new
      one on every call, and /accuracy formats thousands of dates: it was the
      largest single cost of that page's 6-second main-thread task. Output is
      identical, since toLocaleString is defined as exactly this. */
   _fmts:{},
   _fmt(locale,opts){const k=locale+JSON.stringify(opts);return this._fmts[k]||(this._fmts[k]=new Intl.DateTimeFormat(locale,opts))},
-  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
   /* A forecast window edge. Whole-day windows are stored as UTC midnight to
      23:59:59Z, or midnight to midnight with the end excluded, and fmtDate
      turned each edge into a time of day in the reader's zone: "19 Oct to
@@ -121,7 +133,7 @@ const PND={
     const m=edge(v);if(!m||(other&&!edge(other)))return this.fmtDate(v);
     const day=m.last||role!=='end'?m.t:m.t-864e5;
     return this._fmt('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(new Date(day));},
-  fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+  fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
   /* The one risk scale, from risk.js. This used to be a second vocabulary
      mapping onto a second palette, which is how `.badge.watch` came to be
@@ -472,7 +484,7 @@ const PND={
      promise-driven data load can complete in one turn, so that "moment" lasted
      over a second and anything looking at the page in it saw a dropdown with
      nothing to pick. */
-  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'?'IST · India':z)}</option>`).join('');},
+  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'||z===this.timezone?this.tzMenuLabel(z):z)}</option>`).join('');},
   /* Still here for a header put into the page some other way; a no-op once the
      markup already carries its own options. */
   initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s||s.options.length)return;s.innerHTML=this.timezoneOptions();},
