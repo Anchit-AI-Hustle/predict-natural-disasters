@@ -53,8 +53,20 @@ final class PNDUITests: XCTestCase {
         while !(e.exists && (!hittable || onScreen())) && n < swipes {
             let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.3 : 0.78))
             let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.78 : 0.3))
-            start.press(forDuration: 0.05, thenDragTo: end)
+            // Holding at the end of the drag leaves no momentum, so a tap that
+            // follows lands on a still page instead of only stopping the scroll.
+            start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
             n += 1
+        }
+        if hittable && e.exists {
+            // Wait until the element stops moving before anyone taps it.
+            var last = e.frame
+            for _ in 0..<10 {
+                Thread.sleep(forTimeInterval: 0.3)
+                let now = e.frame
+                if now == last { break }
+                last = now
+            }
         }
         XCTAssertTrue(e.exists, "missing after scrolling: \(e)", file: file, line: line)
         return e
