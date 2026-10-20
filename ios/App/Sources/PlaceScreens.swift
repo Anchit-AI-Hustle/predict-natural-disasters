@@ -409,7 +409,7 @@ struct HistoryDetailView: View {
                 EnrichmentSection(record: Screens.syntheticRecord(title: e.name, country: (e.location.components(separatedBy: ",").last ?? "").trimmingCharacters(in: .whitespaces),
                                                                   region: e.location, type: e.type, updated: "", lat: nil, lon: nil, source: "Historical disaster archive"))
             } else {
-                ScreenHeader(title: "Past disaster not found", subtitle: "Go back to the list and choose a disaster.").accessibilityIdentifier("notFound")
+                ScreenHeader(title: "Past disaster not found", subtitle: "Go back to the list and choose a disaster.").accessibilityElement(children: .contain).accessibilityIdentifier("notFound")
             }
         }
         .toolbar { if let e = e { ToolbarItem(placement: .topBarTrailing) { ShareButton(route: .history(e.slug), title: e.name) } } }

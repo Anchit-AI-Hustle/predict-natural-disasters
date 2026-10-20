@@ -380,6 +380,7 @@ struct PlaceResultCard: View {
                 if let l = a.level { RiskBadge(level: l) } else { NothingNearbyChip() }
                 Text(place.name).font(.headline).foregroundStyle(Theme.text).fixedSize(horizontal: false, vertical: true)
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("placeResultHeader")
             block("What\u{2019}s happening") {
                 if let e = lead {
@@ -423,6 +424,7 @@ struct PlaceResultCard: View {
         .padding(14)
         .background(Theme.panelTop, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.panelBorder, lineWidth: 1))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("placeResult")
     }
 

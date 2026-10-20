@@ -203,6 +203,7 @@ struct ForecastTable: View {
         .padding(.vertical, 8).padding(.horizontal, 11)
         .background(Color(hex: "#08211A"), in: RoundedRectangle(cornerRadius: 9))
         .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.divider, lineWidth: 1))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("forecastRow")
     }
 
@@ -368,6 +369,7 @@ struct CalendarGrid: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("forecastCalendar")
     }
 }

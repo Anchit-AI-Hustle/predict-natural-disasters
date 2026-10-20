@@ -127,20 +127,30 @@ jobs:
         working-directory: ios
         run: |
           set -o pipefail
+          set +e
           xcodebuild test-without-building \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.phone }}" -derivedDataPath "$RUNNER_TEMP/dd" \
-            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" $SIM_SIGNING | tail -n 200
+            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" $SIM_SIGNING > "$RUNNER_TEMP/iPhone-test.log" 2>&1
+          code=$?
+          grep -E "error:|Test Case .*(passed|failed)|Executed [0-9]+ test" "$RUNNER_TEMP/iPhone-test.log" | grep -v PNDCoreTests || true
+          tail -n 30 "$RUNNER_TEMP/iPhone-test.log"
+          exit $code
 
       - name: UI tests on iPad (${{ steps.sims.outputs.pad_name }})
         if: always() && steps.build.outcome == 'success'
         working-directory: ios
         run: |
           set -o pipefail
+          set +e
           xcodebuild test-without-building \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.pad }}" -derivedDataPath "$RUNNER_TEMP/dd" \
-            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" $SIM_SIGNING | tail -n 200
+            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" $SIM_SIGNING > "$RUNNER_TEMP/iPad-test.log" 2>&1
+          code=$?
+          grep -E "error:|Test Case .*(passed|failed)|Executed [0-9]+ test" "$RUNNER_TEMP/iPad-test.log" | grep -v PNDCoreTests || true
+          tail -n 30 "$RUNNER_TEMP/iPad-test.log"
+          exit $code
 
       - name: Export screenshots
         if: always()

@@ -160,6 +160,7 @@ struct MyPlacesView: View {
             Button("Remove") { model.removePlace(p.id) }.buttonStyle(SecondaryButtonStyle())
                 .accessibilityLabel("Remove " + p.displayName)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("savedPlace")
     }
 
@@ -300,6 +301,7 @@ struct MyPlacesView: View {
                     }
                 }
                 .padding(.vertical, 4)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("band-" + b.band.rawValue)
             }
         }

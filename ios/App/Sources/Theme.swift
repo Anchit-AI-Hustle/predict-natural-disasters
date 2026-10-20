@@ -479,6 +479,7 @@ struct EmptyStateView: View {
                 Button(b) { onOpenEvents?(empty.query) }.buttonStyle(SecondaryButtonStyle())
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("emptyState")
     }
 }
