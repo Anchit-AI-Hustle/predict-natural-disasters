@@ -216,8 +216,8 @@ private fun TopBar(route: String?, canGoBack: Boolean, onBack: () -> Unit) {
             ) {
                 Text("◎", color = Pnd.green, fontSize = 26.sp)
                 Column(Modifier.padding(start = 6.dp)) {
-                    Text("Predict Natural Disasters", color = Pnd.text, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, lineHeight = 18.sp)
-                    if (!canGoBack || route == "home") Text("Check a place · live hazards · forecasts", color = Color(0xFFCBE5DA), fontSize = 11.sp, lineHeight = 14.sp)
+                    Text("Predict Natural Disasters", color = Pnd.text, fontWeight = FontWeight.ExtraBold, fontSize = capped(15f, 1.3f), lineHeight = capped(18f, 1.3f))
+                    if ((!canGoBack || route == "home") && androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f) Text("Check a place · live hazards · forecasts", color = Color(0xFFCBE5DA), fontSize = 11.sp, lineHeight = 14.sp)
                 }
             }
             Text(Format.tzLabel(env.tz), color = Color(0xFFEAF7F1), fontSize = 12.sp,
@@ -247,7 +247,9 @@ private fun TabBar(active: String?, onTab: (String) -> Unit) {
                     Box(Modifier.fillMaxWidth().heightIn(min = 2.dp, max = 2.dp).background(if (on) Pnd.green else Color.Transparent))
                     Spacer(Modifier.heightIn(min = 6.dp))
                     Icon(icon, null, tint = if (on) Pnd.greenText else Pnd.tabInactive, modifier = Modifier.size(20.dp))
-                    Text(label, color = if (on) Pnd.greenText else Pnd.tabInactive, fontSize = 11.sp, lineHeight = 13.sp, textAlign = TextAlign.Center,
+                    // Labels follow the font size up to 1.3x so a word never breaks across lines; TalkBack reads them in full.
+                    val cap = capped(11f, 1.3f)
+                    Text(label, color = if (on) Pnd.greenText else Pnd.tabInactive, fontSize = cap, lineHeight = cap * 1.2f, textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 2.dp, vertical = 3.dp))
                 }
             }
@@ -298,4 +300,11 @@ fun FeedBanner(feed: com.anchittandon.pnd.data.FeedState) {
     if (feed.failed) StaleBox("Live data unavailable. Trying again automatically." +
         (feed.feed?.let { " Showing a saved copy from ${Format.fmtDate(it.generatedAt)}. It is not live." } ?: ""), tag = "feedError")
     else if (feed.savedCopy && feed.feed != null) StaleBox("Showing a saved copy from ${Format.fmtDate(feed.feed.generatedAt)} while the latest data loads.", tag = "savedCopy")
+}
+
+/** A size that follows the system font scale up to [max], for chrome that must not wrap mid-word. */
+@Composable
+fun capped(sp: Float, max: Float): androidx.compose.ui.unit.TextUnit {
+    val fs = androidx.compose.ui.platform.LocalDensity.current.fontScale
+    return (sp * minOf(fs, max) / fs).sp
 }

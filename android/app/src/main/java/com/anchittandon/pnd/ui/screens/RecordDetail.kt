@@ -118,7 +118,7 @@ fun withDistance(list: List<Event>) = list.map { Event(com.anchittandon.pnd.mode
 
 @Composable
 fun Figure(label: String, value: String) {
-    Column(Modifier.widthIn(min = 140.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp).semantics(mergeDescendants = true) {}) {
+    Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp).semantics(mergeDescendants = true) {}) {
         Label(label)
         Text(value, color = if (value == "Not reported" || value == "Not reported by the source") Pnd.muted else Pnd.text, fontSize = if (value.startsWith("Not reported")) 14.sp else 20.sp, fontWeight = FontWeight.Bold)
     }
@@ -163,7 +163,7 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
     val j = e.json
     item(key = "kpis") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-            Column(Modifier.widthIn(min = 140.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Risk level"); RecordBadge(j) }
+            Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Risk level"); RecordBadge(j) }
             Figure("Type", e.type.ifEmpty { "-" }); Figure("Source", e.source.ifEmpty { "-" }); Figure("Source last updated", Format.age(e.updated))
             Figure("Data status", if (e.cached) "Saved copy" else if (e.forecast) "Our forecast" else "Live")
         }
@@ -284,7 +284,7 @@ private fun LazyListScope.alertBody(e: Event, all: List<Event>, sort: String, se
     val j = e.json
     item(key = "kpis") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-            Column(Modifier.widthIn(min = 140.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Alert level"); RecordBadge(j) }
+            Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Alert level"); RecordBadge(j) }
             Figure("Agency or source", e.source.ifEmpty { "-" }); Figure("Updated", Format.age(e.updated)); Figure("Status", if (e.cached) "Saved copy" else "Live")
         }
     }

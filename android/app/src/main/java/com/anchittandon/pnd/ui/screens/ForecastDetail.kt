@@ -113,7 +113,7 @@ fun ForecastDetailScreen(id: String) {
         item(key = "provenance") { FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 8.dp)) { ProvenancePill(Format.provenance(j)); Pill("Our forecast, not official") } }
         item(key = "factors") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-                Column(Modifier.widthIn(min = 140.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Risk"); RecordBadge(j) }
+                Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Risk"); RecordBadge(j) }
                 Figure("Location", Format.placeOf(j, "-")); Figure("Last updated", Format.age(e.updated))
                 Figure("Status", if (ended) "Ended, not yet checked" else "Active")
             }

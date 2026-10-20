@@ -136,7 +136,8 @@ fun Pill(text: String, border: Color = Pnd.provBorder, color: Color = Pnd.provTe
         if (upper) text.uppercase() else text,
         Modifier.border(1.dp, border, RoundedCornerShape(999.dp)).padding(horizontal = 8.dp, vertical = 3.dp)
             .let { m -> if (description != null) m.semantics { contentDescription = description } else m },
-        color = color, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, letterSpacing = 0.4.sp,
+        // Wraps rather than clips at large text sizes.
+        color = color, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
     )
 }
 
@@ -264,12 +265,16 @@ fun StatLine(items: List<Pair<String, String>>) {
 }
 
 /** KPI-style tiles in a wrapping grid. */
+/** A tile's minimum width grows with the font size, so large text gets fewer, wider columns instead of broken words. */
+@Composable
+fun scaledMin(base: Dp): Dp = base * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceIn(1f, 2.2f)
+
 @Composable
 fun MetricTiles(items: List<Pair<String, String>>, minWidth: Dp = 150.dp) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         items.forEach { (k, v) ->
             Column(
-                Modifier.widthIn(min = minWidth).weight(1f).clip(RoundedCornerShape(10.dp)).background(Pnd.metric)
+                Modifier.widthIn(min = scaledMin(minWidth)).weight(1f).clip(RoundedCornerShape(10.dp)).background(Pnd.metric)
                     .border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp).semantics(mergeDescendants = true) {},
             ) {
                 Label(k)
@@ -287,7 +292,7 @@ fun KeyFactsGrid(e: JsonObject) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
         facts.forEach { f ->
             Column(
-                Modifier.widthIn(min = 140.dp).weight(1f).clip(RoundedCornerShape(8.dp)).background(Pnd.cardAlt)
+                Modifier.widthIn(min = scaledMin(140.dp)).weight(1f).clip(RoundedCornerShape(8.dp)).background(Pnd.cardAlt)
                     .border(1.dp, Pnd.divider, RoundedCornerShape(8.dp)).padding(horizontal = 9.dp, vertical = 8.dp)
                     .semantics(mergeDescendants = true) { if (!f.reported) contentDescription = f.label + ": Not reported" + (f.note?.let { ". $it" } ?: "") },
             ) {

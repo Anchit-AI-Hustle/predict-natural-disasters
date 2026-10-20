@@ -289,10 +289,21 @@ fun ForecastRowCard(e: Event, full: Boolean = false) {
 }
 
 @Composable
-private fun FcCell(label: String, value: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
-        Text(label.uppercase(), color = Pnd.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(96.dp).padding(top = 3.dp))
-        Box(Modifier.weight(1f)) { value() }
+private fun FcCell(label: String, value: @Composable () -> Unit) = LabelValue(label, value)
+
+/** LABEL beside its value on a phone; stacked when large text would break the label. */
+@Composable
+fun LabelValue(label: String, value: @Composable () -> Unit) {
+    if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) {
+        Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
+            Text(label.uppercase(), color = Pnd.label, style = MaterialTheme.typography.labelSmall)
+            value()
+        }
+    } else {
+        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+            Text(label.uppercase(), color = Pnd.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(96.dp).padding(top = 3.dp))
+            Box(Modifier.weight(1f)) { value() }
+        }
     }
 }
 
@@ -342,7 +353,8 @@ private fun Calendar(list: List<Event>) {
     val to = minOf(from + 15 * day, maxOf(from + 4 * day, last + day))
     val span = (to - from).toDouble()
     val days = generateSequence(from) { it + day }.takeWhile { it < to }.toList()
-    val dayW = 56.dp; val labelW = 118.dp
+    val fsc = androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceIn(1f, 2.2f)
+    val dayW = 56.dp * fsc; val labelW = 118.dp * fsc
     val trackW = dayW * days.size
     fun pct(t: Long) = ((t - from) / span).coerceIn(0.0, 1.0)
     val dows = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")

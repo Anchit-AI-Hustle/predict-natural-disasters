@@ -294,13 +294,8 @@ private fun UtilityButton(title: String, text: String, onClick: () -> Unit) = Ca
 @Composable
 fun TableRow(cells: List<Pair<String, String>>, badge: Event?, onClick: (() -> Unit)?) {
     CardBox(onClick = onClick) {
-        cells.forEach { (k, v) ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(k.uppercase(), color = Pnd.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.widthIn(min = 72.dp, max = 110.dp).padding(top = 2.dp))
-                Text(v, color = Pnd.body, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        if (badge != null) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Text("RISK", color = Pnd.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.widthIn(min = 72.dp)); RecordBadge(badge.json) }
+        cells.forEach { (k, v) -> LabelValue(k) { Text(v, color = Pnd.body, style = MaterialTheme.typography.bodySmall) } }
+        if (badge != null) LabelValue("Risk") { RecordBadge(badge.json) }
     }
 }
 
