@@ -1,12 +1,12 @@
 {
  "note": "How each published model forecast turned out, by tools/run-models.js: correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day has been measured by NASA POWER. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it.",
- "generatedAt": "2026-10-19T10:16:19.687Z",
+ "generatedAt": "2026-10-20T09:37:25.570Z",
  "counts": {
-  "issued": 86,
+  "issued": 102,
   "correct": 0,
-  "falseAlarms": 2,
-  "pending": 84,
-  "missedDays": 11
+  "falseAlarms": 6,
+  "pending": 96,
+  "missedDays": 17
  },
  "outlooks": [
   {
@@ -69,7 +69,7 @@
    "id": "model-heat-tehran-ir-2026-10-16",
    "hazard": "heat",
    "placeId": "tehran-ir",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": []
   },
   {
@@ -90,7 +90,7 @@
    "id": "model-rain-wuhan-cn-2026-10-17",
    "hazard": "rain",
    "placeId": "wuhan-cn",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": []
   },
   {
@@ -181,7 +181,7 @@
    "id": "model-heat-new-orleans-us-2026-10-15",
    "hazard": "heat",
    "placeId": "new-orleans-us",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": []
   },
   {
@@ -195,7 +195,7 @@
    "id": "model-heat-miami-us-2026-10-16",
    "hazard": "heat",
    "placeId": "miami-us",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": []
   },
   {
@@ -610,6 +610,118 @@
    "placeId": "manaus-br",
    "verdict": "pending",
    "crossed": []
+  },
+  {
+   "id": "model-heat-kolkata-in-2026-10-26",
+   "hazard": "heat",
+   "placeId": "kolkata-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-fire-hyderabad-in-2026-10-26",
+   "hazard": "fire",
+   "placeId": "hyderabad-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-guwahati-in-2026-10-26",
+   "hazard": "heat",
+   "placeId": "guwahati-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-kathmandu-np-2026-10-26",
+   "hazard": "heat",
+   "placeId": "kathmandu-np",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-dhaka-bd-2026-10-26",
+   "hazard": "heat",
+   "placeId": "dhaka-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-chittagong-bd-2026-10-21",
+   "hazard": "heat",
+   "placeId": "chittagong-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-melbourne-au-2026-10-21",
+   "hazard": "heat",
+   "placeId": "melbourne-au",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-adelaide-au-2026-10-23",
+   "hazard": "rain",
+   "placeId": "adelaide-au",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-nairobi-ke-2026-10-21",
+   "hazard": "heat",
+   "placeId": "nairobi-ke",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-fire-nairobi-ke-2026-10-21",
+   "hazard": "fire",
+   "placeId": "nairobi-ke",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-10-21",
+   "hazard": "heat",
+   "placeId": "niamey-ne",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lagos-ng-2026-10-23",
+   "hazard": "heat",
+   "placeId": "lagos-ng",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-dakar-sn-2026-10-23",
+   "hazard": "heat",
+   "placeId": "dakar-sn",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-athens-gr-2026-10-26",
+   "hazard": "rain",
+   "placeId": "athens-gr",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-antananarivo-mg-2026-10-21",
+   "hazard": "heat",
+   "placeId": "antananarivo-mg",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lima-pe-2026-10-21",
+   "hazard": "heat",
+   "placeId": "lima-pe",
+   "verdict": "pending",
+   "crossed": []
   }
  ],
  "misses": [
@@ -667,6 +779,36 @@
    "placeId": "s-o-paulo-br",
    "hazard": "rain",
    "day": "2026-10-16"
+  },
+  {
+   "placeId": "lagos-ng",
+   "hazard": "heat",
+   "day": "2026-10-16"
+  },
+  {
+   "placeId": "bangkok-th",
+   "hazard": "rain",
+   "day": "2026-10-17"
+  },
+  {
+   "placeId": "lagos-ng",
+   "hazard": "heat",
+   "day": "2026-10-17"
+  },
+  {
+   "placeId": "miami-us",
+   "hazard": "rain",
+   "day": "2026-10-17"
+  },
+  {
+   "placeId": "quito-ec",
+   "hazard": "rain",
+   "day": "2026-10-17"
+  },
+  {
+   "placeId": "s-o-paulo-br",
+   "hazard": "rain",
+   "day": "2026-10-17"
   }
  ]
 }
