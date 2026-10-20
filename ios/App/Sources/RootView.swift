@@ -73,6 +73,7 @@ struct TabStack: View {
             RouteView(route: tab.rootRoute)
                 .navigationDestination(for: Route.self) { RouteView(route: $0) }
         }
+        .environment(\.stackTab, tab)
     }
 }
 
@@ -88,11 +89,19 @@ struct SplitRoot: View {
             List(selection: $selection) {
                 Section {
                     ForEach(AppTab.allCases) { t in
-                        NavigationLink(value: SidebarItem.tab(t)) { Label(t.title, systemImage: t.icon) }
+                        // Tagged rows, not value links: a value link in the sidebar makes
+                        // the split view claim every value link on the page as well.
+                        Label(t.title, systemImage: t.icon)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityAddTraits(.isButton)
                             .accessibilityIdentifier("sidebar-" + t.rawValue)
+                            .tag(SidebarItem.tab(t))
                     }
-                    NavigationLink(value: SidebarItem.more) { Label("More pages", systemImage: "ellipsis.circle") }
+                    Label("More pages", systemImage: "ellipsis.circle")
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(.isButton)
                         .accessibilityIdentifier("sidebar-more")
+                        .tag(SidebarItem.more)
                 } header: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Predict Natural Disasters").font(.headline).foregroundStyle(Theme.text)
@@ -111,6 +120,7 @@ struct SplitRoot: View {
                 NavigationStack(path: model.path(.home)) {
                     MoreView().navigationDestination(for: Route.self) { RouteView(route: $0) }
                 }
+                .environment(\.stackTab, .home)
             case .tab(let t)?:
                 TabStack(tab: t).id(t)
             case nil:
@@ -129,7 +139,7 @@ struct RouteView: View {
         content
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: Route.more) {
+                    RouteLink(value: Route.more) {
                         Image(systemName: "ellipsis.circle").accessibilityLabel("More pages and settings")
                     }
                     .accessibilityIdentifier("moreButton")
@@ -210,7 +220,15 @@ struct MoreView: View {
     }
 
     func link(_ t: String, _ r: Route, _ icon: String) -> some View {
-        NavigationLink(value: r) { Label(t, systemImage: icon).foregroundStyle(Theme.text) }
+        RouteLink(value: r) {
+            HStack {
+                Label(t, systemImage: icon).foregroundStyle(Theme.text)
+                Spacer()
+                Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(Theme.muted)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
             .listRowBackground(Theme.card)
             .frame(minHeight: 44)
     }

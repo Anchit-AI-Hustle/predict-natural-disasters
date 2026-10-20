@@ -3,7 +3,7 @@ import Foundation
 /// The per-screen computations, kept here so they run and are tested on any
 /// platform. The SwiftUI views only lay these out.
 public enum Screens {
-    static func isHighAlert(_ e: Record) -> Bool { ["Red", "Orange", "High"].contains(e.alert) }
+    public static func isHighAlert(_ e: Record) -> Bool { ["Red", "Orange", "High"].contains(e.alert) }
 
     // MARK: Home (features.md section 1.3)
 
@@ -134,13 +134,13 @@ public enum Screens {
         public let advance: String
     }
 
-    static func placeText(_ e: Record) -> String {
+    public static func placeText(_ e: Record) -> String {
         if !e.country.isEmpty { return e.country }
         if !e.region.isEmpty { return "the area covered by " + e.region }
         return "the forecast area"
     }
 
-    static func dayOf(_ iso: String?, _ other: String?, _ role: String? = nil, tz: String?) -> String? {
+    public static func dayOf(_ iso: String?, _ other: String?, _ role: String? = nil, tz: String?) -> String? {
         guard JSDate.ms(iso) != nil else { return nil }
         let s = Format.fmtWhen(iso, other, role, tz: tz)
         if let r = s.range(of: ",", options: .backwards) { return String(s[..<r.lowerBound]) }
@@ -264,7 +264,7 @@ public enum Screens {
         return Calendar(days: days, from: from, to: to, nowPct: pct(now), groups: out.map { (type: $0.0, bars: $0.1) })
     }
 
-    static func dayRange(_ a: Double, _ b: Double, tz: String?) -> String {
+    public static func dayRange(_ a: Double, _ b: Double, tz: String?) -> String {
         func f(_ t: Double) -> String {
             let p = Format.parts(t, tz ?? Format.zoneID)
             return "\(p.day) " + Format.months[p.month - 1].prefix(3)
@@ -284,7 +284,7 @@ public enum Screens {
 
     // MARK: Our sources (features.md section 10.1)
 
-    static let families: [(String, JSRegex)] = [
+    public static let families: [(String, JSRegex)] = [
         ("earthquake", JSRegex(#"\b(?:earthquakes?|seismic|quakes?)\b"#, caseInsensitive: true)),
         ("tropical-cyclone", JSRegex(#"\b(?:cyclones?|hurricanes?|typhoons?|tropical storms?)\b"#, caseInsensitive: true)),
         ("flood", JSRegex(#"\b(?:floods?|flooding|inundation|flash.?floods?)\b"#, caseInsensitive: true)),

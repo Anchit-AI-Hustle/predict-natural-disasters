@@ -41,7 +41,7 @@ public enum History {
         return out
     }
 
-    static let keyRe = JSRegex(#"([{,]\s*)([A-Za-z_]+):"#)
+    public static let keyRe = JSRegex(#"([{,]\s*)([A-Za-z_]+):"#)
 
     /// Parses `window.PND_HISTORY=[{year:"...",...}, ...];`.
     public static func parse(js: String) -> [PastDisaster] {
@@ -80,7 +80,7 @@ public enum History {
 /// "Which country am I in", worked out on the device from the site's own
 /// `/world-countries.json` (the position is never sent anywhere to be named).
 public struct CountryLocator: Sendable {
-    let features: [(name: String, geometry: JSONValue)]
+    public let features: [(name: String, geometry: JSONValue)]
 
     public init(geoJSON: JSONValue) {
         features = (geoJSON["features"]?.arrayValue ?? []).compactMap { f in

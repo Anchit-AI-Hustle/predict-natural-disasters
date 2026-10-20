@@ -1,6 +1,41 @@
 import SwiftUI
 import PNDCore
 
+/// Which tab's stack a view sits in, so links push onto the stack the person sees.
+private struct StackTabKey: EnvironmentKey { static let defaultValue: AppTab = .home }
+extension EnvironmentValues {
+    var stackTab: AppTab {
+        get { self[StackTabKey.self] }
+        set { self[StackTabKey.self] = newValue }
+    }
+}
+
+/// A link to an in-app route. It appends the route to the path of the stack it
+/// sits in, the same way deep links open screens. SwiftUI value links did not
+/// push inside the iPad split view's detail column, so every route link in the
+/// app goes through this one path on iPhone and iPad alike.
+struct RouteLink<Label: View>: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.stackTab) var stackTab
+    let route: Route
+    let label: Label
+
+    init(value: Route, @ViewBuilder label: () -> Label) {
+        self.route = value
+        self.label = label()
+    }
+
+    var body: some View {
+        Button { model.paths[stackTab, default: []].append(route) } label: { label }
+    }
+}
+
+extension RouteLink where Label == Text {
+    init(_ title: String, value: Route) {
+        self.init(value: value) { Text(title) }
+    }
+}
+
 /// The shared record card (features.md section 0.4).
 struct EventCard: View {
     @EnvironmentObject var model: AppModel
@@ -9,7 +44,7 @@ struct EventCard: View {
     var showSavedCopy = false
 
     var body: some View {
-        NavigationLink(value: Route.detail(for: record)) {
+        RouteLink(value: Route.detail(for: record)) {
             CardBox {
                 FlowRow {
                     RecordRiskBadge(record: record)
@@ -31,7 +66,7 @@ struct EventCard: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
         .accessibilityIdentifier("eventCard")
     }
 
@@ -123,7 +158,7 @@ struct RelatedRow: View {
     let record: Record
     var line: String
     var body: some View {
-        NavigationLink(value: Route.detail(for: record)) {
+        RouteLink(value: Route.detail(for: record)) {
             CardBox {
                 FlowRow { RecordRiskBadge(record: record); SourcePill(source: record.source) }
                 Text(record.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
@@ -131,7 +166,7 @@ struct RelatedRow: View {
                 Text(Format.fmtDate(record.updated, tz: model.zoneID)).font(.caption).foregroundStyle(Theme.muted)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
     }
 }
 

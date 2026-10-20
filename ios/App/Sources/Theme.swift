@@ -336,6 +336,21 @@ struct KeyFactsGrid: View {
     }
 }
 
+/// Like `.plain`, but the whole frame of the label takes the tap, not only
+/// its text and shapes. Cards are wide on iPad, so a tap in the empty space
+/// beside a short line has to open the card too.
+struct PlainAreaButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}
+
+extension ButtonStyle where Self == PlainAreaButtonStyle {
+    static var plainArea: PlainAreaButtonStyle { PlainAreaButtonStyle() }
+}
+
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -479,6 +494,7 @@ struct EmptyStateView: View {
                 Button(b) { onOpenEvents?(empty.query) }.buttonStyle(SecondaryButtonStyle())
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("emptyState")
     }
 }

@@ -97,7 +97,7 @@ public enum RiskLevel: String, CaseIterable, Sendable, Codable {
 }
 
 public enum RiskScale {
-    static let vocabulary: [(RiskLevel, JSRegex)] = [
+    public static let vocabulary: [(RiskLevel, JSRegex)] = [
         (.extreme, JSRegex(#"\b(?:extreme|catastrophic|very\s*high|purple)\b"#, caseInsensitive: true)),
         (.severe, JSRegex(#"\b(?:severe|critical)\b"#, caseInsensitive: true)),
         (.high, JSRegex(#"\b(?:high|red|significant)\b"#, caseInsensitive: true)),

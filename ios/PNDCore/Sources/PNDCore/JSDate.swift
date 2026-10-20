@@ -68,7 +68,7 @@ public enum JSDate {
         return String(format: "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", y, m, d, Int(rem / 3600), Int(rem % 3600 / 60), Int(rem % 60), Int(milli))
     }
 
-    static func daysFromCivil(_ y0: Int, _ m: Int, _ d: Int) -> Int {
+    public static func daysFromCivil(_ y0: Int, _ m: Int, _ d: Int) -> Int {
         let y = m <= 2 ? y0 - 1 : y0
         let era = (y >= 0 ? y : y - 399) / 400
         let yoe = y - era * 400
@@ -78,7 +78,7 @@ public enum JSDate {
         return era * 146097 + doe - 719468
     }
 
-    static func civilFromDays(_ z0: Int) -> (Int, Int, Int) {
+    public static func civilFromDays(_ z0: Int) -> (Int, Int, Int) {
         let z = z0 + 719468
         let era = (z >= 0 ? z : z - 146096) / 146097
         let doe = z - era * 146097
@@ -103,7 +103,7 @@ public enum JSDate {
     }()
     private static let rfcLock = NSLock()
 
-    static func rfc822(_ s: String) -> Date? {
+    public static func rfc822(_ s: String) -> Date? {
         rfcLock.lock(); defer { rfcLock.unlock() }
         for f in rfcFormatters { if let d = f.date(from: s) { return d } }
         return nil

@@ -6,8 +6,8 @@ public struct Enrichment: Sendable {
     public init(json: JSONValue) { self.json = json }
 
     public var generatedAt: String? { json["generatedAt"]?.stringValue }
-    func strings(_ k: String) -> [String] { json[k]?.arrayValue?.compactMap { $0.stringValue } ?? [] }
-    func objects(_ k: String) -> [Record] { json[k]?.arrayValue?.compactMap { Record(json: $0) } ?? [] }
+    public func strings(_ k: String) -> [String] { json[k]?.arrayValue?.compactMap { $0.stringValue } ?? [] }
+    public func objects(_ k: String) -> [Record] { json[k]?.arrayValue?.compactMap { Record(json: $0) } ?? [] }
 }
 
 public struct WebLink: Hashable, Sendable {
@@ -75,11 +75,11 @@ public enum EnrichmentPanels {
             body: ["Our help-information service did not respond. The rest of this page is still live. This section will try again by itself."])]) }
     }
 
-    static func tel(_ p: String) -> String { "tel:" + p.filter { $0 == "+" || ($0.isASCII && $0.isNumber) } }
+    public static func tel(_ p: String) -> String { "tel:" + p.filter { $0 == "+" || ($0.isASCII && $0.isNumber) } }
 
-    static func s(_ v: JSONValue?) -> String { (v?.isTruthy ?? false) ? v!.jsString : "" }
+    public static func s(_ v: JSONValue?) -> String { (v?.isTruthy ?? false) ? v!.jsString : "" }
 
-    static func list(_ items: [String]) -> [String]? { items.isEmpty ? nil : items }
+    public static func list(_ items: [String]) -> [String]? { items.isEmpty ? nil : items }
 
     public static func build(_ d: Enrichment, event e: Record, tz: String? = nil, now: Double? = nil) -> [EnrichmentPanel] {
         let j = d.json
