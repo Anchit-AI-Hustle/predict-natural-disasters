@@ -153,6 +153,36 @@ npm test
 
 `test/` is excluded from the Vercel deployment via `.vercelignore`.
 
+## What every page tells a visitor
+
+`trust.js` is loaded first in every page's `<head>` and adds three things:
+
+- **A short note above the fold** on every page that shows a forecast or a
+  risk level: an experimental model, not an official warning, with links to
+  IMD and NDMA (India), the NWS and USGS (United States) and GDACS (worldwide).
+  The footer repeats it with each agency's address and points everyone else
+  to their national weather service through the WMO's list of members.
+- **The data sources that page is built from**, named on its own script tag
+  (`data-trust="feed models place"` or `"ledger"`), each with a link, what it
+  contributes and, for the eight feed providers, whether it answered and the
+  time of its newest record. Only sources the code calls are listed;
+  `test/trust.test.js` checks each one against the hosts in the code.
+- **When the data was last updated**, read from the response the page itself
+  rendered (`generatedAt` and `meta.modelRun.at` from `/api/events`, or the
+  ledgers' own `updatedAt`), shown in the viewer's time zone with the zone
+  named. It never shows the viewer's clock as the data's time: if the feed
+  does not answer it says so.
+
+The note is part of each page's HTML, generated from `trust.js` by
+`node tools/trust-markup.js` (the test suite fails if a page's copy drifts),
+and styled by `trust.css` in `<head>`, so it is in place at first paint and
+loading the data does not move the page. The track record page hands the note
+its records' time (`PNDTrust.recorded`) instead of the note reading those
+files a second time.
+
+It also points each record's canonical link at the record's own address
+(`/disasters/<id>`), not at the shared template.
+
 ## Scientific / safety note
 
 Experimental forecasts are research signals, not official emergency guidance.

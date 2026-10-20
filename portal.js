@@ -1,5 +1,7 @@
 const PND={
-  timezone:localStorage.getItem('pnd_timezone')||'Asia/Kolkata',
+  /* The visitor's own zone until they pick one: a reader in New York was
+     shown every time in IST, beside a trust note in their own zone. */
+  timezone:localStorage.getItem('pnd_timezone')||(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'}catch(e){return 'Asia/Kolkata'}})(),
   /* Lists show what is live. A record its provider stopped updating (the
      feed marks it live:false) still opens on its own page, so a detail page
      asks for everything with {all:true}. */
