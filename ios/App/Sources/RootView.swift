@@ -55,7 +55,7 @@ struct TabRoot: View {
     @EnvironmentObject var model: AppModel
     var body: some View {
         TabView(selection: $model.selectedTab) {
-            ForEach(Tab.allCases) { tab in
+            ForEach(AppTab.allCases) { tab in
                 TabStack(tab: tab)
                     .tabItem { Label(tab.title, systemImage: tab.icon) }
                     .tag(tab)
@@ -67,7 +67,7 @@ struct TabRoot: View {
 
 struct TabStack: View {
     @EnvironmentObject var model: AppModel
-    let tab: Tab
+    let tab: AppTab
     var body: some View {
         NavigationStack(path: model.path(tab)) {
             RouteView(route: tab.rootRoute)
@@ -76,7 +76,7 @@ struct TabStack: View {
     }
 }
 
-enum SidebarItem: Hashable { case tab(Tab), more }
+enum SidebarItem: Hashable { case tab(AppTab), more }
 
 /// iPad: a sidebar with every section.
 struct SplitRoot: View {
@@ -87,7 +87,7 @@ struct SplitRoot: View {
         NavigationSplitView {
             List(selection: $selection) {
                 Section {
-                    ForEach(Tab.allCases) { t in
+                    ForEach(AppTab.allCases) { t in
                         NavigationLink(value: SidebarItem.tab(t)) { Label(t.title, systemImage: t.icon) }
                             .accessibilityIdentifier("sidebar-" + t.rawValue)
                     }

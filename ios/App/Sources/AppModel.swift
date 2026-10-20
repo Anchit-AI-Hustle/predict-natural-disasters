@@ -1,7 +1,7 @@
 import SwiftUI
 import PNDCore
 
-enum Tab: String, CaseIterable, Hashable, Identifiable {
+enum AppTab: String, CaseIterable, Hashable, Identifiable {
     case home, alerts, forecasts, places, map, track
     var id: String { rawValue }
     var title: String {
@@ -36,7 +36,7 @@ enum Tab: String, CaseIterable, Hashable, Identifiable {
     }
 
     /// `PND.NAV_ALIAS`: which tab a secondary screen belongs to.
-    static func owning(_ r: Route) -> Tab {
+    static func owning(_ r: Route) -> AppTab {
         switch r {
         case .home: return .home
         case .map: return .map
@@ -68,8 +68,8 @@ final class AppModel: ObservableObject {
     @Published var refreshing = false
     @Published var places: [Place] = []
     @Published var zoneID: String { didSet { Format.zoneID = zoneID; UserDefaults.standard.set(zoneID, forKey: "pnd_timezone") } }
-    @Published var selectedTab: Tab = .home
-    @Published var paths: [Tab: [Route]] = [:]
+    @Published var selectedTab: AppTab = .home
+    @Published var paths: [AppTab: [Route]] = [:]
     @Published var showMore = false
     @Published var alertsEnabled: Bool { didSet { UserDefaults.standard.set(alertsEnabled, forKey: "pnd_alerts_on") } }
     @Published var alertsInfo: JSONValue?
@@ -204,7 +204,7 @@ final class AppModel: ObservableObject {
     // MARK: navigation
 
     func open(_ route: Route) {
-        let tab = Tab.owning(route)
+        let tab = AppTab.owning(route)
         selectedTab = tab
         if route == tab.rootRoute { paths[tab] = []; return }
         paths[tab, default: []].append(route)
@@ -214,7 +214,7 @@ final class AppModel: ObservableObject {
         paths[selectedTab, default: []].append(route)
     }
 
-    func path(_ tab: Tab) -> Binding<[Route]> {
+    func path(_ tab: AppTab) -> Binding<[Route]> {
         Binding(get: { self.paths[tab] ?? [] }, set: { self.paths[tab] = $0 })
     }
 
