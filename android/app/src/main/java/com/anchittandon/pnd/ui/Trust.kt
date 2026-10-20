@@ -90,14 +90,22 @@ object TrustCopy {
     )
 
     /** "IMD and NDMA in India, NWS and USGS in the US, GDACS worldwide". */
-    const val AGENCY_LINE = "For real alerts, follow your national weather or disaster agency: IMD and NDMA in India, NWS and USGS in the US, GDACS worldwide."
+    const val AGENCY_LINE = "For real alerts, follow your national agency: IMD and NDMA in India, NWS and USGS in the US, GDACS worldwide."
+    const val FOLLOW = "For real alerts, follow your national agency:"
+
+    /** "Data sources: GDACS, USGS, …": the names only. One organisation can supply two datasets, so a count never matched them. */
+    fun sourcesSummary(groups: Set<TrustGroup>): String =
+        "Data sources: " + TrustGroup.entries.filter { it in groups }.flatMap { SOURCES.getValue(it) }.map { it.short }.distinct().joinToString(", ")
+
+    /** trust.js `when()`: the screen's own `fmtDate`, so the note and the screen write one moment in one zone (changelog C9). */
+    fun whenText(iso: String?): String = if (com.anchittandon.pnd.model.JsDate.parse(iso) == null) "" else Format.fmtDate(iso)
 
     fun whenLine(groups: Set<TrustGroup>, feed: FeedState, ledgerTime: String?, ledgerFailed: Boolean): String {
         val bits = mutableListOf<String>()
         val f = feed.feed
         if (TrustGroup.FEED in groups) {
             bits += when {
-                f != null -> "Live data fetched from the agencies " + Format.trustWhen(f.generatedAt) +
+                f != null -> "Live data from the agencies " + whenText(f.generatedAt) +
                     (if (f.meta.json.str("live") == "false") " (they were not answering, so saved copies are shown)" else "") +
                     (if (feed.savedCopy) " (a saved copy on this device; the newest data has not loaded)" else "")
                 feed.failed -> "The live data did not load, so no update time can be shown"
@@ -105,11 +113,11 @@ object TrustCopy {
             }
         }
         if (TrustGroup.MODELS in groups && f != null) {
-            f.meta.modelRun?.let { mr -> if (mr.truthy("at")) bits += "weather models last run " + Format.trustWhen(mr.str("at")) + (if (mr.truthy("served")) "" else " (over 36 hours ago, so their forecasts are not shown)") }
+            f.meta.modelRun?.let { mr -> if (mr.truthy("at")) bits += "weather models run " + whenText(mr.str("at")) + (if (mr.truthy("served")) "" else " (over 36 hours ago, so their forecasts are not shown)") }
         }
         if (TrustGroup.LEDGER in groups) {
             bits += when {
-                ledgerTime != null -> "Track record last recorded " + Format.trustWhen(ledgerTime)
+                ledgerTime != null -> "Track record last recorded " + whenText(ledgerTime)
                 ledgerFailed -> "The track record did not load, so no update time can be shown"
                 else -> "Track record: loading…"
             }
@@ -125,7 +133,6 @@ fun TrustNote(groups: Set<TrustGroup>, ledgerTime: String? = null, ledgerFailed:
     val feed by env.container.feed.state.collectAsState()
     var open by rememberSaveable { mutableStateOf(false) }
     val sources = TrustGroup.entries.filter { it in groups }.flatMap { TrustCopy.SOURCES.getValue(it) }
-    val shorts = sources.map { it.short }.distinct()
     Column(
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.trustFill)
             .border(1.dp, Pnd.provBorder, RoundedCornerShape(10.dp)).testTag("trustNote"),
@@ -134,19 +141,21 @@ fun TrustNote(groups: Set<TrustGroup>, ledgerTime: String? = null, ledgerFailed:
             Box(Modifier.width(3.dp).heightIn(min = 40.dp).background(Pnd.amber))
             Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Box(Modifier.size(18.dp).border(1.5.dp, Pnd.amber, CircleShape), contentAlignment = Alignment.Center) {
-                        Text("i", color = Pnd.amber, fontSize = 12.sp, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold)
+                    // The circle grows with the font size, so the "i" inside it is never clipped at 200%.
+                    val fs = androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
+                    Box(Modifier.size(18.dp * fs).border(1.5.dp, Pnd.amber, CircleShape).testTag("trustIcon"), contentAlignment = Alignment.Center) {
+                        Text("i", color = Pnd.amber, fontSize = 12.sp, lineHeight = 12.sp, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                     }
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(TrustCopy.WARN, color = Pnd.trustText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
-                        Text("For real alerts, follow your national weather or disaster agency:", color = Pnd.trustText, style = MaterialTheme.typography.bodySmall)
+                        Text(TrustCopy.FOLLOW, color = Pnd.trustText, style = MaterialTheme.typography.bodySmall)
                         Text(agencyLine { env.container.platform.openUrl(it) }, color = Pnd.trustText, style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("agencyLine"))
                     }
                 }
                 Text(TrustCopy.whenLine(groups, feed, ledgerTime, ledgerFailed), color = Pnd.trustWhen, fontSize = 12.sp, lineHeight = 16.sp, modifier = Modifier.testTag("trustWhen"))
                 Text(
-                    (if (open) "▾ " else "▸ ") + "Data sources (${sources.size}): " + shorts.joinToString(", "),
+                    (if (open) "▾ " else "▸ ") + TrustCopy.sourcesSummary(groups),
                     color = Pnd.greenText, fontSize = 12.sp,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { open = !open }.padding(vertical = 12.dp)
                         .semantics { stateDescription = if (open) "Expanded" else "Collapsed" },
@@ -161,10 +170,10 @@ fun TrustNote(groups: Set<TrustGroup>, ledgerTime: String? = null, ledgerFailed:
                                 val scan = meta!!.scanProviders.firstOrNull { it.str("provider") == s.key }
                                 Row {
                                     Text(if (src.truthy("ok")) "answered" else "not answering", color = if (src.truthy("ok")) Pnd.green else Pnd.amber, fontSize = 12.sp)
-                                    scan?.str("dataFreshness")?.let { Text(" · newest record " + Format.trustWhen(it), color = Pnd.trustWhen, fontSize = 12.sp) }
+                                    scan?.str("dataFreshness")?.let { Text(" · newest record " + TrustCopy.whenText(it), color = Pnd.trustWhen, fontSize = 12.sp) }
                                 }
                             } else if (s.model && meta?.modelRun?.truthy("at") == true) {
-                                Text("used in the run of " + Format.trustWhen(meta.modelRun!!.str("at")), color = Pnd.trustWhen, fontSize = 12.sp)
+                                Text("used in the run of " + TrustCopy.whenText(meta.modelRun!!.str("at")), color = Pnd.trustWhen, fontSize = 12.sp)
                             }
                             Text(s.adds, color = Color(0xFFC4D8CF), fontSize = 12.sp)
                         }

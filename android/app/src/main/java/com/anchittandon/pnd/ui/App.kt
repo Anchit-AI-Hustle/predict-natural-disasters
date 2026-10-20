@@ -95,6 +95,9 @@ val TABS = listOf(
     Triple("Track record", "accuracy", Icons.Filled.FactCheck),
 )
 
+/** Home and the five tab roots: screens reached from the tab bar or the logo, which never show a back arrow. */
+fun isRoot(route: String?): Boolean = route == null || route == "home" || TABS.any { it.second == route }
+
 /** `PND.NAV_ALIAS`: which tab a secondary screen belongs to. */
 fun tabFor(route: String?): String? {
     val r = route ?: return null
@@ -112,7 +115,7 @@ fun tabFor(route: String?): String? {
 @Composable
 fun PndApp(container: AppContainer, startRoute: String? = null, poll: Boolean = true) {
     val settings by container.settings.values.collectAsState()
-    val tz = settings["pnd_timezone"] ?: "Asia/Kolkata"
+    val tz = com.anchittandon.pnd.logic.Portal.timezone(settings["pnd_timezone"], AppClock.deviceZone)
     AppClock.zone = tz
     val nav = rememberNavController()
     val env = remember(tz) { AppEnv(container, { p -> go(nav, p) }, { if (!nav.popBackStack()) Unit }, tz) }
@@ -172,9 +175,9 @@ private fun androidx.navigation.NavGraphBuilder.routes() {
     composable("personal-risk") { MyPlacesScreen() }
     composable("accuracy") { TrackRecordUi() }
     for (v in CollectionView.entries) {
-        composable(v.route + "?q={q}&region={region}", listOf(str("q"), str("region"))) { b -> CollectionScreen(v, b.arguments?.getString("q") ?: b.arguments?.getString("region") ?: "") }
+        composable(v.route + "?q={q}&region={region}", listOf(str("q"), str("region"))) { b -> CollectionScreen(v, b.arguments?.getString("q") ?: "", b.arguments?.getString("region") ?: "") }
     }
-    composable("forecast-calendar") { ForecastCalendarScreen() }
+    composable("forecast-calendar?region={region}", listOf(str("region"))) { b -> ForecastCalendarScreen(b.arguments?.getString("region") ?: "") }
     composable("calamities") { CalamitiesScreen() }
     composable("regions") { RegionsScreen() }
     composable("resources") { ResourcesScreen() }
@@ -206,7 +209,7 @@ private fun TopBar(route: String?, canGoBack: Boolean, onBack: () -> Unit) {
     val env = LocalApp.current
     Column(Modifier.fillMaxWidth().background(Color(0xF702110D)).windowInsetsPadding(WindowInsets.statusBars)) {
         Row(Modifier.fillMaxWidth().heightIn(min = 58.dp).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (canGoBack && route != "home") {
+            if (canGoBack && !isRoot(route)) {
                 IconButton(onBack, Modifier.size(48.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Pnd.text) }
             }
             Row(
@@ -217,7 +220,7 @@ private fun TopBar(route: String?, canGoBack: Boolean, onBack: () -> Unit) {
                 Text("◎", color = Pnd.green, fontSize = 26.sp)
                 Column(Modifier.padding(start = 6.dp)) {
                     Text("Predict Natural Disasters", color = Pnd.text, fontWeight = FontWeight.ExtraBold, fontSize = capped(15f, 1.3f), lineHeight = capped(18f, 1.3f))
-                    if ((!canGoBack || route == "home") && androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f) Text("Check a place · live hazards · forecasts", color = Color(0xFFCBE5DA), fontSize = 11.sp, lineHeight = 14.sp)
+                    if ((!canGoBack || isRoot(route)) && androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f) Text("Check a place · live hazards · forecasts", color = Color(0xFFCBE5DA), fontSize = 11.sp, lineHeight = 14.sp)
                 }
             }
             Text(Format.tzLabel(env.tz), color = Color(0xFFEAF7F1), fontSize = 12.sp,

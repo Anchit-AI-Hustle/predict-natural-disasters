@@ -22,7 +22,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.TextStyle
 import java.util.Locale
-import java.util.TimeZone
 
 /**
  * The clock and time zone every formatter reads. The app sets the zone from settings, tests fix
@@ -31,6 +30,8 @@ import java.util.TimeZone
 object AppClock {
     @Volatile var now: () -> Long = { System.currentTimeMillis() }
     @Volatile var zone: String = "Asia/Kolkata"
+    /** The device's own zone, the default when none is chosen (`PND.timezone`, changelog C9). Tests fix it. */
+    @Volatile var deviceZone: () -> String? = { java.time.ZoneId.systemDefault().id }
 }
 
 /** Port of the text helpers in portal.js (logic.md §6). */
@@ -208,16 +209,6 @@ object Format {
         if (m == null || (!other.isNullOrEmpty() && edge(other) == null)) return fmtDate(v, tz)
         val day = if (m.last || role != "end") m.t else m.t - 86_400_000L
         return utcDay(day)
-    }
-
-    /** The trust note's `when()`: `d MMM yyyy, h:mm AM/PM {short zone}` in the chosen zone. */
-    fun trustWhen(iso: String?, tz: String = AppClock.zone): String {
-        val t = JsDate.parse(iso) ?: return ""
-        val zid = zoneId(tz)
-        val z = Instant.ofEpochMilli(t).atZone(zid)
-        val short = TimeZone.getTimeZone(zid).getDisplayName(zid.rules.isDaylightSavings(Instant.ofEpochMilli(t)), TimeZone.SHORT, Locale.ENGLISH)
-            .let { if (tz == "UTC") "UTC" else it }
-        return "${z.dayOfMonth} ${MONTHS[z.monthValue - 1].take(3)} ${z.year}, " + clock12(z.hour, z.minute) + " " + short
     }
 
     fun zoneDisplayName(tz: String): String = try { zoneId(tz).getDisplayName(TextStyle.FULL, Locale.ENGLISH) } catch (e: Exception) { tz }

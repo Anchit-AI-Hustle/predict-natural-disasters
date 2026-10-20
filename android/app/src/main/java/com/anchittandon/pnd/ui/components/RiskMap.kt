@@ -39,7 +39,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -76,6 +78,27 @@ import org.osmdroid.views.overlay.TilesOverlay
  */
 val LocalLiveMap = staticCompositionLocalOf { true }
 
+/** What the card over the map says: a selected event, or a search that found nothing (index.html `selectEvent`, `mapSearch`). */
+sealed interface MapNudge {
+    data class Selected(val e: Event) : MapNudge
+    data class NoMatch(val title: String) : MapNudge
+}
+
+/** Selection and camera requests a screen can make of its map. A refresh never moves the map; only a new request does. */
+class MapSelection {
+    var nudge by mutableStateOf<MapNudge?>(null)
+    /** Fly to this point at zoom max(current, 5); [flySeq] changes with each request. */
+    var flyTo by mutableStateOf<Pair<Double, Double>?>(null)
+    var flySeq by mutableStateOf(0)
+    fun select(e: Event, fly: Boolean) {
+        nudge = MapNudge.Selected(e)
+        if (fly && e.lat != null && e.lon != null) { flyTo = e.lat!! to e.lon!!; flySeq++ }
+    }
+}
+
+/** Fit the map to these points (padding 25%, max zoom [maxZoom]) whenever [key] changes. */
+data class MapFit(val key: Any?, val points: List<Pair<Double, Double>>, val maxZoom: Double = 6.0)
+
 data class MapCircle(val lat: Double, val lon: Double, val km: Double, val stroke: Color, val fillAlpha: Float)
 
 /** The Esri tiles the website uses (api.md §6). */
@@ -87,13 +110,24 @@ private class EsriSource(name: String, path: String) : OnlineTileSourceBase(
         baseUrl + MapTileIndex.getZoom(index) + "/" + MapTileIndex.getY(index) + "/" + MapTileIndex.getX(index)
 }
 
+/** The ring drawn round the selected marker. */
+private fun ringBitmap(ctx: Context): BitmapDrawable {
+    val d = ctx.resources.displayMetrics.density
+    val side = (34 * d).toInt()
+    val bmp = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+    val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Pnd.green.toArgb(); style = Paint.Style.STROKE; strokeWidth = 3 * d }
+    android.graphics.Canvas(bmp).drawCircle(side / 2f, side / 2f, side / 2f - 2 * d, p)
+    return BitmapDrawable(ctx.resources, bmp)
+}
+
 private fun markerBitmap(ctx: Context, level: Level): BitmapDrawable {
     val d = ctx.resources.displayMetrics.density
     val sizePx = (level.markerSize * d).toInt().coerceAtLeast(8)
-    val pad = (3 * d).toInt()
-    val bmp = Bitmap.createBitmap(sizePx + pad * 2, sizePx + pad * 2, Bitmap.Config.ARGB_8888)
+    // The mark keeps its size; the bitmap (osmdroid's hit area) is a square of at least 24 dp around it.
+    val side = maxOf((level.tapSize * d).toInt(), sizePx + (6 * d).toInt())
+    val bmp = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
     val c = android.graphics.Canvas(bmp)
-    val w = sizePx.toFloat(); val o = pad.toFloat()
+    val w = sizePx.toFloat(); val o = (side - sizePx) / 2f
     fun path(vararg pts: Pair<Float, Float>) = android.graphics.Path().apply { pts.forEachIndexed { i, (x, y) -> if (i == 0) moveTo(o + x * w, o + y * w) else lineTo(o + x * w, o + y * w) }; close() }
     val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (level.fill() ?: Pnd.unknownMarker).toArgb(); style = Paint.Style.FILL }
     val halo = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2.5f * d }
@@ -128,13 +162,15 @@ fun RiskMap(
     zoom: Double = 1.6,
     circle: MapCircle? = null,
     showKey: Boolean = true,
+    selection: MapSelection? = null,
+    fit: MapFit? = null,
     onOpen: (Event) -> Unit,
 ) {
     val env = LocalApp.current
     val live = LocalLiveMap.current
     var layer by remember { mutableStateOf(env.container.settings.mapLayer) }
     var keyOpen by remember { mutableStateOf(false) }
-    var selected by remember { mutableStateOf<Event?>(null) }
+    val sel = selection ?: remember { MapSelection() }
     val located = events.filter { it.lat != null && it.lon != null }.sortedBy { RiskScale.markerLevel(it.json).rank }
     val counts = located.groupingBy { RiskScale.markerLevel(it.json) }.eachCount()
     val summary = "Map of ${located.size} reported events. " +
@@ -144,9 +180,9 @@ fun RiskMap(
         Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(10.dp)).border(1.dp, Pnd.line, RoundedCornerShape(10.dp))
             .semantics { contentDescription = summary }.testTag("riskMap")) {
             if (live) {
-                OsmMap(located, layer, center, zoom, circle) { selected = it }
+                OsmMap(located, layer, center, zoom, circle, sel, fit) { sel.select(it, fly = false) }
             } else {
-                StaticMap(located, center, zoom, circle)
+                StaticMap(located, center, zoom, circle, sel, fit)
             }
             Text(if (layer == "satellite") "Esri, HERE, Garmin, © OpenStreetMap contributors" else "Country outlines: Natural Earth (public domain)",
                 color = Color(0xFFC7D6CF), fontSize = 10.sp, modifier = Modifier.align(Alignment.BottomStart).background(Color(0xB3020F0B)).padding(horizontal = 4.dp, vertical = 2.dp))
@@ -156,13 +192,26 @@ fun RiskMap(
             if (showKey) OutlinePillButton(if (keyOpen) "Hide key" else "Key") { keyOpen = !keyOpen }
         }
         if (keyOpen) MapKey(counts)
-        selected?.let { e ->
-            CardBox(onClick = { onOpen(e) }, label = "See details of ${e.displayTitle}") {
-                Eyebrow("Selected event on map")
-                Text(e.displayTitle, color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Muted(listOf(e.type, Format.placeOf(e.json), e.source).filter { it.isNotEmpty() }.joinToString(" · "))
-                Text("See details →", color = Pnd.link, fontSize = 14.sp)
+        when (val n = sel.nudge) {
+            is MapNudge.Selected -> {
+                val e = n.e
+                Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag("mapNudge")) {
+                    CardBox {
+                        Eyebrow("Selected event on map")
+                        Text(e.displayTitle, color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Muted(listOf(e.type, Format.placeOf(e.json), e.source).filter { it.isNotEmpty() }.joinToString(" · "))
+                        LinkButton("See details →", Modifier.testTag("nudgeDetail")) { onOpen(e) }
+                    }
+                }
             }
+            is MapNudge.NoMatch -> Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag("mapNudge")) {
+                CardBox {
+                    Eyebrow("Search")
+                    Text(n.title, color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Muted(com.anchittandon.pnd.logic.MapSearch.NO_MATCH_META)
+                }
+            }
+            null -> {}
         }
     }
 }
@@ -184,7 +233,7 @@ fun MapKey(counts: Map<Level, Int>) {
 }
 
 @Composable
-private fun OsmMap(events: List<Event>, layer: String, center: Pair<Double, Double>?, zoom: Double, circle: MapCircle?, onSelect: (Event) -> Unit) {
+private fun OsmMap(events: List<Event>, layer: String, center: Pair<Double, Double>?, zoom: Double, circle: MapCircle?, sel: MapSelection, fit: MapFit?, onSelect: (Event) -> Unit) {
     val env = LocalApp.current
     val ctx = LocalContext.current
     val countries = remember { env.container.countries.features }
@@ -201,6 +250,8 @@ private fun OsmMap(events: List<Event>, layer: String, center: Pair<Double, Doub
         }
     }
     DisposableEffect(view) { view.onResume(); onDispose { view.onPause(); view.onDetach() } }
+    // The camera moves only for a new request: the first draw, a new fit key or a new fly-to. A refresh leaves it.
+    val camera = remember { arrayOf<Any?>(Unit, null, -1) }
     AndroidView({ view }, Modifier.fillMaxSize(), update = { m ->
         m.overlays.clear()
         val sat = layer == "satellite"
@@ -242,17 +293,57 @@ private fun OsmMap(events: List<Event>, layer: String, center: Pair<Double, Doub
             mk.setOnMarkerClickListener { _, _ -> onSelect(e); true }
             m.overlays.add(mk)
         }
-        if (center != null) { m.controller.setZoom(zoom); m.controller.setCenter(GeoPoint(center.first, center.second)) }
-        else { m.controller.setZoom(zoom); m.controller.setCenter(GeoPoint(20.0, 20.0)) }
+        val ring = (sel.nudge as? MapNudge.Selected)?.e
+        if (ring?.lat != null && ring.lon != null) {
+            val mk = Marker(m)
+            mk.position = GeoPoint(ring.lat!!, ring.lon!!)
+            mk.icon = ringBitmap(ctx)
+            mk.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+            mk.setInfoWindow(null)
+            mk.setOnMarkerClickListener { _, _ -> false }
+            m.overlays.add(mk)
+        }
+        if (camera[0] == Unit) {
+            camera[0] = null
+            if (center != null) { m.controller.setZoom(zoom); m.controller.setCenter(GeoPoint(center.first, center.second)) }
+            else { m.controller.setZoom(zoom); m.controller.setCenter(GeoPoint(20.0, 20.0)) }
+        }
+        if (fit != null && fit.key != camera[1]) {
+            camera[1] = fit.key
+            if (fit.points.isNotEmpty()) {
+                val la = fit.points.map { it.first }; val lo = fit.points.map { it.second }
+                val padLa = (la.max() - la.min()) * 0.25; val padLo = (lo.max() - lo.min()) * 0.25
+                val box = org.osmdroid.util.BoundingBox((la.max() + padLa).coerceAtMost(85.0), (lo.max() + padLo).coerceAtMost(180.0),
+                    (la.min() - padLa).coerceAtLeast(-85.0), (lo.min() - padLo).coerceAtLeast(-180.0))
+                m.post {
+                    m.zoomToBoundingBox(box, false)
+                    if (m.zoomLevelDouble > fit.maxZoom) m.controller.setZoom(fit.maxZoom)
+                }
+            }
+        }
+        if (sel.flySeq != camera[2]) {
+            camera[2] = sel.flySeq
+            sel.flyTo?.let { (la, lo) -> m.controller.animateTo(GeoPoint(la, lo), maxOf(m.zoomLevelDouble, 5.0), 550L) }
+        }
         m.invalidate()
     })
 }
 
 /** The same picture drawn in Compose (equirectangular), for tests and as a fallback. */
 @Composable
-fun StaticMap(events: List<Event>, center: Pair<Double, Double>?, zoom: Double, circle: MapCircle?) {
+fun StaticMap(events: List<Event>, center0: Pair<Double, Double>?, zoom0: Double, circle: MapCircle?, sel: MapSelection? = null, fit: MapFit? = null) {
     val env = LocalApp.current
     val countries = remember { env.container.countries.features }
+    // The same camera rules as the live map: a fit to the points (max zoom 6), then a fly-to at zoom max(current, 5).
+    var center = center0; var zoom = zoom0
+    if (fit != null && fit.points.isNotEmpty()) {
+        val la = fit.points.map { it.first }; val lo = fit.points.map { it.second }
+        center = (la.max() + la.min()) / 2 to (lo.max() + lo.min()) / 2
+        val range = maxOf(lo.max() - lo.min(), la.max() - la.min(), 0.01) * 1.5
+        zoom = (1.6 + Math.log(360.0 / range) / Math.log(2.0)).coerceIn(1.6, fit.maxZoom)
+    }
+    sel?.flyTo?.let { center = it; zoom = maxOf(zoom, 5.0) }
+    val ring = (sel?.nudge as? MapNudge.Selected)?.e
     Canvas(Modifier.fillMaxSize().background(Pnd.ocean)) {
         val span = 360.0 / Math.pow(2.0, (zoom - 1.6).coerceAtLeast(0.0))
         val cLat = center?.first ?: 15.0; val cLon = center?.second ?: 20.0
@@ -281,6 +372,7 @@ fun StaticMap(events: List<Event>, center: Pair<Double, Double>?, zoom: Double, 
             drawCircle(Color.White, s / 2 + 1.5f, o)
             drawRiskShape(if (lv == Level.UNKNOWN) com.anchittandon.pnd.logic.RiskShape.CIRCLE else lv.shape, lv.fill() ?: Pnd.unknownMarker, Size(s, s), tl)
         }
+        if (ring?.lat != null && ring.lon != null) drawCircle(Pnd.green, 14 * density, xy(ring.lat!!, ring.lon!!), style = Stroke(3 * density))
     }
 }
 

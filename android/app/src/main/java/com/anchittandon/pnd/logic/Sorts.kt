@@ -63,10 +63,13 @@ object Sorts {
         "source" to SortDef("Source (A to Z)", Comparator { a, b -> locale(textOf(a, "source"), textOf(b, "source")) or { cmpL(timeOf(b), timeOf(a)) } }),
         "title" to SortDef("Name (A to Z)", Comparator { a, b -> locale(textOf(a, "title", "name"), textOf(b, "title", "name")) }),
         "distance" to SortDef("Nearest first", Comparator { a, b -> sign(dist(a) - dist(b)) }),
+        // Open windows first, soonest end first; ended ones (end <= now, or windowClosed) after, most recent first.
         "windowEnd" to SortDef("Ending soonest first", Comparator { a, b ->
+            val now = AppClock.now().toDouble()
             val x = (JsDate.parse(a.text("targetEnd"))?.takeIf { it != 0L }?.toDouble()) ?: Double.POSITIVE_INFINITY
             val y = (JsDate.parse(b.text("targetEnd"))?.takeIf { it != 0L }?.toDouble()) ?: Double.POSITIVE_INFINITY
-            sign(x - y)
+            val xa = x <= now || a.truthy("windowClosed"); val ya = y <= now || b.truthy("windowClosed")
+            if (xa != ya) (if (xa) 1 else -1) else if (xa) sign(y - x) else sign(x - y)
         }),
         "yearNew" to SortDef("Most recent first", Comparator { a, b -> sign(numOf(b, "sort") - numOf(a, "sort")) }),
         "yearOld" to SortDef("Earliest first", Comparator { a, b -> sign(numOf(a, "sort") - numOf(b, "sort")) }),

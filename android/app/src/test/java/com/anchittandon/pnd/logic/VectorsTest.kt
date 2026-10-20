@@ -313,6 +313,183 @@ class VectorsTest {
         }
     }
 
+
+    /* ------------------------------------------------ groups added for the audit fixes (logic.md §11) */
+
+    private fun ids(e: JsonElement?) = e!!.jsonArray.map { s(it) }
+    private fun fx(k: String): List<JsonObject> = V[k]!!.jsonArray.objects()
+    private fun byId(k: String): Map<String, JsonObject> = fx(k).associateBy { s(it["id"])!! }
+
+    @Test fun windowEndPutsEndedWindowsLast() {
+        val g = V["sort.windowEndEnded"]!!.jsonObject
+        val now = JsDate.parse(s(g["now"]))!!
+        AppClock.now = { now }
+        assertEquals(ids(g["out"]), Sorts.sort(g["fixture"]!!.jsonArray.objects(), "windowEnd") { it }.map { s(it["id"]) })
+    }
+
+    @Test fun emptyTextCountsReportsOnly() {
+        group("search.emptyHtml.counts").forEach { c ->
+            val a = inArr(c); val list = a[1].jsonArray.objects()
+            assertEquals(c.toString(), s(c["out"]), Search.emptyState(s(a[0]), list, list, "events").toHtml())
+        }
+        group("search.countryCount").forEach { c -> assertEquals(dbl(c["out"])!!.toInt(), Search.countryCount(inArr(c)[0].jsonArray.objects())) }
+    }
+
+    @Test fun continents() {
+        assertEquals(ids(V["continents.NAMES"]), Continents.NAMES)
+        group("continents.continentNamed").forEach { c -> assertEquals(c.toString(), s(c["out"]), Continents.continentNamed(s(c["in"]))) }
+        val recs = fx("fixtures.places.continents").associateBy { s(it["id"])!! }
+        group("continents.continentsOf").forEach { c -> assertEquals(c.toString(), ids(c["out"]), Continents.continentsOf(recs[s(c["in"])])) }
+        group("continents.onContinent").forEach { c -> val a = inArr(c); assertEquals(c.toString(), c["out"]!!.jsonPrimitive.booleanOrNull, Continents.onContinent(recs[s(a[0])], s(a[1]))) }
+        group("portal.inPlace").forEach { c -> val a = inArr(c); assertEquals(c.toString(), c["out"]!!.jsonPrimitive.booleanOrNull, Portal.inPlace(recs[s(a[0])], s(a[1]))) }
+        group("regionDetail.matches").forEach { c ->
+            val a = inArr(c); val region = RegionMatch.canonical(s(a[0]))
+            val out = c["out"]!!.jsonObject
+            assertEquals(c.toString(), s(out["region"]), region)
+            assertEquals(c.toString(), ids(out["ids"]), a[1].jsonArray.map { recs.getValue(s(it)!!) }.filter { RegionMatch.matches(it, region) }.map { s(it["id"]) })
+        }
+    }
+
+    @Test fun hazardsAreMatchedWhole() {
+        group("portal.hazardKey").forEach { c -> assertEquals(c.toString(), s(c["out"]), Portal.hazardKey(s(c["in"]))) }
+        group("portal.sameHazard").forEach { c -> val a = inArr(c); assertEquals(c.toString(), c["out"]!!.jsonPrimitive.booleanOrNull, Portal.sameHazard(s(a[0]), s(a[1]))) }
+        group("hazardDetail.fillHazards").forEach { c ->
+            val a = inArr(c); val out = c["out"]!!.jsonObject
+            val atStart = HazardPage.fillHazards(s(a[0]), emptyList())
+            assertEquals(c.toString(), s(out["selectedAtStart"]), atStart.selected)
+            val f = HazardPage.fillHazards(s(a[0]), a[1].jsonArray.map { s(it)!! }, was = atStart.selected)
+            assertEquals(c.toString(), ids(out["options"]), f.options)
+            assertEquals(c.toString(), s(out["selected"]), f.selected)
+        }
+        val recs = fx("fixtures.events.hazards")
+        group("hazardDetail.select").forEach { c ->
+            val a = inArr(c); val out = c["out"]!!.jsonObject
+            val sel = HazardPage.select(recs, s(a[0])!!, s(a[1])!!) { it }
+            assertEquals(c.toString(), ids(out["events"]), sel.events.map { s(it["id"]) })
+            assertEquals(c.toString(), ids(out["openForecasts"]), sel.openForecasts.map { s(it["id"]) })
+        }
+    }
+
+    @Test fun officialWarningsAreWarningsInForce() {
+        val w = byId("fixtures.events.warnings")
+        group("portal.isOfficialWarning").forEach { c -> assertEquals(c.toString(), c["out"]!!.jsonPrimitive.booleanOrNull, Portal.isOfficialWarning(s(c["in"])?.let { w[it] })) }
+        val g = V["portal.officialWarnings"]!!.jsonObject
+        assertEquals(ids(g["out"]), Portal.officialWarnings(ids(g["in"]).map { w.getValue(it!!) }) { it }.map { s(it["id"]) })
+        assertEquals(s(V["portal.WARNING_MEANING"]), Portal.WARNING_MEANING)
+    }
+
+    @Test fun oneCountPerQuantity() {
+        val m = byId("fixtures.events.mixed")
+        val ob = V["portal.observed"]!!.jsonObject
+        assertEquals(ids(ob["out"]), Portal.observed(ids(ob["in"]).map { m.getValue(it!!) }) { it }.map { s(it["id"]) })
+        val of = V["portal.openForecasts"]!!.jsonObject
+        assertEquals(ids(of["out"]), Portal.openForecasts(ids(of["in"]).map { m.getValue(it!!) }) { it }.map { s(it["id"]) })
+        group("portal.isHighAlert").forEach { c -> assertEquals(c.toString(), c["out"]!!.jsonPrimitive.booleanOrNull, Portal.isHighAlert(s(c["in"])?.let { m[it] })) }
+        group("portal.sourcesReporting").forEach { c -> assertEquals(c.toString(), dbl(c["out"])!!.toInt(), Portal.sourcesReporting(inArr(c)[0].jsonArray.map { m.getValue(s(it)!!) }) { it }) }
+        group("portal.liveWord").forEach { c -> assertEquals(c.toString(), s(c["out"]), Portal.liveWord(o(c["in"]))) }
+        group("detail.statusWords").forEach { c ->
+            val e = c["in"]!!.jsonObject; val out = c["out"]!!.jsonObject
+            assertEquals(c.toString(), s(out["eventEyebrow"]), DetailWords.eventEyebrow(e))
+            assertEquals(c.toString(), s(out["eventDataStatus"]), Portal.liveWord(e))
+            assertEquals(c.toString(), s(out["eventRecordState"]), DetailWords.eventRecordState(e))
+            assertEquals(c.toString(), s(out["calamityStatus"]), DetailWords.calamityStatus(e))
+        }
+    }
+
+    @Test fun collectionKeepScopeAndCount() {
+        val all = fx("fixtures.events.collection")
+        group("collection.keep").forEach { c ->
+            val a = inArr(c); val view = s(a[0])!!; val region = s(a.getOrNull(1)); val out = c["out"]!!.jsonObject
+            assertEquals(c.toString(), ids(out["kept"]), all.filter { Collections.keep(view, it) }.map { s(it["id"]) })
+            val sc = Collections.scoped(all, view, region) { it }
+            assertEquals(c.toString(), ids(out["scoped"]), sc.map { s(it["id"]) })
+            assertEquals(c.toString(), s(out["countText"]), Collections.countText(sc, view, "items") { it })
+        }
+    }
+
+    @Test fun gradedForecastsShowTheirGrade() {
+        val labels = V["verdicts.LABELS"]!!.jsonObject
+        assertEquals(labels.keys, Verdicts.LABELS.keys)
+        labels.forEach { (k, v) -> assertEquals(k, s(v), Verdicts.LABELS[k]) }
+        group("verdicts.label").forEach { c -> assertEquals(c.toString(), s(c["out"]), Verdicts.LABELS[Verdicts.normalise(s(c["in"]))]) }
+        val files = V["fixtures.verdictFiles"]!!.jsonObject
+        val ledger = files["/data/verification-ledger.json"]!!.jsonObject; val model = files["/data/model-verdicts.json"]!!.jsonObject
+        group("forecastDetail.gradeOf").forEach { c ->
+            val a = inArr(c); val down = a.getOrNull(2)?.let { (it as? JsonPrimitive)?.booleanOrNull } == true
+            val g = Grades.gradeOf(s(a[0]) ?: "", if (down) null else ledger, if (down) null else model)
+            val out = c["out"]!!.jsonObject
+            val exp = o(out["grade"])
+            assertEquals(c.toString(), exp?.let { s(it["label"]) to s(it["summary"]) }, g?.let { it.label to it.summary })
+            assertEquals(c.toString(), s(out["status"]), Grades.status(g, s(a[1]), NOW))
+        }
+    }
+
+    @Test fun timezoneDefaultsToTheDevice() = group("portal.timezoneDefault").forEach { c ->
+        val a = inArr(c); val out = c["out"]!!.jsonObject
+        val dev = s(a[1])
+        val tz = Portal.timezone(s(a[0])) { if (dev == "throws") throw IllegalStateException("no zone") else dev }
+        assertEquals(c.toString(), s(out["timezone"]), tz)
+        assertEquals(c.toString(), s(out["tzLabel"]), Format.tzLabel(tz))
+        assertEquals(c.toString(), s(out["fmtDate"]), Format.fmtDate("2026-10-20T11:24:19Z", tz))
+    }
+
+    @Test fun homeRender() {
+        val h = V["home.render"]!!.jsonObject
+        val feed = h["feed"]!!.jsonArray.objects()
+        assertEquals(h["hazardFilterOptions"]!!.jsonArray.objects().map { s(it["value"]) to s(it["label"]) }, HomeModel.hazardOptions(feed, null))
+        assertEquals(h["sortOptions"]!!.jsonArray.objects().map { s(it["value"]) to s(it["label"]) }, HomeModel.SORT_KEYS.map { it to Sorts.label(it) })
+        assertEquals(s(h["warningsTileNote"]), com.anchittandon.pnd.ui.screens.HOME_WARNINGS_NOTE)
+        assertEquals(s(h["warningsTileTitle"]), Portal.WARNING_MEANING)
+        assertEquals(s(h["liveEventsHeading"]), com.anchittandon.pnd.ui.screens.HOME_LIVE_EVENTS)
+        h["cases"]!!.jsonArray.objects().forEach { c ->
+            val i = c["in"]!!.jsonObject; val out = c["out"]!!.jsonObject; val tag = i.toString()
+            val r = HomeModel.render(feed, s(i["hazardFilter"])!!, s(i["sort"])!!)
+            assertEquals(tag, s(out["kEvents"]), r.kEvents); assertEquals(tag, s(out["kEventsNote"]), r.kEventsNote)
+            assertEquals(tag, s(out["kWarnings"]), r.kWarnings); assertEquals(tag, s(out["kForecasts"]), r.kForecasts)
+            assertEquals(tag, s(out["kForecastsNote"]), r.kForecastsNote); assertEquals(tag, s(out["kCountries"]), r.kCountries)
+            assertEquals(tag, ids(out["liveEvents"]), r.liveEvents.map { s(it["id"]) })
+            assertEquals(tag, out["latestEvents"]!!.jsonArray.map { ids(it) }, HomeModel.latestEventRows(r))
+            assertEquals(tag, out["officialWarnings"]!!.jsonArray.map { ids(it) }, HomeModel.warningRows(r))
+            assertEquals(tag, out["latestForecasts"]!!.jsonArray.map { ids(it) }, HomeModel.forecastRows(r))
+            assertEquals(tag, out["hazardStrip"]!!.jsonArray.objects().map { Triple(s(it["hazard"]), s(it["text"]), s(it["link"])) },
+                r.hazardStrip.map { Triple(it.hazard, it.text, it.link) })
+        }
+    }
+
+    @Test fun alertsPager() {
+        val p = V["alerts.pager"]!!.jsonObject
+        val total = dbl(p["officialRecords"])!!.toInt(); val page = dbl(p["pageSize"])!!.toInt()
+        assertEquals(page, AlertsPager.PAGE)
+        var limit = 0
+        p["steps"]!!.jsonArray.objects().forEach { st ->
+            limit = if (s(st["action"]) == "load") AlertsPager.PAGE else limit + AlertsPager.PAGE
+            val out = st["out"]!!.jsonObject
+            val f = AlertsPager.footer(limit, total)
+            assertEquals(st.toString(), dbl(out["shown"])!!.toInt(), minOf(limit, total))
+            assertEquals(st.toString(), s(out["note"]), f?.note)
+            assertEquals(st.toString(), s(out["button"]), f?.button)
+            assertEquals(st.toString(), s(out["kOfficial"]), total.toString())
+        }
+        // Fewer than a page: no footer at all.
+        assertNull(AlertsPager.footer(40, 12))
+    }
+
+    @Test fun verificationDetailRendersAllEightRows() {
+        val g = V["verificationDetail.render"]!!.jsonObject
+        val fxs = g["fixtures"]!!.jsonObject
+        val recs = (listOf(fxs["forecast"]!!.jsonObject) + fxs["reports"]!!.jsonArray.objects()).associateBy { s(it["id"])!! }
+        g["cases"]!!.jsonArray.objects().forEach { c ->
+            val i = c["in"]!!.jsonObject; val out = c["out"]!!.jsonObject; val tag = s(i["name"])
+            val events = ids(i["events"]).map { recs.getValue(it!!) }
+            val verdict = VerificationCheck.verdict("ND-001", i["ledger"]!!.jsonObject, failed = false)
+            val r = VerificationCheck.check("ND-001", events, verdict)
+            assertEquals(tag, s(out["kVerdict"]), r.kVerdict); assertEquals(tag, s(out["kEvidence"]), r.kEvidence)
+            assertEquals(tag, s(out["kTarget"]), r.kTarget); assertEquals(tag, s(out["kWindow"]), r.kWindow)
+            assertEquals(tag, out["rows"]!!.jsonArray.map { ids(it) }, r.rows)
+            assertEquals(tag, ids(out["evidence"]), r.evidence.map { Format.eventUrl(it) })
+        }
+    }
+
     @Test fun everyVectorGroupIsCovered() {
         val covered = setOf("meta", "risk.levelOf", "risk.markerIcon", "portal.riskLabel", "portal.matchesRiskLevel", "portal.riskTagHtml",
             "portal.riskLevelOptions", "hazards.hazardOf.name", "hazards.horizonHours", "hazards.severityOf", "hazards.cycloneCategory",
@@ -325,7 +502,19 @@ class VectorsTest {
             "sort.fixture", "sort.results", "sort.rankOf", "sort.timeOf", "search.matches", "search.matchesPlace", "search.emptyHtml",
             "glossary.expandAlways", "placeSearch.levelOf", "placeSearch.labelOf", "placeSearch.candidates", "verdicts.normalise", "verdicts.stateOf",
             "verdicts.engineState", "verdicts.rate", "verdicts.tally", "verdicts.joinVerdicts", "verification.score", "verification.predictingSince")
-        assertTrue("uncovered: " + (V.keys - covered), (V.keys - covered).isEmpty())
+        // Groups added for the audit fixes (logic.md §11), each asserted by a test above.
+        val audit = setOf("sort.windowEndEnded", "search.emptyHtml.counts", "search.countryCount", "continents.NAMES", "continents.continentNamed",
+            "fixtures.places.continents", "continents.continentsOf", "continents.onContinent", "portal.inPlace", "regionDetail.matches",
+            "portal.hazardKey", "portal.sameHazard", "hazardDetail.fillHazards", "fixtures.events.hazards", "hazardDetail.select",
+            "fixtures.events.warnings", "portal.isOfficialWarning", "portal.officialWarnings", "portal.WARNING_MEANING", "fixtures.events.mixed",
+            "portal.observed", "portal.openForecasts", "portal.isHighAlert", "portal.sourcesReporting", "portal.liveWord", "detail.statusWords",
+            "fixtures.events.collection", "collection.keep", "verdicts.LABELS", "verdicts.label", "fixtures.verdictFiles", "forecastDetail.gradeOf",
+            "portal.timezoneDefault", "home.render", "alerts.pager", "verificationDetail.render")
+        // Groups that only describe the web page's DOM and have nothing to port, each with its reason. None so far.
+        val webOnly = emptyMap<String, String>()
+        val uncovered = V.keys - covered - audit - webOnly.keys
+        assertTrue("uncovered: $uncovered", uncovered.isEmpty())
+        assertTrue("listed but gone: " + ((covered + audit) - V.keys), ((covered + audit) - V.keys).isEmpty())
     }
 
     @Suppress("unused") private fun arr(e: JsonElement?) = e as? JsonArray

@@ -26,11 +26,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.data.Api
 import com.anchittandon.pnd.data.FeedState
+import com.anchittandon.pnd.logic.DetailWords
 import com.anchittandon.pnd.logic.Format
+import com.anchittandon.pnd.logic.Portal
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.Level
 import com.anchittandon.pnd.logic.RiskScale
@@ -86,23 +89,46 @@ fun DetailTop(eyebrow: String, title: String, subtitle: String?, sharePath: Stri
     }
 }
 
-fun LazyListScope.notFound(title: String, text: String, onNav: (String) -> Unit) {
+/**
+ * A detail screen whose record is not in the feed (changelog C20): its heading, one sentence and a link to the
+ * matching list, with the body hidden. [eyebrow] is the screen's own.
+ */
+fun LazyListScope.notFound(eyebrow: String, title: String, line: GoneLine, onNav: (String) -> Unit) {
     item(key = "nf") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Eyebrow(eyebrow)
             Heading(title, Modifier.testTag("notFound"))
-            Body(text, Pnd.textSoft)
-            Body("That event or forecast is no longer listed. We searched the latest data by its ID and by its title, and found no match.")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("Events" to "/events", "Official warnings" to "/official-warnings", "Our forecasts" to "/forecast-list", "Calamities" to "/calamities", "Regions" to "/regions").forEach { (l, u) -> OutlinePillButton(l) { onNav(u) } }
-            }
+            GoneText(line, onNav)
         }
     }
 }
 
-/** Waiting for the feed, or it failed before anything loaded. True when the caller should stop. */
-fun LazyListScope.waiting(feed: FeedState, failedText: String): Boolean {
+/** A sentence with a link inside it, as the web writes it: "{before}[{link}]{after}". */
+data class GoneLine(val before: String, val link: String? = null, val path: String? = null, val after: String = "") {
+    val text: String get() = before + (link ?: "") + after
+}
+
+@Composable
+fun GoneText(line: GoneLine, onNav: (String) -> Unit) {
+    val t = androidx.compose.ui.text.buildAnnotatedString {
+        append(line.before)
+        if (line.link != null && line.path != null) {
+            withLink(androidx.compose.ui.text.LinkAnnotation.Clickable(line.link, androidx.compose.ui.text.TextLinkStyles(androidx.compose.ui.text.SpanStyle(color = Pnd.link, fontWeight = FontWeight.SemiBold))) { onNav(line.path) }) { append(line.link) }
+        }
+        append(line.after)
+    }
+    Text(t, color = Pnd.textSoft, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("goneText"))
+}
+
+/** Waiting for the feed, or it failed before anything loaded ("Live data unavailable", body hidden). True when the caller should stop. */
+fun LazyListScope.waiting(feed: FeedState, failed: GoneLine, onNav: (String) -> Unit): Boolean {
     if (feed.feed != null) return false
-    item(key = "wait") { if (feed.failed) StaleBox("Live data unavailable. Trying again automatically. $failedText", tag = "detailError") else Body("Loading the latest data…") }
+    item(key = "wait") {
+        if (feed.failed) Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("detailError")) {
+            Heading("Live data unavailable")
+            GoneText(failed, onNav)
+        } else Body("Loading the latest data…")
+    }
     return true
 }
 
@@ -135,18 +161,23 @@ fun RecordDetailScreen(kind: DetailKind, id: String) {
         if (kind == DetailKind.EVENT) Sorts.NEARBY else Sorts.EVENT_SORTS)
     val path = when (kind) { DetailKind.EVENT -> "/disasters/"; DetailKind.ALERT -> "/alerts/"; DetailKind.CALAMITY -> "/calamities/" } + Format.enc(e?.id ?: id)
     PndScreen(feedBanner = false) {
-        if (waiting(feed, when (kind) { DetailKind.EVENT -> "We could not update this event just now."; else -> "" })) return@PndScreen
-        if (feed.failed) item(key = "stale") { StaleBox("Live data unavailable. Trying again automatically." + if (kind == DetailKind.EVENT) " We could not update this event just now." else "", tag = "detailError") }
+        val failed = when (kind) {
+            DetailKind.EVENT -> GoneLine("We could not load this event just now. Trying again automatically. ", "See all events", "/events", ".")
+            DetailKind.ALERT -> GoneLine("We could not load this alert just now. Trying again automatically.")
+            DetailKind.CALAMITY -> GoneLine("We could not load this disaster just now. Trying again automatically.")
+        }
+        if (waiting(feed, failed, env.navigate)) return@PndScreen
+        if (feed.failed) item(key = "stale") { StaleBox(when (kind) { DetailKind.EVENT -> "We could not update this event just now."; DetailKind.ALERT -> "We could not update this alert just now."; DetailKind.CALAMITY -> "We could not update this disaster just now." }, tag = "detailError") }
         if (e == null) {
             when (kind) {
-                DetailKind.EVENT -> notFound("Event not found", "The source may no longer list this event. See all events to find the latest ones.", env.navigate)
-                DetailKind.ALERT -> notFound("Alert not found", "The source may no longer list this alert.", env.navigate)
-                DetailKind.CALAMITY -> notFound("Disaster not found", "The source may no longer list this event. It may have ended.", env.navigate)
+                DetailKind.EVENT -> notFound("EVENT", "Event not found", GoneLine("The source may no longer list this event. ", "See all events", "/events", " to find the latest ones."), env.navigate)
+                DetailKind.ALERT -> notFound("OFFICIAL ALERT", "Alert not found", GoneLine("The source may no longer list this alert. ", "See all official warnings", "/official-warnings", "."), env.navigate)
+                DetailKind.CALAMITY -> notFound("CURRENT DISASTER", "Disaster not found", GoneLine("The source may no longer list this event. It may have ended. ", "See current disasters", "/calamities", "."), env.navigate)
             }
             return@PndScreen
         }
         val j = e.json
-        val eyebrow = when (kind) { DetailKind.EVENT -> if (e.forecast) "OUR FORECAST, NOT OFFICIAL" else "LIVE EVENT"; DetailKind.ALERT -> "OFFICIAL ALERT"; DetailKind.CALAMITY -> "CURRENT DISASTER" }
+        val eyebrow = when (kind) { DetailKind.EVENT -> DetailWords.eventEyebrow(j); DetailKind.ALERT -> "OFFICIAL ALERT"; DetailKind.CALAMITY -> "CURRENT DISASTER" }
         item(key = "top") { DetailTop(eyebrow, e.displayTitle, "${e.type} · ${Format.placeOf(j, "Place not given")}", path) }
         Format.quietNote(j).takeIf { it.isNotEmpty() }?.let { q -> item(key = "quiet") { StaleBox(q, tag = "quietNote") } }
         item(key = "status") { Muted(Format.statusText(feed.feed!!.meta.json) + " · checked " + Format.fmtDate(feed.feed!!.generatedAt)) }
@@ -165,7 +196,7 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
             Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Risk level"); RecordBadge(j) }
             Figure("Type", e.type.ifEmpty { "-" }); Figure("Source", e.source.ifEmpty { "-" }); Figure("Source last updated", Format.age(e.updated))
-            Figure("Data status", if (e.cached) "Saved copy" else if (e.forecast) "Our forecast" else "Live")
+            Figure("Data status", Portal.liveWord(j))
         }
     }
     item(key = "action") { ActionPanel(e) }
@@ -195,7 +226,7 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
         Panel("How up to date and reliable") {
             KvList(listOf("Last update" to "The source last updated this ${Format.age(e.updated)} (${Format.fmtDate(e.updated)}).",
                 "Type of source" to (if (e.official) "Official source" else if (e.forecast) "Our own forecast, not official" else "Collected from other sources"),
-                "Status" to (if (e.cached) "Saved copy, not live" else if (e.forecast) "Forecast in progress" else "Live, as the source last reported it")))
+                "Status" to DetailWords.eventRecordState(j)))
         }
     }
     item(key = "context") {
@@ -285,7 +316,7 @@ private fun LazyListScope.alertBody(e: Event, all: List<Event>, sort: String, se
     item(key = "kpis") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
             Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Alert level"); RecordBadge(j) }
-            Figure("Agency or source", e.source.ifEmpty { "-" }); Figure("Updated", Format.age(e.updated)); Figure("Status", if (e.cached) "Saved copy" else "Live")
+            Figure("Agency or source", e.source.ifEmpty { "-" }); Figure("Updated", Format.age(e.updated)); Figure("Status", Portal.liveWord(j))
         }
     }
     item(key = "summary") {
@@ -301,7 +332,7 @@ private fun LazyListScope.alertBody(e: Event, all: List<Event>, sort: String, se
             if (e.sourceUrl.isNotEmpty()) SecondaryButton("Open the original report ↗") { env.container.platform.openUrl(Api.absolute(e.sourceUrl)) }
         }
     }
-    item(key = "impact") { ImpactPanel(j, "We show impact figures only when the source gives them. A missing figure does not mean there was no impact.", "Data status" to (if (e.cached) "Saved copy" else "Live")) }
+    item(key = "impact") { ImpactPanel(j, "We show impact figures only when the source gives them. A missing figure does not mean there was no impact.", "Data status" to Portal.liveWord(j)) }
     item(key = "checks") {
         Panel("Source checks") {
             KvList(listOf("Official source named?" to "Yes", "Source’s update time shown?" to "Yes", "Is this a saved copy?" to (if (e.cached) "Yes, and it is labelled" else "No"),
@@ -360,7 +391,7 @@ private fun LazyListScope.calamityBody(e: Event, all: List<Event>, feed: FeedSta
     item(key = "fresh") {
         Panel("How up to date this is") {
             KvList(listOf("Source last updated" to Format.fmtDate(e.updated), "We last checked" to Format.fmtDate(feed.feed?.generatedAt), "Age of the data" to Format.age(e.updated),
-                "Status" to (if (e.cached) "A saved copy, shown because the source did not list it this time" else "Live, as the source last reported it")))
+                "Status" to DetailWords.calamityStatus(j)))
         }
     }
     item(key = "map") {

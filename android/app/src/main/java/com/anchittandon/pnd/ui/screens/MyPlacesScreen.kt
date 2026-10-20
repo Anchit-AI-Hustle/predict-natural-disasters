@@ -36,6 +36,7 @@ import com.anchittandon.pnd.logic.AlertRules
 import com.anchittandon.pnd.logic.AppClock
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
+import com.anchittandon.pnd.logic.PlaceForm
 import com.anchittandon.pnd.logic.Place
 import com.anchittandon.pnd.logic.PlaceRisk
 import com.anchittandon.pnd.logic.Sorts
@@ -79,6 +80,8 @@ fun MyPlacesScreen() {
     var lon by rememberSaveable { mutableStateOf("") }
     var foundCountry by rememberSaveable { mutableStateOf("") }
     var foundCode by rememberSaveable { mutableStateOf("") }
+    // What the search itself filled ("name|lat|lon"), so only the reader's own edit clears the country (changelog C23).
+    var chosenAs by rememberSaveable { mutableStateOf("") }
     var result by rememberSaveable { mutableStateOf("Search for the place by name, then choose the right match. You can also type the latitude and longitude yourself.") }
     var choices by remember { mutableStateOf<List<Place>>(emptyList()) }
     var locStatus by rememberSaveable { mutableStateOf("") }
@@ -92,13 +95,14 @@ fun MyPlacesScreen() {
     }
 
     fun edited() {
-        if (foundCountry.isEmpty() && foundCode.isEmpty()) return
+        if (!PlaceForm.clearsCountry(foundCountry.isNotEmpty() || foundCode.isNotEmpty(), chosenAs, name, lat, lon)) return
         foundCountry = ""; foundCode = ""
         result = "You changed the place, so we no longer know its country. Search for it by name again to record the country."
     }
     fun use(p: Place) {
         lat = com.anchittandon.pnd.model.toFixed(p.lat, 6); lon = com.anchittandon.pnd.model.toFixed(p.lon, 6); name = p.name
         foundCountry = p.country; foundCode = p.countryCode
+        chosenAs = PlaceForm.chosenAs(name, lat, lon)
         result = "Chosen: ${p.name} (${p.level.lowercase()}). Choose the kind of place and press Save."
     }
 

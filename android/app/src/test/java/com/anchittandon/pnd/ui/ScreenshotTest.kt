@@ -86,6 +86,13 @@ abstract class ScreenshotBase(private val device: String) {
     @Test fun sourceDetail() = shot("detail_source", "sources/GDACS")
     @Test fun verificationDetail() = shot("detail_nd001_check", "verification-detail")
     @Test fun notFound() = shot("detail_not_found", "disasters/no-such-record", scrollTo = 0)
+    // Screens added for the audit fixes (features.md changelog).
+    @Test fun regionContinent() = shot("detail_region_asia", "regions/Asia")
+    @Test fun eventsScoped() = shot("events_region_asia", "events?region=Asia", scrollTo = 0)
+    @Test fun hazardUnknown() = shot("detail_hazard_unknown", "hazards/Ice")
+    @Test fun sourceNotFound() = shot("detail_source_not_found", "sources/Nowhere", scrollTo = 0)
+    @Test fun forecastNotFound() = shot("detail_forecast_not_found", "forecasts/OUT-not-a-forecast", scrollTo = 0)
+    @Test fun homeFeedFailed() = shot("home_feed_failed", "home", failFeed = true)
 }
 
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-xxhdpi")

@@ -11,7 +11,7 @@ import java.util.Locale
 
 /** verdicts.js (logic.md §10.1 to §10.3). */
 object Verdicts {
-    private val VERDICTS = mapOf(
+    val VERDICTS = mapOf(
         "VERIFIED" to "VERIFIED", "PARTIAL_VERIFICATION" to "PARTIAL", "PARTIAL" to "PARTIAL",
         "FALSE_ALARM" to "FALSE_ALARM", "MISS_FALSE_POSITIVE" to "FALSE_ALARM",
         "MISSED_EVENT" to "MISSED", "FALSE_NEGATIVE_UNPREDICTED_EVENT" to "MISSED",

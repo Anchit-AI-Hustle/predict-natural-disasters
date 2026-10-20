@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -367,6 +368,15 @@ fun Toolbar(content: @Composable () -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) { content() }
 }
 
+/** `PND.unavailableHtml()`: a list's card when nothing has loaded. A failed load is not an empty world. */
+@Composable
+fun UnavailableCard(tag: String = "unavailable") {
+    CardBox(Modifier.testTag(tag).semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }) {
+        Text(com.anchittandon.pnd.logic.Portal.UNAVAILABLE_TITLE, fontWeight = FontWeight.Bold, color = Pnd.text, style = MaterialTheme.typography.bodyMedium)
+        Muted(com.anchittandon.pnd.logic.Portal.UNAVAILABLE_BODY)
+    }
+}
+
 /** search.js emptyHtml, with its button to the events list. */
 @Composable
 fun EmptyCard(state: Search.EmptyState, onSeeEvents: (String) -> Unit) {
@@ -379,9 +389,9 @@ fun EmptyCard(state: Search.EmptyState, onSeeEvents: (String) -> Unit) {
 
 /** The shared record card (features.md §0.4). */
 @Composable
-fun EventCard(e: Event, onOpen: () -> Unit, extra: String? = null, showSavedCopy: Boolean = false) {
+fun EventCard(e: Event, onOpen: () -> Unit, extra: String? = null, showSavedCopy: Boolean = false, modifier: Modifier = Modifier) {
     val j = e.json
-    CardBox(Modifier.testTag("card:${e.id}"), onClick = onOpen, label = "Open ${e.displayTitle}") {
+    CardBox(modifier.testTag("card:${e.id}"), onClick = onOpen, label = "Open ${e.displayTitle}") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             RecordBadge(j)
             SourcePill(e)

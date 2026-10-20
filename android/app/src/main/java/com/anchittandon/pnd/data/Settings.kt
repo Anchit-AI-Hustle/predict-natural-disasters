@@ -62,7 +62,8 @@ class SettingsStore(private val backend: KeyValueBackend) {
     }
 
     /** IST by default, as the website does (features.md §17). */
-    val timezone: String get() = this["pnd_timezone"] ?: "Asia/Kolkata"
+    /** The chosen zone, else the device's, else Asia/Kolkata (logic.md §6.13). */
+    val timezone: String get() = com.anchittandon.pnd.logic.Portal.timezone(this["pnd_timezone"], com.anchittandon.pnd.logic.AppClock.deviceZone)
     fun setTimezone(tz: String) = set("pnd_timezone", tz)
 
     fun sort(screen: String, keys: List<String>): String = this["pnd_sort_$screen"]?.takeIf { it in keys } ?: keys.first()

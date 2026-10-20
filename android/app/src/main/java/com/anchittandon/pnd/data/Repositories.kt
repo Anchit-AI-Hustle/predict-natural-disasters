@@ -91,10 +91,10 @@ class EnrichmentRepository(private val http: Http) {
     }
 }
 
-/** Static JSON from the site, read fresh each time (`?ts=`), the way the web reads ledgers. */
+/** Static JSON from the site, revalidated on each read (`cache: 'no-cache'`, no `?ts=`), the way the web reads ledgers. */
 class DataRepository(private val http: Http) {
     suspend fun json(file: String): kotlinx.serialization.json.JsonElement? {
-        val r = http.get(Api.data(file, AppClock.now()), mapOf("Cache-Control" to "no-cache"))
+        val r = http.get(Api.data(file), mapOf("Cache-Control" to "no-cache"))
         return if (r.ok) try { PndJson.parseToJsonElement(r.body!!) } catch (e: Exception) { null } else null
     }
 

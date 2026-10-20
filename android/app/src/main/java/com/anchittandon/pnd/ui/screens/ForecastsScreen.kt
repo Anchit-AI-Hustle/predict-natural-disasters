@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.logic.Format
+import com.anchittandon.pnd.logic.Portal
 import com.anchittandon.pnd.logic.RiskScale
 import com.anchittandon.pnd.logic.Search
 import com.anchittandon.pnd.logic.Sorts
@@ -49,7 +50,7 @@ fun ForecastsScreen() {
     var risk by rememberSaveable { mutableStateOf("") }
     val (sort, setSort) = rememberSort("forecasts_sortBy", Sorts.FORECASTS_TAB)
     val all = feed.events
-    fun isHigh(e: Event) = !e.forecast && e.alert in setOf("Red", "Orange", "High")
+    fun isHigh(e: Event) = Portal.isHighAlert(e.json)
     val pass = { e: Event -> Search.matches(e.json, q, e.searchText) && RiskScale.matchesRiskLevel(e.json, risk) }
     val fcAll = all.filter { it.forecast }; val obsAll = all.filter(::isHigh)
     val fc = remember(feed, q, type, risk, sort) { Sorts.sort(fcAll.filter { pass(it) && (type.isEmpty() || it.type == type) }, sort) { it.json } }
@@ -59,11 +60,14 @@ fun ForecastsScreen() {
         item(key = "stats") {
             val f = feed.feed
             val h = f?.meta?.forecastHorizon?.str("furthestWindowEnds")
+            // With nothing loaded, every figure says so (PND.feedDown).
+            val none = if (f == null && feed.failed) Portal.UNAVAILABLE else "-"
             Column {
-                StatLine(listOf("forecasts" to (if (f != null) fcAll.size.toString() else "-"), "events on high alert" to (if (f != null) obsAll.size.toString() else "-"),
-                    "kinds of hazard" to (if (f != null) fcAll.map { it.type }.toSet().size.toString() else "-"), "sources working" to (f?.let { Format.sourcesRatio(it.meta.json) } ?: "-"),
-                    "updated" to (f?.let { Format.age(it.generatedAt) } ?: "-"),
-                    "forecasts reach as far as" to (if (!h.isNullOrEmpty()) Format.fmtWhen(h, null, "end").replace(Regex(",[^,]*$"), "") else "-")))
+                // OPEN FORECASTS is the home page's number: open forecasts only (changelog C14).
+                StatLine(listOf("open forecasts" to (if (f != null) Portal.openForecasts(fcAll) { it.json }.size.toString() else none), "events on high alert" to (if (f != null) obsAll.size.toString() else none),
+                    "kinds of hazard" to (if (f != null) fcAll.map { it.type }.toSet().size.toString() else none), "sources working" to (f?.let { Format.sourcesRatio(it.meta.json) } ?: none),
+                    "updated" to (f?.let { Format.age(it.generatedAt) } ?: none),
+                    "forecasts reach as far as" to (if (f == null) none else if (!h.isNullOrEmpty()) Format.fmtWhen(h, null, "end").replace(Regex(",[^,]*$"), "") else "-")))
                 if (f != null) Body(Format.horizonText(meta), Pnd.textSoft)
             }
         }
@@ -71,7 +75,8 @@ fun ForecastsScreen() {
             Column {
                 SearchField(q, "Search by forecast, country, city, sea or hazard", tag = "search") { q = it }
                 Toolbar {
-                    Select("Filter by hazard", Format.hazardOptions((fcAll + obsAll).map { it.json }, type), type, tag = "hazardFilter") { type = it }
+                    // Built from forecasts only, so its counts add up to the forecasts (changelog C8).
+                    Select("Filter by hazard", Format.hazardOptions(fcAll.map { it.json }, type), type, tag = "hazardFilter") { type = it }
                     RiskFilter(risk) { risk = it }
                     SortSelect("forecasts", Sorts.FORECASTS_TAB, sort, setSort)
                 }
@@ -87,7 +92,7 @@ fun ForecastsScreen() {
         item(key = "byHazard") {
             Panel("Forecasts by hazard", subtitle = "Select a hazard to see only its forecasts. Select it again to see them all.") {
                 val counts = fcAll.filter(pass).groupingBy { it.type }.eachCount().entries.sortedWith { a, b -> (b.value - a.value).takeIf { it != 0 } ?: Sorts.collator.compare(a.key, b.key) }
-                if (counts.isEmpty()) EmptyText(if (feed.feed == null) "Loading…" else "No forecast matches these filters.")
+                if (counts.isEmpty() && !(feed.feed == null && feed.failed)) EmptyText(if (feed.feed == null) "Loading…" else "No forecast matches these filters.")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     counts.forEach { (h, c) ->
                         val on = type == h
@@ -127,9 +132,10 @@ fun ForecastsScreen() {
                 }
             }
         }
+        if (feed.feed == null && feed.failed) item(key = "obsDown") { Column(Modifier.padding(top = 10.dp)) { SubHeading("Events on high alert"); UnavailableCard() } }
         item(key = "changes") {
             Panel("What changed since our last check") {
-                if (feed.feed == null) Muted("Loading…") else {
+                if (feed.feed == null) Muted(if (feed.failed) "Live data unavailable, so we cannot say what changed. Trying again automatically." else "Loading…") else {
                     val ch = Format.changes(meta)
                     Body(ch.headline)
                     ch.sections.forEach { s ->

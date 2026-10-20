@@ -127,6 +127,9 @@ object Search {
         private fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
     }
 
+    /** `PNDSearch.countryCount`: the same rule as `PND.countryCount`. */
+    fun countryCount(list: List<JsonObject>): Int = Format.countryCount(list)
+
     fun emptyState(query: String?, pool: List<JsonObject>, all: List<JsonObject>?, noun: String): EmptyState {
         val q = (query ?: "").trim()
         if (q.isEmpty()) return EmptyState("No $noun to show right now.")
@@ -139,11 +142,12 @@ object Search {
                     " this search. This page shows only $noun.",
                 "See " + (if (elsewhere == 1) "it" else "all $elsewhere") + " on the events page →", q)
         }
-        val countries = LinkedHashSet<String>()
-        whole.forEach { e -> e.str("country")?.takeIf { it.isNotEmpty() }?.let { countries += it } }
+        // Reports only, counted as every screen counts them (changelog C15).
+        val reports = Portal.observed(whole) { it }
+        val n = countryCount(reports)
         return EmptyState(title,
-            "Nothing in our current data matches it. Right now we have ${whole.size} event" + (if (whole.size == 1) "" else "s") +
-                " from ${countries.size}" + (if (countries.size == 1) " country or territory" else " countries and territories") + ". " +
+            "Nothing in our current data matches it. Right now we have ${reports.size} event" + (if (reports.size == 1) "" else "s") +
+                " from $n" + (if (n == 1) " country or territory" else " countries and territories") + ". " +
                 "We only show what official sources are reporting. If a place has no current official report, it is not listed here. " +
                 "That does not mean nothing is happening there.")
     }

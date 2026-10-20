@@ -34,8 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.logic.Format
+import com.anchittandon.pnd.logic.VerificationCheck
 import com.anchittandon.pnd.logic.Sorts
 import com.anchittandon.pnd.logic.Verdicts
+import com.anchittandon.pnd.model.Event
 import com.anchittandon.pnd.model.JsDate
 import com.anchittandon.pnd.model.arr
 import com.anchittandon.pnd.model.jsNum
@@ -283,20 +285,16 @@ fun VerificationDetailScreen() {
     val id = "ND-001"
     var verdict by remember { mutableStateOf("-") }
     LaunchedEffect(Unit) {
+        // LABELS[VERDICTS[row.status]] with the raw status, as verification-detail.html reads it.
         val l = env.container.data.json("verification-ledger.json") as? JsonObject
-        verdict = if (l == null) "Not available" else l.arr("verifications").objects().firstOrNull { it.str("id") == id }
-            ?.let { r -> Verdicts.normalise(r.text("status")).let { k -> Verdicts.LABELS[k] } } ?: "Not checked yet"
+        verdict = VerificationCheck.verdict(id, l, failed = l == null)
     }
     val (sort, setSort) = rememberSort("verification-detail_sortBy", Sorts.EVENT_SORTS)
-    val re = Regex("[Vv]ietnam|[Đđ]à [Nn]ẵng|[Hh]uế|[Qq]uảng|[Qq]uang")
-    val ev = feed.all.filter { re.containsMatchIn(listOf(it.title, it.country, it.region, it.details).joinToString(" ")) }
-    val fc = Format.findEvent(feed.all, id) { it.json }
+    val check = remember(feed, verdict, sort) { VerificationCheck.check(id, feed.all.map { it.json }, verdict, sort) }
     PndScreen(header = { item { DetailTop("Forecast check", "ND-001 · Central Vietnam flood and landslide forecast", "What we forecast, what was reported and how we decide the result.", "/verification-detail?id=ND-001") } }) {
-        val fcStart = fc?.json?.let { it.text("targetStart").ifEmpty { it.text("startedAt").ifEmpty { it.text("updated") } } } ?: ""
-        val dateOf = { v: String -> if (JsDate.parse(v) != null) Format.fmtWhen(v).split(",")[0].trim() else "" }
-        val dur = fc?.let { Format.duration(fcStart, it.json.text("targetEnd")) } ?: ""
         item(key = "k") { FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-            Figure("ID", id); Figure("Result", verdict); Figure("Starts", dateOf(fcStart).ifEmpty { "Not stated" }); Figure("Lasts", dur.ifEmpty { "Not stated" }); Figure("Matching reports", if (feed.feed == null) "-" else ev.size.toString())
+            Figure("ID", id); Figure("Result", verdict); Figure("Starts", if (feed.feed == null) "-" else check.kTarget); Figure("Lasts", if (feed.feed == null) "-" else check.kWindow)
+            Figure("Matching reports", if (feed.feed == null) "-" else check.kEvidence)
         } }
         item(key = "rec") {
             Panel("The forecast, as recorded", trailing = { LinkButton("How we check forecasts →") { env.navigate("/verification") } }) {
@@ -308,36 +306,20 @@ fun VerificationDetailScreen() {
                     "Wrong if" to "There is no real harm that counts in the forecast area and period, or the harm comes from an unrelated event."))
             }
         }
+        if (feed.feed == null && feed.failed) item(key = "loadError") { Muted("Could not load reports. Trying again…") }
         if (notLoaded(feed)) return@PndScreen
         item(key = "cmp") {
-            val nr = "Not reported by any of our sources"; val nf = "Not included. This forecast does not predict casualties."
-            val times = ev.mapNotNull { JsDate.parse(it.json.text("startedAt")) }.sorted()
-            val first = times.firstOrNull()?.let { JsDate.iso(it) } ?: ""; val last = times.lastOrNull()?.let { JsDate.iso(it) } ?: ""
-            val anyDeaths = ev.any { it.json.truthy("deaths") || it.json["deaths"]?.toString() == "0" }
-            val deaths = if (anyDeaths) ev.sumOf { it.json.jsNum("deaths").let { d -> if (d.isFinite()) d.toLong() else 0L } } else null
-            val places = ev.map { it.country.ifEmpty { it.region } }.filter { it.isNotEmpty() }.distinct()
-            val mags = ev.mapNotNull { (Regex("\\bM\\s*(\\d+(?:\\.\\d+)?)\\b").find(it.title) ?: Regex("\\bmagnitude\\s+(\\d+(?:\\.\\d+)?)", RegexOption.IGNORE_CASE).find(it.title))?.groupValues?.get(1)?.toDoubleOrNull() }
-            val timeOf = { v: String -> if (JsDate.parse(v) != null) Format.fmtTime(v) else "" }
+            // All 8 rows, in the page's order (features.md §14, changelog C11).
             Panel("Forecast compared with what happened") {
-                listOf(
-                    Triple("Area", fc?.json?.let { it.text("region").ifEmpty { it.text("country") } }?.ifEmpty { null } ?: "Not stated in the recorded forecast", places.joinToString(" · ").ifEmpty { nr }),
-                    Triple("Start date", dateOf(fcStart).ifEmpty { "Not stated" }, dateOf(first).ifEmpty { nr }),
-                    Triple("Start time", timeOf(fcStart).ifEmpty { "Not stated" }, timeOf(first).ifEmpty { nr }),
-                    Triple("Duration", dur.ifEmpty { "Not stated" }, Format.duration(first, last).ifEmpty { if (times.isNotEmpty()) "Still developing" else nr }),
-                    Triple("How widespread", fc?.details?.ifEmpty { null } ?: "Not measured in the recorded forecast", if (ev.isNotEmpty()) "${ev.size} matching report" + (if (ev.size == 1) "" else "s") + " from ${places.size} area" + (if (places.size == 1) "" else "s") else nr),
-                    Triple("Strength or severity", fc?.alert?.ifEmpty { null } ?: "Not stated", if (mags.isNotEmpty()) "Highest magnitude reported: " + com.anchittandon.pnd.model.jsNumText(mags.max()) else ev.map { it.alert }.filter { it.isNotEmpty() }.distinct().joinToString(" · ").ifEmpty { nr }),
-                    Triple("Lives lost", nf, deaths?.let { Format.grouped(it.toDouble()) } ?: nr),
-                    Triple("Missing people", nf, nr),
-                ).forEach { (m, f, a) -> CardBox { Text(m, color = Pnd.text, fontWeight = FontWeight.Bold); KvList(listOf("Forecast" to f, "Actual" to a)) } }
+                check.rows.forEach { (m, f, a) -> CardBox(Modifier.testTag("cmp:$m")) { Text(m, color = Pnd.text, fontWeight = FontWeight.Bold); KvList(listOf("Forecast" to f, "Actual" to a)) } }
                 Muted("Each row shows what we forecast next to what our sources have reported since. “Not reported” means none of our sources has reported that figure yet. That is not the same as a reported zero. If the same hazard happens again later in the same place, we check it as a separate event.")
             }
         }
         item(key = "ev") {
             Panel("Matching reports", trailing = { LinkButton("Forecast details →") { env.navigate("/forecasts/ND-001") } }) {
                 SortSelect("verification-detail", Sorts.EVENT_SORTS, sort, setSort)
-                val s = Sorts.sort(ev, sort) { it.json }
-                if (s.isEmpty()) EmptyText("None of our sources has a matching report.")
-                s.forEach { e -> CardBox(onClick = { env.navigate(Format.eventUrl(e.json)) }) { FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) { RecordBadge(e.json); SourcePill(e) }; Text(e.displayTitle, color = Pnd.text, fontWeight = FontWeight.Bold); if (e.details.isNotEmpty()) Muted(e.details); Muted(Format.fmtDate(e.updated)) } }
+                if (check.evidence.isEmpty()) EmptyText("None of our sources has a matching report.")
+                check.evidence.forEach { j -> val e = Event(j); CardBox(onClick = { env.navigate(Format.eventUrl(j)) }) { FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) { RecordBadge(j); SourcePill(e) }; Text(e.displayTitle, color = Pnd.text, fontWeight = FontWeight.Bold); if (e.details.isNotEmpty()) Muted(e.details); Muted(Format.fmtDate(e.updated)) } }
             }
         }
         item(key = "rules") {
@@ -376,14 +358,15 @@ fun SettingsScreen() {
     val c = env.container
     val values by c.settings.values.collectAsState()
     val scope = rememberCoroutineScope()
-    val tz = values["pnd_timezone"] ?: "Asia/Kolkata"
+    // The chosen zone, else the device's (changelog C9).
+    val tz = com.anchittandon.pnd.logic.Portal.timezone(values["pnd_timezone"], com.anchittandon.pnd.logic.AppClock.deviceZone)
     val base = listOf("Asia/Kolkata", "UTC", "America/New_York", "America/Los_Angeles", "Europe/London", "Europe/Paris", "Asia/Dubai", "Asia/Singapore", "Asia/Tokyo", "Australia/Sydney")
     val zones = remember { (listOf(tz) + base + ZoneId.getAvailableZoneIds().filter { it.contains('/') && !it.startsWith("Etc/") && !it.startsWith("SystemV/") }.sorted()).distinct() }
     var alertMsg by remember { mutableStateOf("") }
     val on = values["pnd_alerts_on"] == "1"
     PndScreen(trust = null, feedBanner = false, header = { item { ScreenHeader(null, "Settings", null) } }) {
         item(key = "tz") {
-            Panel("Time zone", subtitle = "Every time in the app is shown in this zone, with the zone named. India Standard Time is the default, as on the website.") {
+            Panel("Time zone", subtitle = "Every time in the app is shown in this zone, with the zone named. Your device's time zone is the default, as on the website.") {
                 Select("Display time zone", zones.map { it to if (it == "Asia/Kolkata") "IST · India" else it }, tz, tag = "tzSelect") { c.settings.setTimezone(it) }
                 Muted("Times are shown as, for example, " + Format.fmtDate("2026-10-20T11:24:19Z", tz) + ".")
             }

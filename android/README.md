@@ -32,6 +32,7 @@ adb shell am start -a android.intent.action.VIEW -d "https://predict-natural-dis
 ### What the tests cover
 
 - `logic/VectorsTest`: checks every group in `docs/native-parity/test-vectors.json`, covering every rule in logic.md.
+- `logic/ParityLogicTest` and `ui/ParityFlowTest`: one check per row of the features.md changelog (C1 to C25) and the screens behind them.
 - `logic/GradingEngineTest`: runs the site's own `hazard-model.js`, `observed-model.js` and `verification-model.js` in Rhino. The output must match what Node produces for the same ledgers.
 - `data/DataTest`: tolerant decoding of the sample feed and enrichment, the repositories (the saved copy on disk, `?ts=` refresh, failures), and deep-link resolution.
 - `ui/FlowTest`: the key flows.

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.data.PlaceSearchRepository
 import com.anchittandon.pnd.logic.AppClock
+import com.anchittandon.pnd.logic.Continents
+import com.anchittandon.pnd.logic.HazardPage
+import com.anchittandon.pnd.logic.Portal
+import com.anchittandon.pnd.logic.RegionMatch
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.Place
@@ -91,8 +96,8 @@ fun RegionsScreen() {
         header = { item { ScreenHeader("By place", "Regions", "Start with the whole world. Then choose a country, a city or a neighbourhood, and then an event.") } }) {
         item(key = "stats") {
             val f = feed.feed
-            StatLine(listOf("current events" to (if (f != null) reports.size.toString() else "-"), "countries and areas" to (if (f != null) groups.size.toString() else "-"),
-                "high alert" to (if (f != null) reports.count { it.alert in setOf("Red", "Orange", "High") }.toString() else "-"),
+            StatLine(listOf("current events" to (if (f != null) reports.size.toString() else "-"), "countries and areas" to (if (f != null) Format.countryCount(reports.map { it.json }).toString() else "-"),
+                "high alert" to (if (f != null) reports.count { Portal.isHighAlert(it.json) }.toString() else "-"),
                 "sources working" to (f?.let { Format.sourcesRatio(it.meta.json) } ?: "-"), "updated" to (f?.let { Format.age(it.generatedAt) } ?: "-")))
         }
         item(key = "tools") {
@@ -162,12 +167,13 @@ fun PopularPlaces(withSummary: Boolean) {
 fun RegionDetailScreen(region0: String) {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
-    val region = region0.ifEmpty { "World" }
+    // A continent is the countries on it (continents.js); its canonical name is used from here on (changelog C1).
+    val region = RegionMatch.canonical(region0)
+    val continent = Continents.continentNamed(region)
     var input by rememberSaveable { mutableStateOf(if (region == "World") "" else region) }
     val (sort, setSort) = rememberSort("region_sortBy", Sorts.EVENT_SORTS)
-    val es = remember(feed, region, sort) {
-        Sorts.sort(feed.events.filter { e -> region == "World" || listOf(e.country, e.region, e.title, e.details).joinToString(" ").lowercase().contains(region.lowercase()) }, sort) { it.json }
-    }
+    // Reports only, the same records and counts as every other screen (changelog C14).
+    val es = remember(feed, region, sort) { Sorts.sort(Portal.observed(feed.events) { it.json }.filter { RegionMatch.matches(it.json, region) }, sort) { it.json } }
     val counts = es.groupingBy { it.type }.eachCount().entries.sortedByDescending { it.value }
     PndScreen(trust = setOf(TrustGroup.FEED, TrustGroup.MODELS, TrustGroup.PLACE), header = {
         item { DetailTop("REGION", if (region == "World") "Disasters around the world" else "Disasters in $region", "Current events and alerts for ${if (region == "World") "the whole world" else region}.", "/regions/" + Format.enc(region)) }
@@ -178,16 +184,22 @@ fun RegionDetailScreen(region0: String) {
                 SecondaryButton("Open region") { env.navigate("/regions/" + Format.enc(input.trim().ifEmpty { "World" })) }
             }
         }
+        if (feed.feed == null && feed.failed) {
+            item(key = "stats") { StatLine(listOf("current events", "high alert", "types of hazard", "sources reporting here", "last checked").map { it to Portal.UNAVAILABLE }) }
+            item(key = "coverDown") { Muted("Live data unavailable, so we cannot say what is reported here right now.") }
+        }
         if (notLoaded(feed)) return@PndScreen
         item(key = "stats") {
-            StatLine(listOf("current events" to es.size.toString(), "high alert" to es.count { it.alert in setOf("Red", "Orange", "High") }.toString(),
-                "types of hazard" to counts.size.toString(), "sources" to es.map { it.source }.toSet().size.toString(), "last checked" to Format.age(feed.feed!!.generatedAt)))
+            StatLine(listOf("current events" to es.size.toString(), "high alert" to es.count { Portal.isHighAlert(it.json) }.toString(),
+                "types of hazard" to counts.size.toString(), "sources reporting here" to Portal.sourcesReporting(es) { it.json }.toString(), "last checked" to Format.age(feed.feed!!.generatedAt)))
         }
         item(key = "status") { RefreshRow(feed) }
         item(key = "map") {
-            val lat = es.mapNotNull { it.lat }; val lon = es.mapNotNull { it.lon }
-            val center = if (region != "World" && lat.isNotEmpty()) (lat.average() to lon.average()) else null
-            Panel("Live map", trailing = { LinkButton("Full map →") { env.navigate("/live-map") } }) { RiskMap(es.take(250), center = center, zoom = if (center != null) 4.0 else 1.6) { env.navigate(Format.eventUrl(it.json)) } }
+            // The map fits the markers (max zoom 6).
+            val pts = es.take(250).filter { it.lat != null && it.lon != null }.map { it.lat!! to it.lon!! }
+            Panel("Live map", trailing = { LinkButton("Full map →") { env.navigate("/live-map") } }) {
+                RiskMap(es.take(250), fit = if (pts.isNotEmpty()) MapFit(region, pts) else null) { env.navigate(Format.eventUrl(it.json)) }
+            }
         }
         item(key = "evHead") { Column { androidx.compose.foundation.layout.Row { SubHeading("Current events here"); LinkButton("See all events →") { env.navigate("/events?region=" + Format.enc(region)) } }; Toolbar { SortSelect("region", Sorts.EVENT_SORTS, sort, setSort) } } }
         if (es.isEmpty()) item { CardBox { Text("No current events here.", fontWeight = FontWeight.Bold, color = Pnd.text); Muted("Our sources have no current report for this place. This does not mean there is no danger.") } }
@@ -202,7 +214,7 @@ fun RegionDetailScreen(region0: String) {
         }
         item(key = "cover") {
             Panel("What we cover") {
-                Body("Sources working now: ${feed.feed!!.meta.sources.values.count { it.truthy("ok") }}. Current events here: ${es.size}.")
+                Body(RegionMatch.coverage(Format.sourcesRatio(feed.feed!!.meta.json), es.size, continent, if (continent.isEmpty()) 0 else RegionMatch.atSea(feed.events) { it.json }))
                 Muted("What we show depends on what our global and national sources report. If a place has no current report, we show no events for it. That does not mean it is free of risk.")
             }
         }
@@ -289,29 +301,28 @@ fun LocationDetailScreen(name: String, lat: Double?, lon: Double?, level: String
     }
 }
 
-val HAZARD_SELECT = listOf("Flood", "Earthquake", "Wildfire", "Volcano", "Tropical Cyclone", "Drought", "Landslide", "Severe Storm", "Tornado", "Extreme Cold")
-
 /** Hazard detail (features.md §9.2). */
 @Composable
 fun HazardDetailScreen(type0: String, region0: String) {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
-    val type = HAZARD_SELECT.firstOrNull { it == type0 } ?: "Flood"
+    // Every hazard the model knows, every hazard present and the one asked for, A to Z; an unknown type is itself, never Flood (changelog C21).
+    val fill = remember(feed, type0) { HazardPage.fillHazards(type0.ifBlank { "Flood" }, feed.events.map { it.type }) }
+    val type = fill.selected
     var sel by rememberSaveable { mutableStateOf(type) }
     var reg by rememberSaveable { mutableStateOf(region0) }
     val (sort, setSort) = rememberSort("hazard_sortBy", Sorts.EVENT_SORTS)
     val rr = region0.trim().lowercase()
-    val es = remember(feed, type, rr, sort) {
-        val target = hazKey(type)
-        Sorts.sort(feed.events.filter { it.type.lowercase().contains(target) && (rr.isEmpty() || Search.matchesPlace(it.json, rr)) }, sort) { it.json }
-    }
+    // Reports only, matched whole (sameHazard) and placed with inPlace; open forecasts are counted apart.
+    val pick = remember(feed, type, rr) { HazardPage.select(feed.events, type, rr) { it.json } }
+    val es = remember(pick, sort) { Sorts.sort(pick.events, sort) { it.json } }
     val hz = Hazards.hazardOf(type)
     PndScreen(header = {
         item { DetailTop("HAZARD TYPE", "${type.first()}${type.drop(1).lowercase()} events", "Current ${type.lowercase()} events" + (if (rr.isNotEmpty()) " in ${region0.trim()}" else " around the world") + ". Open any event to see its details and its source.", "/hazards/" + Format.enc(type) + if (rr.isNotEmpty()) "?region=" + Format.enc(region0.trim()) else "") }
     }) {
         item(key = "pick") {
             Toolbar {
-                Select("Hazard", HAZARD_SELECT.map { it to it }, sel, tag = "hazardSelect") { sel = it }
+                Select("Hazard", fill.options.map { it to it }, sel, tag = "hazardSelect") { sel = it }
                 SearchField(reg, "Region (optional)", Modifier.widthIn(min = 200.dp)) { reg = it }
                 SecondaryButton("Show") { env.navigate("/hazards/" + Format.enc(sel) + if (reg.isNotBlank()) "?region=" + Format.enc(reg.trim()) else "") }
             }
@@ -323,10 +334,11 @@ fun HazardDetailScreen(type0: String, region0: String) {
                     "How long it lasts" to hz.duration, "How much warning there is" to hz.leadTime, "How severity is measured" to hz.severityBasis))
             }
         }
+        if (feed.feed == null && feed.failed) item(key = "stats") { StatLine(listOf("current events", "high alert", "countries and areas", "sources").map { it to Portal.UNAVAILABLE }) }
         if (notLoaded(feed)) return@PndScreen
         item(key = "stats") {
-            StatLine(listOf("current events" to es.size.toString(), "high alert" to es.count { it.alert in setOf("Red", "Orange", "High") }.toString(),
-                "countries and areas" to Format.countryCount(es.map { it.json }).toString(), "sources" to es.map { it.source }.toSet().size.toString()))
+            StatLine(listOf("current events" to es.size.toString(), "high alert" to es.count { Portal.isHighAlert(it.json) }.toString(),
+                "countries and areas" to Format.countryCount(es.map { it.json }).toString(), "sources" to Portal.sourcesReporting(es) { it.json }.toString()))
         }
         item(key = "status") { RefreshRow(feed) }
         item(key = "map") { Panel("Map of current events", trailing = { LinkButton("Full map →") { env.navigate("/live-map") } }) { RiskMap(es.take(250)) { env.navigate(Format.eventUrl(it.json)) } } }
@@ -339,7 +351,7 @@ fun HazardDetailScreen(type0: String, region0: String) {
             }
         }
         item(key = "head") { Column { SubHeading("Current ${type.lowercase()} events" + if (rr.isNotEmpty()) " · ${region0.trim()}" else ""); Toolbar { SortSelect("hazard", Sorts.EVENT_SORTS, sort, setSort) } } }
-        if (es.isEmpty()) item { EmptyText("No current events of this type match.") }
+        if (es.isEmpty()) item { CardBox(Modifier.testTag("hazardEmpty")) { Text("No current events of this type match.", fontWeight = FontWeight.Bold, color = Pnd.text); Muted(HazardPage.emptyBody(rr.isNotEmpty())) } }
         items(es, key = { "hz" + it.id + it.hashCode() }) { e ->
             Box(Modifier.padding(bottom = 8.dp)) {
                 CardBox(onClick = { env.navigate(Format.eventUrl(e.json)) }, label = "Open ${e.displayTitle}") {
@@ -348,6 +360,12 @@ fun HazardDetailScreen(type0: String, region0: String) {
                     Muted(Format.placeOf(e.json, "Place not given") + (if (e.details.isNotEmpty()) " · " + Format.summary(e.details) else ""))
                     Muted(Format.fmtDate(e.updated))
                 }
+            }
+        }
+        if (pick.openForecasts.isNotEmpty()) item(key = "fcNote") {
+            FlowRow(Modifier.fillMaxWidth().padding(bottom = 8.dp).testTag("hazardForecastNote")) {
+                Muted(HazardPage.forecastNote(pick.openForecasts.size, type, rr.isNotEmpty()), Modifier.padding(top = 14.dp, end = 6.dp))
+                LinkButton("See our forecasts →") { env.navigate("/forecast-list") }
             }
         }
         val top = es.firstOrNull()
@@ -420,15 +438,28 @@ fun SourceDetailScreen(raw0: String) {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
     val raw = raw0.ifEmpty { "GDACS" }
-    val p = PROFILES.firstOrNull { it.name.lowercase() == raw.lowercase() } ?: Profile(raw, "Other source we read or mention", "Depends on the source.", "Used where it has reports.", "Varies by source.", "Check the source itself for what it covers and its limits.", "")
+    val known = PROFILES.firstOrNull { it.name.lowercase() == raw.lowercase() }
+    val p = known ?: Profile(raw, "Source named in our current reports", "Depends on the source.", "Used where it has reports.", "Varies by source.", "Check the source itself for what it covers and its limits.", "")
     val (sort, setSort) = rememberSort("source_sortBy", Sorts.EVENT_SORTS)
     val es = Sorts.sort(feed.events.filter { it.source.lowercase().contains(p.name.lowercase().replace("nasa ", "")) || it.source.lowercase() == raw.lowercase() }, sort) { it.json }
     val metaKey = if (p.name == "NASA EONET") "eonet" else p.name.lowercase()
     val sm = feed.feed?.meta?.sources?.get(metaKey)
+    // A name with no profile and no current report is not a source (changelog C22).
+    if (known == null && feed.feed != null && es.isEmpty()) {
+        PndScreen(header = { item { DetailTop("DATA SOURCE", "Source not found", null, null) } }) {
+            item(key = "nf") {
+                Column(Modifier.testTag("notFound")) {
+                    Body("None of our current reports names a source called \u201c$raw\u201d.", Pnd.textSoft)
+                    LinkButton("See every source we read →") { env.navigate("/resources") }
+                }
+            }
+        }
+        return
+    }
     PndScreen(header = { item { DetailTop("DATA SOURCE", p.name, p.cls, "/sources/" + Format.enc(p.name)) } }) {
         item(key = "stats") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-                Figure("Status", if (feed.feed == null) "-" else if (sm?.truthy("ok") == true) "Working" else if (sm != null) "Not answering" else "Not read live")
+                Figure("Status", if (feed.feed == null) "-" else if (sm?.truthy("ok") == true) "Working" else if (sm != null) "Not answering" else if (es.isNotEmpty()) "Named in current reports" else "Not read live")
                 Figure("Current reports", if (feed.feed == null) "-" else es.size.toString())
                 Figure("Latest update", es.maxByOrNull { JsDate.parse(it.updated) ?: 0L }?.let { Format.age(it.updated) } ?: "-")
                 Figure("Type", p.cls.split(" ").take(2).joinToString(" "))

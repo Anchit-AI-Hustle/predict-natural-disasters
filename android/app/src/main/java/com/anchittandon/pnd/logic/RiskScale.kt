@@ -17,6 +17,8 @@ enum class Level(val label: String, val colour: Long?, val ink: Long?, val rank:
     UNKNOWN("Not rated", null, null, 0, RiskShape.HOLLOW, "hollow circle");
 
     val markerSize: Int get() = 9 + rank * 3
+    /** The square a marker can be tapped in: at least 24, centred on the mark, which keeps its own size (map-setup.js riskMarker). */
+    val tapSize: Int get() = maxOf(24, markerSize)
     val key: String get() = name
 }
 

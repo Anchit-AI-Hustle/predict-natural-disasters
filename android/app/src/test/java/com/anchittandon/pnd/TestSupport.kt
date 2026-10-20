@@ -34,14 +34,16 @@ object Fixtures {
 }
 
 /** Answers from fixtures by URL; [failEvents] makes the feed fail as a network error does. */
-class FakeHttp(var failEvents: Boolean = false, var failEnrichment: Boolean = false) : Http {
+class FakeHttp(var failEvents: Boolean = false, var failEnrichment: Boolean = false, var eventsBody: String? = null) : Http {
     val requests = mutableListOf<String>()
+    val headers = mutableListOf<Map<String, String>>()
     override suspend fun get(url: String, headers: Map<String, String>): HttpResult {
         requests += url
+        this.headers += headers
         val path = url.substringAfter("anchit-tandon.com").substringBefore('?')
         return when {
             url.startsWith("https://nominatim.openstreetmap.org/") -> HttpResult(200, Fixtures.NOMINATIM)
-            path == "/api/events" -> if (failEvents) HttpResult(0, null) else HttpResult(200, Fixtures.events)
+            path == "/api/events" -> if (failEvents) HttpResult(0, null) else HttpResult(200, eventsBody ?: Fixtures.events)
             path == "/api/event-enrichment" -> if (failEnrichment) HttpResult(503, "{}") else HttpResult(200, Fixtures.enrichment["response"].toString())
             path == "/api/alerts" -> HttpResult(200, """{"available":false,"reason":"Background alerts are not switched on for this site yet.","schedule":null,"keeps":"For each place: its kind and its position rounded to about 1 km.","rules":{"nearKm":30,"severeNearKm":100,"recentHours":72},"publicKey":null,"lastRun":null}""")
             path == "/data/outlook-ledger.json" -> HttpResult(200, Fixtures.ledgers["outlook"].toString())
@@ -72,6 +74,8 @@ class FakePlatform : Platform {
 
 fun testContainer(http: Http = FakeHttp(), settings: Map<String, String> = emptyMap(), platform: Platform = FakePlatform()): AppContainer {
     AppClock.now = { Fixtures.NOW }
+    // The device zone is the default (changelog C9); the tests fix it so screenshots do not follow the machine.
+    AppClock.deviceZone = { "Asia/Kolkata" }
     AppClock.zone = settings["pnd_timezone"] ?: "Asia/Kolkata"
     val assets = File("src/main/assets")
     return AppContainer(http, SettingsStore(MemoryBackend(settings)), null, { File(assets, it).readText() },

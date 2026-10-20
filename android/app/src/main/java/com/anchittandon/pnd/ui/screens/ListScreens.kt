@@ -20,6 +20,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +51,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.data.FeedState
+import com.anchittandon.pnd.logic.AlertsPager
 import com.anchittandon.pnd.logic.AppClock
+import com.anchittandon.pnd.logic.Collections
+import com.anchittandon.pnd.logic.MapSearch
+import com.anchittandon.pnd.logic.Portal
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.RiskScale
@@ -83,11 +92,6 @@ fun SortSelect(screen: String, keys: List<String>, value: String, onChange: (Str
 fun RiskFilter(value: String, onChange: (String) -> Unit) =
     Select("Filter by risk level", listOf("" to "All risk levels") + RiskScale.filterOptions, value, tag = "riskFilter", onSelect = onChange)
 
-val FIXED_HAZARDS = listOf("Flood", "Earthquake", "Wildfire", "Volcano", "Tropical Cyclone", "Drought")
-
-/** Fixed-list hazard filter match: `type.toLowerCase().includes(option.toLowerCase().replace('s',''))`. */
-fun fixedHazardMatch(type: String, option: String): Boolean = option.isEmpty() || type.lowercase().contains(option.lowercase().replaceFirst("s", ""))
-
 fun statusLine(feed: FeedState, extra: String? = null): String {
     val f = feed.feed
     if (f == null) return if (feed.failed) "Live data unavailable. Trying again automatically." else "Loading the latest data…"
@@ -120,7 +124,7 @@ fun LazyListScope.eventCards(list: List<Event>, keyPrefix: String, onOpen: (Even
 fun LazyListScope.notLoaded(feed: FeedState): Boolean {
     if (feed.feed != null) return false
     item(key = "notLoaded") {
-        if (feed.failed) StaleBox("Live data unavailable. Trying again automatically.", tag = "listError") else EmptyText("Loading…")
+        if (feed.failed) UnavailableCard("listError") else EmptyText("Loading…")
     }
     return true
 }
@@ -135,15 +139,20 @@ fun MapScreen() {
     var q by rememberSaveable { mutableStateOf("") }
     val (sort, setSort) = rememberSort("live-map_sortBy", Sorts.EVENT_SORTS)
     val list = remember(feed, q, sort) { Sorts.sort(feed.events.filter { Search.matches(it.json, q, it.searchText) }, sort) { it.json } }
+    // A new search fits the map to what it found (max zoom 6); a refresh with the same query leaves the map where it is.
+    val qt = q.trim()
+    val fit = if (qt.isEmpty()) null else MapFit(qt.lowercase(), list.filter { it.lat != null && it.lon != null }.map { it.lat!! to it.lon!! })
+    val note = if (feed.feed == null) null else MapSearch.liveMapNote(q, list.size)
     PndScreen(header = { item { ScreenHeader(null, "Live disaster map", "Events reported by official agencies, shown on a map. This page refreshes every minute.") } }) {
         item(key = "tools") {
             Column {
                 SearchField(q, "Search place or hazard", tag = "search") { q = it }
                 Toolbar { SortSelect("live-map", Sorts.EVENT_SORTS, sort, setSort) }
                 RefreshRow(feed)
+                if (note != null) Muted(note, Modifier.testTag("mapNote").semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
             }
         }
-        item(key = "map") { RiskMap(list.take(220), height = 420.dp) { env.navigate(Format.eventUrl(it.json)) } }
+        item(key = "map") { RiskMap(list.take(220), height = 420.dp, fit = fit?.takeIf { it.points.isNotEmpty() }) { env.navigate(Format.eventUrl(it.json)) } }
         item(key = "latestHead") { Row(verticalAlignment = Alignment.CenterVertically) { SubHeading("Latest events"); LinkButton("See all →") { env.navigate("/recent-events") } } }
         if (!notLoaded(feed)) {
             if (list.isEmpty()) item { EmptyCard(Search.emptyState(q, feed.events.map { it.json }, feed.events.map { it.json }, "events")) { env.navigate("/events?q=" + Format.enc(it)) } }
@@ -164,14 +173,19 @@ fun AlertsScreen() {
     val (sort, setSort) = rememberSort("alerts_sortBy", Sorts.EVENT_SORTS)
     val all = feed.events
     val es = remember(feed, q, level, sort) { Sorts.sort(all.filter { it.official && Search.matches(it.json, q, it.searchText) && RiskScale.matchesRiskLevel(it.json, level) }, sort) { it.json } }
+    // 40 at a time (alerts.html draw): a new search, level or sort goes back to 40; a feed refresh keeps the count.
+    var limit by rememberSaveable(q, level, sort) { mutableStateOf(AlertsPager.PAGE) }
+    var focusFrom by remember { mutableStateOf(-1) }
+    val down = feed.feed == null && feed.failed
+    fun fig(v: String) = if (down) Portal.UNAVAILABLE else v
     PndScreen(header = { item { ScreenHeader("Official alerts and reported events", "Alerts", "Current reports from official agencies. Open any alert to see its details and its source.") } }) {
         item(key = "stats") {
             val f = feed.feed
-            StatLine(listOf("official reports" to (if (f != null) es.size.toString() else "-"),
-                "red or orange alert" to (if (f != null) es.count { it.alert == "Red" || it.alert == "Orange" }.toString() else "-"),
-                "countries and areas" to (if (f != null) Format.countryCount(es.map { it.json }).toString() else "-"),
-                "sources working" to (f?.let { Format.sourcesRatio(it.meta.json) } ?: "-"),
-                "updated" to (f?.let { Format.age(it.generatedAt) } ?: "-")))
+            StatLine(listOf("official reports" to (if (f != null) es.size.toString() else fig("-")),
+                "red or orange alert" to (if (f != null) es.count { it.alert == "Red" || it.alert == "Orange" }.toString() else fig("-")),
+                "countries and areas" to (if (f != null) Format.countryCount(es.map { it.json }).toString() else fig("-")),
+                "sources working" to (f?.let { Format.sourcesRatio(it.meta.json) } ?: fig("-")),
+                "updated" to (f?.let { Format.age(it.generatedAt) } ?: fig("-"))))
         }
         item(key = "nav") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -190,7 +204,20 @@ fun AlertsScreen() {
         item(key = "head") { Row(verticalAlignment = Alignment.CenterVertically) { SubHeading("Current official alerts"); LinkButton("See all official warnings →") { env.navigate("/official-warnings") } } }
         if (!notLoaded(feed)) {
             if (es.isEmpty()) item { EmptyCard(Search.emptyState(q, all.map { it.json }, all.map { it.json }, "official alerts")) { env.navigate("/events?q=" + Format.enc(it)) } }
-            eventCards(es.take(40), "a", { env.navigate(Format.eventUrl(it.json)) })
+            itemsIndexed(es.take(limit), key = { _, e -> "a" + e.id + e.hashCode() }) { i, e ->
+                val fr = remember { FocusRequester() }
+                Box(Modifier.padding(bottom = 10.dp)) { EventCard(e, { env.navigate(Format.eventUrl(e.json)) }, modifier = Modifier.focusRequester(fr)) }
+                // "Show more" moves focus to the first new card.
+                if (i == focusFrom) LaunchedEffect(focusFrom) { try { fr.requestFocus() } catch (x: IllegalStateException) { } ; focusFrom = -1 }
+            }
+            AlertsPager.footer(limit, es.size)?.let { pf ->
+                item(key = "pager") {
+                    CardBox(Modifier.padding(bottom = 10.dp).testTag("pager")) {
+                        Muted(pf.note, Modifier.testTag("pagerNote"))
+                        if (pf.button != null) SecondaryButton(pf.button, Modifier.testTag("showMore")) { focusFrom = limit; limit += AlertsPager.PAGE }
+                    }
+                }
+            }
         }
         item(key = "sources") {
             Panel("Source status", trailing = { LinkButton("About our sources →") { env.navigate("/resources") } }) {
@@ -199,7 +226,7 @@ fun AlertsScreen() {
                         Text(k.uppercase().replace("_", " "), color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Muted((if (v.truthy("ok")) "Working" else "Not answering") + " · checked " + Format.fmtDate(v.str("checkedAt")))
                     }
-                } ?: Muted(if (feed.failed) "Live data unavailable. Trying again automatically." else "Loading…")
+                } ?: Muted(if (feed.failed) "" else "Loading…")
             }
         }
         item(key = "howto") {
@@ -216,7 +243,7 @@ fun AlertsScreen() {
 
 /** The collection views (features.md §3.2). */
 @Composable
-fun CollectionScreen(view: CollectionView, initialQuery: String) {
+fun CollectionScreen(view: CollectionView, initialQuery: String, region: String = "") {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
     var q by rememberSaveable { mutableStateOf(initialQuery) }
@@ -226,18 +253,11 @@ fun CollectionScreen(view: CollectionView, initialQuery: String) {
     val keys = when (view) { CollectionView.FORECAST_LIST -> Sorts.FORECAST_LIST; CollectionView.HISTORICAL -> Sorts.HISTORICAL; else -> Sorts.EVENT_SORTS }
     val (sort, setSort) = rememberSort(view.route + "_sortBy", keys)
     val all = if (view == CollectionView.HISTORICAL) feed.all else feed.events
-    fun keep(e: Event) = when (view) {
-        CollectionView.OFFICIAL, CollectionView.ALERTS_NOTIFICATIONS -> e.official && (e.alert == "Red" || e.alert == "Orange" || e.source == "USGS")
-        CollectionView.FORECAST_LIST -> e.json.str("forecast") == "true"
-        CollectionView.RECENT -> e.official
-        else -> true
-    }
-    val pool = all.filter(::keep)
-    val es = remember(feed, q, hazard, level, sort) {
+    // collection.js keep() and scoped(): ?region= narrows every list (changelog C3, C17).
+    val pool = remember(feed, region) { Collections.scoped(all, view.route, region) { it.json } }
+    val es = remember(feed, q, hazard, level, sort, region) {
         Sorts.sort(pool.filter { e ->
-            Search.matches(e.json, q, e.searchText) &&
-                (hazard.isEmpty() || if (forecastMode) e.type.lowercase() == hazard.lowercase() else fixedHazardMatch(e.type, hazard)) &&
-                RiskScale.matchesRiskLevel(e.json, level)
+            Search.matches(e.json, q, e.searchText) && (hazard.isEmpty() || e.type.lowercase() == hazard.lowercase()) && RiskScale.matchesRiskLevel(e.json, level)
         }, sort) { it.json }
     }
     PndScreen(header = { item { ScreenHeader(null, view.title, view.subtitle) } }) {
@@ -245,14 +265,15 @@ fun CollectionScreen(view: CollectionView, initialQuery: String) {
             Column {
                 SearchField(q, if (view == CollectionView.COMPARE) "Search for a place" else "Search events, places or hazards", tag = "search") { q = it }
                 Toolbar {
-                    val opts = if (forecastMode) Format.hazardOptions(pool.map { it.json }, hazard) else listOf("" to "All hazards") + FIXED_HAZARDS.map { it to it }
-                    Select("Filter by hazard", opts, hazard, tag = "hazardFilter") { hazard = it }
+                    // Built from the records this list holds, with counts (changelog C8).
+                    Select("Filter by hazard", Format.hazardOptions(pool.map { it.json }, hazard), hazard, tag = "hazardFilter") { hazard = it }
                     RiskFilter(level) { level = it }
                     SortSelect(view.route, keys, sort, setSort)
                 }
-                RefreshRow(feed, Format.countText(es.map { it.json }))
+                RefreshRow(feed, Collections.countText(pool, view.route, view.noun) { it.json })
             }
         }
+        Collections.scopeNote(region)?.let { n -> item(key = "scope") { ScopeNote(n) { env.navigate("/" + view.route) } } }
         if (forecastMode) item(key = "note") { Notice(Format.horizonText(feed.feed?.meta?.json) + " Each forecast is our own estimate, based on a current official report. It may be wrong. It is not an official warning and does not replace one.") }
         if (!notLoaded(feed)) {
             if (es.isEmpty()) item(key = "empty") { EmptyCard(Search.emptyState(q, pool.map { it.json }, all.map { it.json }, view.noun)) { env.navigate("/events?q=" + Format.enc(it)) } }
@@ -311,14 +332,14 @@ fun LabelValue(label: String, value: @Composable () -> Unit) {
 
 /** Forecast calendar (features.md §4.2). */
 @Composable
-fun ForecastCalendarScreen() {
+fun ForecastCalendarScreen(region: String = "") {
     val env = LocalApp.current
     val feed by env.container.feed.state.collectAsState()
     var q by rememberSaveable { mutableStateOf("") }
     var hazard by rememberSaveable { mutableStateOf("") }
     var level by rememberSaveable { mutableStateOf("") }
     val (sort, setSort) = rememberSort("forecast-calendar_sortBy", Sorts.FORECAST_LIST)
-    val pool = feed.events.filter { it.json.str("forecast") == "true" }
+    val pool = remember(feed, region) { Collections.scoped(feed.events, "forecast-calendar", region) { it.json } }
     val es = Sorts.sort(pool.filter { Search.matches(it.json, q, it.searchText) && (hazard.isEmpty() || it.type.lowercase() == hazard.lowercase()) && RiskScale.matchesRiskLevel(it.json, level) }, sort) { it.json }
     PndScreen(header = { item { ScreenHeader(null, "Forecast calendar", "Each current forecast, shown across the days it covers.") } }) {
         item(key = "tools") {
@@ -329,9 +350,10 @@ fun ForecastCalendarScreen() {
                     RiskFilter(level) { level = it }
                     SortSelect("forecast-calendar", Sorts.FORECAST_LIST, sort, setSort)
                 }
-                RefreshRow(feed, Format.countText(es.map { it.json }))
+                RefreshRow(feed, Collections.countText(pool, "forecast-calendar", "forecasts") { it.json })
             }
         }
+        Collections.scopeNote(region)?.let { n -> item(key = "scope") { ScopeNote(n) { env.navigate("/forecast-calendar") } } }
         item(key = "note") { Notice(Format.horizonText(feed.feed?.meta?.json) + " Each forecast is our own estimate, based on a current official report. It may be wrong. It is not an official warning and does not replace one.") }
         if (!notLoaded(feed)) item(key = "cal") { Calendar(es) }
     }
@@ -518,7 +540,16 @@ fun CalamitiesScreen() {
                 }
             }
         }
-        item(key = "tzfoot") { Muted("Times are shown in ${Format.tzLabel()} by default. To see them in another time zone, use the time zone menu at the top of the screen.", Modifier.padding(vertical = 8.dp)) }
+        item(key = "tzfoot") { Muted("Times are shown in your device's time zone. To see them in another time zone, use the time zone setting.", Modifier.padding(vertical = 8.dp)) }
+    }
+}
+
+/** "Showing only {region}. Show everywhere →" above a scoped list. */
+@Composable
+fun ScopeNote(text: String, onEverywhere: () -> Unit) {
+    FlowRow(Modifier.fillMaxWidth().padding(bottom = 8.dp).testTag("scopeNote"), verticalArrangement = Arrangement.Center) {
+        Muted(text, Modifier.padding(top = 14.dp, end = 6.dp))
+        LinkButton("Show everywhere →", onClick = onEverywhere)
     }
 }
 

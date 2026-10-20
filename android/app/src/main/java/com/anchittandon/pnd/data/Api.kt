@@ -27,7 +27,8 @@ object Api {
     fun events(fresh: Boolean, now: Long): String = if (fresh) "$BASE/api/events?ts=$now" else "$BASE/api/events"
     fun summary(): String = "$BASE/api/events?summary=1"
     fun alerts(): String = "$BASE/api/alerts"
-    fun data(file: String, now: Long): String = "$BASE/data/$file?ts=$now"
+    /** Static data files are served `max-age=0, must-revalidate`; reads revalidate with no-cache and carry no `?ts=` (changelog C25). */
+    fun data(file: String): String = "$BASE/data/$file"
 
     /** Same parameter order and values as the web, so the edge cache is shared (api.md §3.1). */
     fun enrichment(title: String, country: String, region: String, type: String, updated: String, forecast: Boolean, lat: Double?, lon: Double?): String {

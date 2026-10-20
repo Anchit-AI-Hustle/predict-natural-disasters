@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.logic.AppClock
 import com.anchittandon.pnd.logic.Format
+import com.anchittandon.pnd.logic.Grades
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.Sorts
 import com.anchittandon.pnd.model.Event
@@ -89,18 +90,22 @@ fun ForecastDetailScreen(id: String) {
         if (feed.feed != null && inFeed == null && !ledgerTried) { ledger = env.container.data.ledgerRow(id); ledgerTried = true }
     }
     val (sort, setSort) = rememberSort("forecast_sortBy", Sorts.NEARBY)
+    // A graded forecast shows its grade (forecast-detail.html gradeOf, changelog C4). A failed read gives no grade.
+    val gradeId = inFeed?.id ?: ledger?.str("id")
+    var grade by remember(gradeId) { mutableStateOf<Grades.Grade?>(null) }
+    LaunchedEffect(gradeId) {
+        if (gradeId != null) {
+            val l = env.container.data.json("verification-ledger.json") as? JsonObject
+            val m = if (gradeId.startsWith("model-") && Grades.gradeOf(gradeId, l, null) == null) env.container.data.json("model-verdicts.json") as? JsonObject else null
+            grade = Grades.gradeOf(gradeId, l, m)
+        }
+    }
     PndScreen(feedBanner = false) {
-        if (waiting(feed, "")) return@PndScreen
+        if (waiting(feed, GoneLine("We could not load our forecasts, so this one cannot be shown right now. Trying again automatically. ", "See all our forecasts", "/forecast-list", "."), env.navigate)) return@PndScreen
         if (feed.failed) item(key = "stale") { StaleBox("Live data unavailable. Trying again automatically.", tag = "detailError") }
         val e: Event = inFeed ?: ledger?.let { Event(JsonObject(LinkedHashMap<String, kotlinx.serialization.json.JsonElement>().apply { put("forecast", JsonPrimitive(true)); putAll(it) })) } ?: run {
             if (!ledgerTried) item(key = "ledgerWait") { Body("Looking for this forecast in our record of past forecasts…") }
-            else item(key = "nf") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Heading("Forecast not found", Modifier.testTag("notFound"))
-                    Body("We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or go to the forecasts list.", Pnd.textSoft)
-                    OutlinePillButton("Our forecasts") { env.navigate("/forecast-list") }
-                }
-            }
+            else notFound("FORECAST DETAILS", "Forecast not found", GoneLine("We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or ", "see all our forecasts", "/forecast-list", "."), env.navigate)
             return@PndScreen
         }
         val j = e.json
@@ -115,7 +120,7 @@ fun ForecastDetailScreen(id: String) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
                 Column(Modifier.widthIn(min = scaledMin(140.dp)).clip(RoundedCornerShape(10.dp)).background(Pnd.metric).border(1.dp, Pnd.metricBorder, RoundedCornerShape(10.dp)).padding(10.dp)) { Label("Risk"); RecordBadge(j) }
                 Figure("Location", Format.placeOf(j, "-")); Figure("Last updated", Format.age(e.updated))
-                Figure("Status", if (ended) "Ended, not yet checked" else "Active")
+                Figure("Status", Grades.status(grade, j.text("targetEnd"), now))
             }
         }
         val all = feed.all
@@ -173,7 +178,9 @@ fun ForecastDetailScreen(id: String) {
             val match = close.filter { !it.forecast && it.id != j.text("forecastOf") && fam(it.type) == fam(e.type) && ((JsDate.parse(it.json.text("startedAt").ifEmpty { it.updated }) ?: 0L) >= from) }
             Panel("What we will check", subtitle = "Each line is one thing we check this forecast against. Each stays open until the forecast period ends. None of them says that the event happened.",
                 trailing = { LinkButton("How we check forecasts →") { env.navigate("/verification") } }) {
-                Check("Inside the locked forecast period", if (ended) "Ended" else "Open",
+                val g = grade
+                if (g != null) Check("Inside the locked forecast period", "Ended", Grades.timingText(g, dayOf(j.str("targetEnd"), j.str("targetStart"), "end")))
+                else Check("Inside the locked forecast period", if (ended) "Ended" else "Open",
                     if (ended) "The forecast period ran to ${dayOf(j.str("targetEnd"), j.str("targetStart"), "end") ?: "its end"} and has ended. It is now waiting to be checked." else "Runs ${spanText(j)}. It stays open until the end of that period, whatever happens before then.")
                 Check("Inside the forecast area", if (ended) "Ended" else "Open", "Set to ${placeName(j)} when we made the forecast, and never widened. Damage just outside it does not count.")
                 Check("Hazard reported", if (match.isNotEmpty()) "${match.size} reported" else "None yet",

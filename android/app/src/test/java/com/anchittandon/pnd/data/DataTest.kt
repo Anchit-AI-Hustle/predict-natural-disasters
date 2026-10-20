@@ -127,7 +127,14 @@ class RepositoryTest {
         assertEquals(27.72, p[0].lat, 0.0); assertEquals(85.33, p[0].lon, 0.0)
         assertEquals("loc-100", p[1].id)
         assertEquals(1, s.removePlace("loc-100").size)
-        assertEquals("Asia/Kolkata", s.timezone)
+        // No zone chosen: the device's, else Asia/Kolkata (changelog C9).
+        val device = AppClock.deviceZone
+        try {
+            AppClock.deviceZone = { "Europe/London" }; assertEquals("Europe/London", s.timezone)
+            AppClock.deviceZone = { null }; assertEquals("Asia/Kolkata", s.timezone)
+            AppClock.deviceZone = { throw SecurityException("no zone") }; assertEquals("Asia/Kolkata", s.timezone)
+            s.setTimezone("UTC"); assertEquals("UTC", s.timezone)
+        } finally { AppClock.deviceZone = device }
         assertEquals("newest", s.sort("x", listOf("newest", "severity")))
         s.setSort("x", "severity"); assertEquals("severity", s.sort("x", listOf("newest", "severity")))
         // Background payload: kind plus coordinates rounded to 2 decimals, at most 10.

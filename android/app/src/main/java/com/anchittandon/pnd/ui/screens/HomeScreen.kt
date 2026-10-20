@@ -36,11 +36,16 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.data.PlaceSearchRepository
 import com.anchittandon.pnd.logic.AppClock
+import com.anchittandon.pnd.logic.HomeModel
+import com.anchittandon.pnd.logic.MapSearch
+import com.anchittandon.pnd.logic.Portal
 import com.anchittandon.pnd.logic.Format
 import com.anchittandon.pnd.logic.Hazards
 import com.anchittandon.pnd.logic.Level
@@ -58,6 +63,11 @@ import com.anchittandon.pnd.ui.components.*
 import com.anchittandon.pnd.ui.theme.Pnd
 import kotlinx.coroutines.launch
 
+/** The Official warnings tile's subline; its accessibility hint is `Portal.WARNING_MEANING`. */
+const val HOME_WARNINGS_NOTE = "Issued by agencies, in force now"
+/** The heading of the home card that lists reports (was "Most serious live events"). */
+const val HOME_LIVE_EVENTS = "Live events"
+
 /** Home / Check a place (features.md §1). */
 @Composable
 fun HomeScreen() {
@@ -71,8 +81,10 @@ fun HomeScreen() {
     var busy by remember { mutableStateOf(false) }
     var choices by remember { mutableStateOf<List<Place>>(emptyList()) }
     var checked by remember { mutableStateOf<Place?>(null) }
-    var hazard by rememberSaveable { mutableStateOf("all") }
-    var sort by remember { mutableStateOf(c.settings.sort("home_sortBy", Sorts.EVENT_SORTS)) }
+    var hazard by rememberSaveable { mutableStateOf("") }
+    var sort by remember { mutableStateOf(c.settings.sort("home_sortBy", HomeModel.SORT_KEYS)) }
+    var mapQuery by rememberSaveable { mutableStateOf("") }
+    val selection = remember { MapSelection() }
     val scope = rememberCoroutineScope()
 
     // Auto answer on arrival: the current location if kept, otherwise the first saved place.
@@ -101,13 +113,21 @@ fun HomeScreen() {
         }
     }
 
-    val list = remember(feed, hazard, sort) {
-        val base = feed.events.filter { hazard == "all" || it.type.lowercase().contains(hazard.lowercase()) }
-        Sorts.sort(base, sort) { it.json }
-    }
-    val reports = list.filter { !it.forecast }
-    val fc = list.filter { it.forecast && !it.windowClosed }
+    val r = remember(feed, hazard, sort) { HomeModel.render(feed.events.map { it.json }, hazard, sort) }
+    val byJson = remember(feed) { feed.events.associateBy { it.json } }
+    fun ev(j: kotlinx.serialization.json.JsonObject) = byJson[j] ?: Event(j)
+    val list = remember(r) { r.list.map { ev(it) } }
     val loaded = feed.feed != null
+    // A failed load is not an empty world: with nothing loaded, the tiles keep "-" and say why (index.html down()).
+    val down = feed.failed && !loaded
+    val downText = "Live data unavailable. Trying again automatically."
+    fun mapSearch() {
+        when (val m = MapSearch.search(feed.events.map { it.json }, mapQuery)) {
+            null -> {}
+            is MapSearch.Found -> selection.select(feed.events[m.index], fly = true)
+            is MapSearch.NoMatch -> { selection.nudge = MapNudge.NoMatch(m.title); selection.flyTo = null }
+        }
+    }
 
     PndScreen(trust = setOf(TrustGroup.FEED, TrustGroup.MODELS, TrustGroup.PLACE), trustAfterHeader = true, header = {
         item(key = "hero") {
@@ -142,15 +162,13 @@ fun HomeScreen() {
 
         item(key = "kpis") {
             Panel("Around the world now", subtitle = "What our sources are reporting right now.") {
-                val sev = reports.groupingBy { it.severity }.eachCount()
-                val bad = (sev["Extreme"] ?: 0) + (sev["Severe"] ?: 0); val routine = sev["Informational"] ?: 0
-                val split = Level.entries.filter { it != Level.UNKNOWN }.reversed().map { lv -> lv.label to fc.count { RiskScale.matchesRiskLevel(it.json, lv.name) } }.filter { it.second > 0 }
+                val pending = feed.loading && !loaded && !feed.failed
+                fun sub(t: String) = if (down) "Live data unavailable" else t
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Kpi(if (loaded) reports.size.toString() else "-", "Live events",
-                        if (reports.isNotEmpty() && (bad > 0 || routine > 0)) "$bad serious · $routine minor" else if (hazard == "all") "From all our sources" else "Matching the hazard you chose", feed.loading && !loaded) { env.navigate("/events") }
-                    Kpi(if (loaded) list.count { it.official && (it.alert == "Red" || it.alert == "Orange") }.toString() else "-", "Official warnings", "Red or orange level", feed.loading && !loaded) { env.navigate("/official-warnings") }
-                    Kpi(if (loaded) fc.size.toString() else "-", "Open forecasts", if (split.isNotEmpty()) split.joinToString(" · ") { "${it.second} ${it.first}" } else "Recorded for grading", feed.loading && !loaded) { env.navigate("/forecast-list") }
-                    Kpi(if (loaded) Format.countryCount(reports.map { it.json }).toString() else "-", "Countries", "Named in live reports", feed.loading && !loaded) { env.navigate("/regions") }
+                    Kpi(if (loaded) r.kEvents else "-", "Live events", sub(if (loaded) r.kEventsNote else "From all our sources"), pending) { env.navigate("/events") }
+                    Kpi(if (loaded) r.kWarnings else "-", "Official warnings", sub(HOME_WARNINGS_NOTE), pending, hint = Portal.WARNING_MEANING) { env.navigate("/official-warnings") }
+                    Kpi(if (loaded) r.kForecasts else "-", "Open forecasts", sub(if (loaded) r.kForecastsNote else "Our own estimates"), pending) { env.navigate("/forecast-list") }
+                    Kpi(if (loaded) r.kCountries else "-", "Countries", sub("Named in live reports"), pending) { env.navigate("/regions") }
                     Column(Modifier.widthIn(min = 150.dp).weight(1f).clip(RoundedCornerShape(10.dp)).background(Pnd.kpi).border(1.dp, Pnd.kpiBorder, RoundedCornerShape(10.dp)).padding(12.dp)) {
                         Text("“Prepared communities save lives.”", color = Pnd.text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text("Data for a safer, more resilient world.", color = Color(0xFF87AA9B), fontSize = 12.sp)
@@ -182,18 +200,23 @@ fun HomeScreen() {
         item(key = "map") {
             Panel("Live map") {
                 Toolbar {
-                    Select("Filter the map by hazard type", listOf("all" to "All hazards") + listOf("Earthquake", "Wildfire", "Flood", "Drought", "Tropical Cyclone", "Severe Storm", "Volcano", "Landslide", "Tornado", "Extreme Cold").map { it to it }, hazard) { hazard = it }
-                    Select("Sort results", Sorts.EVENT_SORTS.map { it to Sorts.label(it) }, sort) { sort = it; c.settings.setSort("home_sortBy", it) }
+                    SearchField(mapQuery, "Search location", Modifier.widthIn(min = 200.dp), tag = "mapSearch", imeSearch = { mapSearch() }) { mapQuery = it }
+                    // Filled from the live records, with counts; matched by hazardKey (changelog C2, C8).
+                    Select("Filter the map by hazard type", HomeModel.hazardOptions(feed.events.map { it.json }, hazard), hazard, tag = "homeHazard") { hazard = it }
                 }
-                RiskMap(list, height = 260.dp) { env.navigate(Format.eventUrl(it.json)) }
+                RiskMap(list, height = 260.dp, selection = selection) { env.navigate(Format.eventUrl(it.json)) }
             }
         }
         item(key = "top5") {
-            Panel("Most serious live events", trailing = { LinkButton("View All →") { env.navigate("/events") } }) {
-                val top = Sorts.sort(list, "severity") { it.json }.take(5)
-                if (top.isEmpty()) EmptyText(if (feed.failed && !loaded) "Live data unavailable. Trying again automatically." else if (!loaded) "Loading the latest data…" else "No live events match.")
+            Panel(HOME_LIVE_EVENTS, trailing = { LinkButton("View All →") { env.navigate("/events") } }) {
+                // This card's own sort orders it; it lists reports only (changelog C7).
+                Select("Sort results", HomeModel.SORT_KEYS.map { it to Sorts.label(it) }, sort, tag = "sort:home") { sort = it; c.settings.setSort("home_sortBy", it) }
+                val top = r.liveEvents.map { ev(it) }
+                if (down) UnavailableCard()
+                else if (top.isEmpty()) EmptyText(if (!loaded) "Loading the latest data…" else "No live events match.")
                 top.forEachIndexed { i, e ->
-                    CardBox(onClick = { env.navigate(Format.eventUrl(e.json)) }, label = "Open ${e.displayTitle}") {
+                    CardBox(Modifier.onFocusChanged { if (it.isFocused) selection.select(e, fly = true) }.testTag("live:${e.id}"), onClick = { env.navigate(Format.eventUrl(e.json)) }, label = "Open ${e.displayTitle}",
+                        accent = if ((selection.nudge as? MapNudge.Selected)?.e?.id == e.id) Pnd.green else null) {
                         Row(verticalAlignment = Alignment.Top) {
                             Text("${i + 1}", color = Pnd.greenText, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 10.dp))
                             Column {
@@ -208,15 +231,14 @@ fun HomeScreen() {
         }
         item(key = "strip") {
             Panel("Live events by type", trailing = { LinkButton("View All →") { env.navigate("/hazard-types") } }) {
+                if (down) Muted(downText)
+                // Reports only, grouped by hazardKey, every reported hazard shown (changelog C13).
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    HAZARD_STRIP.forEach { (t, ic) ->
-                        val n = list.count { it.type.lowercase().contains(hazKey(t)) }
-                        if (n > 0) {
-                            val never = !Hazards.hazardOf(t).forecastable
-                            CardBox(Modifier.widthIn(min = 150.dp, max = 220.dp), onClick = { env.navigate("/hazards/" + Format.enc(t)) }, label = "Open $t" + if (never) ". Observed only - no agency forecasts the onset of this hazard" else "") {
-                                Text("$ic $t", color = Pnd.text, fontWeight = FontWeight.Bold)
-                                Muted("$n tracked" + if (never) " · observed only" else "")
-                            }
+                    r.hazardStrip.forEach { chip ->
+                        CardBox(Modifier.widthIn(min = 150.dp, max = 220.dp).testTag("hazChip:${chip.hazard}"), onClick = { env.navigate(chip.link) },
+                            label = "Open ${chip.hazard}" + if (chip.observedOnly) ". Observed only - no agency forecasts the onset of this hazard" else "") {
+                            Text("${chip.icon} ${chip.hazard}", color = Pnd.text, fontWeight = FontWeight.Bold)
+                            Muted(chip.text)
                         }
                     }
                 }
@@ -224,26 +246,32 @@ fun HomeScreen() {
         }
         item(key = "fcTable") {
             Panel("Latest forecasts", trailing = { LinkButton("View All →") { env.navigate("/forecast-list") } }) {
-                if (fc.isEmpty()) EmptyText(if (loaded) "No open forecasts right now." else "Loading forecasts…")
-                fc.take(6).forEach { e ->
-                    TableRow(listOf("Starts" to Format.fmtWhen(e.json.str("targetStart")?.ifEmpty { null } ?: e.updated), "Location" to Format.placeOf(e.json, "-"), "Hazard" to e.type.ifEmpty { "Outlook" }), e) { env.navigate(Format.eventUrl(e.json)) }
+                if (down) EmptyText(downText)
+                else if (r.latestForecasts.isEmpty()) EmptyText(if (loaded) HomeModel.NO_FORECASTS else "Loading forecasts…")
+                r.latestForecasts.forEach { j ->
+                    val row = HomeModel.forecastRow(j)
+                    TableRow(listOf("Starts" to row[0], "Location" to row[1], "Hazard" to row[2]), ev(j)) { env.navigate(Format.eventUrl(j)) }
                 }
             }
         }
         item(key = "latest") {
             Panel("Latest events", trailing = { LinkButton("View All →") { env.navigate("/recent-events") } }) {
-                reports.take(5).forEach { e ->
-                    TableRow(listOf("Time" to Format.fmtDate(e.updated), "Location" to Format.placeOf(e.json, "-"), "Event" to e.type.ifEmpty { "Event" }, "Source" to e.source), null) { env.navigate(Format.eventUrl(e.json)) }
+                if (down) EmptyText(downText)
+                // The 5 newest reports, whatever the card's sort (changelog C7).
+                r.latestEvents.forEach { j ->
+                    val row = HomeModel.latestEventRow(j)
+                    TableRow(listOf("Time" to row[0], "Location" to row[1], "Event" to row[2], "Source" to row[3]), null) { env.navigate(Format.eventUrl(j)) }
                 }
             }
         }
         item(key = "warnings") {
             Panel("Official Warnings", trailing = { LinkButton("View All →") { env.navigate("/official-warnings") } }) {
-                val w = list.filter { it.official && (it.alert == "Red" || it.alert == "Orange") }.take(5)
-                if (w.isEmpty() && loaded) EmptyText("No red or orange official warning right now.")
-                w.forEach { e ->
-                    val end = e.json.str("expiresAt")?.ifEmpty { null } ?: e.json.str("expectedEnd")?.ifEmpty { null }
-                    TableRow(listOf("Agency" to e.source.ifEmpty { "Official" }, "Location" to Format.placeOf(e.json, "-"), "Warning" to e.displayTitle, "Ends" to (end?.let { Format.fmtDate(it) } ?: "Not stated")), null) { env.navigate(Format.eventUrl(e.json)) }
+                // Warnings in force (PND.officialWarnings), most serious first (changelog C3).
+                if (down) EmptyText(downText)
+                else if (r.officialWarnings.isEmpty() && loaded) EmptyText(HomeModel.NO_WARNINGS)
+                r.officialWarnings.forEach { j ->
+                    val row = HomeModel.warningRow(j)
+                    TableRow(listOf("Agency" to row[0], "Location" to row[1], "Warning" to ev(j).displayTitle, "Ends" to row[3]), null) { env.navigate(Format.eventUrl(j)) }
                 }
             }
         }
@@ -266,22 +294,16 @@ fun HomeScreen() {
     }
 }
 
-val HAZARD_STRIP = listOf("Earthquake" to "⌁", "Wildfire" to "🔥", "Flood" to "●", "Drought" to "⌛", "Tropical Cyclone" to "◉",
-    "Severe Storm" to "◈", "Volcano" to "▲", "Landslide" to "△", "Tornado" to "✦", "Extreme Cold" to "❄")
-
-/** The stem a fixed hazard list matches on: first word, wildfire to "wild", volcano to "volcan". */
-fun hazKey(t: String) = t.lowercase().replace("wildfire", "wild").replace("volcano", "volcan").split(" ")[0]
-
 @Composable
-private fun Kpi(value: String, label: String, delta: String, pending: Boolean, onClick: () -> Unit) {
+private fun Kpi(value: String, label: String, delta: String, pending: Boolean, hint: String? = null, onClick: () -> Unit) {
     Column(
         Modifier.widthIn(min = 150.dp).heightIn(min = 78.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.kpi).border(1.dp, Pnd.kpiBorder, RoundedCornerShape(10.dp))
             .clickable(role = Role.Button, onClickLabel = "Open $label") { onClick() }.padding(horizontal = 13.dp, vertical = 10.dp)
-            .semantics(mergeDescendants = true) {}.testTag("kpi:$label"),
+            .semantics(mergeDescendants = true) { if (hint != null) stateDescription = hint }.testTag("kpi:$label"),
     ) {
         Text(if (pending) "…" else value, color = Pnd.text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text(label, color = Pnd.text, fontSize = 12.sp)
-        Text(delta, color = Color(0xFF87AA9B), fontSize = 12.sp)
+        Text(delta, color = Color(0xFF87AA9B), fontSize = 12.sp, modifier = Modifier.testTag("kpiNote:$label"))
     }
 }
 
