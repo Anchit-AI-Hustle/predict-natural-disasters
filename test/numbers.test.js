@@ -173,7 +173,8 @@ test('no page ships a warning no agency issued', () => {
 });
 
 test('the dashboard reads the same merged feed as every other page', () => {
-  const s = read('dashboard.html');
+  /* The trust note links each source's home page; a link is not a fetch. */
+  const s = read('dashboard.html').replace(/<aside class="trust"[\s\S]*?<\/aside>/, '');
   assert.ok(!/earthquake\.usgs\.gov/.test(s) && !/eonet\.gsfc\.nasa\.gov/.test(s),
     'its own capped upstream fetches gave it totals that disagreed with the rest of the site');
   assert.match(s, /fetch\('\/api\/events'/, 'it should read /api/events');

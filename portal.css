@@ -140,3 +140,7 @@ a.btn,a.viewall,a.live,a.logo,a.action,a.countryLink,a.onward{text-decoration:no
 .pc-level{font-size:11px;color:#9fe9c8;border:1px solid #2d7a5d;border-radius:999px;padding:1px 8px;align-self:start;white-space:nowrap}
 .pc-full{grid-column:1/-1;font-size:11px;color:#9db9ad;overflow-wrap:anywhere}
 .placeanswer{margin:8px 0 0;max-width:900px;line-height:1.5}.placeanswer .risk{margin-right:6px;vertical-align:middle}
+/* A list's space is held while it loads. Empty, the page was short enough to
+   bring the footer into the first screen, and the arriving list then pushed
+   it out: a layout shift of 0.22 on /events at 390 px. */
+.event-grid:empty{min-height:70vh}
