@@ -90,3 +90,63 @@ final class TrackRecordTests: XCTestCase {
         }
     }
 }
+
+final class FixtureLedgerTests: XCTestCase {
+    /// The trimmed ledgers the app's fixture mode serves still build a report.
+    func testFixtureLedgersBuild() {
+        let i = TrackRecord.Inputs(outlookLedger: Fixtures.json("outlook-ledger.json"), verificationLedger: Fixtures.json("verification-ledger.json"),
+                                   observed: Fixtures.json("observed-disasters.json"), scanLedger: Fixtures.json("scan-ledger.json"))
+        let p = TrackRecord.prepare(i)
+        XCTAssertTrue(p.canGrade)
+        XCTAssertGreaterThan(p.preds.count, 10)
+        XCTAssertTrue(p.preds.allSatisfy { !$0.s("forecastClass").isEmpty })
+        let r = TrackRecord.build(i, p, verdicts: Array(repeating: .object([:]), count: p.preds.count),
+                                  assessments: Array(repeating: .object(["falseNegative": true, "status": "DATA_UNAVAILABLE"]), count: p.obsEvents.count), now: Fixtures.now)
+        XCTAssertNil(r.ledgerError)
+        XCTAssertEqual(r.figures["mTotal"], "\(p.rows.count)")
+        XCTAssertEqual(r.figures["obUnknown"], "\(p.obsEvents.count)")
+        XCTAssertNotNil(Backtest.rows(Fixtures.json("model-backtest.json")))
+        XCTAssertFalse(TrackRecord.published(Fixtures.json("model-verdicts.json")).status.isEmpty)
+    }
+}
+
+#if canImport(JavaScriptCore)
+/// On Apple platforms: the bundled site scripts run in JavaScriptCore and give
+/// the vectors' answers, so the engine the app ships is the site's.
+final class JavaScriptCoreTests: XCTestCase {
+    func engine() throws -> JSGradingEngine {
+        try XCTUnwrap(JSGradingEngine(directory: Fixtures.repoRoot), "site scripts not found at the repository root")
+    }
+
+    func testScoreVectorsInJSC() throws {
+        let e = try engine()
+        for v in Fixtures.group("verification.score") {
+            let input = String(decoding: (v["in"] ?? .null).data(), as: UTF8.self)
+            let out = try e.evaluate("JSON.stringify(PNDVerification.score.apply(null, \(input)))")
+            let got = try JSONValue.parse(Data(out.utf8))
+            for k in ["hit", "partial", "miss", "pending", "precision", "recall", "f1"] {
+                XCTAssertEqual(got[k], v["out"]?[k], k)
+            }
+        }
+    }
+
+    func testClassifyVectorsInJSC() throws {
+        let e = try engine()
+        for v in Fixtures.group("hazards.classifyForecast") {
+            let input = String(decoding: (v["in"] ?? .null).data(), as: UTF8.self)
+            let out = try e.evaluate("JSON.stringify(PNDHazards.classifyForecast.apply(null, \(input)))")
+            XCTAssertEqual(try JSONValue.parse(Data(out.utf8)), v["out"] ?? .null)
+        }
+    }
+
+    func testGradingRunsOnFixtureLedgers() throws {
+        let i = TrackRecord.Inputs(outlookLedger: Fixtures.json("outlook-ledger.json"), verificationLedger: Fixtures.json("verification-ledger.json"),
+                                   observed: Fixtures.json("observed-disasters.json"), scanLedger: Fixtures.json("scan-ledger.json"))
+        let p = TrackRecord.prepare(i)
+        let g = try engine().grade(p, scanLedger: i.scanLedger, now: Fixtures.now)
+        XCTAssertEqual(g.verdicts.count, p.preds.count)
+        XCTAssertEqual(g.assessments.count, p.obsEvents.count)
+        XCTAssertTrue(g.verdicts.allSatisfy { $0["classification"]?.stringValue != nil })
+    }
+}
+#endif

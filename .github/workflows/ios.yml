@@ -1,0 +1,151 @@
+name: iOS
+
+# The native iOS app in ios/. It runs only when the app or this file changes,
+# because macOS minutes cost ten times Linux minutes on a private repository.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  core-linux:
+    name: PNDCore on Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container: swift:6.0-jammy
+    steps:
+      - uses: actions/checkout@v5
+      - name: swift test
+        working-directory: ios/PNDCore
+        run: swift test
+
+  app-macos:
+    name: App on iPhone and iPad simulators
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Choose Xcode
+        run: |
+          ls -d /Applications/Xcode*.app || true
+          XC=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then XC=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1); fi
+          echo "Using $XC"
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Render the site's own Track record figures
+        run: |
+          cd test && npm install --no-audit --no-fund && cd ..
+          node ios/scripts/track-record-expected.js > "$RUNNER_TEMP/track-expected.json"
+          cat "$RUNNER_TEMP/track-expected.json"
+
+      - name: PNDCore tests (JavaScriptCore grading checked against the site)
+        working-directory: ios/PNDCore
+        env:
+          PND_TRACK_EXPECTED: ${{ runner.temp }}/track-expected.json
+        run: swift test
+
+      - name: Generate the Xcode project
+        working-directory: ios
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Pick simulators
+        id: sims
+        run: |
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/devices.json"
+          python3 - "$RUNNER_TEMP/devices.json" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, re, sys
+          data = json.load(open(sys.argv[1]))["devices"]
+          def ver(rt):
+              m = re.search(r"iOS-(\d+)-(\d+)", rt)
+              return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+          ios = sorted([(ver(rt), d) for rt, ds in data.items() if "iOS" in rt for d in ds if d.get("isAvailable", True)],
+                       key=lambda x: x[0], reverse=True)
+          def pick(prefs, kind):
+              for p in prefs:
+                  for v, d in ios:
+                      if d["name"] == p:
+                          return d["udid"], d["name"]
+              for v, d in ios:
+                  if d["name"].startswith(kind):
+                      return d["udid"], d["name"]
+              raise SystemExit("no " + kind + " simulator")
+          phone = pick(["iPhone 16", "iPhone 16 Pro", "iPhone 15"], "iPhone")
+          pad = pick(["iPad (10th generation)", "iPad Air 11-inch (M2)", "iPad Air 11-inch (M3)", "iPad Air (5th generation)", "iPad (A16)"], "iPad")
+          print("phone=" + phone[0]); print("phone_name=" + phone[1])
+          print("pad=" + pad[0]); print("pad_name=" + pad[1])
+          PY
+          cat "$GITHUB_OUTPUT"
+
+      - name: Build for testing
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
+            -destination "id=${{ steps.sims.outputs.phone }}" -destination "id=${{ steps.sims.outputs.pad }}" \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tail -n 200
+
+      - name: UI tests on iPhone (${{ steps.sims.outputs.phone_name }})
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
+            -destination "id=${{ steps.sims.outputs.phone }}" -derivedDataPath "$RUNNER_TEMP/dd" \
+            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" CODE_SIGNING_ALLOWED=NO | tail -n 200
+
+      - name: UI tests on iPad (${{ steps.sims.outputs.pad_name }})
+        if: always()
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
+            -destination "id=${{ steps.sims.outputs.pad }}" -derivedDataPath "$RUNNER_TEMP/dd" \
+            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" CODE_SIGNING_ALLOWED=NO | tail -n 200
+
+      - name: Export screenshots
+        if: always()
+        run: ios/scripts/export-screenshots.sh "$RUNNER_TEMP/screenshots" "$RUNNER_TEMP/iPhone.xcresult" "$RUNNER_TEMP/iPad.xcresult"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ios-xcresults
+          path: |
+            ${{ runner.temp }}/iPhone.xcresult
+            ${{ runner.temp }}/iPad.xcresult
+          if-no-files-found: warn
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ios-screenshots
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: warn

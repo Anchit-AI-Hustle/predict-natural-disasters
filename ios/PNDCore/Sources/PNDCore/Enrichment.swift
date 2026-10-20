@@ -10,7 +10,7 @@ public struct Enrichment: Sendable {
     func objects(_ k: String) -> [Record] { json[k]?.arrayValue?.compactMap { Record(json: $0) } ?? [] }
 }
 
-public struct Link: Hashable, Sendable {
+public struct WebLink: Hashable, Sendable {
     public let label: String
     public let url: String
     public init(_ label: String, _ url: String) { self.label = label; self.url = url }
@@ -30,7 +30,7 @@ public struct EnrichmentCard: Hashable, Sendable, Identifiable {
     public var url: String? = nil
     public var small: String? = nil
     public var cta: String? = nil
-    public var links: [Link] = []
+    public var links: [WebLink] = []
 }
 
 public struct KeyValue: Hashable, Sendable, Identifiable {
@@ -38,7 +38,7 @@ public struct KeyValue: Hashable, Sendable, Identifiable {
     public let key: String
     public let value: String
     public var note: String? = nil
-    public var links: [Link] = []
+    public var links: [WebLink] = []
 }
 
 public struct EnrichmentPanel: Sendable, Identifiable {
@@ -107,16 +107,16 @@ public enum EnrichmentPanels {
         rows.append(KeyValue(key: "Areas affected", value: s(w["affectedAreaText"]).isEmpty ? "-" : s(w["affectedAreaText"])))
         if let c = w["coordinates"], c.isTruthy {
             let m = w["mapLinks"] ?? .object([:])
-            var links: [Link] = []
-            if !s(m["openStreetMap"]).isEmpty { links.append(Link("OpenStreetMap \u{2197}", s(m["openStreetMap"]))) }
-            if !s(m["googleMaps"]).isEmpty { links.append(Link("Google Maps \u{2197}", s(m["googleMaps"]))) }
-            if !s(m["windy"]).isEmpty { links.append(Link("Weather map \u{2197}", s(m["windy"]))) }
+            var links: [WebLink] = []
+            if !s(m["openStreetMap"]).isEmpty { links.append(WebLink("OpenStreetMap \u{2197}", s(m["openStreetMap"]))) }
+            if !s(m["googleMaps"]).isEmpty { links.append(WebLink("Google Maps \u{2197}", s(m["googleMaps"]))) }
+            if !s(m["windy"]).isEmpty { links.append(WebLink("Weather map \u{2197}", s(m["windy"]))) }
             let lat = c["lat"]?.jsNumber ?? .nan, lon = c["lon"]?.jsNumber ?? .nan
             rows.append(KeyValue(key: "Coordinates", value: JS.toFixed(lat, 4) + ", " + JS.toFixed(lon, 4), links: links))
         }
         rows.append(KeyValue(key: "Type", value: e.type.isEmpty ? "-" : e.type))
         rows.append(KeyValue(key: "Source", value: e.source.isEmpty ? "-" : e.source,
-                             links: e.sourceURL.map { [Link("Open the original report \u{2197}", $0.absoluteString)] } ?? []))
+                             links: e.sourceURL.map { [WebLink("Open the original report \u{2197}", $0.absoluteString)] } ?? []))
         rows.append(KeyValue(key: "About these times", value: s(when["note"])))
         out.append(EnrichmentPanel(id: "whenWhere", title: panels[0].title, meta: "Updated " + fmt(d.generatedAt), rows: rows))
 
@@ -150,7 +150,7 @@ public enum EnrichmentPanels {
             meta: "\(news.count) report" + (news.count == 1 ? "" : "s") + " \u{00B7} only from established newsrooms and official agencies",
             cards: news.isEmpty ? [EnrichmentCard(title: "No news reports found yet",
                 body: ["News searches can be slow to pick up a new event. Try the directories below. This section refreshes by itself."],
-                links: s(searches["googleNews"]).isEmpty ? [] : [Link("Search news \u{2197}", s(searches["googleNews"]))])] : news.map(newsCard)))
+                links: s(searches["googleNews"]).isEmpty ? [] : [WebLink("Search news \u{2197}", s(searches["googleNews"]))])] : news.map(newsCard)))
 
         // 4. Situation reports
         let reports = d.objects("situationReports")
@@ -158,13 +158,13 @@ public enum EnrichmentPanels {
             meta: "\(reports.count) official report" + (reports.count == 1 ? "" : "s"),
             cards: reports.isEmpty ? [EnrichmentCard(title: "No matching ReliefWeb report yet",
                 body: ["Situation reports come out once aid groups organise a response, so there may be none in the first hours of an event."],
-                links: s(searches["reliefweb"]).isEmpty ? [] : [Link("Search ReliefWeb \u{2197}", s(searches["reliefweb"]))])] : reports.map(newsCard)))
+                links: s(searches["reliefweb"]).isEmpty ? [] : [WebLink("Search ReliefWeb \u{2197}", s(searches["reliefweb"]))])] : reports.map(newsCard)))
 
         // 5. Videos
         let videos = d.objects("videos")
         out.append(EnrichmentPanel(id: "videos", title: panels[4].title, meta: "\(videos.count) video" + (videos.count == 1 ? "" : "s"),
             cards: videos.isEmpty ? [EnrichmentCard(title: "No videos found", body: ["Video search may be down, or it has not picked up this event yet."],
-                links: s(searches["youtube"]).isEmpty ? [] : [Link("Search for videos \u{2197}", s(searches["youtube"]))])]
+                links: s(searches["youtube"]).isEmpty ? [] : [WebLink("Search for videos \u{2197}", s(searches["youtube"]))])]
                 : videos.map { EnrichmentCard(title: $0.title, imageURL: $0.s("thumbnail"), url: $0.s("url"), cta: "Watch \u{2197}") }))
 
         // 6. Emergency phone numbers
@@ -181,11 +181,11 @@ public enum EnrichmentPanels {
         var emails: [EnrichmentCard] = []
         for a in d.objects("authorities") where a.truthy("email") {
             emails.append(EnrichmentCard(title: a.s("name") + " (email)", email: a.s("email"),
-                links: a.truthy("contactUrl") ? [Link("Official contact page \u{2197}", a.s("contactUrl"))] : []))
+                links: a.truthy("contactUrl") ? [WebLink("Official contact page \u{2197}", a.s("contactUrl"))] : []))
         }
         for r in d.objects("reliefGroups") where r.truthy("email") {
             emails.append(EnrichmentCard(title: r.s("name") + " (email and phone)", phone: r.truthy("phone") ? r.s("phone") : nil, phoneSmall: true,
-                email: r.s("email"), links: r.truthy("contactUrl") ? [Link("Official contact page \u{2197}", r.s("contactUrl"))] : []))
+                email: r.s("email"), links: r.truthy("contactUrl") ? [WebLink("Official contact page \u{2197}", r.s("contactUrl"))] : []))
         }
         let helpMeta = (s(h["country"]).isEmpty ? "" : s(h["country"]) + " \u{00B7} ") + "\(nums.count) verified number" + (nums.count == 1 ? "" : "s") +
             " \u{00B7} \(emails.count) published email contact" + (emails.count == 1 ? "" : "s")
@@ -198,16 +198,16 @@ public enum EnrichmentPanels {
             cards: auth.isEmpty ? [EnrichmentCard(title: "We do not have a national agency listed for this country yet",
                 body: ["Use the directories below to find the right national agency."])]
                 : auth.map { x in EnrichmentCard(title: x.s("name"), body: ["Official national agency for warnings, advice and emergency response."],
-                    links: [Link("Open the official website \u{2197}", x.s("url"))] + (x.truthy("contactUrl") ? [Link("Contact \u{2197}", x.s("contactUrl"))] : [])) }))
+                    links: [WebLink("Open the official website \u{2197}", x.s("url"))] + (x.truthy("contactUrl") ? [WebLink("Contact \u{2197}", x.s("contactUrl"))] : [])) }))
 
         // 8. Support groups
         let support = d.objects("supportGroups")
         out.append(EnrichmentPanel(id: "support", title: panels[7].title, meta: "\(support.count) support group" + (support.count == 1 ? "" : "s"),
             cards: support.isEmpty ? [EnrichmentCard(title: "We do not have a national support group listed yet",
                 body: ["The IFRC directory below lists the Red Cross or Red Crescent society for every country."],
-                links: [Link("Find your national Red Cross or Red Crescent \u{2197}", "https://www.ifrc.org/national-societies-directory")])]
+                links: [WebLink("Find your national Red Cross or Red Crescent \u{2197}", "https://www.ifrc.org/national-societies-directory")])]
                 : support.map { x in EnrichmentCard(title: x.s("name"), body: ["National relief and support organisation."],
-                    links: (x.truthy("donate") ? [Link("Donate \u{2197}", x.s("donate"))] : []) + [Link("Website \u{2197}", x.s("url"))]) }))
+                    links: (x.truthy("donate") ? [WebLink("Donate \u{2197}", x.s("donate"))] : []) + [WebLink("Website \u{2197}", x.s("url"))]) }))
 
         // 9. Relief and donations (always empty for forecasts)
         let relief = d.objects("reliefGroups")
@@ -215,12 +215,12 @@ public enum EnrichmentPanels {
         out.append(EnrichmentPanel(id: "relief", title: panels[8].title, meta: "\(relief.count) organisation" + (relief.count == 1 ? "" : "s") + " with donation pages",
             cards: relief.isEmpty ? [EnrichmentCard(title: "Donation links held back", body: [policy])]
                 : relief.map { x in EnrichmentCard(title: x.s("name"), body: [x.s("kind").isEmpty ? "Humanitarian support" : x.s("kind")],
-                    links: [Link("Official donation page \u{2197}", x.truthy("donate") ? x.s("donate") : x.s("url")), Link("Emergency page \u{2197}", x.s("url"))]) }
+                    links: [WebLink("Official donation page \u{2197}", x.truthy("donate") ? x.s("donate") : x.s("url")), WebLink("Emergency page \u{2197}", x.s("url"))]) }
                   + [EnrichmentCard(title: "About donations", body: [policy])]))
 
         // 10. Directories and provenance
         let dirs = d.objects("directories").map { x in
-            EnrichmentCard(title: x.s("name"), body: [x.s("kind")].filter { !$0.isEmpty }, links: [Link("Open \u{2197}", x.s("url"))])
+            EnrichmentCard(title: x.s("name"), body: [x.s("kind")].filter { !$0.isEmpty }, links: [WebLink("Open \u{2197}", x.s("url"))])
         }
         let prov = d.objects("sources").map { src -> String in
             let n = src.numOf("items")
