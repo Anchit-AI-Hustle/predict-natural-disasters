@@ -149,16 +149,25 @@ struct MyPlacesView: View {
 
     func savedCard(_ p: Place) -> some View {
         let a = PlaceRisk.assess(p, model.live, generatedAt: model.feed?.generatedAt)
+        let state = model.placeFeedState
         let coords = (p.lat.map { JS.numberString($0) } ?? "-") + ", " + (p.lon.map { JS.numberString($0) } ?? "-")
         return CardBox {
             Text(p.displayName).font(.headline).foregroundStyle(Theme.text)
             Text(placeLine(p, coords: coords))
                 .font(.footnote).foregroundStyle(Theme.muted)
             HStack {
-                if a.level == nil { NothingNearbyChip() } else { RiskBadge(level: a.level!, text: a.headline) }
-                Text(PlaceRisk.summaryChip(a)).font(.caption.weight(.heavy)).foregroundStyle(Theme.textSoft)
+                // CHECKING… / LIVE DATA UNAVAILABLE before the feed loads (changelog C26).
+                if let pend = PlaceRisk.pending(state) {
+                    PendingChip(text: pend.headline)
+                } else if let l = a.level {
+                    RiskBadge(level: l, text: a.headline)
+                } else {
+                    NothingNearbyChip()
+                }
+                Text(PlaceRisk.summaryChip(p, model.live, state: state)).font(.caption.weight(.heavy)).foregroundStyle(Theme.textSoft)
             }
             .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("placeChip")
             Button("Remove") { model.removePlace(p.id) }.buttonStyle(SecondaryButtonStyle())
                 .accessibilityLabel("Remove " + p.displayName)
         }
@@ -276,17 +285,23 @@ struct MyPlacesView: View {
             Text("Grouped by how sure we can be that each one affects your place. We show a distance only when the report gives the exact spot.")
                 .font(.footnote).foregroundStyle(Theme.muted)
             HStack {
-                Text("Updated " + Format.age(model.feed?.generatedAt)).font(.footnote).foregroundStyle(Theme.muted)
+                Text(model.placeFeedState == .failed ? "Live data unavailable" : "Updated " + Format.age(model.feed?.generatedAt)).font(.footnote).foregroundStyle(Theme.muted)
                 Spacer()
                 SortPicker(screen: "personal-risk_sortBy", keys: Sorts.myPlacesSorts, selection: $sort)
             }
-            if model.status == .failed {
+            // No feed yet: an empty list while loading, and the unavailable card
+            // when it failed, not five empty bands (changelog C26). The model
+            // tries again every 60 s until a load succeeds.
+            if model.placeFeedState == .failed {
+                UnavailableCard()
+                Notice(text: "Do not rely on this page in an emergency. Check with your local authorities.", stale: true)
+            } else if model.status == .failed {
                 Notice(text: "We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.", stale: true)
             }
             if countryWide > 0 && noCountry > 0 {
                 Notice(text: scopeNote(noCountry: noCountry, countryWide: countryWide))
             }
-            ForEach(PlaceRisk.bands, id: \.band) { b in
+            ForEach(model.placeFeedState == .loaded ? PlaceRisk.bands : [], id: \.band) { b in
                 let inBand = all.filter { $0.row.band == b.band }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(b.title).font(.subheadline.bold()).foregroundStyle(Theme.text).accessibilityAddTraits(.isHeader)

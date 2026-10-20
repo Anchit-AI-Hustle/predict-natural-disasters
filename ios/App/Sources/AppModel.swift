@@ -168,6 +168,11 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// `feedState(loaded, failed)` for place answers (changelog C26). A saved
+    /// or earlier feed counts as loaded, so a later failed refresh keeps the
+    /// last real answer.
+    var placeFeedState: PlaceRisk.FeedState { PlaceRisk.feedState(loaded: feed != nil, failed: status == .failed) }
+
     /// Nothing has loaded and the last load failed (`PND.feedDown`, changelog C19).
     var feedDown: Bool { feed == nil && status == .failed }
 
@@ -229,6 +234,17 @@ final class AppModel: ObservableObject {
     /// A tab bar tap: switch tabs, or go back to the root of the tab shown.
     func selectTab(_ tab: AppTab) {
         if selectedTab == tab { paths[tab] = [] } else { selectedTab = tab }
+    }
+
+    /// Bumped whenever a link asks for a tab, so the iPad sidebar follows
+    /// even when that tab was already the selected one.
+    @Published var tabRequest = 0
+
+    /// A link to a tab's own screen: that tab, at its root.
+    func showTab(_ tab: AppTab) {
+        paths[tab] = []
+        selectedTab = tab
+        tabRequest += 1
     }
 
     /// The logo button: Home / Check a place.

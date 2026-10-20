@@ -221,7 +221,7 @@ struct SettingsView: View {
             Section {
                 Text("Times are shown in this time zone, with the zone named. The default is this device\u{2019}s own time zone, as on the website.")
                     .font(.footnote).foregroundStyle(Theme.muted)
-                Button("Use this device\u{2019}s time zone (\(TimeZone.current.identifier))") { model.zoneID = TimeZone.current.identifier }
+                Button("Use this device\u{2019}s time zone (\(Format.tzMenuLabel(TimeZone.current.identifier)))") { model.zoneID = TimeZone.current.identifier }
                     .frame(minHeight: 44)
                 TextField("Search time zones", text: $search).frame(minHeight: 44)
                 ForEach(zones.prefix(80), id: \.self) { z in
@@ -229,7 +229,8 @@ struct SettingsView: View {
                         model.zoneID = z
                     } label: {
                         HStack {
-                            Text(z == "Asia/Kolkata" ? "IST \u{00B7} India" : z).foregroundStyle(Theme.text)
+                            // The chosen zone reads "{label} · {city}" (changelog C27); the others stay IANA ids.
+                            Text(z == model.zoneID || z == "Asia/Kolkata" ? Format.tzMenuLabel(z) : z).foregroundStyle(Theme.text)
                             Spacer()
                             if z == model.zoneID { Image(systemName: "checkmark").foregroundStyle(Theme.green).accessibilityLabel("Selected") }
                         }
@@ -237,7 +238,7 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Text("Time zone: " + model.zoneID + " (" + Format.tzLabel(model.zoneID) + ")")
+                Text("Time zone: " + Format.tzMenuLabel(model.zoneID))
             }
             Section("Alerts") {
                 Toggle("Alerts for my places", isOn: Binding(get: { model.alertsEnabled }, set: { on in

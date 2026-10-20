@@ -315,6 +315,70 @@ final class ParityVectorTests: XCTestCase {
         XCTAssertEqual(ForecastCheck.title("OUT-1"), "Checking forecast OUT-1")
     }
 
+    // MARK: C27 zone labels
+
+    func testZoneLabels() {
+        each("portal.zoneLabel") { i, o, m in
+            let tz = i["tz"]!.stringValue!, at = i["at"]!.stringValue!
+            let ms = JSDate.ms(at)!
+            XCTAssertEqual(Format.tzLabel(tz, at: ms), o["label"]?.stringValue, m + " " + tz)
+            XCTAssertEqual(Format.fmtDate(at, tz: tz), o["fmtDate"]?.stringValue, m + " " + tz)
+            XCTAssertEqual(Format.fmtTime(at, tz: tz), o["fmtTime"]?.stringValue, m + " " + tz)
+            XCTAssertEqual(Format.tzMenuLabel(tz, at: ms), o["menuLabel"]?.stringValue, m + " " + tz)
+            XCTAssertFalse(Format.tzLabel(tz, at: ms).contains("/"), "never an IANA id")
+        }
+    }
+
+    // MARK: C26 place answers before the feed loads
+
+    /// The two records `tools/make-parity-vectors.js placeAnswerVectors()`
+    /// serves (the vector names them by id only).
+    static func placeAnswerFeed(_ ids: [String]) -> [Record] {
+        let hour = 3_600_000.0
+        let updated = JSONValue.string(JSDate.iso(Fixtures.now - hour))
+        let hit = Record(["id": "usgs-dl", "type": "Earthquake", "title": "M 5.6 - 12 km N of Delhi, India", "source": "USGS", "sourceType": "official",
+                          "evidenceState": "observed", "proximityEligible": true, "magnitude": 5.6, "alert": "Orange", "severity": "Severe",
+                          "severityRank": 4, "country": "India", "region": "Delhi", "lat": 28.7, "lon": 77.2, "updated": updated])
+        let far = Record(["id": "usgs-jp", "type": "Earthquake", "title": "M 5.1 - 20 km E of Miyako, Japan", "source": "USGS", "sourceType": "official",
+                          "evidenceState": "observed", "alert": "Green", "severityRank": 2, "country": "Japan", "lat": 39.6, "lon": 142.2, "updated": updated])
+        return [hit, far].filter { ids.contains($0.id) }
+    }
+
+    func testPlaceAnswerStates() {
+        let g = obj("home.placeAnswerStates")
+        XCTAssertEqual(strings(g["placeAnswerStates"]), ["loading", "failed", "loaded"])
+        let cases = g["cases"]?.arrayValue ?? []
+        XCTAssertEqual(cases.count, 5)
+        withZone(nil) {
+            for c in cases {
+                let m = c["in"]?["state"]?.stringValue ?? ""
+                let place = Place(json: c["in"]!["place"]!)
+                // Replay the loads: "hang" never answers, "fail" fails, a list loads.
+                var loaded = false, failed = false, events: [Record] = []
+                for step in c["in"]?["feed"]?.arrayValue ?? [] {
+                    if step.stringValue == "fail" { if !loaded { failed = true } }
+                    else if let ids = step.arrayValue { events = Self.placeAnswerFeed(ids.compactMap { $0.stringValue }); loaded = true; failed = false }
+                }
+                let state = PlaceRisk.feedState(loaded: loaded, failed: failed)
+                let card = PlaceRisk.answerCard(place, events: events, state: state, generatedAt: loaded ? JSDate.iso(Fixtures.now) : nil)
+                let o = c["out"] ?? .null
+                XCTAssertEqual(card.eyebrow, o["eyebrow"]?.stringValue, m)
+                XCTAssertEqual(card.badge, o["badge"]?.stringValue, m)
+                XCTAssertEqual(card.heading, o["heading"]?.stringValue, m)
+                XCTAssertEqual(card.happening, o["happening"]?.stringValue, m)
+                XCTAssertEqual(card.unavailableCard, o["unavailableCard"]?.boolValue, m)
+                XCTAssertEqual(card.why, o["why"]?.stringValue, m)
+                XCTAssertEqual(card.steps, strings(o["steps"]), m)
+                XCTAssertEqual(card.lastChecked, o["lastChecked"]?.stringValue, m)
+                XCTAssertEqual(card.busy ? "true" : "false", o["busy"]?.stringValue, m)
+                if state != .loaded { XCTAssertNotEqual(card.badge, "Nothing reported nearby", "no false all-clear: " + m) }
+            }
+        }
+        XCTAssertEqual(PlaceRisk.summaryChip(Place(kind: "Home", name: "x", lat: 1, lon: 1, country: "", countryCode: ""), [], state: .loading), "CHECKING\u{2026}")
+        XCTAssertEqual(PlaceRisk.summaryChip(Place(kind: "Home", name: "x", lat: 1, lon: 1, country: "", countryCode: ""), [], state: .failed), "LIVE DATA UNAVAILABLE")
+        XCTAssertEqual(PlaceRisk.summaryChip(Place(kind: "Home", name: "x", lat: 1, lon: 1, country: "", countryCode: ""), [], state: .loaded), "NOTHING REPORTED NEARBY")
+    }
+
     /// The groups this file asserts (VectorTests checks every group has a test).
     static let groups: Set<String> = ["sort.windowEndEnded", "search.emptyHtml.counts", "search.countryCount", "continents.NAMES",
         "continents.continentNamed", "fixtures.places.continents", "continents.continentsOf", "continents.onContinent", "portal.inPlace",
@@ -323,10 +387,10 @@ final class ParityVectorTests: XCTestCase {
         "fixtures.events.mixed", "portal.observed", "portal.openForecasts", "portal.isHighAlert", "portal.sourcesReporting",
         "portal.liveWord", "detail.statusWords", "fixtures.events.collection", "collection.keep", "verdicts.LABELS", "verdicts.label",
         "fixtures.verdictFiles", "forecastDetail.gradeOf", "portal.timezoneDefault", "home.render", "alerts.pager",
-        "verificationDetail.render"]
+        "verificationDetail.render", "portal.zoneLabel", "home.placeAnswerStates"]
 
-    func testThirtySixNewGroups() {
-        XCTAssertEqual(Self.groups.count, 36)
+    func testEveryNewGroupIsNamed() {
+        XCTAssertEqual(Self.groups.count, 38)
         let all = Set((Fixtures.vectors.objectValue ?? [:]).keys)
         XCTAssertEqual(Self.groups.subtracting(all), [], "groups named here but missing from test-vectors.json")
     }

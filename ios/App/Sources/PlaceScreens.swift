@@ -168,7 +168,15 @@ struct LocationDetailView: View {
             ScreenHeader(eyebrow: "Place", title: hasCoords ? "Disasters near \(name)" : "Disasters in \(name)", subtitle: "Current events and alerts for this place.")
             TrustNote(groups: [.feed, .models, .place])
             FeedBanner()
-            if let a = a {
+            if hasCoords, let pend = PlaceRisk.pending(model.placeFeedState) {
+                // "Checking…" then "Live data unavailable" before the feed loads (changelog C26).
+                HStack(alignment: .top, spacing: 8) {
+                    PendingChip(text: pend.headline)
+                    Text(pend.text).font(.footnote).foregroundStyle(Theme.textSoft)
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityAddTraits(model.placeFeedState == .loading ? .updatesFrequently : [])
+            } else if let a = a {
                 HStack(alignment: .top, spacing: 8) {
                     if let l = a.level { RiskBadge(level: l) } else { NothingNearbyChip() }
                     Text(a.why).font(.footnote).foregroundStyle(Theme.textSoft)

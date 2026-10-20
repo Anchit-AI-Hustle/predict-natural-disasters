@@ -88,19 +88,20 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, @un
 
     /// Foreground evaluation on every feed load, as the site's
     /// `evaluateRiskNotifications` does on /alerts and every other feed page
-    /// (features.md section 16.2): whenever notifications are allowed, with or
-    /// without saved places. Place alerts need a saved place; major global
-    /// events (official Red, M6.5+, tsunami, severe cyclone) do not. The site
-    /// skips this when its push service is on only so that nothing is said
-    /// twice; here the background check and this share one 6-hour memory
-    /// (`pnd_notified`), so nothing is said twice either way.
+    /// (features.md section 16.2). The alerts switch is the off-switch for
+    /// every notification this app shows; with it on and notifications
+    /// allowed, both rules run. Place alerts need a saved place; major global
+    /// events (official Red, M6.5+, tsunami, severe cyclone) do not. The
+    /// background check and this share one 6-hour memory (`pnd_notified`),
+    /// so nothing is said twice.
     @MainActor
     func evaluateForeground(model: AppModel) {
-        guard !model.fixtureMode else { return }
+        guard model.alertsEnabled, !model.fixtureMode else { return }
         let events = model.live, places = model.places
         Task {
             let status = await self.authorizationStatus()
-            guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+            let granted = status == .authorized || status == .provisional || status == .ephemeral
+            guard AlertRules.notificationsAllowed(switchOn: model.alertsEnabled, permissionGranted: granted) else { return }
             await Self.post(events: events, places: places)
         }
     }

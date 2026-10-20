@@ -26,7 +26,15 @@ struct RouteLink<Label: View>: View {
     }
 
     var body: some View {
-        Button { model.paths[stackTab, default: []].append(route) } label: { label }
+        Button {
+            // A tab's own screen opens its tab ("Risk map" selects Map), not
+            // a copy of it inside the current stack.
+            if let tab = AppTab.allCases.first(where: { $0.rootRoute == route }) {
+                model.showTab(tab)
+            } else {
+                model.paths[stackTab, default: []].append(route)
+            }
+        } label: { label }
     }
 }
 

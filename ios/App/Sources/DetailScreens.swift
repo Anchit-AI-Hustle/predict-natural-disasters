@@ -421,6 +421,8 @@ struct ForecastDetailView: View {
     let id: String
     @State var ledgerRecord: Record?
     @State var ledgerChecked = false
+    /// The ledger read failed: say the data is unavailable, not "not found" (changelog C20).
+    @State var ledgerFailed = false
     /// The forecast's grade from the verification ledger or the model verdicts (changelog C4).
     @State var grade: Verdicts.Grade?
 
@@ -432,7 +434,7 @@ struct ForecastDetailView: View {
                 content(e, frozenAt: live == nil ? ledgerRecord?.first("recordedAt", "freezeTimestamp")?.jsString : nil)
             } else if (model.feed == nil && model.status != .failed) || (model.feed != nil && !ledgerChecked) {
                 ProgressView(Copy.loading).tint(Theme.text)
-            } else if model.status == .failed && model.feed == nil {
+            } else if (model.status == .failed && model.feed == nil) || ledgerFailed {
                 gone("Live data unavailable", "We could not load our forecasts, so this one cannot be shown right now. Trying again automatically. See all our forecasts.")
             } else {
                 gone("Forecast not found", "We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or see all our forecasts.")
@@ -443,10 +445,15 @@ struct ForecastDetailView: View {
         }
         .task(id: model.feed?.generatedAt) {
             guard model.feed != nil, Format.findEvent(model.all, id) == nil, ledgerRecord == nil else { ledgerChecked = true; return }
-            if let r = try? await model.client.ledgerRow(id: id) {
-                var raw = r.raw
-                raw["forecast"] = .bool(true)
-                ledgerRecord = Record(raw)
+            do {
+                if let r = try await model.client.ledgerRow(id: id) {
+                    var raw = r.raw
+                    raw["forecast"] = .bool(true)
+                    ledgerRecord = Record(raw)
+                }
+                ledgerFailed = false
+            } catch {
+                ledgerFailed = true
             }
             ledgerChecked = true
         }

@@ -465,6 +465,30 @@ struct HomeTableRow: View {
     }
 }
 
+/// The place answer's badge: a level, "Nothing reported nearby" once the
+/// feed has loaded, or "Checking…" / "Live data unavailable" before it.
+struct AnswerBadge: View {
+    let card: PlaceRisk.AnswerCard
+    var body: some View {
+        if let l = card.level {
+            RiskBadge(level: l)
+        } else if card.state == .loaded {
+            NothingNearbyChip()
+        } else {
+            PendingChip(text: card.badge)
+        }
+    }
+}
+
+/// "Checking…" or "Live data unavailable": the unknown style, never a level.
+struct PendingChip: View {
+    let text: String
+    var body: some View {
+        RiskBadge(level: .unknown, text: text, accessibilityText: text)
+            .accessibilityIdentifier("pendingChip")
+    }
+}
+
 /// The KPI loading shimmer (stops with Reduce Motion).
 struct ShimmerBar: View {
     @Environment(\.accessibilityReduceMotion) var reduce
@@ -486,50 +510,37 @@ struct PlaceResultCard: View {
     @State var saveNote: String?
 
     var body: some View {
-        let a = PlaceRisk.assess(place, model.live, generatedAt: model.feed?.generatedAt)
-        let acts = PlaceRisk.actionsFor(a)
-        let lead = a.lead?.event
-        let tz = model.zoneID
+        // Before the feed loads the answer is "Checking…" or "Live data
+        // unavailable", never an all-clear (changelog C26). It answers again
+        // by itself when the data arrives; a later failed refresh keeps it.
+        let card = PlaceRisk.answerCard(place, events: model.live, state: model.placeFeedState,
+                                        generatedAt: model.feed?.generatedAt, tz: model.zoneID)
         VStack(alignment: .leading, spacing: 10) {
-            Eyebrow(text: "Current risk")
+            Eyebrow(text: card.eyebrow)
             HStack(alignment: .center, spacing: 8) {
-                if let l = a.level { RiskBadge(level: l) } else { NothingNearbyChip() }
+                AnswerBadge(card: card)
                 Text(place.name).font(.headline).foregroundStyle(Theme.text).fixedSize(horizontal: false, vertical: true)
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("placeResultHeader")
-            block("What\u{2019}s happening") {
-                if let e = lead {
-                    Text(Format.titleOf(e)).font(.subheadline.bold()).foregroundStyle(Color(hex: "#DCECE4"))
-                    Text(e.type + " \u{00B7} " + Format.placeOf(e, "Place not given") + " \u{00B7} reported " + Format.age(e.updated))
-                        .font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
-                } else {
-                    Text("None of our sources reports anything at this place right now.").font(.subheadline).foregroundStyle(Color(hex: "#DCECE4"))
-                }
+            block("What\u{2019}s happening") { happening(card) }
+            if let why = card.why {
+                block("Why we\u{2019}re showing this") { Text(why).font(.subheadline).foregroundStyle(Color(hex: "#DCECE4")).accessibilityIdentifier("placeWhy") }
             }
-            block("Why we\u{2019}re showing this") { Text(a.why).font(.subheadline).foregroundStyle(Color(hex: "#DCECE4")).accessibilityIdentifier("placeWhy") }
             block("What should I do?") {
-                ForEach(acts.steps, id: \.self) { s in
+                ForEach(card.steps, id: \.self) { s in
                     HStack(alignment: .top, spacing: 6) { Text("\u{2022}"); Text(s) }.font(.subheadline).foregroundStyle(Color(hex: "#DCECE4"))
                 }
-                Text(acts.authority).font(.subheadline).foregroundStyle(Theme.authority)
+                Text(card.authority).font(.subheadline).foregroundStyle(Theme.authority)
             }
-            block("Source") {
-                if let e = lead {
-                    Text(Format.provenance(e) + " \u{00B7} " + e.source).font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
-                    if let u = e.sourceURL { Link("Open the original report \u{2192}", destination: u).font(.footnote).foregroundStyle(Theme.link) }
-                } else {
-                    Text("No report was used for this answer.").font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
-                }
-            }
+            if card.state == .loaded { block("Source") { source(card.lead) } }
             block("Last checked") {
-                Text(model.feed?.generatedAt.map { Format.fmtDate($0, tz: tz) + " \u{00B7} " + Format.age($0) } ?? "not yet: the data is still loading")
-                    .font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+                Text(card.lastChecked).font(.footnote).foregroundStyle(Color(hex: "#DCECE4")).accessibilityIdentifier("lastChecked")
             }
             FlowRow(spacing: 8) {
                 Button("Save place") { save() }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("savePlace")
                 Button("Alert me if this changes") { alertMe() }.buttonStyle(SecondaryButtonStyle())
-                if let e = lead {
+                if let e = card.lead {
                     RouteLink("See details", value: Route.detail(for: e)).buttonStyle(SecondaryButtonStyle())
                 } else {
                     RouteLink("See details", value: Route.myPlaces).buttonStyle(SecondaryButtonStyle())
@@ -541,7 +552,29 @@ struct PlaceResultCard: View {
         .background(Theme.panelTop, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.panelBorder, lineWidth: 1))
         .accessibilityElement(children: .contain)
+        // iOS has no aria-busy; a card still checking is marked as updating.
+        .accessibilityAddTraits(card.busy ? .updatesFrequently : [])
         .accessibilityIdentifier("placeResult")
+    }
+
+    @ViewBuilder func happening(_ card: PlaceRisk.AnswerCard) -> some View {
+        if card.unavailableCard {
+            UnavailableCard()
+        } else if let t = card.leadTitle {
+            Text(t).font(.subheadline.bold()).foregroundStyle(Color(hex: "#DCECE4"))
+            Text(card.leadLine ?? "").font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+        } else {
+            Text(card.happeningText ?? "").font(.subheadline).foregroundStyle(Color(hex: "#DCECE4"))
+        }
+    }
+
+    @ViewBuilder func source(_ lead: Record?) -> some View {
+        if let e = lead {
+            Text(Format.provenance(e) + " \u{00B7} " + (e.source.isEmpty ? "Source not stated" : e.source)).font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+            if let u = e.sourceURL { Link("Open the original report \u{2192}", destination: u).font(.footnote).foregroundStyle(Theme.link) }
+        } else {
+            Text("No report was used for this answer.").font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+        }
     }
 
     func block<C: View>(_ title: String, @ViewBuilder _ c: () -> C) -> some View {

@@ -128,6 +128,24 @@ final class ParityChangeTests: XCTestCase {
                        "https://predict-natural-disasters.anchit-tandon.com/data/verification-ledger.json")
     }
 
+    // Review fix (c): the alerts switch stops every notification, while
+    // major events still need no saved place.
+    func testAlertsSwitchIsTheOffSwitch() {
+        XCTAssertFalse(AlertRules.notificationsAllowed(switchOn: false, permissionGranted: true))
+        XCTAssertFalse(AlertRules.notificationsAllowed(switchOn: true, permissionGranted: false))
+        XCTAssertTrue(AlertRules.notificationsAllowed(switchOn: true, permissionGranted: true))
+    }
+
+    // C27: no raw IANA id after a time, in any zone the device may have.
+    func testNoZoneLabelIsAnIanaId() {
+        for z in ["America/Argentina/Buenos_Aires", "Asia/Kathmandu", "Africa/Nairobi", "Pacific/Auckland", "America/Sao_Paulo", "Europe/Berlin"] {
+            let l = Format.tzLabel(z, at: Fixtures.now)
+            XCTAssertFalse(l.contains("/") || l.isEmpty, z + " -> " + l)
+        }
+        XCTAssertEqual(Format.tzLabel("Not/AZone", at: Fixtures.now), "local time")
+        XCTAssertEqual(Format.tzMenuLabel("Asia/Kolkata"), "IST \u{00B7} India")
+    }
+
     // iOS fix (b): foreground notifications match the site's /alerts rules:
     // major global events are sent with no saved place at all.
     func testMajorEventsNeedNoSavedPlace() {

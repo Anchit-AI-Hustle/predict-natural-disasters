@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import PNDCore
 
 @main
@@ -57,6 +58,9 @@ struct TabRoot: View {
     @EnvironmentObject var model: AppModel
     /// Tabs are built when first opened, then kept, so each keeps its place.
     @State var opened: Set<AppTab> = []
+    /// The bar hides while the keyboard is up, as a system tab bar does,
+    /// instead of riding above it.
+    @State var keyboardShown = false
 
     var body: some View {
         ZStack {
@@ -66,7 +70,11 @@ struct TabRoot: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { PhoneTabBar() }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !keyboardShown { PhoneTabBar() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardShown = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboardShown = false }
         .onAppear { opened.insert(model.selectedTab) }
         .onChange(of: model.selectedTab) { _, t in opened.insert(t) }
     }
@@ -105,17 +113,23 @@ struct PhoneTabButton: View {
     let tab: AppTab
     let selected: Bool
     let action: () -> Void
+    /// Sizes follow Dynamic Type, capped so five labels still fit; the Large
+    /// Content Viewer shows the full label on a long press at the largest sizes.
+    @ScaledMetric(relativeTo: .caption2) var iconSize: CGFloat = 18
+    @ScaledMetric(relativeTo: .caption2) var labelSize: CGFloat = 10
+    @ScaledMetric(relativeTo: .caption2) var barHeight: CGFloat = 49
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: tab.icon).font(.system(size: 18, weight: .semibold))
-                Text(tab.title).font(.system(size: 10, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.6)
+                Image(systemName: tab.icon).font(.system(size: min(iconSize, 28), weight: .semibold))
+                Text(tab.title).font(.system(size: min(labelSize, 15), weight: .semibold)).lineLimit(1).minimumScaleFactor(0.6)
             }
             .foregroundStyle(selected ? Theme.green : Theme.muted)
-            .frame(maxWidth: .infinity, minHeight: 49)
+            .frame(maxWidth: .infinity, minHeight: min(barHeight, 64))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityShowsLargeContentViewer { Label(tab.title, systemImage: tab.icon) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
@@ -201,6 +215,7 @@ struct SplitRoot: View {
             }
         }
         .onChange(of: model.selectedTab) { _, t in selection = .tab(t) }
+        .onChange(of: model.tabRequest) { _, _ in selection = .tab(model.selectedTab) }
         .onChange(of: selection) { _, s in if case .tab(let t)? = s, model.selectedTab != t { model.selectedTab = t } }
     }
 }

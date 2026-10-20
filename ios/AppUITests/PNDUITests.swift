@@ -257,6 +257,26 @@ final class PNDUITests: XCTestCase {
         shot(app, "41-offline-alerts")
     }
 
+    /// A failed first load is not an all-clear for the reader's own place
+    /// (changelog C26): Home and My places say the data is unavailable.
+    func testFailedFeedIsNotAnAllClear() {
+        let app = launch(["-PNDFixtureFail", "-PNDFixturePlaces"])
+        let card = el(app, "placeResult")
+        waitFor(card, 30)
+        waitFor(card.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Live data unavailable")).firstMatch, 30)
+        let allClear = NSPredicate(format: "label CONTAINS[c] 'Nothing reported nearby'")
+        XCTAssertEqual(app.descendants(matching: .any).matching(allClear).count, 0, "no false all-clear on Home")
+        scrollTo(app, el(app, "lastChecked"))
+        XCTAssertEqual(el(app, "lastChecked").label, "not yet: the latest data could not be loaded")
+        shot(app, "42-offline-place-answer")
+        open(app, tab: "places", title: "My places")
+        let chip = el(app, "placeChip")
+        scrollTo(app, chip)
+        XCTAssertTrue(chip.label.contains("LIVE DATA UNAVAILABLE"), chip.label)
+        XCTAssertEqual(app.descendants(matching: .any).matching(allClear).count, 0, "no false all-clear on My places")
+        shot(app, "43-offline-my-places")
+    }
+
     func testMoreScreenAndSettings() {
         let app = launch()
         let more = el(app, "moreButton")
