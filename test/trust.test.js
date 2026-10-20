@@ -173,3 +173,24 @@ test('no page shows its own clock as the time its data was updated', () => {
   }
   assert.deepEqual(bad, [], bad.join('\n'));
 });
+
+test('a detail page’s ledger request is not taken for the feed it rendered', async () => {
+  /* An id the feed does not carry sends forecast-detail on to ?ledger=1,
+     whose answer has a generatedAt but no provider statuses. */
+  const r = await renderPage('forecast-detail.html', {
+    search: '?id=not-a-real-forecast',
+    waitFor: d => d.querySelector('.trust-src li .trust-ok, .trust-src li .trust-down')
+  });
+  assert.ok(r.apiCalls.some(u => /ledger=1/.test(u)), 'the page did not ask for the ledger, so this tests nothing');
+  assert.ok(r.document.querySelector('.trust-src li .trust-ok, .trust-src li .trust-down'), 'provider statuses were replaced by the ledger answer');
+  assert.match(r.document.querySelector('.trust-when').textContent, /weather models last run/);
+});
+
+test('when the track record does not load, the note says so rather than loading forever', async () => {
+  const r = await renderPage('accuracy.html', {
+    beforeParse(w) { const f = w.fetch; w.fetch = u => /\/data\//.test(String(u)) ? Promise.resolve({ ok: false, status: 503, headers: { get: () => null }, json: async () => ({}) }) : f(u); },
+    waitFor: d => /did not load/.test((d.querySelector('.trust-when') || {}).textContent || '')
+  });
+  assert.match(r.document.querySelector('.trust-when').textContent, /track record did not load/);
+  assert.equal(r.document.querySelectorAll('.trust-when time').length, 0);
+});

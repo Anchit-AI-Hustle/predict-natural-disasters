@@ -96,22 +96,23 @@
 
   /* -------------------------------------------------- what the page fetched */
 
-  var state = { feed: null, feedFailed: false, files: {} };
+  var state = { feed: null, feedFailed: false, files: {}, filesAsked: 0, filesDone: 0 };
 
   function take(path, d) {
     if (!d || typeof d !== 'object') return;
     if (path === '/api/events') {
-      if (!d.generatedAt) return;
-      /* A copy older than one already shown is not news: a detail page asks
-         for the ledger after the feed, and that answer is a different shape. */
-      var prev = state.feed && Date.parse(state.feed.generatedAt);
-      if (prev && Date.parse(d.generatedAt) < prev) return;
+      /* Only the feed itself: a detail page also asks for ?ledger=1, which
+         carries a generatedAt of its own but no provider statuses, and taking
+         it would show a time for data the page did not render. The latest
+         feed the page received is the one it drew, so it always wins. */
+      if (!d.generatedAt || !d.meta || !d.meta.sources) return;
       state.feed = { generatedAt: d.generatedAt, meta: d.meta || {} };
       state.feedFailed = false;
     } else {
       var at = d.updatedAt || d.generatedAt;
       if (!at && Array.isArray(d)) return;
       if (at) state.files[path] = at;
+      state.filesDone++;
     }
     render();
   }
@@ -125,13 +126,20 @@
         var raw = typeof input === 'string' ? input : (input && input.url) || '';
         path = raw.split('#')[0].split('?')[0].replace(/^[a-z]+:\/\/[^/]+/i, '');
       } catch (e) { path = ''; }
-      if (path === '/api/events' || /^\/data\/[\w-]+\.json$/.test(path)) {
+      var isData = /^\/data\/[\w-]+\.json$/.test(path);
+      if (isData) state.filesAsked++;
+      var failed = function () {
+        if (path === '/api/events' && !state.feed) state.feedFailed = true;
+        if (isData) state.filesDone++;
+        render();
+      };
+      if (path === '/api/events' || isData) {
         p.then(function (r) {
-          if (!r || !r.ok) { if (path === '/api/events' && !state.feed) { state.feedFailed = true; render(); } return; }
+          if (!r || !r.ok) { failed(); return; }
           /* A clone, so the page still reads the body it asked for. */
           var copy = typeof r.clone === 'function' ? r.clone() : r;
-          if (copy && typeof copy.json === 'function') copy.json().then(function (d) { take(path, d); }, function () {});
-        }, function () { if (path === '/api/events' && !state.feed) { state.feedFailed = true; render(); } });
+          if (copy && typeof copy.json === 'function') copy.json().then(function (d) { take(path, d); }, failed);
+        }, failed);
       }
       return p;
     };
@@ -147,13 +155,19 @@
 
   /* The visitor's own time zone, named, because "3:08 PM" alone is a
      different moment in every reader's zone. */
+  function chosenZone() {
+    /* A zone the visitor picked in the header, so the note and the page
+       write one moment the same way; otherwise the visitor's own. */
+    try { return localStorage.getItem('pnd_timezone') || undefined; } catch (e) { return undefined; }
+  }
   function when(iso) {
     var d = new Date(iso);
     if (!iso || isNaN(d)) return '';
-    var text;
+    var text, opts = { day: 'numeric', month: 'short', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
+    var tz = chosenZone();
     try {
-      text = d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric',
-        hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+      text = d.toLocaleString(undefined, tz ? Object.assign({ timeZone: tz }, opts) : opts);
     } catch (e) { text = d.toString(); }
     return '<time datetime="' + esc(d.toISOString()) + '" title="' + esc(d.toISOString().replace('T', ' ').slice(0, 16) + ' UTC') + '">' + esc(text) + '</time>';
   }
@@ -212,7 +226,9 @@
       var times = Object.keys(state.files).map(function (k) { return state.files[k]; })
         .filter(function (t) { return !isNaN(Date.parse(t)); })
         .sort(function (a, b) { return Date.parse(b) - Date.parse(a); });
-      bits.push(times.length ? 'Track record last recorded ' + when(times[0]) : 'Track record: loading…');
+      bits.push(times.length ? 'Track record last recorded ' + when(times[0])
+        : state.filesAsked && state.filesDone >= state.filesAsked ? 'The track record did not load, so no update time can be shown'
+          : 'Track record: loading…');
     }
     return bits.join(' · ');
   }
@@ -233,13 +249,15 @@
   var box = null;
   function render() {
     if (!box) return;
-    var u = box.querySelector('[data-trust-when]');
-    if (u) u.innerHTML = updatedLine();
-    var open = box.querySelector('.trust-src');
-    var wasOpen = open && open.open;
-    var holder = box.querySelector('[data-trust-sources]');
-    if (holder) {
-      holder.innerHTML = sourcesHtml();
+    /* Rebuilt only when something it says has changed: the feed is polled
+       every minute, and replacing an unchanged list took keyboard focus out
+       of it each time. */
+    var u = box.querySelector('[data-trust-when]'), line = updatedLine();
+    if (u && u.__html !== line) { u.innerHTML = line; u.__html = line; }
+    var holder = box.querySelector('[data-trust-sources]'), list = sourcesHtml();
+    if (holder && holder.__html !== list) {
+      var open = holder.querySelector('.trust-src'), wasOpen = open && open.open;
+      holder.innerHTML = list; holder.__html = list;
       if (wasOpen) holder.querySelector('.trust-src').open = true;
     }
   }
@@ -258,7 +276,7 @@
     box.innerHTML =
       '<p class="trust-warn" data-keep-acronyms><span class="trust-ico" aria-hidden="true">i</span><span><b>Experimental model, not an official warning.</b> ' +
       'For real alerts, follow your national weather or disaster agency: ' + agencyLine() + '.</span></p>' +
-      '<p class="trust-when" data-keep-acronyms data-trust-when aria-live="polite"></p>' +
+      '<p class="trust-when" data-keep-acronyms data-trust-when></p>' +
       '<div data-trust-sources></div>';
     if (anchor) anchor.insertAdjacentElement('afterend', box);
     else main.insertBefore(box, main.firstChild);
@@ -308,6 +326,8 @@
     'hazard-detail': ['hazards', 'type'], 'historical-event-detail': ['history', 'id'], 'source-detail': ['sources', 'source']
   };
   function canonical() {
+    /* The not-found page answers any address; it must not claim one. */
+    if (document.querySelector('meta[name="robots"][content*="noindex"]')) return;
     var path = location.pathname, url = '';
     if (PRETTY.test(path)) url = SITE + path.replace(/\/$/, '');
     else {
