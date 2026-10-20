@@ -17,7 +17,12 @@ function buildRows(places){const rows=[];places.forEach(x=>events.forEach(e=>{co
    an area's centre point are a fact about that area's shape. */
 /* The same answer the homepage gives for this place (place-risk.js), so the
    two pages can never rate one place differently. */
-function summarise(x){const A=PNDPlaceRisk.assess(x,events);
+/* Whether the feed has loaded, and whether the last try failed. Before it
+   loads a saved place is not "nothing reported nearby": it is still being
+   checked, or the data is unavailable (place-risk.js feedState, C26). */
+let feedLoaded=false,feedFailed=false;const feedState=()=>PNDPlaceRisk.feedState(feedLoaded,feedFailed);
+function summarise(x){if(feedState()!=='loaded')return PNDPlaceRisk.PENDING[feedState()].headline.toUpperCase();
+  const A=PNDPlaceRisk.assess(x,events);
   if(!A.level)return 'NOTHING REPORTED NEARBY';
   const lead=A.lead;const why=!lead?'':lead.r.band==='B'?'inside an official warning area'
     :lead.r.band==='A'&&lead.r.containment===true?'inside a reported affected area'
@@ -31,7 +36,10 @@ function draw(){const a=PND.savedLocations();
   saved.innerHTML=a.length?a.map(x=>`<div class="card"><b>${x.kind===x.name?PND.esc(x.kind):PND.esc(x.kind)+' · '+PND.esc(x.name)}</b><div class="muted">${x.lat}, ${x.lon}${x.country?' · '+PND.esc(x.country):' · country unknown'}${x.updatedAt?' · updated '+PND.esc(PND.age(x.updatedAt)):''}</div><button class="btn" onclick="PND.removeLocation('${x.id}');draw();placesChanged()">Remove</button></div>`).join(''):'<div class="empty">No saved places yet. Search for a place above and save it.</div>';
   const rows=orderRisks(buildRows(a));
   saved.querySelectorAll('.card').forEach((el,i)=>{const x=a[i];if(!x)return;el.insertAdjacentHTML('beforeend',`<div class="provenance">${PND.esc(summarise(x))}</div>`)});
-  risks.innerHTML=PNDHazards.RISK_BANDS.map(b=>bandSection(b,rows.filter(r=>r.r.band===b.key))).join('');
+  /* No feed: the dangers list is not a set of empty bands. */
+  if(feedState()==='failed')risks.innerHTML=PND.unavailableHtml()+'<div class="stale">Do not rely on this page in an emergency. Check with your local authorities.</div>';
+  else if(feedState()==='loading')risks.innerHTML='';
+  else risks.innerHTML=PNDHazards.RISK_BANDS.map(b=>bandSection(b,rows.filter(r=>r.r.band===b.key))).join('');
   /* A country-wide outlook applies to a country, and a place saved as bare
      coordinates has none recorded - so those outlooks can be neither shown
      nor ruled out for it. Said once, with the remedy, rather than guessed at
@@ -40,7 +48,9 @@ function draw(){const a=PND.savedLocations();
   const placeless=a.filter(x=>!x.country).length;
   scopeNote.textContent=(wide&&placeless)
     ?(placeless===1?'1 of your saved places has':placeless+' of your saved places have')+' no country recorded, so we cannot tell whether '+(wide===1?'1 forecast that covers a whole country applies':wide+' forecasts that cover a whole country apply')+' to '+(placeless===1?'it':'them')+'. Search for the place by name instead of typing coordinates, and we can check.'
-    :''}/* Enter in the search box searches. It used to submit the form instead, and the browser stopped that at the empty latitude and longitude, so Enter did nothing a visitor could see. Save stays on its own button. */placeName.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();findPlace.click()}});f.onsubmit=e=>{e.preventDefault();PND.saveLocation({kind:kind.value,name:placeName.value,lat:+lat.value,lon:+lon.value,country:foundCountry||'',countryCode:foundCountryCode||''});foundCountry='';foundCountryCode='';f.reset();draw();placesChanged()};PND.getEvents().then(d=>{events=d.events||[];PND.evaluateRiskNotifications(events);fresh.textContent='Updated '+PND.age(d.generatedAt||(d.meta&&d.meta.generatedAt));draw()}).catch(()=>{fresh.textContent='Live data unavailable';risks.innerHTML='<div class="stale">We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.</div>'});/* The country is asked for and kept, because a country-wide outlook applies
+    :''}/* Enter in the search box searches. It used to submit the form instead, and the browser stopped that at the empty latitude and longitude, so Enter did nothing a visitor could see. Save stays on its own button. */placeName.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();findPlace.click()}});f.onsubmit=e=>{e.preventDefault();PND.saveLocation({kind:kind.value,name:placeName.value,lat:+lat.value,lon:+lon.value,country:foundCountry||'',countryCode:foundCountryCode||''});foundCountry='';foundCountryCode='';f.reset();draw();placesChanged()};/* A failed first load is tried again every minute until it loads, and the
+   saved places are answered again when it does. */
+let feedRetry=null;function loadFeed(){return PND.getEvents().then(d=>{events=d.events||[];feedLoaded=true;feedFailed=false;clearTimeout(feedRetry);PND.evaluateRiskNotifications(events);fresh.textContent='Updated '+PND.age(d.generatedAt||(d.meta&&d.meta.generatedAt));draw()}).catch(()=>{if(feedLoaded)return;feedFailed=true;fresh.textContent='Live data unavailable';draw();clearTimeout(feedRetry);feedRetry=setTimeout(loadFeed,60000)})}loadFeed();/* The country is asked for and kept, because a country-wide outlook applies
    to a country and not to a radius around whichever point it was anchored at:
    without it, a United States outlook anchored in Florida cannot be shown to
    a home in California. A place entered as bare coordinates has none, and the
