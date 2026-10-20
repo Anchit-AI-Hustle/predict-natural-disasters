@@ -91,14 +91,16 @@ struct SplitRoot: View {
                         // Tagged rows, not value links: a value link in the sidebar makes
                         // the split view claim every value link on the page as well.
                         Label(t.title, systemImage: t.icon)
-                            .tag(SidebarItem.tab(t))
+                            .accessibilityElement(children: .combine)
                             .accessibilityAddTraits(.isButton)
                             .accessibilityIdentifier("sidebar-" + t.rawValue)
+                            .tag(SidebarItem.tab(t))
                     }
                     Label("More pages", systemImage: "ellipsis.circle")
-                        .tag(SidebarItem.more)
+                        .accessibilityElement(children: .combine)
                         .accessibilityAddTraits(.isButton)
                         .accessibilityIdentifier("sidebar-more")
+                        .tag(SidebarItem.more)
                 } header: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Predict Natural Disasters").font(.headline).foregroundStyle(Theme.text)

@@ -64,14 +64,16 @@ final class PNDUITests: XCTestCase {
     func open(_ app: XCUIApplication, tab: String, title: String) {
         if isPad {
             let item = el(app, "sidebar-" + tab)
-            if !item.exists {
+            if !(item.exists && item.isHittable) {
                 // Portrait iPad may hide the sidebar behind a button.
                 for name in ["ToggleSidebar", "Show Sidebar", "Sections"] {
                     let toggle = app.navigationBars.buttons[name].firstMatch
                     if toggle.exists && toggle.isHittable { toggle.tap(); break }
                 }
             }
-            if item.waitForExistence(timeout: 5) { item.tap() } else {
+            if item.waitForExistence(timeout: 5) {
+                if item.isHittable { item.tap() } else { item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+            } else {
                 let cell = app.staticTexts[title]
                 if cell.exists { cell.tap() }
             }
