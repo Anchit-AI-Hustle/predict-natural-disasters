@@ -63,9 +63,13 @@ final class PNDUITests: XCTestCase {
                     if toggle.exists && toggle.isHittable { toggle.tap(); break }
                 }
             }
-            if item.waitForExistence(timeout: 5) { item.tap(); return }
-            let cell = app.staticTexts[title]
-            if cell.exists { cell.tap() }
+            if item.waitForExistence(timeout: 5) { item.tap() } else {
+                let cell = app.staticTexts[title]
+                if cell.exists { cell.tap() }
+            }
+            // In portrait the sidebar floats over the page; close it so the page can be tapped.
+            let dismiss = el(app, "PopoverDismissRegion")
+            if dismiss.waitForExistence(timeout: 2) && dismiss.isHittable { dismiss.tap() }
             return
         }
         let button = app.tabBars.buttons[title]
@@ -135,7 +139,8 @@ final class PNDUITests: XCTestCase {
             waitFor(app.staticTexts[r.2].firstMatch, 30)
             if r.0 != "history" && r.0 != "notfound" { waitFor(el(app, "trustNote")) }
             if r.0 == "quiet" { waitFor(el(app, "quietNote")) }
-            if r.0 != "notfound" { scrollTo(app, el(app, "enrichment")) }
+            // The source page has no enrichment block (features.md 10.2).
+            if r.0 != "notfound" && r.0 != "source" { scrollTo(app, el(app, "enrichment")) }
             shot(app, "20-detail-" + r.0)
             app.terminate()
         }
