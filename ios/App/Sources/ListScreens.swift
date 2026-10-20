@@ -17,7 +17,7 @@ struct MapScreen: View {
             HStack { SortPicker(screen: "live-map_sortBy", keys: Sorts.eventSorts, selection: $sort); Spacer() }
             RefreshRow(status: model.status == .failed ? Copy.loadError : model.statusLine())
             MapCard(records: Array(list.prefix(220)), height: 420) { model.push(Route.detail(for: $0)) }
-            Panel("Latest events", trailing: AnyView(NavigationLink("See all \u{2192}", value: Route.collection(.recentEvents, query: nil)).font(.caption))) {
+            Panel("Latest events", trailing: AnyView(RouteLink("See all \u{2192}", value: Route.collection(.recentEvents, query: nil)).font(.caption))) {
                 if list.isEmpty && model.feed != nil { EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "events")) { q in model.push(.collection(.events, query: q)) } }
                 LazyVStack(spacing: 8) { ForEach(list.prefix(30)) { EventCard(record: $0) } }
             }
@@ -50,11 +50,11 @@ struct AlertsView: View {
             HStack { RiskFilterPicker(selection: $level); SortPicker(screen: "alerts_sortBy", keys: Sorts.eventSorts, selection: $sort) }
             RefreshRow(status: model.statusLine())
             HStack(spacing: 8) {
-                NavigationLink("Live events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
-                NavigationLink("Disasters now and past", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Live events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Disasters now and past", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
             }
             MapCard(records: Array(list.prefix(250)), height: 260) { model.push(Route.detail(for: $0)) }
-            Panel("Current official alerts", trailing: AnyView(NavigationLink("See all official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
+            Panel("Current official alerts", trailing: AnyView(RouteLink("See all official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
                 if list.isEmpty && model.feed != nil {
                     EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "official alerts")) { q in model.push(.collection(.events, query: q)) }
                 }
@@ -62,7 +62,7 @@ struct AlertsView: View {
                     ForEach(list.prefix(40)) { e in AlertCard(record: e) }
                 }
             }
-            Panel("Source status", trailing: AnyView(NavigationLink("About our sources \u{2192}", value: Route.collection(.resources, query: nil)).font(.caption))) {
+            Panel("Source status", trailing: AnyView(RouteLink("About our sources \u{2192}", value: Route.collection(.resources, query: nil)).font(.caption))) {
                 ForEach(Screens.sourceRows(model.meta, tz: tz), id: \.name) { r in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(r.name).font(.footnote.bold()).foregroundStyle(Theme.text)
@@ -82,7 +82,7 @@ struct AlertCard: View {
     @EnvironmentObject var model: AppModel
     let record: Record
     var body: some View {
-        NavigationLink(value: Route.detail(for: record)) {
+        RouteLink(value: Route.detail(for: record)) {
             CardBox {
                 FlowRow { RecordRiskBadge(record: record); SourcePill(source: record.source) }
                 Text(Format.titleOf(record)).font(.headline).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
@@ -169,7 +169,7 @@ struct ForecastTable: View {
 
     var body: some View {
         LimitedList(items: records, page: 30) { e in
-            NavigationLink(value: Route.detail(for: e)) { row(e) }.buttonStyle(.plainArea)
+            RouteLink(value: Route.detail(for: e)) { row(e) }.buttonStyle(.plainArea)
         }
     }
 
@@ -254,8 +254,8 @@ struct ForecastsView: View {
             }
             RefreshRow(label: "\u{21BB} Refresh live data", status: model.statusLine())
             HStack(spacing: 8) {
-                NavigationLink("Forecast calendar", value: Route.collection(.forecastCalendar, query: nil)).buttonStyle(SecondaryButtonStyle())
-                NavigationLink("Full table", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Forecast calendar", value: Route.collection(.forecastCalendar, query: nil)).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Full table", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
             }
             MapCard(records: Array((fc + high).prefix(300)), height: 260) { model.push(Route.detail(for: $0)) }
             Panel("Forecasts by hazard") {
@@ -277,13 +277,13 @@ struct ForecastsView: View {
                     }
                 }
             }
-            Panel("Forecasts \u{00B7} \(fc.count) (of \(fcAll.count))", trailing: AnyView(NavigationLink("Full table \u{2192}", value: Route.collection(.forecastList, query: nil)).font(.caption))) {
+            Panel("Forecasts \u{00B7} \(fc.count) (of \(fcAll.count))", trailing: AnyView(RouteLink("Full table \u{2192}", value: Route.collection(.forecastList, query: nil)).font(.caption))) {
                 if fc.isEmpty && model.feed != nil {
                     EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "forecasts")) { q in model.push(.collection(.events, query: q)) }
                 }
                 ForecastTable(records: fc)
             }
-            Panel("Events on high alert \u{00B7} \(high.count) (of \(highAll.count))", trailing: AnyView(NavigationLink("All official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
+            Panel("Events on high alert \u{00B7} \(high.count) (of \(highAll.count))", trailing: AnyView(RouteLink("All official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
                 Text(Copy.highAlertNote).font(.footnote).foregroundStyle(Theme.muted)
                 if high.isEmpty { Text("No event on high alert matches these filters.").font(.footnote).foregroundStyle(Theme.muted) }
                 LimitedList(items: high, page: 20) { e in
@@ -302,7 +302,7 @@ struct ForecastsView: View {
                     }
                 }
             }
-            Panel("How we make forecasts", trailing: AnyView(NavigationLink("Methodology \u{2192}", value: Route.methodology).font(.caption))) {
+            Panel("How we make forecasts", trailing: AnyView(RouteLink("Methodology \u{2192}", value: Route.methodology).font(.caption))) {
                 ForEach(Copy.howWeMakeForecasts, id: \.title) { i in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(i.title).font(.subheadline.bold()).foregroundStyle(Theme.text)
@@ -310,10 +310,10 @@ struct ForecastsView: View {
                     }
                 }
             }
-            Panel("Checking our forecasts", trailing: AnyView(NavigationLink("How we check forecasts \u{2192}", value: Route.verification).font(.caption))) {
+            Panel("Checking our forecasts", trailing: AnyView(RouteLink("How we check forecasts \u{2192}", value: Route.verification).font(.caption))) {
                 Text("ND-001 \u{00B7} Central Vietnam flash-flood + landslide forecast").font(.subheadline.bold()).foregroundStyle(Theme.text)
                 Text(Copy.nd001Blurb).font(.footnote).foregroundStyle(Theme.textSoft)
-                NavigationLink("See the ND-001 forecast \u{2192}", value: Route.forecast("ND-001")).font(.footnote)
+                RouteLink("See the ND-001 forecast \u{2192}", value: Route.forecast("ND-001")).font(.footnote)
             }
         }
     }
@@ -417,7 +417,7 @@ struct CalendarGroupView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(type.uppercased()).font(.caption2.weight(.heavy)).tracking(1.2).foregroundStyle(Color(hex: "#7FD8B4"))
             ForEach(bars) { b in
-                NavigationLink(value: Route.detail(for: b.record)) {
+                RouteLink(value: Route.detail(for: b.record)) {
                     CalendarBarRow(bar: b, nowPct: nowPct, labelWidth: labelWidth, trackWidth: trackWidth)
                 }
                 .buttonStyle(.plainArea)
@@ -487,7 +487,7 @@ struct VerificationListView: View {
             Panel("Current forecasts") {
                 if list.isEmpty { Text(model.status == .failed ? Copy.loadError : Copy.loading).font(.footnote).foregroundStyle(Theme.muted) }
                 LimitedList(items: list, page: 25) { e in
-                    NavigationLink(value: Route.forecast(e.id)) {
+                    RouteLink(value: Route.forecast(e.id)) {
                         CardBox {
                             FlowRow { RecordRiskBadge(record: e); Pill(text: e.s("forecastKind") == "frozen-benchmark" ? "Test case" : "Based on a current report") }
                             Text(Format.titleOf(e)).font(.headline).foregroundStyle(Theme.text).multilineTextAlignment(.leading)

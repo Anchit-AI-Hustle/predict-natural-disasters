@@ -288,7 +288,7 @@ struct MyPlacesView: View {
                         Text(b.empty).font(.footnote).foregroundStyle(Theme.muted)
                     }
                     ForEach(inBand.prefix(30)) { r in
-                        NavigationLink(value: Route.detail(for: r.record)) {
+                        RouteLink(value: Route.detail(for: r.record)) {
                             CardBox {
                                 Pill(text: Format.provenance(r.record))
                                 Text(r.record.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)

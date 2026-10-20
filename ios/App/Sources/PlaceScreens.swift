@@ -23,7 +23,7 @@ struct RegionsView: View {
                              ("Sources working", model.figText(Format.sourcesRatio(model.meta))), ("Updated", Format.age(model.feed?.generatedAt))])
             SearchField(prompt: "Search a country, region or city", text: $query)
             FlowRow(spacing: 8) {
-                NavigationLink("Open this place", value: Route.region(query.trimmingCharacters(in: .whitespaces).ifEmpty("World"))).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Open this place", value: Route.region(query.trimmingCharacters(in: .whitespaces).ifEmpty("World"))).buttonStyle(SecondaryButtonStyle())
                 Button("Find a city or area", action: find).buttonStyle(SecondaryButtonStyle())
             }
             if let n = note { Text(n).font(.footnote).foregroundStyle(Theme.textSoft) }
@@ -40,7 +40,7 @@ struct RegionsView: View {
                 if groups.isEmpty && model.feed != nil { Text("No current events here. Our sources have no current report for this place. This does not mean there is no danger.").font(.footnote).foregroundStyle(Theme.muted) }
                 ForEach(groups.prefix(40)) { g in
                     let lines = Screens.regionGroupLines(g)
-                    NavigationLink(value: Route.region(g.s("name"))) {
+                    RouteLink(value: Route.region(g.s("name"))) {
                         CardBox {
                             Text(g.s("name")).font(.headline).foregroundStyle(Theme.text)
                             Text(lines.0).font(.footnote).foregroundStyle(Theme.textSoft)
@@ -52,7 +52,7 @@ struct RegionsView: View {
             }
             Panel("Popular places") {
                 ForEach(Copy.popularPlaces, id: \.title) { p in
-                    NavigationLink(value: Route.region(p.title)) {
+                    RouteLink(value: Route.region(p.title)) {
                         HStack { Text(p.title).font(.subheadline.bold()).foregroundStyle(Theme.text); Spacer(); Text(p.body).font(.caption).foregroundStyle(Theme.muted) }
                             .frame(minHeight: 44)
                     }
@@ -105,11 +105,11 @@ struct RegionDetailView: View {
                         .accessibilityIdentifier("regionEmpty")
                 }
                 LimitedList(items: current, page: 20) { EventCard(record: $0) }
-                NavigationLink("See all events \u{2192}", value: Route.collection(.events, query: world ? nil : name)).font(.footnote)
+                RouteLink("See all events \u{2192}", value: Route.collection(.events, query: world ? nil : name)).font(.footnote)
             }
             Panel("Types of hazard") {
                 ForEach(Screens.typeCounts(current), id: \.type) { t in
-                    NavigationLink(value: Route.hazard(type: t.type, region: world ? nil : name)) {
+                    RouteLink(value: Route.hazard(type: t.type, region: world ? nil : name)) {
                         HStack { Text(t.type).foregroundStyle(Theme.text); Spacer(); Text("\(t.count)").foregroundStyle(Theme.muted) }.font(.subheadline).frame(minHeight: 44)
                     }
                     .buttonStyle(.plainArea)
@@ -120,7 +120,7 @@ struct RegionDetailView: View {
                 Text("What we show depends on what our global and national sources report. If a place has no current report, we show no events for it. That does not mean it is free of risk.").font(.footnote).foregroundStyle(Theme.muted)
             }
             Panel("Popular places") {
-                FlowRow(spacing: 8) { ForEach(Copy.popularPlaces.dropLast(), id: \.title) { NavigationLink($0.title, value: Route.region($0.title)).buttonStyle(OutlinePillButtonStyle()) } }
+                FlowRow(spacing: 8) { ForEach(Copy.popularPlaces.dropLast(), id: \.title) { RouteLink($0.title, value: Route.region($0.title)).buttonStyle(OutlinePillButtonStyle()) } }
             }
             Text("Help and context").font(.title3.bold()).foregroundStyle(Theme.text)
             EnrichmentSection(record: Screens.syntheticRecord(title: world ? "global natural disaster response" : "\(name) natural disaster",
@@ -313,7 +313,7 @@ struct CalamitiesView: View {
                 MessageCard(title: "No matching disasters reported right now.", detail: "Our sources have no current report that matches. This does not mean the place is safe.")
             }
             LimitedList(items: list, page: 30) { e in
-                NavigationLink(value: Route.calamity(e.id)) {
+                RouteLink(value: Route.calamity(e.id)) {
                     CardBox {
                         FlowRow { RecordRiskBadge(record: e); SourcePill(source: e.source); if e.cached { Pill(text: "Saved copy") } }
                         Text(e.title).font(.headline).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
@@ -325,7 +325,7 @@ struct CalamitiesView: View {
                 .buttonStyle(.plainArea)
             }
         }
-        Panel("Source status", trailing: AnyView(NavigationLink("Sources \u{2192}", value: Route.collection(.resources, query: nil)).font(.caption))) {
+        Panel("Source status", trailing: AnyView(RouteLink("Sources \u{2192}", value: Route.collection(.resources, query: nil)).font(.caption))) {
             ForEach(Screens.sourceRows(model.meta, tz: model.zoneID), id: \.name) { r in
                 KeyValueRow(key: r.name, value: r.detail + "\nChecked " + r.checked)
             }
@@ -341,11 +341,11 @@ struct CalamitiesView: View {
             FlowRow(spacing: 8) {
                 MenuPicker(label: "Filter by hazard type", selection: $hh, options: [("", "All hazards")] + History.filters.map { ($0, $0) })
                 MenuPicker(label: "Sort results", selection: $hsort, options: [("asc", "Oldest first"), ("desc", "Newest first")])
-                NavigationLink("See past and recent events", value: Route.collection(.historicalEvents, query: nil)).buttonStyle(SecondaryButtonStyle())
+                RouteLink("See past and recent events", value: Route.collection(.historicalEvents, query: nil)).buttonStyle(SecondaryButtonStyle())
             }
             Notice(text: History.notice)
             ForEach(arr) { e in
-                NavigationLink(value: Route.history(e.slug)) {
+                RouteLink(value: Route.history(e.slug)) {
                     CardBox {
                         HStack(alignment: .top) {
                             Text(e.year).font(.footnote.bold()).foregroundStyle(Theme.text).frame(width: 80, alignment: .leading)
@@ -390,7 +390,7 @@ struct HistoryDetailView: View {
                 Panel("Similar past disasters", trailing: AnyView(SortPicker(screen: "history_sortBy", keys: Sorts.historySorts, selection: $sort))) {
                     if rel.isEmpty { Text("No similar past disasters in our list.").font(.footnote).foregroundStyle(Theme.muted) }
                     ForEach(rel.prefix(8)) { x in
-                        NavigationLink(value: Route.history(x.s("id"))) {
+                        RouteLink(value: Route.history(x.s("id"))) {
                             CardBox {
                                 RiskBadge(level: x.s("severity") == "Catastrophic" ? .severe : .high, text: x.s("severity"))
                                 Text(x.s("name")).font(.subheadline.bold()).foregroundStyle(Theme.text)
@@ -401,9 +401,9 @@ struct HistoryDetailView: View {
                     }
                 }
                 FlowRow(spacing: 8) {
-                    NavigationLink("This hazard", value: Route.hazard(type: e.type.components(separatedBy: "/")[0].trimmingCharacters(in: .whitespaces), region: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("This region", value: Route.region(e.location.components(separatedBy: ",")[0].components(separatedBy: "/")[0].trimmingCharacters(in: .whitespaces))).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Current calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("This hazard", value: Route.hazard(type: e.type.components(separatedBy: "/")[0].trimmingCharacters(in: .whitespaces), region: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("This region", value: Route.region(e.location.components(separatedBy: ",")[0].components(separatedBy: "/")[0].trimmingCharacters(in: .whitespaces))).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Current calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
                 }
                 Text("Help and context").font(.title3.bold()).foregroundStyle(Theme.text)
                 EnrichmentSection(record: Screens.syntheticRecord(title: e.name, country: (e.location.components(separatedBy: ",").last ?? "").trimmingCharacters(in: .whitespaces),

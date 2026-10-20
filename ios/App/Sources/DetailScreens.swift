@@ -170,11 +170,11 @@ struct RecordDetailView: View {
                                 : "The source may no longer list this event. See all events to find the latest ones.")
                 Text(Copy.notFound).font(.subheadline).foregroundStyle(Theme.textSoft)
                 FlowRow(spacing: 8) {
-                    NavigationLink("Events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Official warnings", value: Route.collection(.officialWarnings, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
-                    NavigationLink("Regions", value: Route.regions).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Official warnings", value: Route.collection(.officialWarnings, query: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
+                    RouteLink("Regions", value: Route.regions).buttonStyle(SecondaryButtonStyle())
                 }
             }
         }
@@ -411,7 +411,7 @@ struct ForecastDetailView: View {
                 ScreenHeader(title: "Forecast not found", subtitle: "We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or go to the forecasts list.")
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("notFound")
-                NavigationLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+                RouteLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
             }
         }
         .toolbar {

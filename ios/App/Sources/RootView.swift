@@ -73,6 +73,7 @@ struct TabStack: View {
             RouteView(route: tab.rootRoute)
                 .navigationDestination(for: Route.self) { RouteView(route: $0) }
         }
+        .environment(\.stackTab, tab)
     }
 }
 
@@ -119,6 +120,7 @@ struct SplitRoot: View {
                 NavigationStack(path: model.path(.home)) {
                     MoreView().navigationDestination(for: Route.self) { RouteView(route: $0) }
                 }
+                .environment(\.stackTab, .home)
             case .tab(let t)?:
                 TabStack(tab: t).id(t)
             case nil:
@@ -137,7 +139,7 @@ struct RouteView: View {
         content
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: Route.more) {
+                    RouteLink(value: Route.more) {
                         Image(systemName: "ellipsis.circle").accessibilityLabel("More pages and settings")
                     }
                     .accessibilityIdentifier("moreButton")
@@ -218,7 +220,15 @@ struct MoreView: View {
     }
 
     func link(_ t: String, _ r: Route, _ icon: String) -> some View {
-        NavigationLink(value: r) { Label(t, systemImage: icon).foregroundStyle(Theme.text) }
+        RouteLink(value: r) {
+            HStack {
+                Label(t, systemImage: icon).foregroundStyle(Theme.text)
+                Spacer()
+                Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(Theme.muted)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
             .listRowBackground(Theme.card)
             .frame(minHeight: 44)
     }
