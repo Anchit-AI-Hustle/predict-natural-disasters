@@ -173,6 +173,13 @@ npm test
   named. It never shows the viewer's clock as the data's time: if the feed
   does not answer it says so.
 
+The note is part of each page's HTML, generated from `trust.js` by
+`node tools/trust-markup.js` (the test suite fails if a page's copy drifts),
+and styled by `trust.css` in `<head>`, so it is in place at first paint and
+loading the data does not move the page. The track record page hands the note
+its records' time (`PNDTrust.recorded`) instead of the note reading those
+files a second time.
+
 It also points each record's canonical link at the record's own address
 (`/disasters/<id>`), not at the shared template.
 

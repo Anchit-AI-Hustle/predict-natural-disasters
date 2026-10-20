@@ -183,7 +183,7 @@ test('a detail page’s ledger request is not taken for the feed it rendered', a
   });
   assert.ok(r.apiCalls.some(u => /ledger=1/.test(u)), 'the page did not ask for the ledger, so this tests nothing');
   assert.ok(r.document.querySelector('.trust-src li .trust-ok, .trust-src li .trust-down'), 'provider statuses were replaced by the ledger answer');
-  assert.match(r.document.querySelector('.trust-when').textContent, /weather models last run/);
+  assert.match(r.document.querySelector('.trust-when').textContent, /weather models run/);
 });
 
 test('when the track record does not load, the note says so rather than loading forever', async () => {
@@ -193,4 +193,24 @@ test('when the track record does not load, the note says so rather than loading 
   });
   assert.match(r.document.querySelector('.trust-when').textContent, /track record did not load/);
   assert.equal(r.document.querySelectorAll('.trust-when time').length, 0);
+});
+
+test('the note is in every page’s HTML, identical to what trust.js draws, so nothing moves when it loads', () => {
+  const { update, registry: reg } = require(path.join(ROOT, 'tools', 'trust-markup.js'));
+  const T = reg();
+  const stale = PAGES.filter(f => update(f, T) !== read(f));
+  assert.deepEqual(stale, [], 'run node tools/trust-markup.js: ' + stale.join(', '));
+  for (const f of PAGES) {
+    assert.match(head(f), /<link rel="stylesheet" href="\/trust\.css"><script src="\/trust\.js"/, f + ': trust.css must load with the script');
+    const html = read(f), hasNote = /<aside class="trust"/.test(html);
+    assert.equal(hasNote, groupsOf(f).length > 0, f + (hasNote ? ': a note on a page with no prediction' : ': no note in the HTML'));
+  }
+  assert.doesNotMatch(read('trust.js'), /createElement\('style'\)/, 'the note’s styles belong in trust.css, before first paint');
+});
+
+test('the track record’s files are not read a second time for the note', () => {
+  /* Only the feed is watched: the ledgers are 5 MB, and the page hands
+     over their time itself. */
+  assert.doesNotMatch(read('trust.js'), /isData|state\.files/);
+  assert.match(read('accuracy.html'), /PNDTrust\.recorded\(/);
 });

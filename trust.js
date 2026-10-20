@@ -23,6 +23,14 @@
  *
  * No data-trust at all is a page with no prediction or risk on it: it gets
  * the footer, and no note at the top.
+ *
+ * The note itself is in each page's HTML, written there by
+ * tools/trust-markup.js from noteHtml() below, and styled by trust.css in the
+ * page's <head>. Added by script after the page had drawn, it moved every
+ * page down by its own height (layout shift 0.12 to 0.39 on a phone) and
+ * became the largest thing on the first screen. This file only fills in the
+ * two parts that depend on the data: the update time and the source list.
+ * test/trust.test.js keeps every page's copy identical to noteHtml().
  */
 (function () {
   'use strict';
@@ -96,7 +104,11 @@
 
   /* -------------------------------------------------- what the page fetched */
 
-  var state = { feed: null, feedFailed: false, files: {}, filesAsked: 0, filesDone: 0 };
+  /* `ledger` is the track record's own last-written time, handed over by the
+     page that read it (recorded() below) rather than read again here: its
+     files are 5 MB of JSON, and parsing them a second time cost a phone over
+     a second of a main thread that was already blocked. */
+  var state = { feed: null, feedFailed: false, ledger: undefined };
 
   function take(path, d) {
     if (!d || typeof d !== 'object') return;
@@ -108,11 +120,6 @@
       if (!d.generatedAt || !d.meta || !d.meta.sources) return;
       state.feed = { generatedAt: d.generatedAt, meta: d.meta || {} };
       state.feedFailed = false;
-    } else {
-      var at = d.updatedAt || d.generatedAt;
-      if (!at && Array.isArray(d)) return;
-      if (at) state.files[path] = at;
-      state.filesDone++;
     }
     render();
   }
@@ -126,14 +133,11 @@
         var raw = typeof input === 'string' ? input : (input && input.url) || '';
         path = raw.split('#')[0].split('?')[0].replace(/^[a-z]+:\/\/[^/]+/i, '');
       } catch (e) { path = ''; }
-      var isData = /^\/data\/[\w-]+\.json$/.test(path);
-      if (isData) state.filesAsked++;
       var failed = function () {
-        if (path === '/api/events' && !state.feed) state.feedFailed = true;
-        if (isData) state.filesDone++;
+        if (!state.feed) state.feedFailed = true;
         render();
       };
-      if (path === '/api/events' || isData) {
+      if (path === '/api/events') {
         p.then(function (r) {
           if (!r || !r.ok) { failed(); return; }
           /* A clone, so the page still reads the body it asked for. */
@@ -190,9 +194,9 @@
 
   /* --------------------------------------------------------------- the note */
 
-  function list() {
+  function listOf(gs) {
     var out = [];
-    groups.forEach(function (g) { SOURCES[g].forEach(function (s) { out.push(s); }); });
+    gs.forEach(function (g) { SOURCES[g].forEach(function (s) { out.push(s); }); });
     return out;
   }
 
@@ -216,7 +220,7 @@
     if (groups.indexOf('feed') >= 0) {
       if (f) {
         var m = f.meta || {};
-        bits.push('Live data fetched from the agencies ' + when(f.generatedAt) +
+        bits.push('Live data from the agencies ' + when(f.generatedAt) +
           (m.live === false ? ' (they were not answering, so saved copies are shown)' : ''));
       } else if (state.feedFailed) {
         bits.push('The live data did not load, so no update time can be shown');
@@ -226,32 +230,41 @@
     }
     if (groups.indexOf('models') >= 0 && f && f.meta && f.meta.modelRun) {
       var mr = f.meta.modelRun;
-      if (mr.at) bits.push('weather models last run ' + when(mr.at) + (mr.served ? '' : ' (over 36 hours ago, so their forecasts are not shown)'));
+      if (mr.at) bits.push('weather models run ' + when(mr.at) + (mr.served ? '' : ' (over 36 hours ago, so their forecasts are not shown)'));
     }
     if (groups.indexOf('ledger') >= 0) {
-      var times = Object.keys(state.files).map(function (k) { return state.files[k]; })
-        .filter(function (t) { return !isNaN(Date.parse(t)); })
-        .sort(function (a, b) { return Date.parse(b) - Date.parse(a); });
-      bits.push(times.length ? 'Track record last recorded ' + when(times[0])
-        : state.filesAsked && state.filesDone >= state.filesAsked ? 'The track record did not load, so no update time can be shown'
+      bits.push(state.ledger ? 'Track record last recorded ' + when(state.ledger)
+        : state.ledger === null ? 'The track record did not load, so no update time can be shown'
           : 'Track record: loading…');
     }
     return bits.join(' · ');
   }
 
-  function sourcesHtml() {
-    var all = list();
-    var short = [];
-    all.forEach(function (s) { if (short.indexOf(s.short) < 0) short.push(s.short); });
-    /* Named, not counted: one organisation can supply two datasets, so a
-       count beside the names never matched them. */
-    return '<details class="trust-src"><summary data-keep-acronyms>Data sources: ' + esc(short.join(', ')) + '</summary><ul>' +
-      all.map(function (s) {
+  function itemsHtml(gs) {
+    return listOf(gs).map(function (s) {
         var st = statusOf(s);
         var external = /^https?:/.test(s.url);
         return '<li><a href="' + esc(s.url) + '"' + (external ? ' target="_blank" rel="noopener"' : '') + '>' + esc(s.name) + '</a>' +
           (st ? ' <span class="trust-st">' + st + '</span>' : '') + '<br><span class="trust-adds" data-keep-acronyms>' + esc(s.adds) + '</span></li>';
-      }).join('') + '</ul><p class="trust-more">What each source can and cannot see: <a href="/resources">Our sources</a> · <a href="/methodology">How it works</a></p></details>';
+    }).join('');
+  }
+
+  /* The note as it stands before any data has arrived: what every page
+     carries in its HTML. Sized for that state too, so filling it in does not
+     move what follows (trust.css reserves the update line's height). */
+  function noteHtml(gs) {
+    var short = [];
+    listOf(gs).forEach(function (s) { if (short.indexOf(s.short) < 0) short.push(s.short); });
+    var loading = gs.indexOf('feed') >= 0 ? 'Live data: loading…' : 'Track record: loading…';
+    /* Named, not counted: one organisation can supply two datasets, so a
+       count beside the names never matched them. */
+    return '<aside class="trust" aria-label="About this information" data-keep-acronyms>' +
+      '<p class="trust-warn"><span class="trust-ico" aria-hidden="true">i</span><span><b>Experimental model, not an official warning.</b> ' +
+      'For real alerts, follow your national agency: ' + agencyLine() + '.</span></p>' +
+      '<p class="trust-when" data-trust-when>' + loading + '</p>' +
+      '<details class="trust-src"><summary>Data sources: ' + esc(short.join(', ')) + '</summary>' +
+      '<ul data-trust-sources>' + itemsHtml(gs) + '</ul>' +
+      '<p class="trust-more">What each source can and cannot see: <a href="/resources">Our sources</a> · <a href="/methodology">How it works</a></p></details></aside>';
   }
 
   var box = null;
@@ -262,30 +275,24 @@
        of it each time. */
     var u = box.querySelector('[data-trust-when]'), line = updatedLine();
     if (u && u.__html !== line) { u.innerHTML = line; u.__html = line; }
-    var holder = box.querySelector('[data-trust-sources]'), list = sourcesHtml();
-    if (holder && holder.__html !== list) {
-      var open = holder.querySelector('.trust-src'), wasOpen = open && open.open;
-      holder.innerHTML = list; holder.__html = list;
-      if (wasOpen) holder.querySelector('.trust-src').open = true;
-    }
+    var holder = box.querySelector('[data-trust-sources]'), items = itemsHtml(groups);
+    if (holder && holder.__html !== items) { holder.innerHTML = items; holder.__html = items; }
   }
 
   function note() {
-    if (!groups.length || document.querySelector('.trust')) return;
+    if (!groups.length) return;
+    box = document.querySelector('.trust');
+    if (box) { render(); return; }
+    /* A page whose HTML lost its copy still gets one, late, rather than none. */
     /* A page whose prediction sits above <main> - the homepage answers "is
        this place at risk" in its hero - names where the note goes instead. */
     var after = me && me.getAttribute('data-trust-after');
     var anchor = after ? document.querySelector(after) : null;
     var main = document.querySelector('main') || document.body;
     if (!main) return;
-    box = document.createElement('aside');
-    box.className = 'trust';
-    box.setAttribute('aria-label', 'About this information');
-    box.innerHTML =
-      '<p class="trust-warn" data-keep-acronyms><span class="trust-ico" aria-hidden="true">i</span><span><b>Experimental model, not an official warning.</b> ' +
-      'For real alerts, follow your national weather or disaster agency: ' + agencyLine() + '.</span></p>' +
-      '<p class="trust-when" data-keep-acronyms data-trust-when></p>' +
-      '<div data-trust-sources></div>';
+    var tmp = document.createElement('div');
+    tmp.innerHTML = noteHtml(groups);
+    box = tmp.firstChild;
     if (anchor) anchor.insertAdjacentElement('afterend', box);
     else main.insertBefore(box, main.firstChild);
     render();
@@ -351,39 +358,15 @@
     if (og) og.setAttribute('content', url);
   }
 
-  /* ----------------------------------------------------------------- styles */
-
-  var CSS =
-    '.trust{margin:0 0 12px;padding:9px 12px;border:1px solid #2b624e;border-left:3px solid #ffbf2f;border-radius:10px;background:#071f18;color:#d9ebe3;font-size:13px;line-height:1.45}' +
-    'main:not([class])>.trust{margin:12px 16px}' +
-    '.trust p{margin:0}.trust-warn{display:flex;gap:8px;align-items:flex-start}' +
-    '.trust-ico{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1.5px solid #ffbf2f;color:#ffbf2f;font:700 12px/15px Georgia,serif;text-align:center;font-style:italic;margin-top:1px}' +
-    '.trust a{color:#6fe3ff}.trust a:visited{color:#d7b8ff}' +
-    '.trust-when{margin-top:4px!important;color:#9fbcb0;font-size:12px;padding-left:26px}.trust-when:empty{display:none}' +
-    '.trust-src{margin-top:4px;padding-left:26px;font-size:12px;color:#9fbcb0}' +
-    '.trust-src summary{cursor:pointer;color:#8ff0ca;overflow-wrap:anywhere}' +
-    '.trust-src ul{margin:6px 0;padding-left:18px}.trust-src li{margin:0 0 5px}' +
-    '.trust-adds{color:#c4d8cf}.trust-st{color:#9fbcb0}.trust-ok{color:#25e29c}.trust-down{color:#ffbf2f}' +
-    '.trust-more{margin-top:4px!important}' +
-    '.trust-foot{margin-top:10px;color:#c4d8cf;font-size:12px;max-width:90ch}.trust-foot p{margin:0 0 4px}' +
-    '.trust-foot ul{margin:0;padding-left:18px}.trust-foot li{margin:2px 0}.trust-foot a{color:#8ff0ca}' +
-    '.trust-foot small{color:#9fbcb0;margin-left:2px}.trust-foot li>span{color:#e6f2ec;font-weight:600}' +
-    '@media (max-width:600px){.trust{font-size:12.5px;padding:8px 10px}.trust-when,.trust-src{padding-left:0}}';
-
-  function style() {
-    if (document.getElementById('trust-css')) return;
-    var s = document.createElement('style');
-    s.id = 'trust-css';
-    s.textContent = CSS;
-    (document.head || document.documentElement).appendChild(s);
-  }
-
   /* After the page's own start-up, which builds the shared footer this adds
      to: the page's scripts sit at the end of <body>, so their DOMContentLoaded
      handlers were registered after this one. */
-  function start() { style(); canonical(); note(); setTimeout(footer, 0); }
+  function start() { canonical(); note(); setTimeout(footer, 0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 
-  window.PNDTrust = { OFFICIAL: OFFICIAL, SOURCES: SOURCES, groups: groups, state: state, when: when };
+  window.PNDTrust = { OFFICIAL: OFFICIAL, SOURCES: SOURCES, groups: groups, state: state, when: when, noteHtml: noteHtml,
+    /* The track record page hands over the time its records were last
+       written, or null when none could be read. */
+    recorded: function (iso) { state.ledger = iso || null; render(); } };
 })();
