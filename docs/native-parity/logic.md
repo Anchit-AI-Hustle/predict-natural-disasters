@@ -350,7 +350,22 @@ else: + "Keep an eye on the source (linked below) and on your local agency, not 
 - an NWS warning without geometry 20 km away: **level nil**. A band B row with undecidable containment does not
   produce a level, and the "why" text counts only band D rows. Port this as is.
 
-**My places summary chip** (`personal-risk.html summarise`): when there is no level, `NOTHING REPORTED NEARBY`.
+**Before the feed loads** (changelog C26, `place-risk.js`):
+```
+feedState(loaded, failed) = loaded ? "loaded" : failed ? "failed" : "loading"
+PENDING.loading = {headline: "Checking…", text: "Checking the latest reports for this place.",
+                   lastChecked: "not yet: the data is still loading"}
+PENDING.failed  = {headline: "Live data unavailable",
+                   text: "We could not load the latest reports, so nothing can be shown here. This does not mean nothing is happening. Trying again automatically.",
+                   lastChecked: "not yet: the latest data could not be loaded"}
+PENDING_STEP    = "For official information about this place, check your national or local disaster agency."
+```
+`loaded` means a feed has loaded on this screen at least once; `failed` that the last attempt failed. Every place
+answer (Home card, My places chip, place page line) calls `assess` only when the state is `loaded`, and shows
+`PENDING[state]` otherwise. `"…"` is U+2026. **[vectors: home.placeAnswerStates]**
+
+**My places summary chip** (`personal-risk.html summarise`): before the feed loads, `PENDING[state].headline`
+upper-cased (`CHECKING…`, `LIVE DATA UNAVAILABLE`). When there is no level, `NOTHING REPORTED NEARBY`.
 Otherwise `HEADLINE.uppercased()` followed by one of:
 `" · inside an official warning area"` (lead band B), `" · inside a reported affected area"` (band A with
 containment true), `" · a forecast covers it"` (band C), or `" · event {round(d)} km away"` when d is finite.
@@ -638,8 +653,20 @@ return r || c || fallback
   Oct Nov Dec** (note "Sept"). Hard-code them; do not rely on platform locale data.
   Examples: `"20 Oct 2026, 4:54 PM IST"`, `"05 Jan 2026, 11:35 PM IST"`, `"20 Oct 2026, 12:00 AM UTC"`.
 - `fmtTime(v)`: `"h:mm AM|PM {tzLabel}"`.
-- `tzLabel(tz)`: Asia/Kolkata → IST, UTC → UTC, America/New_York → ET, America/Los_Angeles → PT, Europe/London → UK,
-  Asia/Dubai → GST, Asia/Singapore → SGT, Asia/Tokyo → JST, Australia/Sydney → Sydney. Any other zone gives the IANA id.
+- `tzLabel(tz, at)` (changelog C27): Asia/Kolkata → IST, UTC → UTC, America/New_York → ET, America/Los_Angeles → PT,
+  Europe/London → UK, Asia/Dubai → GST, Asia/Singapore → SGT, Asia/Tokyo → JST, Australia/Sydney → Sydney. Any other
+  zone: the `timeZoneName` part of `Intl.DateTimeFormat('en-US', {timeZone: tz, timeZoneName: 'short'})` at the moment
+  `at` (the time being formatted; now when omitted). That is the en-US short name where CLDR has one ("CDT", "CST",
+  "MST", "EDT") and otherwise `GMT±H` or `GMT±H:MM` with no leading zero ("GMT-3", "GMT+5:45", "GMT+11"; "GMT" alone at
+  offset 0). When the platform gives nothing: `local time`. Never the IANA id. `fmtDate` and `fmtTime` pass their own
+  date as `at`, so a DST zone is labelled for that date (Europe/Paris "GMT+2" on 20 Oct, "GMT+1" on 5 Jan).
+  Native: ICU via `TimeZone.abbreviation(for:)`/`DateFormatter` with `en_US_POSIX` "zzz" (Swift) or
+  `DateTimeFormatter.ofPattern("zzz", Locale.US)` (Kotlin) give the same short names; check them against the vectors and
+  turn any "GMT-03:00" form into "GMT-3".
+- `tzMenuLabel(tz, at)`: the time zone menu's text for the chosen zone. `IST · India` for Asia/Kolkata; otherwise
+  `{tzLabel} · {city}` where city is the last `/` segment with `_` as space, or just `tzLabel` when there is no city,
+  the city equals the label (UTC), or the zone starts `Etc/` or `SystemV/`. Other menu options stay IANA ids.
+  **[vectors: portal.zoneLabel]** (`{in:{tz, at}, out:{label, fmtDate, fmtTime, menuLabel}}`)
 - The chosen zone (`PND.timezone`) is the stored `pnd_timezone`, else the device zone, else Asia/Kolkata (§6.13).
   The trust note's times use this same `fmtDate`, so one screen shows one zone.
 - **[vectors: portal.fmtDate, portal.fmtTime]** cover 5 timezones each.
@@ -1187,6 +1214,8 @@ spec's group names disappears.
 | `fixtures.verdictFiles` | (fixture) | the two data files served to the next group |
 | `forecastDetail.gradeOf` | `forecast-detail.html gradeOf` | in: `[id, targetEnd, filesDown?]`; out: `{grade, status}` (§10.4b) |
 | `portal.timezoneDefault` | `PND.timezone`, `tzLabel`, `fmtDate` | in: `[stored, browserZone]` (§6.13) |
+| `portal.zoneLabel` | `PND.tzLabel(tz, at)`, `fmtDate`, `fmtTime`, `tzMenuLabel` with that zone selected | in: `{tz, at}`; out: `{label, fmtDate, fmtTime, menuLabel}` (§6.4, changelog C27) |
+| `home.placeAnswerStates` | `index.html` rendered whole with a saved place and the feed held, refused or served | object: `{placeAnswerStates, cases[{in:{state, place, feed (per load: "hang", "fail" or record ids)}, out:{eyebrow, badge, heading, happening, unavailableCard, why, steps, lastChecked, busy}}]}`; states loading, failed, loaded-empty, loaded-with-hits, failed-then-loaded (changelog C26) |
 | `home.render` | `index.html` rendered whole | object: `feed`, `hazardFilterOptions`, `sortOptions`, `warningsTileNote`, `warningsTileTitle`, `liveEventsHeading`, `cases[{in:{hazardFilter, sort}, out:{kEvents, kEventsNote, kWarnings, kForecasts, kForecastsNote, kCountries, liveEvents (ids), latestEvents, officialWarnings, latestForecasts (table cells), hazardStrip[{hazard, text, link}]}}]` |
 | `alerts.pager` | `alerts.html` rendered whole | object: `{feedRecords, officialRecords, pageSize, steps[{action, out:{shown, note, button, kOfficial}}]}` |
 | `verificationDetail.render` | `verification-detail.html` rendered whole | object: `{fixtures:{forecast, reports}, cases[{in:{name, events, ledger}, out:{kVerdict, kEvidence, kTarget, kWindow, rows (8 × [metric, forecast, actual]), evidence (hrefs)}}]}` |

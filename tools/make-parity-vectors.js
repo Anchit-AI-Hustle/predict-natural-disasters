@@ -479,8 +479,18 @@ async function build() {
     return { timezone: wz.PND.timezone, tzLabel: wz.PND.tzLabel(), fmtDate: wz.PND.fmtDate('2026-10-20T11:24:19Z') };
   }, [[null, 'America/New_York'], [null, 'Asia/Kolkata'], [null, 'Europe/London'], [null, 'Asia/Kathmandu'], [null, ''], [null, 'throws'], ['UTC', 'America/New_York'], ['Asia/Tokyo', 'Europe/Paris']]);
 
+  // ---------- C27: the zone's label beside a time (portal.js tzLabel, tzMenuLabel)
+  V_['portal.zoneLabel'] = [];
+  for (const tz of ['Asia/Kolkata', 'UTC', 'America/New_York', 'Europe/London', 'America/Argentina/Buenos_Aires', 'Asia/Kathmandu', 'Australia/Lord_Howe', 'Europe/Paris', 'America/Chicago', 'America/Phoenix', 'Etc/GMT+5']) {
+    const wz = env({ tz });
+    for (const at of ['2026-10-20T11:24:19Z', '2026-01-05T18:05:00Z']) {
+      V_['portal.zoneLabel'].push({ in: { tz, at }, out: { label: wz.PND.tzLabel(tz, at), fmtDate: wz.PND.fmtDate(at), fmtTime: wz.PND.fmtTime(at), menuLabel: wz.PND.tzMenuLabel(tz, at) } });
+    }
+  }
+
   // ---------- whole pages, rendered with a fixed feed
   V_['home.render'] = await homeVectors();
+  V_['home.placeAnswerStates'] = await placeAnswerVectors();
   V_['alerts.pager'] = await alertsPagerVectors();
   V_['verificationDetail.render'] = await verificationDetailVectors();
 
@@ -625,6 +635,67 @@ async function homeVectors() {
   }
   r.close();
   return out;
+}
+
+/* C26. The home page's answer for a saved place before, and after, the feed
+   loads: "Checking…" while the first load is in flight, "Live data
+   unavailable" when it failed, and a real answer once data arrives. */
+async function placeAnswerVectors() {
+  const { renderPage } = require(path.join(ROOT, 'test', 'render.js'));
+  const place = { id: 'loc-1', kind: 'Home', name: 'Delhi home', lat: 28.61, lon: 77.21, country: 'India', countryCode: 'IN' };
+  const hit = { id: 'usgs-dl', type: 'Earthquake', title: 'M 5.6 - 12 km N of Delhi, India', source: 'USGS', sourceType: 'official', evidenceState: 'observed', proximityEligible: true, magnitude: 5.6, alert: 'Orange', severity: 'Severe', severityRank: 4, country: 'India', region: 'Delhi', lat: 28.7, lon: 77.2, updated: new Date(NOW - 3600e3).toISOString() };
+  const far = { id: 'usgs-jp', type: 'Earthquake', title: 'M 5.1 - 20 km E of Miyako, Japan', source: 'USGS', sourceType: 'official', evidenceState: 'observed', alert: 'Green', severityRank: 2, country: 'Japan', lat: 39.6, lon: 142.2, updated: new Date(NOW - 3600e3).toISOString() };
+  const feedOf = events => ({ generatedAt: new Date(NOW).toISOString(), meta: { live: true, sources: { gdacs: { ok: true }, usgs: { ok: true } } }, events });
+  const cases = [
+    { state: 'loading', steps: ['hang'] },
+    { state: 'failed', steps: ['fail'] },
+    { state: 'loaded-empty', steps: [[far]] },
+    { state: 'loaded-with-hits', steps: [[hit, far]] },
+    { state: 'failed-then-loaded', steps: ['fail', [hit, far]] }
+  ];
+  const clean = t => String(t || '').replace(/\s+/g, ' ').trim();
+  /* Text as read: each text node apart, so "<b>Live data unavailable.</b><p>We…" keeps its space. */
+  const words = el => { if (!el) return ''; const out = [], tw = el.ownerDocument.createTreeWalker(el, 4); while (tw.nextNode()) out.push(tw.currentNode.nodeValue); return clean(out.join(' ')); };
+  const out = [];
+  for (const c of cases) {
+    let step = c.steps[0];
+    const r = await renderPage('index.html', {
+      storage: { pnd_timezone: TZ, pnd_saved_locations: JSON.stringify([place]) },
+      beforeParse(w) {
+        w.eval(EN_US_NUMBERS);
+        /* "reported 1 hr ago" and "Last checked" read the clock. */
+        w.eval('Date.now=function(){return ' + NOW + '};');
+        const orig = w.fetch;
+        w.fetch = async (input) => {
+          const url = String(input && input.url ? input.url : input);
+          if (!/\/api\/events(?:\?|$)/.test(url)) return orig(input);
+          if (step === 'hang') return new Promise(() => {});
+          if (step === 'fail') return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
+          const copy = feedOf(JSON.parse(JSON.stringify(step)));
+          return { ok: true, status: 200, headers: { get: () => null }, json: async () => copy, text: async () => JSON.stringify(copy) };
+        };
+      },
+      waitFor: d => { const p = d.getElementById('placeResult'); return p && !p.hidden && (step === 'hang' || !/Checking…/.test(p.textContent)); },
+      timeoutMs: step === 'hang' ? 1500 : 15000
+    });
+    for (const s2 of c.steps.slice(1)) { step = s2; await r.window.load(); }
+    const d = r.document;
+    const block = h => { const b = [...d.querySelectorAll('#placeResult .pr-block')].find(x => clean(x.querySelector('h3').textContent) === h); return b || null; };
+    const happening = block("What's happening"), why = block("Why we're showing this"), last = block('Last checked');
+    out.push({ in: { state: c.state, place, feed: c.steps.map(s2 => Array.isArray(s2) ? s2.map(e => e.id) : s2) }, out: {
+      eyebrow: clean(d.querySelector('#placeResult .pr-eyebrow').textContent),
+      badge: clean(d.querySelector('#placeResult .pr-top .risk').textContent),
+      heading: clean(d.querySelector('#placeResult h2').textContent),
+      happening: happening ? [...happening.children].slice(1).map(words).join(' ') : '',
+      unavailableCard: !!d.querySelector('#placeResult .card.unavailable'),
+      why: why ? clean(why.querySelector('p').textContent) : null,
+      steps: [...d.querySelectorAll('#placeResult .pr-block li')].map(li => clean(li.textContent)),
+      lastChecked: last ? clean(last.querySelector('p').textContent) : null,
+      busy: d.getElementById('placeResult').getAttribute('aria-busy')
+    } });
+    r.close();
+  }
+  return { placeAnswerStates: ['loading', 'failed', 'loaded'], cases: out };
 }
 
 const serialise = v => JSON.stringify(v, null, 1);

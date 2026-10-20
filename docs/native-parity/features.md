@@ -55,6 +55,8 @@ page HTML), `4c11103` (accessibility, layout and performance), `a94cd45` (dead R
 | C23 | **My places keeps the country after an Enter search.** The field's change event after a search no longer clears the country the search found; only an edit by the reader does. | `personal-risk.html`: `chosenAs` | §5.2 | none |
 | C24 | **Map markers.** The mark keeps its size (`markerIcon` `iconSize`, 9 to 27 px by level) inside a square tap area of `max(24, size)` px centred on it, and markers are out of the keyboard tab order (the list beside the map is the keyboard path). Phones and save-data readers open on the flat map, not the globe. | `map-setup.js`: `riskMarker`; `globe.js`: `prefers` | design.md §3.3 | none |
 | C25 | **Static data reads revalidate.** `/data/*` is served `max-age=0, must-revalidate`; the track record reads its ledgers with `cache:'no-cache'` and no `?ts=`. The ReliefWeb candidate `/disasters/feed` was dropped (`endpoint` is now `https://reliefweb.int/disasters/rss.xml`). | `vercel.json`; `accuracy.html`: `readLedger`; `api/events.js` | api.md §5; §6 Track record "?ts= cache-busting" | none |
+| C26 | **A place answer before the feed loads is not an all-clear.** Was: the Home place answer (saved-place chip, typed search, "Use my location") ran `assess(place, [])` whenever no feed had loaded, so a failed or unfinished first load showed "Nothing reported nearby", "None of our sources reports anything at this place right now." and "No report was used for this answer."; My places showed `NOTHING REPORTED NEARBY` on every saved place and empty danger bands; a place page with coordinates showed no answer. Now every place answer asks `feedState(loaded, failed)` first. **Loading** (no feed yet, none failed): badge **"Checking…"** (`risk risk-unknown`), What's happening *"Checking the latest reports for this place."*, What should I do *"For official information about this place, check your national or local disaster agency."* plus the authority line, Last checked *"not yet: the data is still loading"*, no Why or Source block, `aria-busy="true"`. **Failed** (first load failed): badge **"Live data unavailable"**, What's happening is the C19 card (`PND.unavailableHtml`: **"Live data unavailable."** *"We could not load the latest reports, so nothing can be shown here. This does not mean nothing is happening. Trying again automatically."*), the same single step, Last checked *"not yet: the latest data could not be loaded"*. Save place, Alert me and See details (to My places) stay. The returning reader's own place is answered on arrival in these states too, and the answer is redrawn by itself, without scrolling, when the data arrives (each refresh re-answers quietly). A later failed refresh keeps the last real answer. My places: summary chip `CHECKING…` / `LIVE DATA UNAVAILABLE`; the danger list is empty while loading and the C19 card plus *"Do not rely on this page in an emergency. Check with your local authorities."* when failed; the load is retried every 60 s until it succeeds. Place page with coordinates: the answer line reads `Checking…` then `Live data unavailable` followed by the text above. | `place-risk.js`: `feedState`, `PENDING`, `PENDING_STEP`; `index.html`: `load()`, `pendingAnswer()`, `answer()`; `personal-risk.html`: `summarise()`, `draw()`, `loadFeed()`; `location-detail.html`: `pendingAnswer()`, `load()` | §1.1 auto answer; §1.2 badge and Last checked; §5.2 summary chip; §8.3 place answer line | `home.placeAnswerStates` |
+| C27 | **Zone labels are never raw IANA ids.** Was: `tzLabel` returned the IANA id for any zone outside the nine aliases, so with the device-zone default (C9) times read "20 Oct 2026, 8:24 AM America/Argentina/Buenos_Aires". Now the aliases stay (IST, UTC, ET, PT, UK, GST, SGT, JST, Sydney); any other zone takes `Intl.DateTimeFormat('en-US', {timeZone, timeZoneName:'short'})` for **the moment being formatted**, which is a short name where en-US has one (America/Chicago "CDT"/"CST", America/Phoenix "MST") and otherwise a GMT offset (America/Argentina/Buenos_Aires "GMT-3", Asia/Kathmandu "GMT+5:45", Australia/Lord_Howe "GMT+11" in October, Europe/Paris "GMT+2" in summer and "GMT+1" in winter, Etc/GMT+5 "GMT-5"). If the platform gives nothing: "local time". The time zone menu's chosen option reads `tzMenuLabel(tz)`: "IST · India" for Asia/Kolkata, otherwise "{label} · {city}" with the last IANA segment and "_" as space ("GMT-3 · Buenos Aires", "ET · New York"), or just the label when the city equals it ("UTC") or for `Etc/` zones ("GMT-5"); the other options stay IANA ids. The trust note uses `PND.fmtDate`, so it follows. | `portal.js`: `TZ_ALIASES`, `tzLabel(tz, at)`, `tzMenuLabel(tz, at)`, `fmtDate`, `fmtTime`, `timezoneOptions`; `trust.js`: `when()` (unchanged, uses `fmtDate`) | §17 zone labels and "A zone without a short label shows its IANA id"; logic.md §6.4 `tzLabel` | `portal.zoneLabel`; changed rows: `portal.fmtDate`, `portal.fmtTime`, `portal.fmtWhen`, `portal.windowText`, `portal.horizonText` (Europe/Paris), `portal.timezoneDefault` (Asia/Kathmandu) |
 
 ---
 
@@ -271,10 +273,23 @@ Implemented in `index.html` (self-contained; it uses `place-search.js`, `place-r
 - **Saved quick chips**: up to 4 saved places, shown as `{kind} · {name}`. Tapping one answers that place.
 - **Auto answer on arrival**: if the user has saved places, answer the first one with `id=='loc-current'`, otherwise
   the first saved place. Do this without scrolling, and show the note *"Showing your current location / your saved
-  place "{name}". Search above to check anywhere else."*. Each feed refresh re-answers the place currently shown.
+  place "{name}". Search above to check anywhere else."*. Each feed refresh re-answers the place currently shown,
+  without scrolling. The arrival answer is given at once, before the feed has loaded, in the "Checking…" state of
+  §1.2 (changelog C26).
 
 ### 1.2 Place result card (`answer()`)
-Uses `PNDPlaceRisk.assess(place, liveEvents, {generatedAt})` and `actionsFor()` (logic.md §3).
+Uses `PNDPlaceRisk.assess(place, liveEvents, {generatedAt})` and `actionsFor()` (logic.md §3), **only once a feed
+has loaded** (changelog C26). Before that, `feedState(loaded, failed)` picks the card:
+- `loading`: eyebrow "CURRENT RISK", the neutral chip **"Checking…"**, the place name, What's happening *"Checking the
+  latest reports for this place."*, What should I do: the one step *"For official information about this place, check
+  your national or local disaster agency."* and the authority line, Last checked *"not yet: the data is still
+  loading"*, then the actions. No Why or Source block. The card has `aria-busy="true"`.
+- `failed` (nothing has loaded and the last try failed): as `loading`, but the chip **"Live data unavailable"**, What's
+  happening is the unavailable card (**"Live data unavailable."** *"We could not load the latest reports, so nothing
+  can be shown here. This does not mean nothing is happening. Trying again automatically."*), and Last checked
+  *"not yet: the latest data could not be loaded"*.
+- Never show "Nothing reported nearby" until a feed has loaded. When it loads, redraw the card for the same place
+  without scrolling. A later failed refresh keeps the last real answer. **[vectors: home.placeAnswerStates]**
 
 - Eyebrow "CURRENT RISK". If `A.level` is set, show a **badge** using the level label (for example "Severe"). If it
   is null, show the neutral chip **"Nothing reported nearby"**. Never show a LOW badge for nothing. Then the place
@@ -582,6 +597,7 @@ Implemented in `personal-risk.html`, `place-risk.js`, `alert-rules.js`, `alerts-
 - Each saved place card: `{kind} · {name}` (just `{kind}` when kind equals name), `{lat}, {lon} · {country}` or
   "· country unknown", "· updated {age}" for the current location, a **Remove** button, and a **summary chip** from
   `summarise()`:
+  - feed not loaded yet: `CHECKING…`; first load failed: `LIVE DATA UNAVAILABLE` (changelog C26)
   - no level: `NOTHING REPORTED NEARBY`
   - otherwise `HEADLINE` upper-cased, then ` · inside an official warning area` (lead band B), or ` · inside a
     reported affected area` (band A with containment), or ` · a forecast covers it` (band C), or ` · event {d} km away`.
@@ -865,6 +881,8 @@ Implemented in `location-detail.html`. Comes from Find a city or area.
   (`pnd_radius_{level}`).
 - Records within the radius, sorted with `['distance', ...EVENT_SORTS]`, each showing "{km} km away".
 - A **place answer line** above: the badge from `PNDPlaceRisk.assess` (or the "Nothing reported nearby" chip) and `A.why`.
+  Before the first load it reads the "Checking…" chip and *"Checking the latest reports for this place."*; if the first
+  load fails, the "Live data unavailable" chip and the unavailable text of §1.2 (changelog C26).
 - Map: the radius circle (green `#25e29c`, fill opacity 0.06) and a centre dot.
 - Without coordinates: match with `matchesPlace(e, name)`.
 - Title "Disasters near {name}" (with coordinates) or "Disasters in {name}". Enrichment block as in 8.2.
@@ -1124,14 +1142,16 @@ apps should implement:
 Implemented in `PND.timezone`, `PND.timezoneOptions` and `PND.setTimezone` (`portal.js`).
 - Default (changelog C9): the stored choice (`pnd_timezone`), else **the device's own zone**
   (`Intl.DateTimeFormat().resolvedOptions().timeZone`), else Asia/Kolkata when the platform gives none. Native:
-  `TimeZone.current.identifier` / `ZoneId.systemDefault().id`, falling back to Asia/Kolkata. A zone without a short
-  label shows its IANA id (for example "Asia/Kathmandu"). **[vectors: portal.timezoneDefault]**
-- Picker: the current zone first, then Asia/Kolkata (labelled "IST · India"), UTC, America/New_York,
+  `TimeZone.current.identifier` / `ZoneId.systemDefault().id`, falling back to Asia/Kolkata. A zone without an alias
+  is labelled by its short name or GMT offset (for example "GMT+5:45" for Asia/Kathmandu), never its IANA id
+  (changelog C27). **[vectors: portal.timezoneDefault]**
+- Picker: the current zone first (labelled `tzMenuLabel`, for example "GMT-3 · Buenos Aires"; changelog C27), then Asia/Kolkata (labelled "IST · India"), UTC, America/New_York,
   America/Los_Angeles, Europe/London, Europe/Paris, Asia/Dubai, Asia/Singapore, Asia/Tokyo, Australia/Sydney, then
   every IANA zone. Stored in `pnd_timezone`. Changing it re-renders every screen (the web reloads the page).
 - Zone labels shown after times (`tzLabel`): Asia/Kolkata IST, UTC UTC, America/New_York ET, America/Los_Angeles PT,
   Europe/London UK, Asia/Dubai GST, Asia/Singapore SGT, Asia/Tokyo JST, Australia/Sydney Sydney. Any other zone shows
-  the raw IANA id (for example "Europe/Paris"). The formats are in logic.md §6.
+  its en-US short name for that moment, or a GMT offset where there is none ("CDT", "GMT-3", "GMT+5:45"), never the
+  raw IANA id (changelog C27). The formats are in logic.md §6.4. **[vectors: portal.zoneLabel]**
 - The trust note formats with the same `fmtDate` and `tzLabel` as the rest of the screen (one zone per screen). Do
   not use the platform's short zone name ("GMT+5:30").
 
