@@ -25,7 +25,7 @@ struct PlaceChooser: View {
                     .background(Theme.panelTop, in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.panelBorder, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.plainArea)
                 .accessibilityIdentifier("placeCandidate")
             }
         }
@@ -184,7 +184,7 @@ struct HomeView: View {
             .background(Color(hex: "#072B20"), in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#176148"), lineWidth: 1))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("kpi-" + label)
     }
@@ -207,7 +207,7 @@ struct HomeView: View {
                     }
                     .frame(minHeight: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.plainArea)
             }
         }
     }
@@ -268,7 +268,7 @@ struct HomeView: View {
                         }
                         .frame(minHeight: 44)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plainArea)
                 }
             }
             Panel("Live events by type") {
@@ -282,7 +282,7 @@ struct HomeView: View {
                             .padding(8).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .background(Theme.cardAlt, in: RoundedRectangle(cornerRadius: 8))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plainArea)
                         .accessibilityHint(t.observedOnly ? "Observed only - no agency forecasts the onset of this hazard" : "")
                     }
                 }
@@ -327,7 +327,7 @@ struct HomeView: View {
             .background(Color(hex: "#08211A"), in: RoundedRectangle(cornerRadius: 9))
             .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.divider, lineWidth: 1))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
     }
 
     var trackTeaser: some View {
@@ -339,7 +339,7 @@ struct HomeView: View {
                     VerdictPill(text: "PARTLY CORRECT", css: "partial")
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.plainArea)
             Text("What we check").font(.caption.bold()).foregroundStyle(Theme.label)
             Text(Copy.whatWeCheck).font(.footnote).foregroundStyle(Theme.text)
             Text("How we check forecasts").font(.caption.bold()).foregroundStyle(Theme.label)

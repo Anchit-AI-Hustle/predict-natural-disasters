@@ -47,7 +47,7 @@ struct RegionsView: View {
                             Text(lines.1).font(.caption).foregroundStyle(Theme.muted)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plainArea)
                 }
             }
             Panel("Popular places") {
@@ -56,7 +56,7 @@ struct RegionsView: View {
                         HStack { Text(p.title).font(.subheadline.bold()).foregroundStyle(Theme.text); Spacer(); Text(p.body).font(.caption).foregroundStyle(Theme.muted) }
                             .frame(minHeight: 44)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plainArea)
                 }
             }
             Panel("What we show") { ForEach(Copy.regionsWhatWeShow, id: \.self) { Text($0).font(.footnote).foregroundStyle(Theme.textSoft) } }
@@ -112,7 +112,7 @@ struct RegionDetailView: View {
                     NavigationLink(value: Route.hazard(type: t.type, region: world ? nil : name)) {
                         HStack { Text(t.type).foregroundStyle(Theme.text); Spacer(); Text("\(t.count)").foregroundStyle(Theme.muted) }.font(.subheadline).frame(minHeight: 44)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plainArea)
                 }
             }
             Panel("What we cover") {
@@ -322,7 +322,7 @@ struct CalamitiesView: View {
                         Text("Updated " + Format.fmtDate(e.updated, tz: model.zoneID) + " \u{00B7} " + Format.age(e.updated)).font(.caption).foregroundStyle(Theme.muted)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.plainArea)
             }
         }
         Panel("Source status", trailing: AnyView(NavigationLink("Sources \u{2192}", value: Route.collection(.resources, query: nil)).font(.caption))) {
@@ -359,7 +359,7 @@ struct CalamitiesView: View {
                         }
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.plainArea)
             }
         }
     }
@@ -397,7 +397,7 @@ struct HistoryDetailView: View {
                                 Text(x.s("year") + " \u{00B7} " + x.s("location") + " \u{00B7} " + x.s("type")).font(.caption).foregroundStyle(Theme.muted)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plainArea)
                     }
                 }
                 FlowRow(spacing: 8) {

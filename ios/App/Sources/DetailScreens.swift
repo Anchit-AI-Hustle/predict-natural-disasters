@@ -70,7 +70,7 @@ struct EnrichmentCardView: View {
 
     var body: some View {
         if let s = card.url, let u = URL(string: s) {
-            SwiftUI.Link(destination: u) { CardBox { inner } }.buttonStyle(.plain)
+            SwiftUI.Link(destination: u) { CardBox { inner } }.buttonStyle(.plainArea)
         } else {
             CardBox { inner }
         }

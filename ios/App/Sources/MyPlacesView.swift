@@ -297,7 +297,7 @@ struct MyPlacesView: View {
                                 if !r.row.applicability.isEmpty { Text(r.row.applicability).font(.caption).foregroundStyle(Theme.muted) }
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plainArea)
                     }
                 }
                 .padding(.vertical, 4)

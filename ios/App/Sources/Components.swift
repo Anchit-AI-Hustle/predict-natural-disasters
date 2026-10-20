@@ -31,7 +31,7 @@ struct EventCard: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
         .accessibilityIdentifier("eventCard")
     }
 
@@ -131,7 +131,7 @@ struct RelatedRow: View {
                 Text(Format.fmtDate(record.updated, tz: model.zoneID)).font(.caption).foregroundStyle(Theme.muted)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
     }
 }
 

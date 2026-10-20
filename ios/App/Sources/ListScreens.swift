@@ -93,7 +93,7 @@ struct AlertCard: View {
                     .font(.caption).foregroundStyle(Theme.muted)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
         .accessibilityIdentifier("alertCard")
     }
 }
@@ -169,7 +169,7 @@ struct ForecastTable: View {
 
     var body: some View {
         LimitedList(items: records, page: 30) { e in
-            NavigationLink(value: Route.detail(for: e)) { row(e) }.buttonStyle(.plain)
+            NavigationLink(value: Route.detail(for: e)) { row(e) }.buttonStyle(.plainArea)
         }
     }
 
@@ -272,7 +272,7 @@ struct ForecastsView: View {
                             .padding(8).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .background(hazard == t.type ? Theme.green : Theme.cardAlt, in: RoundedRectangle(cornerRadius: 8))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plainArea)
                         .accessibilityAddTraits(hazard == t.type ? .isSelected : [])
                     }
                 }
@@ -420,7 +420,7 @@ struct CalendarGroupView: View {
                 NavigationLink(value: Route.detail(for: b.record)) {
                     CalendarBarRow(bar: b, nowPct: nowPct, labelWidth: labelWidth, trackWidth: trackWidth)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.plainArea)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(label(b))
             }
@@ -499,7 +499,7 @@ struct VerificationListView: View {
                             Text("See forecast details \u{2192}").font(.footnote.bold()).foregroundStyle(Theme.link)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plainArea)
                 }
             }
             Panel("How we check a forecast") {
