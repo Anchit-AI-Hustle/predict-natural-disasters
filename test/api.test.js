@@ -147,10 +147,12 @@ test('a ReliefWeb record whose country cannot be located is left out', async () 
 test('a feed URL that answers without items falls through to the next candidate', async () => {
   // A Drupal miss returns 200 with an HTML page; that must not be accepted as
   // an empty feed, which would look like "online, no disasters".
-  const res = await runEvents({ reliefwebEmptyUntil: '/disasters/feed' });
+  /* The last candidate was /disasters/feed until it was removed for answering
+     404; the fall-through is now from the ongoing view to the full feed. */
+  const res = await runEvents({ reliefwebEmpty: ['view=ongoing'] });
   const rw = res.body.meta.sources.reliefweb;
   assert.equal(rw.ok, true);
-  assert.equal(rw.endpoint, 'https://reliefweb.int/disasters/feed');
+  assert.equal(rw.endpoint, 'https://reliefweb.int/disasters/rss.xml');
   assert.equal(rw.records, 2);
 });
 
@@ -159,7 +161,7 @@ test('ReliefWeb is offline when no candidate feed yields items', async () => {
   const rw = res.body.meta.sources.reliefweb;
   assert.equal(rw.ok, false);
   assert.match(rw.error, /no <item> elements/);
-  assert.equal(rw.tried, 3);
+  assert.equal(rw.tried, 2, "both candidate feeds (the dead /disasters/feed was the third) were tried");
 });
 
 test('ReliefWeb degrades to offline when its feed is unreachable', async () => {

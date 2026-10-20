@@ -1177,8 +1177,13 @@
     if (!R) return L.marker(latlng, opts || {});
     var icon = R.markerIcon(value, label);
     var o = opts || {};
-    var settings = { icon: L.divIcon({ className: icon.className, html: icon.html,
-      iconSize: icon.iconSize, iconAnchor: icon.iconAnchor }),
+    /* The mark keeps the size its level gives it (12 to 21px); the area that
+       takes a tap is at least 24px, centred on it (WCAG 2.5.8). */
+    var hit = Math.max(24, icon.iconSize[0]), mark = icon.iconSize[0];
+    var settings = { icon: L.divIcon({ className: icon.className,
+      html: '<span class="risk-hit" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">' +
+        icon.html.replace('class="risk-shape"', 'class="risk-shape" style="width:' + mark + 'px;height:' + mark + 'px;flex:0 0 auto"') + '</span>',
+      iconSize: [hit, hit], iconAnchor: [hit / 2, hit / 2] }),
       /* Read by the map's key, which counts what is drawn. */
       pndLevel: icon.level,
       /* The more serious event on top. Leaflet stacks markers by latitude,
@@ -1186,12 +1191,20 @@
          mattered under them. */
       zIndexOffset: (R.level(value).rank || 0) * 1000,
       /* Leaflet's default alt is "Marker", which is what a screen reader
-         announced for every event on the map. Keyboard focus is left alone:
-         Leaflet already gives markers it, and map.test.js holds this file to
-         not re-stating what Leaflet does. */
+         announced for every event on the map. */
       alt: icon.label, title: icon.label };
     for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) settings[k] = o[k];
-    return L.marker(latlng, settings);
+    var m = L.marker(latlng, settings);
+    /* Out of the tab order. Every marker was a tab stop - 79 on the home
+       page, before anything after the map could be reached - and each event
+       is in the list beside its map, where the keyboard reaches it in reading
+       order. The map's own keyboard panning and zooming are left as Leaflet
+       sets them; this is only the marker's element. */
+    if (typeof m.on === 'function') m.on('add', function () {
+      var el = m.getElement && m.getElement();
+      if (el) el.setAttribute('tabindex', '-1');
+    });
+    return m;
   }
 
   window.PNDMap = { basemap: basemap, worldZoom: worldZoom, WORLD: WORLD,

@@ -1627,8 +1627,9 @@ async function handler(req, res) {
       // items before accepting it. `endpoint` records which one answered.
       const feeds = [
         'https://reliefweb.int/disasters/rss.xml?view=ongoing',
-        'https://reliefweb.int/disasters/rss.xml',
-        'https://reliefweb.int/disasters/feed'
+        /* /disasters/feed was a third candidate. It answers 404 (checked
+           20 Oct 2026), so it could only ever add a failed request. */
+        'https://reliefweb.int/disasters/rss.xml'
       ];
       let xml = '', lastError = 'no candidate feed returned items';
       for (const url of feeds) {
@@ -2555,7 +2556,7 @@ async function handler(req, res) {
       hazards: ['Flood', 'Drought', 'Earthquake', 'Tropical Cyclone', 'Complex Emergency'],
       geographicCoverage: 'Global',
       coverageResolution: 'Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.',
-      endpoint: 'https://reliefweb.int/disasters/feed',
+      endpoint: 'https://reliefweb.int/disasters/rss.xml',
       scope: { kind: 'global' },
       completeness: 'selective',
       recordsObservations: true,

@@ -212,21 +212,34 @@
   function walk(root) {
     if (!root || !root.ownerDocument && root.nodeType !== 9 && root.nodeType !== 1) return;
     var doc = root.ownerDocument || document;
+    /* Each element's answer is worked out once and remembered for the walk:
+       asking every ancestor again for every text node under it was most of
+       the time /accuracy spent with its thousands of table cells. */
+    var skipMemo = new Map(), shortMemo = new Map();
+    function skipped(p) {
+      if (!p || p.nodeType !== 1) return false;
+      if (skipMemo.has(p)) return skipMemo.get(p);
+      var v = !!(SKIP[p.tagName] || p.hasAttribute('data-keep-acronyms') || isLabel(p)) || skipped(p.parentNode);
+      skipMemo.set(p, v);
+      return v;
+    }
+    function shortened(q) {
+      if (!q || q.nodeType !== 1) return false;
+      if (shortMemo.has(q)) return shortMemo.get(q);
+      var v = keepsAcronymsShort(q) || shortened(q.parentNode);
+      shortMemo.set(q, v);
+      return v;
+    }
     var walker = doc.createTreeWalker(root, 4 /* SHOW_TEXT */, {
       acceptNode: function (node) {
-        for (var p = node.parentNode; p && p.nodeType === 1; p = p.parentNode) {
-          if (SKIP[p.tagName] || p.hasAttribute('data-keep-acronyms') || isLabel(p)) return 2 /* REJECT */;
-        }
+        if (skipped(node.parentNode)) return 2 /* REJECT */;
         return /[A-Za-z]/.test(node.data) ? 1 /* ACCEPT */ : 2;
       }
     });
     var node, pending = [];
     while ((node = walker.nextNode())) pending.push(node);
     for (var i = 0; i < pending.length; i++) {
-      var short = false;
-      for (var q = pending[i].parentNode; q && q.nodeType === 1; q = q.parentNode) {
-        if (keepsAcronymsShort(q)) { short = true; break; }
-      }
+      var short = shortened(pending[i].parentNode);
       var next = short ? expandAlways(pending[i].data) : rewrite(pending[i].data);
       if (next !== pending[i].data) pending[i].data = next;   // in place: adds no nodes
     }
@@ -283,11 +296,17 @@
   }
   function readableText(skip) {
     var parts = [];
+    var memo = new Map();
+    function unread(p) {
+      if (!p || p.nodeType !== 1) return false;
+      if (memo.has(p)) return memo.get(p);
+      var v = !!(UNREAD[p.tagName] || p === skip) || unread(p.parentNode);
+      memo.set(p, v);
+      return v;
+    }
     var walker = document.createTreeWalker(document.body, 4 /* SHOW_TEXT */, {
       acceptNode: function (node) {
-        for (var p = node.parentNode; p && p.nodeType === 1; p = p.parentNode) {
-          if (UNREAD[p.tagName] || p === skip) return 2 /* REJECT */;
-        }
+        if (unread(node.parentNode)) return 2 /* REJECT */;
         return shoutedPhrase(node.data) ? 2 /* REJECT */ : 1 /* ACCEPT */;
       }
     });
