@@ -4,6 +4,11 @@ import PNDCore
 enum AppTab: String, CaseIterable, Hashable, Identifiable {
     case home, alerts, forecasts, places, map, track
     var id: String { rawValue }
+
+    /// The site's five tabs (features.md section 0.1). Home is not a tab: it
+    /// opens from the logo button, so iPhone never adds a system "More" tab.
+    static let barTabs: [AppTab] = [.map, .alerts, .forecasts, .places, .track]
+
     var title: String {
         switch self {
         case .home: return "Home"
@@ -41,7 +46,7 @@ enum AppTab: String, CaseIterable, Hashable, Identifiable {
         case .home: return .home
         case .map: return .map
         case .alerts, .event, .alert, .calamity, .calamities: return .alerts
-        case .collection(let v, _):
+        case .collection(let v, _), .scopedCollection(let v, _, _):
             switch v {
             case .forecastList, .forecastCalendar: return .forecasts
             default: return .alerts
@@ -93,7 +98,7 @@ final class AppModel: ObservableObject {
         let fail = args.contains("-PNDFixtureFail")
         fixtureMode = fx
         failMode = fail
-        let transport: HTTPTransport = fx ? BundleFixtureTransport(fail: fail) : URLSessionTransport()
+        let transport: HTTPTransport = fx ? BundleFixtureTransport(fail: fail, pager: args.contains("-PNDFixturePager")) : URLSessionTransport()
         let api = APIClient(transport: transport)
         client = api
         var cache: FeedCache? = FeedCache.defaultCache()
@@ -105,7 +110,10 @@ final class AppModel: ObservableObject {
         if fx { defaults.removePersistentDomain(forName: "pnd-fixture") }
         let store = PlacesStore(defaults: defaults)
         placesStore = store
-        let storedZone = UserDefaults.standard.string(forKey: "pnd_timezone") ?? Format.defaultZoneID
+        // The stored choice, else the device's own zone, else India time
+        // (changelog C9). Fixture mode pins India time so screenshots and UI
+        // tests read the same on every machine.
+        let storedZone = Format.timezoneDefault(stored: UserDefaults.standard.string(forKey: "pnd_timezone"), device: TimeZone.current.identifier)
         let zone = args.contains("-PNDFixtureMode") ? Format.defaultZoneID : storedZone
         zoneID = zone
         Format.zoneID = zone
@@ -160,9 +168,18 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// A figure, or "-" before the feed has loaded.
-    func fig(_ n: Int) -> String { feed == nil ? "-" : String(n) }
-    func figText(_ t: String) -> String { feed == nil ? "-" : t }
+    /// `feedState(loaded, failed)` for place answers (changelog C26). A saved
+    /// or earlier feed counts as loaded, so a later failed refresh keeps the
+    /// last real answer.
+    var placeFeedState: PlaceRisk.FeedState { PlaceRisk.feedState(loaded: feed != nil, failed: status == .failed) }
+
+    /// Nothing has loaded and the last load failed (`PND.feedDown`, changelog C19).
+    var feedDown: Bool { feed == nil && status == .failed }
+
+    /// A figure, "-" before the feed has loaded, or "Unavailable" when it
+    /// failed before anything loaded (a failed load is not a zero).
+    func fig(_ n: Int) -> String { feedDown ? Format.unavailable : (feed == nil ? "-" : String(n)) }
+    func figText(_ t: String) -> String { feedDown ? Format.unavailable : (feed == nil ? "-" : t) }
 
     /// The status line under a list title.
     func statusLine(_ extra: String? = nil) -> String {
@@ -185,7 +202,7 @@ final class AppModel: ObservableObject {
 
     // MARK: places
 
-    func reloadPlaces() { places = placesStore.places; NotificationService.shared.scheduleBackgroundRefresh(enabled: alertsEnabled && !places.isEmpty) }
+    func reloadPlaces() { places = placesStore.places; NotificationService.shared.scheduleBackgroundRefresh(enabled: alertsEnabled) }
 
     @discardableResult
     func savePlace(_ p: Place) -> Place {
@@ -214,6 +231,25 @@ final class AppModel: ObservableObject {
         paths[tab, default: []].append(route)
     }
 
+    /// A tab bar tap: switch tabs, or go back to the root of the tab shown.
+    func selectTab(_ tab: AppTab) {
+        if selectedTab == tab { paths[tab] = [] } else { selectedTab = tab }
+    }
+
+    /// Bumped whenever a link asks for a tab, so the iPad sidebar follows
+    /// even when that tab was already the selected one.
+    @Published var tabRequest = 0
+
+    /// A link to a tab's own screen: that tab, at its root.
+    func showTab(_ tab: AppTab) {
+        paths[tab] = []
+        selectedTab = tab
+        tabRequest += 1
+    }
+
+    /// The logo button: Home / Check a place.
+    func goHome() { selectTab(.home) }
+
     func push(_ route: Route) {
         paths[selectedTab, default: []].append(route)
     }
@@ -240,7 +276,46 @@ enum WebAssets {
 /// need no network (launch argument `-PNDFixtureMode`).
 final class BundleFixtureTransport: HTTPTransport, @unchecked Sendable {
     let fail: Bool
-    init(fail: Bool) { self.fail = fail }
+    /// `-PNDFixturePager`: 45 official reports and one aggregator record, the
+    /// feed the `alerts.pager` vectors were made with, so the Alerts pager shows.
+    let pager: Bool
+    init(fail: Bool, pager: Bool = false) { self.fail = fail; self.pager = pager }
+
+    static func pagerFeed() -> Data {
+        let now = JSDate.ms("2026-10-20T12:00:00Z")!
+        var events: [JSONValue] = []
+        for i in 0..<45 {
+            let d = Double(i)
+            var o: [String: JSONValue] = [:]
+            o["id"] = .string("usgs-p\(i)")
+            o["type"] = .string("Earthquake")
+            o["title"] = .string("M 4.\(i % 10) - Testville \(i), Japan")
+            o["source"] = .string("USGS")
+            o["sourceType"] = .string("official")
+            o["evidenceState"] = .string("observed")
+            o["alert"] = .string("Green")
+            o["severityRank"] = .number(1)
+            o["country"] = .string("Japan")
+            o["lat"] = .number(33 + d / 20)
+            o["lon"] = .number(130 + d / 10)
+            o["updated"] = .string(JSDate.iso(now - (d + 1) * 3_600_000))
+            events.append(.object(o))
+        }
+        var x: [String: JSONValue] = [:]
+        x["id"] = .string("eonet-x")
+        x["type"] = .string("Wildfire")
+        x["title"] = .string("Not official")
+        x["source"] = .string("NASA EONET")
+        x["sourceType"] = .string("aggregator")
+        x["lat"] = .number(1)
+        x["lon"] = .number(1)
+        x["updated"] = .string(JSDate.iso(now))
+        events.append(.object(x))
+        let sources: [String: JSONValue] = ["usgs": .object(["ok": .bool(true)])]
+        let meta: [String: JSONValue] = ["live": .bool(true), "sources": .object(sources)]
+        let feed: JSONValue = .object(["generatedAt": .string(JSDate.iso(now)), "meta": .object(meta), "events": .array(events)])
+        return feed.data()
+    }
 
     func fixture(_ name: String) -> Data? {
         Bundle.main.url(forResource: name, withExtension: nil, subdirectory: "Fixtures").flatMap { try? Data(contentsOf: $0) }
@@ -256,6 +331,7 @@ final class BundleFixtureTransport: HTTPTransport, @unchecked Sendable {
                 j.removeValue(forKey: "events")
                 return (JSONValue.object(j).data(), 200)
             }
+            if pager { return (Self.pagerFeed(), 200) }
             return (fixture("sample-events.json") ?? Data(), 200)
         }
         if path == "/api/event-enrichment", let d = fixture("sample-enrichment.json"), let j = try? JSONValue.parse(d) {

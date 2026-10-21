@@ -42,6 +42,56 @@ public enum Verdicts {
         return normalise(v.jsString)
     }
 
+    /// `LABELS[normalise(status)]`, nil when there is none (empty, PENDING).
+    public static func label(_ status: JSONValue?) -> String? { labels[normalise(status)] }
+
+    public struct Grade: Equatable, Sendable { public let label: String; public let summary: String }
+
+    /// `forecast-detail.html gradeOf(id)` (logic.md section 10.4b, changelog C4).
+    /// `ledger` is `/data/verification-ledger.json` and `models`
+    /// `/data/model-verdicts.json` (nil when the read failed or was not made).
+    /// The ledger wins when an id is in both.
+    public static func gradeOf(id: String, ledger: JSONValue?, models: JSONValue?) -> Grade? {
+        if let v = (ledger?["verifications"]?.arrayValue ?? []).first(where: { $0["id"]?.stringValue == id }) {
+            let k = normalise(v["status"])
+            if !k.isEmpty && k != "PENDING" && k != "UNKNOWN" {
+                return Grade(label: labels[k] ?? k, summary: v["summary"]?.isTruthy == true ? v["summary"]!.jsString : "")
+            }
+        }
+        if id.hasPrefix("model-"), let o = (models?["outlooks"]?.arrayValue ?? []).first(where: { $0["id"]?.stringValue == id }) {
+            if o["verdict"]?.stringValue == "correct" { return Grade(label: labels["VERIFIED"]!, summary: "") }
+            if o["verdict"]?.stringValue == "false alarm" { return Grade(label: labels["FALSE_ALARM"]!, summary: "") }
+        }
+        return nil
+    }
+
+    /// Whether `gradeOf` needs the model verdict file for this id.
+    public static func needsModelVerdicts(id: String, ledger: JSONValue?) -> Bool {
+        guard id.hasPrefix("model-") else { return false }
+        if let v = (ledger?["verifications"]?.arrayValue ?? []).first(where: { $0["id"]?.stringValue == id }) {
+            let k = normalise(v["status"])
+            if !k.isEmpty && k != "PENDING" && k != "UNKNOWN" { return false }
+        }
+        return true
+    }
+
+    /// The forecast screen's STATUS: the grade when there is one, otherwise
+    /// "Ended, not yet checked" or "Active".
+    public static func forecastStatus(grade: Grade?, targetEnd: String?, now: Double) -> String {
+        if let g = grade { return "Checked: " + g.label }
+        if let t = JSDate.ms(targetEnd), t < now { return "Ended, not yet checked" }
+        return "Active"
+    }
+
+    /// The ND-001 check screen's Result: `LABELS[VERDICTS[row.status]]` with
+    /// the raw status as the key; "Not available" when the request failed.
+    public static func checkResult(id: String, ledger: JSONValue?, requestFailed: Bool) -> String {
+        if requestFailed { return "Not available" }
+        let row = (ledger?["verifications"]?.arrayValue ?? []).first { $0["id"]?.stringValue == id }
+        if let st = row?["status"]?.stringValue, let key = verdicts[st], let l = labels[key] { return l }
+        return "Not checked yet"
+    }
+
     public static func stateOf(_ r: Record, now: Double) -> String {
         let graded = normalise(r.first("status", "outcome"))
         if !graded.isEmpty && graded != "PENDING" { return graded }

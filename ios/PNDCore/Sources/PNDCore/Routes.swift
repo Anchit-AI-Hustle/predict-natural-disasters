@@ -11,6 +11,8 @@ public enum Route: Hashable, Sendable {
     case history(String)
     case source(String)
     case collection(CollectionView, query: String?)
+    /// A list scoped to a place (`/events?region=`, changelog C17).
+    case scopedCollection(CollectionView, query: String?, region: String)
     case calamities, regions, insights, methodology, about, settings, verification, verificationDetail, more
 
     /// The record's own detail screen (`eventUrl`).
@@ -78,7 +80,10 @@ public enum Route: Hashable, Sendable {
         case "about": return .about
         case "resources": return .collection(.resources, query: nil)
         default:
-            if let v = CollectionView(rawValue: name) { return .collection(v, query: q("q") ?? q("search")) }
+            if let v = CollectionView(rawValue: name) {
+                if v != .resources, let r = q("region"), !JS.trim(r).isEmpty { return .scopedCollection(v, query: q("q") ?? q("search"), region: JS.trim(r)) }
+                return .collection(v, query: q("q") ?? q("search"))
+            }
             return nil
         }
     }
@@ -114,6 +119,8 @@ public enum Route: Hashable, Sendable {
         case .history(let s): return "/history/" + e(s)
         case .source(let s): return "/sources/" + e(s)
         case .collection(let v, let q): return "/" + v.rawValue + ((q ?? "").isEmpty ? "" : "?q=" + e(q!))
+        case .scopedCollection(let v, let q, let r):
+            return "/" + v.rawValue + "?region=" + e(r) + ((q ?? "").isEmpty ? "" : "&q=" + e(q!))
         case .calamities: return "/calamities"
         case .regions: return "/regions"
         case .insights: return "/insights"
@@ -153,8 +160,8 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
         switch self {
         case .events: return "Disasters reported by official agencies, and our own forecasts of what may happen next."
         case .recentEvents: return "The latest disasters reported by official agencies."
-        case .officialWarnings: return "The most serious reports from official agencies, plus earthquakes reported by the USGS."
-        case .alertsNotifications: return "The most serious current reports from official agencies, with a link to each source."
+        case .officialWarnings: return "Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events."
+        case .alertsNotifications: return "Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events."
         case .hazardTypes: return "Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought."
         case .historicalEvents: return "Recent past events from GDACS, plus the events happening now."
         case .compareLocations: return "Search for a place to see its current events. Then search for another place to compare."
@@ -189,14 +196,30 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
 
     public var isForecastView: Bool { self == .forecastList || self == .forecastCalendar }
 
-    /// Records kept by this view.
+    /// Records kept by this view (`collection.js keep`). The warning lists
+    /// keep warnings in force (`isOfficialWarning`, changelog C3).
     public func keep(_ e: Record) -> Bool {
         switch self {
         case .recentEvents: return e.isOfficial
-        case .officialWarnings, .alertsNotifications: return e.isOfficial && (e.isRedOrOrange || e.source == "USGS")
-        case .forecastList, .forecastCalendar: return e.forecast
+        case .officialWarnings, .alertsNotifications: return Format.isOfficialWarning(e)
+        case .forecastList, .forecastCalendar: return e["forecast"] == .bool(true)
         default: return true
         }
+    }
+
+    /// `scoped()`: with a region (not "world"), only records `inPlace` there
+    /// (changelog C17).
+    public static func scoped(_ kept: [Record], region: String?) -> [Record] {
+        let r = JS.trim(region ?? "")
+        if r.isEmpty || r.lowercased() == "world" { return kept }
+        return kept.filter { Format.inPlace($0, r) }
+    }
+
+    /// "Showing only {region}." above the cards, or nil when not scoped.
+    public static func scopeNote(region: String?) -> String? {
+        let r = JS.trim(region ?? "")
+        if r.isEmpty || r.lowercased() == "world" { return nil }
+        return "Showing only " + r + "."
     }
 
     /// The fixed hazard filter of the non-forecast views.
@@ -210,10 +233,17 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
         return e.type.lowercased().contains(o)
     }
 
-    /// `countText(shown, noun)`: "N events \u{00B7} M forecasts" where a list mixes them.
-    public func countText(shown: Int, kept: [Record]) -> String {
+    /// `countText(shown, noun)`: "N events \u{00B7} M forecasts" where a list
+    /// mixes them; on the forecast views "N forecasts: {open} open, {ended}
+    /// ended" (changelog C14). `kept` is the scoped list.
+    public func countText(shown: Int, kept: [Record], noun: String? = nil) -> String {
+        let w = noun ?? self.noun
         func one(_ n: Int, _ w: String) -> String { "\(n) " + (n == 1 && w.hasSuffix("s") ? String(w.dropLast()) : w) }
-        let fc = isForecastView ? 0 : kept.filter { $0.forecast }.count
-        return fc > 0 ? one(shown - fc, noun) + " \u{00B7} " + one(fc, "forecasts") : one(shown, noun)
+        if isForecastView {
+            let open = Format.openForecasts(kept).count
+            return one(shown, w) + ": \(open) open, \(shown - open) ended"
+        }
+        let fc = kept.filter { $0.forecast }.count
+        return fc > 0 ? one(shown - fc, w) + " \u{00B7} " + one(fc, "forecasts") : one(shown, w)
     }
 }

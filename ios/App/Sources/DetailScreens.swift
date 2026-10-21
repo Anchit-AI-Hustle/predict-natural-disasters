@@ -136,16 +136,21 @@ struct RecordDetailView: View {
     let id: String
     let kind: DetailKind
     @State var sort = SortPicker.initial("detail_sortBy", Sorts.nearbySorts)
+    /// The record last shown: once shown, a later miss leaves it (changelog C20).
+    @State var shown: Record?
 
     var body: some View {
-        let e = Format.findEvent(model.all, id)
-        ScreenScroll(title: e.map { Format.titleOf($0) } ?? "Details") {
+        let found = Format.findEvent(model.all, id)
+        let e = found ?? shown
+        ScreenScroll(title: e.map { Format.titleOf($0) } ?? (model.feed == nil && model.status == .failed ? "Live data unavailable" : goneTitle)) {
             if let e = e {
                 content(e)
             } else if model.feed == nil && model.status != .failed {
                 ProgressView(Copy.loading).tint(Theme.text)
+            } else if model.feed == nil {
+                gone(title: "Live data unavailable", text: unavailableText)
             } else {
-                notFound
+                gone(title: goneTitle, text: goneText)
             }
         }
         .toolbar {
@@ -153,30 +158,47 @@ struct RecordDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) { ShareButton(route: route, title: Format.titleOf(e)) }
             }
         }
+        .onAppear { if let f = found { shown = f } }
+        .onChange(of: found) { _, f in if let f = f { shown = f } }
     }
 
     var route: Route {
         switch kind { case .event: return .event(id); case .alert: return .alert(id); case .calamity: return .calamity(id) }
     }
 
-    var notFound: some View {
+    var goneTitle: String {
+        switch kind { case .event: return "Event not found"; case .alert: return "Alert not found"; case .calamity: return "Disaster not found" }
+    }
+
+    var goneText: String {
+        switch kind {
+        case .event: return "The source may no longer list this event. See all events to find the latest ones."
+        case .alert: return "The source may no longer list this alert. See all official warnings."
+        case .calamity: return "The source may no longer list this event. It may have ended. See current disasters."
+        }
+    }
+
+    var unavailableText: String {
+        switch kind {
+        case .event: return "We could not load this event just now. Trying again automatically. See all events."
+        case .alert: return "We could not load this alert just now. Trying again automatically."
+        case .calamity: return "We could not load this disaster just now. Trying again automatically."
+        }
+    }
+
+    var goneLink: (String, Route) {
+        switch kind {
+        case .event: return ("See all events", .collection(.events, query: nil))
+        case .alert: return ("See all official warnings", .collection(.officialWarnings, query: nil))
+        case .calamity: return ("See current disasters", .calamities)
+        }
+    }
+
+    /// Not found, or not loaded: said once and plainly, with the body hidden.
+    func gone(title: String, text: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            if model.status == .failed {
-                Notice(text: Copy.loadError, stale: true)
-                Text(kind == .event ? "We could not update this event just now." : Copy.loadError).font(.subheadline).foregroundStyle(Theme.textSoft)
-            } else {
-                ScreenHeader(title: kind == .alert ? "Alert not found" : (kind == .calamity ? "Disaster not found" : "Event not found"),
-                             subtitle: kind == .calamity ? "The source may no longer list this event. It may have ended."
-                                : "The source may no longer list this event. See all events to find the latest ones.")
-                Text(Copy.notFound).font(.subheadline).foregroundStyle(Theme.textSoft)
-                FlowRow(spacing: 8) {
-                    RouteLink("Events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    RouteLink("Official warnings", value: Route.collection(.officialWarnings, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    RouteLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
-                    RouteLink("Calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
-                    RouteLink("Regions", value: Route.regions).buttonStyle(SecondaryButtonStyle())
-                }
-            }
+            ScreenHeader(eyebrow: kind == .event ? "Event" : nil, title: title, subtitle: text)
+            RouteLink(goneLink.0, value: goneLink.1).buttonStyle(SecondaryButtonStyle())
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("notFound")
@@ -184,8 +206,11 @@ struct RecordDetailView: View {
 
     @ViewBuilder func content(_ e: Record) -> some View {
         let tz = model.zoneID
-        let eyebrow: String = kind == .alert ? "Official alert" : (kind == .calamity ? "Current disaster" : (e.forecast ? "Our forecast, not official" : "Live event"))
-        ScreenHeader(eyebrow: eyebrow, title: Format.titleOf(e), subtitle: e.type + " \u{00B7} " + Format.placeOf(e, "Place not given"))
+        // A record its provider stopped updating is not called live (changelog C5).
+        let eyebrow: String = kind == .alert ? "Official alert" : (kind == .calamity ? "Current disaster" : Format.eventEyebrow(e))
+        let failedUpdate = kind == .event && model.status == .failed
+        ScreenHeader(eyebrow: eyebrow, title: Format.titleOf(e),
+                     subtitle: failedUpdate ? "We could not update this event just now." : e.type + " \u{00B7} " + Format.placeOf(e, "Place not given"))
         QuietNote(text: Format.quietNote(e))
         TrustNote()
         FeedBanner()
@@ -205,7 +230,7 @@ struct RecordDetailView: View {
 
     @ViewBuilder func eventBody(_ e: Record, _ tz: String) -> some View {
         StatGrid(items: [("Type", e.type.isEmpty ? "-" : e.type), ("Source", e.source.isEmpty ? "-" : e.source),
-                         ("Source last updated", Format.age(e.updated)), ("Data status", e.cached ? "Saved copy" : (e.forecast ? "Our forecast" : "Live"))])
+                         ("Source last updated", Format.age(e.updated)), ("Data status", Format.liveWord(e))])
         HStack { Text("RISK LEVEL").font(.caption2.weight(.heavy)).foregroundStyle(Theme.label); RecordRiskBadge(record: e) }
         actionPanel(e)
         Panel("Overview") {
@@ -229,7 +254,7 @@ struct RecordDetailView: View {
         Panel("How up to date and reliable this is") {
             Text("The source last updated this \(Format.age(e.updated)) (\(Format.fmtDate(e.updated, tz: tz))).").font(.footnote).foregroundStyle(Theme.textSoft)
             KeyValueRow(key: "Type of source", value: e.isOfficial ? "Official source" : (e.forecast ? "Our own forecast, not official" : "Collected from other sources"))
-            KeyValueRow(key: "Status", value: e.cached ? "Saved copy, not live" : (e.forecast ? "Forecast in progress" : "Live, as the source last reported it"))
+            KeyValueRow(key: "Status", value: Format.eventRecordState(e))
         }
         Panel("Who may need help") {
             ForEach(Copy.responseContext(e.type), id: \.title) { i in KeyValueRow(key: i.title, value: i.body) }
@@ -300,7 +325,7 @@ struct RecordDetailView: View {
 
     @ViewBuilder func alertBody(_ e: Record, _ tz: String) -> some View {
         HStack { Text("ALERT LEVEL").font(.caption2.weight(.heavy)).foregroundStyle(Theme.label); RecordRiskBadge(record: e) }
-        StatGrid(items: [("Agency or source", e.source.isEmpty ? "-" : e.source), ("Updated", Format.age(e.updated)), ("Status", e.cached ? "Saved copy" : "Live")])
+        StatGrid(items: [("Agency or source", e.source.isEmpty ? "-" : e.source), ("Updated", Format.age(e.updated)), ("Status", Format.liveWord(e))])
         Panel("Alert summary") {
             KeyFactsGrid(record: e)
             KeyValueRow(key: "Hazard", value: e.type.isEmpty ? "-" : e.type)
@@ -313,7 +338,7 @@ struct RecordDetailView: View {
             KeyValueRow(key: "Source report ID", value: e.first("rawId", "id")?.jsString ?? "-")
             if let u = e.sourceURL { SwiftUI.Link("Open the original report \u{2197}", destination: u).buttonStyle(SecondaryButtonStyle()) }
         }
-        impactPanel(e, note: Copy.alertImpactNote, status: e.cached ? "Saved copy" : "Live")
+        impactPanel(e, note: Copy.alertImpactNote, status: Format.liveWord(e))
         Panel("Source checks") {
             KeyValueRow(key: "Official source named?", value: "Yes")
             KeyValueRow(key: "Source\u{2019}s update time shown?", value: "Yes")
@@ -352,7 +377,7 @@ struct RecordDetailView: View {
             KeyValueRow(key: "Source last updated", value: Format.fmtDate(e.updated, tz: tz))
             KeyValueRow(key: "We last checked", value: Format.fmtDate(model.feed?.generatedAt, tz: tz))
             KeyValueRow(key: "Age of the data", value: Format.age(e.updated))
-            KeyValueRow(key: "Status", value: e.cached ? "Saved copy" : "Reported")
+            KeyValueRow(key: "Status", value: Format.calamityStatus(e))
         }
         Panel("Safety and sources") {
             Text(Copy.calamitySafety).font(.footnote).foregroundStyle(Theme.textSoft)
@@ -396,6 +421,10 @@ struct ForecastDetailView: View {
     let id: String
     @State var ledgerRecord: Record?
     @State var ledgerChecked = false
+    /// The ledger read failed: say the data is unavailable, not "not found" (changelog C20).
+    @State var ledgerFailed = false
+    /// The forecast's grade from the verification ledger or the model verdicts (changelog C4).
+    @State var grade: Verdicts.Grade?
 
     var body: some View {
         let live = Format.findEvent(model.all, id)
@@ -405,13 +434,10 @@ struct ForecastDetailView: View {
                 content(e, frozenAt: live == nil ? ledgerRecord?.first("recordedAt", "freezeTimestamp")?.jsString : nil)
             } else if (model.feed == nil && model.status != .failed) || (model.feed != nil && !ledgerChecked) {
                 ProgressView(Copy.loading).tint(Theme.text)
-            } else if model.status == .failed && model.feed == nil {
-                Notice(text: Copy.loadError, stale: true)
+            } else if (model.status == .failed && model.feed == nil) || ledgerFailed {
+                gone("Live data unavailable", "We could not load our forecasts, so this one cannot be shown right now. Trying again automatically. See all our forecasts.")
             } else {
-                ScreenHeader(title: "Forecast not found", subtitle: "We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or go to the forecasts list.")
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("notFound")
-                RouteLink("Our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+                gone("Forecast not found", "We cannot find this forecast in our current data or in our record of past forecasts. Check the link, or see all our forecasts.")
             }
         }
         .toolbar {
@@ -419,13 +445,37 @@ struct ForecastDetailView: View {
         }
         .task(id: model.feed?.generatedAt) {
             guard model.feed != nil, Format.findEvent(model.all, id) == nil, ledgerRecord == nil else { ledgerChecked = true; return }
-            if let r = try? await model.client.ledgerRow(id: id) {
-                var raw = r.raw
-                raw["forecast"] = .bool(true)
-                ledgerRecord = Record(raw)
+            do {
+                if let r = try await model.client.ledgerRow(id: id) {
+                    var raw = r.raw
+                    raw["forecast"] = .bool(true)
+                    ledgerRecord = Record(raw)
+                }
+                ledgerFailed = false
+            } catch {
+                ledgerFailed = true
             }
             ledgerChecked = true
         }
+        .task(id: e?.id ?? id) { await loadGrade(e?.id ?? id) }
+    }
+
+    func gone(_ title: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ScreenHeader(title: title, subtitle: text)
+            RouteLink("See all our forecasts", value: Route.collection(.forecastList, query: nil)).buttonStyle(SecondaryButtonStyle())
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("notFound")
+    }
+
+    /// `gradeOf(id)`: the verification ledger first, then (for `model-` ids)
+    /// the model verdicts. A failed read gives no grade.
+    func loadGrade(_ recordID: String) async {
+        let ledger = try? await model.client.dataFile("verification-ledger.json")
+        var models: JSONValue? = nil
+        if Verdicts.needsModelVerdicts(id: recordID, ledger: ledger) { models = try? await model.client.dataFile("model-verdicts.json") }
+        grade = Verdicts.gradeOf(id: recordID, ledger: ledger, models: models)
     }
 
     @ViewBuilder func content(_ e: Record, frozenAt: String?) -> some View {
@@ -442,7 +492,8 @@ struct ForecastDetailView: View {
         TrustNote()
         FeedBanner()
         HStack { Text("RISK").font(.caption2.weight(.heavy)).foregroundStyle(Theme.label); RecordRiskBadge(record: e) }
-        StatGrid(items: [("Location", Format.placeOf(e, "-")), ("Last updated", Format.age(e.updated)), ("Status", c.ended ? "Ended, not yet checked" : "Active")])
+        StatGrid(items: [("Location", Format.placeOf(e, "-")), ("Last updated", Format.age(e.updated)),
+                         ("Status", Verdicts.forecastStatus(grade: grade, targetEnd: e.truthy("targetEnd") ? e.s("targetEnd") : nil, now: Format.now()))])
         Panel("The forecast") {
             KeyFactsGrid(record: e)
             KeyValueRow(key: "Hazard", value: e.type.isEmpty ? "-" : e.type)
@@ -473,7 +524,11 @@ struct ForecastDetailView: View {
             KeyValueRow(key: "4. How we will check it", value: c.verification)
         }
         Panel("What we will check") {
-            matrix("Inside the locked forecast period", c.ended ? "Ended" : "Open", c.timingWhy)
+            if let g = grade {
+                matrix("Inside the locked forecast period", "Ended", gradedWhy(e, g, tz: tz))
+            } else {
+                matrix("Inside the locked forecast period", c.ended ? "Ended" : "Open", c.timingWhy)
+            }
             matrix("Inside the forecast area", c.ended ? "Ended" : "Open", c.geoWhy)
             matrix("Hazard reported", c.hazardValue, c.hazardWhy)
             matrix("Serious harm", "Not assumed", Copy.seriousHarmWhy)
@@ -493,6 +548,12 @@ struct ForecastDetailView: View {
         }
         Text("Help and context").font(.title3.bold()).foregroundStyle(Theme.text)
         EnrichmentSection(record: e)
+    }
+
+    func gradedWhy(_ e: Record, _ g: Verdicts.Grade, tz: String) -> String {
+        let end = e.truthy("targetEnd") ? e.s("targetEnd") : nil, start = e.truthy("targetStart") ? e.s("targetStart") : nil
+        let day = Screens.dayOf(end, start, "end", tz: tz) ?? "its end"
+        return "The forecast period ran to \(day) and has been checked. Result: \(g.label)." + (g.summary.isEmpty ? "" : " " + g.summary)
     }
 
     func matrix(_ label: String, _ value: String, _ why: String) -> some View {

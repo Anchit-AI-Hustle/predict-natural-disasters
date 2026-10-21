@@ -82,6 +82,9 @@ public enum RiskLevel: String, CaseIterable, Sendable, Codable {
 
     /// Map marker size in points: `9 + rank*3`.
     public var markerSize: Double { Double(9 + rank * 3) }
+    /// The square tap area a marker sits in: `max(24, size)` (changelog C24).
+    /// The mark keeps its own size inside it.
+    public var markerTapSide: Double { max(24, markerSize) }
     /// Map z-order: higher levels draw on top.
     public var zIndex: Int { rank * 1000 }
 

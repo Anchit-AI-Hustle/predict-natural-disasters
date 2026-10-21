@@ -72,7 +72,7 @@ final class PNDUITests: XCTestCase {
         return e
     }
 
-    /// Opens a section: the tab bar (or its More list) on iPhone, the sidebar on iPad.
+    /// Opens a section: the five-tab bar on iPhone, the sidebar on iPad.
     func open(_ app: XCUIApplication, tab: String, title: String) {
         if isPad {
             let item = el(app, "sidebar-" + tab)
@@ -94,12 +94,13 @@ final class PNDUITests: XCTestCase {
             if dismiss.waitForExistence(timeout: 2) && dismiss.isHittable { dismiss.tap() }
             return
         }
-        let button = app.tabBars.buttons[title]
-        if button.exists { button.tap(); return }
-        app.tabBars.buttons["More"].tap()
-        let cell = app.tables.cells.staticTexts[title].firstMatch
-        if cell.waitForExistence(timeout: 5) { cell.tap() } else { app.staticTexts[title].firstMatch.tap() }
+        let button = el(app, "tab-" + tab)
+        waitFor(button)
+        button.tap()
     }
+
+    /// The site's five tabs, in its order (features.md section 0.1).
+    let barTabs = ["map", "alerts", "forecasts", "places", "track"]
 
     func testHomeShowsTrustNoteAndFigures() {
         let app = launch()
@@ -127,6 +128,60 @@ final class PNDUITests: XCTestCase {
             if t.0 == "track" { waitFor(el(app, "answerLead"), 60) }
             shot(app, String(format: "%02d-", i + 2) + t.0)
         }
+        // Home is reached from the logo, as on the site.
+        let logo = el(app, "logoButton")
+        waitFor(logo)
+        logo.tap()
+        waitFor(app.staticTexts["Is a place you care about at risk?"].firstMatch)
+    }
+
+    /// Five tabs and no system "More" tab: Map and Track record are never
+    /// hidden behind one (iOS-only fix a). iPad shows the same five in its sidebar.
+    func testFiveTabsAndNoSystemMoreTab() {
+        let app = launch()
+        waitFor(el(app, "trustNote"))
+        if !isPad {
+            for t in barTabs { waitFor(el(app, "tab-" + t), 10) }
+            XCTAssertFalse(el(app, "tab-home").exists, "Home is not a tab")
+            XCTAssertFalse(app.tabBars.buttons["More"].exists, "no system More tab")
+        }
+        open(app, tab: "track", title: "Track record")
+        waitFor(app.staticTexts["Track record"].firstMatch)
+        open(app, tab: "map", title: "Map")
+        waitFor(app.staticTexts["Live disaster map"].firstMatch)
+        shot(app, "05-five-tabs")
+    }
+
+    /// Alerts shows 40 at a time and says so (changelog C6, vectors alerts.pager).
+    func testAlertsPager() {
+        let app = launch(["-PNDFixturePager"])
+        open(app, tab: "alerts", title: "Alerts & events")
+        waitFor(el(app, "alertCard"))
+        let more = el(app, "showMore")
+        scrollTo(app, more, hittable: true, swipes: 60)
+        XCTAssertEqual(more.label, "Show 5 more")
+        XCTAssertTrue(app.staticTexts["Showing 40 of 45."].exists)
+        shot(app, "12-alerts-pager")
+        more.tap()
+        let all = app.staticTexts["Showing all 45."].firstMatch
+        scrollTo(app, all, swipes: 20)
+        XCTAssertFalse(el(app, "showMore").exists)
+        shot(app, "13-alerts-pager-all")
+    }
+
+    /// The ND-001 check shows all eight rows (changelog C11, vectors verificationDetail.render).
+    func testForecastCheckEightRows() {
+        let app = launch(["-PNDOpenRoute", "/verification-detail"])
+        waitFor(app.staticTexts["ND-001 \u{00B7} Central Vietnam flood and landslide forecast"].firstMatch, 30)
+        waitFor(el(app, "trustNote"))
+        let metrics = ["Area", "Start date", "Start time", "Duration", "How widespread", "Strength or severity", "Lives lost", "Missing people"]
+        for (i, m) in metrics.enumerated() {
+            let row = el(app, "compareRow-\(i)")
+            scrollTo(app, row)
+            XCTAssertTrue(row.staticTexts[m].exists, "row \(i) is \(m)")
+        }
+        XCTAssertFalse(el(app, "compareRow-8").exists, "eight rows, no more")
+        shot(app, "70-forecast-check")
     }
 
     func testDetailNavigationFromAlerts() {
@@ -153,7 +208,7 @@ final class PNDUITests: XCTestCase {
             ("hazard", "/hazards/Flood", "Flood events"),
             ("history", "/history/mount-vesuvius-eruption", "Mount Vesuvius eruption"),
             ("source", "/sources/USGS", "USGS"),
-            ("quiet", "/disasters/usgs-us7000ijkl", "LIVE EVENT"),
+            ("quiet", "/disasters/usgs-us7000ijkl", "EVENT NO LONGER UPDATED"),
             ("notfound", "/disasters/no-such-record", "Event not found")
         ]
         for r in routes {
@@ -195,9 +250,31 @@ final class PNDUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Live data unavailable. Trying again automatically."].firstMatch.exists)
         waitFor(app.staticTexts["The live data did not load, so no update time can be shown"].firstMatch)
         shot(app, "40-offline-home")
+        scrollTo(app, el(app, "unavailableCard"))
         open(app, tab: "alerts", title: "Alerts & events")
         waitFor(el(app, "feedError"))
+        scrollTo(app, el(app, "unavailableCard"))
         shot(app, "41-offline-alerts")
+    }
+
+    /// A failed first load is not an all-clear for the reader's own place
+    /// (changelog C26): Home and My places say the data is unavailable.
+    func testFailedFeedIsNotAnAllClear() {
+        let app = launch(["-PNDFixtureFail", "-PNDFixturePlaces"])
+        let card = el(app, "placeResult")
+        waitFor(card, 30)
+        waitFor(card.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Live data unavailable")).firstMatch, 30)
+        let allClear = NSPredicate(format: "label CONTAINS[c] 'Nothing reported nearby'")
+        XCTAssertEqual(app.descendants(matching: .any).matching(allClear).count, 0, "no false all-clear on Home")
+        scrollTo(app, el(app, "lastChecked"))
+        XCTAssertEqual(el(app, "lastChecked").label, "not yet: the latest data could not be loaded")
+        shot(app, "42-offline-place-answer")
+        open(app, tab: "places", title: "My places")
+        let chip = el(app, "placeChip")
+        scrollTo(app, chip)
+        XCTAssertTrue(chip.label.contains("LIVE DATA UNAVAILABLE"), chip.label)
+        XCTAssertEqual(app.descendants(matching: .any).matching(allClear).count, 0, "no false all-clear on My places")
+        shot(app, "43-offline-my-places")
     }
 
     func testMoreScreenAndSettings() {

@@ -26,7 +26,15 @@ struct RouteLink<Label: View>: View {
     }
 
     var body: some View {
-        Button { model.paths[stackTab, default: []].append(route) } label: { label }
+        Button {
+            // A tab's own screen opens its tab ("Risk map" selects Map), not
+            // a copy of it inside the current stack.
+            if let tab = AppTab.allCases.first(where: { $0.rootRoute == route }) {
+                model.showTab(tab)
+            } else {
+                model.paths[stackTab, default: []].append(route)
+            }
+        } label: { label }
     }
 }
 
@@ -213,5 +221,15 @@ struct QuietNote: View {
     let text: String
     var body: some View {
         if !text.isEmpty { Notice(text: text, stale: true).accessibilityIdentifier("quietNote") }
+    }
+}
+
+/// `PND.unavailableHtml()`: the card a list shows when nothing has loaded
+/// (changelog C19). A failed load is not an empty world.
+struct UnavailableCard: View {
+    var body: some View {
+        MessageCard(title: Format.unavailableTitle, detail: Format.unavailableBody)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("unavailableCard")
     }
 }

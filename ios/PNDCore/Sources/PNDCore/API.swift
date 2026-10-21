@@ -44,8 +44,11 @@ public enum API {
     public static var ledgerURL: URL { URL(string: "/api/events?ledger=1", relativeTo: baseURL)!.absoluteURL }
     public static var alertsURL: URL { URL(string: "/api/alerts", relativeTo: baseURL)!.absoluteURL }
 
-    public static func dataURL(_ file: String, now: Double = Format.now()) -> URL {
-        URL(string: "/data/\(file)?ts=\(Int64(now))", relativeTo: baseURL)!.absoluteURL
+    /// A static data file. Served `max-age=0, must-revalidate`, so it is read
+    /// without a `?ts=` cache-buster (changelog C25); the transport never
+    /// answers from a local cache.
+    public static func dataURL(_ file: String) -> URL {
+        URL(string: "/data/\(file)", relativeTo: baseURL)!.absoluteURL
     }
 
     /// Query component encoding that matches `encodeURIComponent`.

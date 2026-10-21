@@ -8,18 +8,32 @@ struct MapScreen: View {
     @State var sort = SortPicker.initial("live-map_sortBy", Sorts.eventSorts)
 
     var body: some View {
-        let list = Sorts.apply(model.live.filter { Search.matches($0, query) }, sort)
+        let s = query.lowercased()
+        let list = Sorts.apply(model.live.filter { Search.matches($0, s) }, sort)
+        let hasPoints = list.contains { $0.hasCoordinates }
+        let searching = !JS.trim(s).isEmpty
+        // A new search moves the map to what it found; a refresh does not (changelog C18).
+        let fitKey: String? = searching ? (hasPoints ? s : "") : nil
         ScreenScroll(title: "Map") {
             ScreenHeader(title: "Live disaster map", subtitle: "Events reported by official agencies, shown on a map. This page refreshes every minute.")
             TrustNote()
             FeedBanner()
             SearchField(prompt: "Search place or hazard", text: $query)
+            if let n = Screens.mapSearchNote(query: query, matching: list) {
+                Text(n).font(.footnote).foregroundStyle(Theme.textSoft).accessibilityIdentifier("mapSearchNote")
+            }
             HStack { SortPicker(screen: "live-map_sortBy", keys: Sorts.eventSorts, selection: $sort); Spacer() }
             RefreshRow(status: model.status == .failed ? Copy.loadError : model.statusLine())
             MapCard(records: Array(list.prefix(220)), height: 420) { model.push(Route.detail(for: $0)) }
+                .fitting(fitKey)
             Panel("Latest events", trailing: AnyView(RouteLink("See all \u{2192}", value: Route.collection(.recentEvents, query: nil)).font(.caption))) {
-                if list.isEmpty && model.feed != nil { EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "events")) { q in model.push(.collection(.events, query: q)) } }
-                LazyVStack(spacing: 8) { ForEach(list.prefix(30)) { EventCard(record: $0) } }
+                if model.feedDown {
+                    UnavailableCard()
+                } else if model.feed != nil && (list.isEmpty || (searching && !hasPoints)) {
+                    EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "events")) { q in model.push(.collection(.events, query: q)) }
+                } else {
+                    LazyVStack(spacing: 8) { ForEach(list.prefix(30)) { EventCard(record: $0) } }
+                }
             }
         }
     }
@@ -31,10 +45,14 @@ struct AlertsView: View {
     @State var query = ""
     @State var level = ""
     @State var sort = SortPicker.initial("alerts_sortBy", Sorts.eventSorts)
+    /// 40 at a time (changelog C6); a new search, level or sort goes back to 40.
+    @State var limit = Screens.alertsPage
+    @AccessibilityFocusState var focused: String?
 
     var body: some View {
         let official = model.live.filter { $0.isOfficial }
         let list = Sorts.apply(official.filter { Search.matches($0, query) && RiskScale.matches($0, level) }, sort)
+        let pager = Screens.alertsPager(total: list.count, limit: limit)
         let tz = model.zoneID
         ScreenScroll(title: "Alerts & events") {
             ScreenHeader(eyebrow: "Official alerts and reported events", title: "Alerts",
@@ -45,7 +63,7 @@ struct AlertsView: View {
                              ("Red or orange alert", model.fig(list.filter { $0.isRedOrOrange }.count)),
                              ("Countries and areas", model.fig(Format.countryCount(list))),
                              ("Sources working", model.figText(Format.sourcesRatio(model.meta))),
-                             ("Updated", Format.age(model.feed?.generatedAt))])
+                             ("Updated", model.feedDown ? Format.unavailable : Format.age(model.feed?.generatedAt))])
             SearchField(prompt: "Search by alert, place, hazard or agency", text: $query)
             HStack { RiskFilterPicker(selection: $level); SortPicker(screen: "alerts_sortBy", keys: Sorts.eventSorts, selection: $sort) }
             RefreshRow(status: model.statusLine())
@@ -55,15 +73,28 @@ struct AlertsView: View {
             }
             MapCard(records: Array(list.prefix(250)), height: 260) { model.push(Route.detail(for: $0)) }
             Panel("Current official alerts", trailing: AnyView(RouteLink("See all official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
-                if list.isEmpty && model.feed != nil {
+                if model.feedDown {
+                    UnavailableCard()
+                } else if list.isEmpty && model.feed != nil {
                     EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "official alerts")) { q in model.push(.collection(.events, query: q)) }
                 }
                 LazyVStack(spacing: 8) {
-                    ForEach(list.prefix(40)) { e in AlertCard(record: e) }
+                    ForEach(Array(list.prefix(pager.shown).enumerated()), id: \.offset) { _, e in
+                        AlertCard(record: e).accessibilityFocused($focused, equals: e.id)
+                    }
+                }
+                PagerFooter(pager: pager) {
+                    let first = limit
+                    limit += Screens.alertsPage
+                    // Focus moves to the first new card.
+                    if first < list.count { focused = list[first].id }
                 }
             }
+            .onChange(of: query) { _, _ in limit = Screens.alertsPage }
+            .onChange(of: level) { _, _ in limit = Screens.alertsPage }
+            .onChange(of: sort) { _, _ in limit = Screens.alertsPage }
             Panel("Source status", trailing: AnyView(RouteLink("About our sources \u{2192}", value: Route.collection(.resources, query: nil)).font(.caption))) {
-                ForEach(Screens.sourceRows(model.meta, tz: tz), id: \.name) { r in
+                ForEach(model.feedDown ? [] : Screens.sourceRows(model.meta, tz: tz), id: \.name) { r in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(r.name).font(.footnote.bold()).foregroundStyle(Theme.text)
                         Text((r.ok ? "Working" : "Not answering") + " \u{00B7} checked " + r.checked).font(.caption)
@@ -73,6 +104,24 @@ struct AlertsView: View {
             }
             Panel("How to read these alerts") {
                 ForEach(Copy.howToReadAlerts, id: \.self) { Text($0).font(.footnote).foregroundStyle(Theme.textSoft) }
+            }
+        }
+    }
+}
+
+/// "Showing {n} of {N}." with "Show {k} more", or "Showing all {N}."
+struct PagerFooter: View {
+    let pager: Screens.Pager
+    let more: () -> Void
+    var body: some View {
+        if let n = pager.note {
+            if let b = pager.button {
+                CardBox {
+                    Text(n).font(.footnote).foregroundStyle(Theme.muted).accessibilityIdentifier("pagerNote")
+                    Button(b, action: more).buttonStyle(SecondaryButtonStyle()).accessibilityIdentifier("showMore")
+                }
+            } else {
+                Text(n).font(.footnote).foregroundStyle(Theme.muted).accessibilityIdentifier("pagerNote")
             }
         }
     }
@@ -102,13 +151,16 @@ struct AlertCard: View {
 struct CollectionScreen: View {
     @EnvironmentObject var model: AppModel
     let view: CollectionView
+    /// `?region=`: the list keeps only records in that place (changelog C17).
+    let region: String?
     @State var query: String
     @State var hazard = ""
     @State var level = ""
     @State var sort: String
 
-    init(view: CollectionView, initialQuery: String) {
+    init(view: CollectionView, initialQuery: String, region: String? = nil) {
         self.view = view
+        self.region = region
         _query = State(initialValue: initialQuery)
         _sort = State(initialValue: SortPicker.initial(view.rawValue + "_sortBy", view.sortKeys))
     }
@@ -116,11 +168,11 @@ struct CollectionScreen: View {
     var pool: [Record] { view.includesNotLive ? model.all : model.live }
 
     var body: some View {
-        let kept = pool.filter { view.keep($0) }
+        let kept = CollectionView.scoped(pool.filter { view.keep($0) }, region: region)
+        // The hazard filter is built from the list's own records and matches
+        // the type exactly (changelog C8).
         let list = Sorts.apply(kept.filter { e in
-            Search.matches(e, query) &&
-            (hazard.isEmpty || (view.isForecastView ? e.type.lowercased() == hazard.lowercased() : CollectionView.fixedHazardMatches(e, hazard))) &&
-            RiskScale.matches(e, level)
+            Search.matches(e, query) && (hazard.isEmpty || e.type.lowercased() == hazard.lowercased()) && RiskScale.matches(e, level)
         }, sort)
         ScreenScroll(title: view.title) {
             ScreenHeader(title: view.title, subtitle: view.subtitle)
@@ -128,7 +180,7 @@ struct CollectionScreen: View {
             FeedBanner()
             SearchField(prompt: "Search", text: $query).accessibilityIdentifier("collectionSearch")
             FlowRow(spacing: 8) {
-                MenuPicker(label: "Filter by hazard", selection: $hazard, options: hazardOptions(kept))
+                MenuPicker(label: "Filter by hazard", selection: $hazard, options: Format.hazardOptions(kept, selected: hazard).map { ($0.value, $0.label) })
                 RiskFilterPicker(selection: $level)
                 SortPicker(screen: view.rawValue + "_sortBy", keys: view.sortKeys, selection: $sort)
             }
@@ -137,8 +189,16 @@ struct CollectionScreen: View {
             if view == .compareLocations {
                 Text("Search for a place to see its current events. Then search for another place to compare.").font(.footnote).foregroundStyle(Theme.muted)
             }
+            if let note = CollectionView.scopeNote(region: region) {
+                HStack(spacing: 8) {
+                    Text(note).font(.footnote).foregroundStyle(Theme.muted)
+                    RouteLink("Show everywhere \u{2192}", value: Route.collection(view, query: nil)).font(.footnote)
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("regionScope")
+            }
             if list.isEmpty && model.feed != nil {
-                EmptyStateView(empty: Search.empty(query: query, all: model.all, noun: view.noun)) { q in model.push(.collection(.events, query: q)) }
+                EmptyStateView(empty: Search.empty(query: query, all: pool, noun: view.noun)) { q in model.push(.collection(.events, query: q)) }
             }
             if view == .forecastList {
                 ForecastTable(records: list, full: true)
@@ -155,10 +215,6 @@ struct CollectionScreen: View {
         return parts.joined(separator: " \u{00B7} ")
     }
 
-    func hazardOptions(_ kept: [Record]) -> [(String, String)] {
-        if view.isForecastView { return Format.hazardOptions(kept, selected: hazard).map { ($0.value, $0.label) } }
-        return [("", "All hazards")] + CollectionView.fixedHazards.map { ($0, $0) }
-    }
 }
 
 /// The forecast table's phone fold, or the full ten columns (logic.md section 7).
@@ -230,7 +286,8 @@ struct ForecastsView: View {
     var body: some View {
         let tz = model.zoneID
         let fcAll = model.live.filter { $0.forecast }
-        let highAll = model.live.filter { !$0.forecast && ["Red", "Orange", "High"].contains($0.alert) }
+        let highAll = model.live.filter { Format.isHighAlert($0) }
+        let down = model.feedDown
         let matchQ: (Record) -> Bool = { Search.matches($0, query) && RiskScale.matches($0, level) }
         let fc = Sorts.apply(fcAll.filter { matchQ($0) && (hazard.isEmpty || $0.type == hazard) }, sort)
         let high = Sorts.apply(highAll.filter { matchQ($0) && (hazard.isEmpty || $0.type == hazard) }, sort)
@@ -241,14 +298,17 @@ struct ForecastsView: View {
                          subtitle: "These are our forecasts of what may happen next, and where. We make them from reports by official agencies. They are not official warnings.")
             TrustNote()
             FeedBanner()
-            StatGrid(items: [("Forecasts", model.fig(fcAll.count)), ("Events on high alert", model.fig(highAll.count)),
+            // OPEN FORECASTS is the home page's number; ended ones are still listed (changelog C14).
+            StatGrid(items: [("Open forecasts", model.fig(Format.openForecasts(fcAll).count)), ("Events on high alert", model.fig(highAll.count)),
                              ("Kinds of hazard", model.fig(Set(fcAll.map { $0.type }).count)),
-                             ("Sources working", model.figText(Format.sourcesRatio(model.meta))), ("Updated", Format.age(model.feed?.generatedAt)),
-                             ("Forecasts reach as far as", Format.horizonStat(model.meta, tz: tz))])
-            Text(Format.horizonText(model.meta, tz: tz)).font(.footnote).foregroundStyle(Theme.textSoft)
+                             ("Sources working", model.figText(Format.sourcesRatio(model.meta))),
+                             ("Updated", down ? Format.unavailable : Format.age(model.feed?.generatedAt)),
+                             ("Forecasts reach as far as", down ? Format.unavailable : Format.horizonStat(model.meta, tz: tz))])
+            if !down { Text(Format.horizonText(model.meta, tz: tz)).font(.footnote).foregroundStyle(Theme.textSoft) }
             SearchField(prompt: "Search by forecast, country, city, sea or hazard", text: $query)
             FlowRow(spacing: 8) {
-                MenuPicker(label: "Filter by hazard", selection: $hazard, options: Format.hazardOptions(fcAll + highAll, selected: hazard).map { ($0.value, $0.label) })
+                // Built from forecasts only, so its counts add up to the forecasts (changelog C8).
+                MenuPicker(label: "Filter by hazard", selection: $hazard, options: Format.hazardOptions(fcAll, selected: hazard).map { ($0.value, $0.label) })
                 RiskFilterPicker(selection: $level)
                 SortPicker(screen: "forecasts_sortBy", keys: Sorts.forecastTabSorts, selection: $sort)
             }
@@ -260,7 +320,7 @@ struct ForecastsView: View {
             MapCard(records: Array((fc + high).prefix(300)), height: 260) { model.push(Route.detail(for: $0)) }
             Panel("Forecasts by hazard") {
                 Text("Select a hazard to see only its forecasts. Select it again to see them all.").font(.footnote).foregroundStyle(Theme.muted)
-                if tiles.isEmpty { Text("No forecast matches these filters.").font(.footnote).foregroundStyle(Theme.muted) }
+                if tiles.isEmpty && !down { Text("No forecast matches these filters.").font(.footnote).foregroundStyle(Theme.muted) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
                     ForEach(tiles, id: \.type) { t in
                         Button { hazard = hazard == t.type ? "" : t.type } label: {
@@ -278,14 +338,20 @@ struct ForecastsView: View {
                 }
             }
             Panel("Forecasts \u{00B7} \(fc.count) (of \(fcAll.count))", trailing: AnyView(RouteLink("Full table \u{2192}", value: Route.collection(.forecastList, query: nil)).font(.caption))) {
-                if fc.isEmpty && model.feed != nil {
+                if down {
+                    UnavailableCard()
+                } else if fc.isEmpty && model.feed != nil {
                     EmptyStateView(empty: Search.empty(query: query, all: model.live, noun: "forecasts")) { q in model.push(.collection(.events, query: q)) }
                 }
                 ForecastTable(records: fc)
             }
             Panel("Events on high alert \u{00B7} \(high.count) (of \(highAll.count))", trailing: AnyView(RouteLink("All official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
                 Text(Copy.highAlertNote).font(.footnote).foregroundStyle(Theme.muted)
-                if high.isEmpty { Text("No event on high alert matches these filters.").font(.footnote).foregroundStyle(Theme.muted) }
+                if down {
+                    UnavailableCard()
+                } else if high.isEmpty {
+                    Text("No event on high alert matches these filters.").font(.footnote).foregroundStyle(Theme.muted)
+                }
                 LimitedList(items: high, page: 20) { e in
                     let place = [e.type, e.region, e.country].filter { !$0.isEmpty }
                     RelatedRow(record: e, line: (place.count > 1 ? place.joined(separator: " \u{00B7} ") : e.type + " \u{00B7} Location not stated by the source") +
@@ -293,8 +359,9 @@ struct ForecastsView: View {
                 }
             }
             Panel("What changed since our last check") {
-                Text(changes.headline).font(.footnote).foregroundStyle(Theme.textSoft)
-                ForEach(changes.sections, id: \.title) { s in
+                Text(down ? "Live data unavailable, so we cannot say what changed. Trying again automatically." : changes.headline)
+                    .font(.footnote).foregroundStyle(Theme.textSoft)
+                ForEach(down ? [] : changes.sections, id: \.title) { s in
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(s.title) (\(s.count))").font(.footnote.bold()).foregroundStyle(Theme.text)
                         ForEach(s.rows, id: \.self) { Text($0).font(.caption).foregroundStyle(Theme.muted) }
@@ -323,13 +390,14 @@ struct ForecastsView: View {
 struct CalendarScreen: View {
     @EnvironmentObject var model: AppModel
     @State var query: String
+    var region: String? = nil
     @State var hazard = ""
     @State var level = ""
     @State var sort = SortPicker.initial("forecast-calendar_sortBy", Sorts.forecastListSorts)
 
     var body: some View {
         let tz = model.zoneID
-        let kept = model.live.filter { $0.forecast }
+        let kept = CollectionView.scoped(model.live.filter { CollectionView.forecastCalendar.keep($0) }, region: region)
         let list = Sorts.apply(kept.filter { Search.matches($0, query) && (hazard.isEmpty || $0.type.lowercased() == hazard.lowercased()) && RiskScale.matches($0, level) }, sort)
         let cal = Screens.calendar(list, now: Format.now(), tz: tz)
         ScreenScroll(title: "Forecast calendar") {
@@ -342,8 +410,14 @@ struct CalendarScreen: View {
                 RiskFilterPicker(selection: $level)
                 SortPicker(screen: "forecast-calendar_sortBy", keys: Sorts.forecastListSorts, selection: $sort)
             }
-            RefreshRow(status: model.statusLine())
+            RefreshRow(status: model.feed == nil ? model.statusLine() : model.statusLine(CollectionView.forecastCalendar.countText(shown: kept.count, kept: kept)))
             Text(Format.horizonText(model.meta, tz: tz) + " " + Copy.forecastNote).font(.footnote).foregroundStyle(Theme.muted)
+            if let note = CollectionView.scopeNote(region: region) {
+                HStack(spacing: 8) {
+                    Text(note).font(.footnote).foregroundStyle(Theme.muted)
+                    RouteLink("Show everywhere \u{2192}", value: Route.collection(.forecastCalendar, query: nil)).font(.footnote)
+                }
+            }
             if list.isEmpty {
                 MessageCard(title: Copy.calendarEmptyTitle, detail: Copy.calendarEmptyBody)
             } else {

@@ -112,12 +112,59 @@ public enum Format {
 
     // MARK: dates
 
-    /// `tzLabel(tz)`.
-    public static func tzLabel(_ tz: String = zoneID) -> String {
-        let aliases = ["Asia/Kolkata": "IST", "UTC": "UTC", "America/New_York": "ET", "America/Los_Angeles": "PT",
-                       "Europe/London": "UK", "Asia/Dubai": "GST", "Asia/Singapore": "SGT", "Asia/Tokyo": "JST",
-                       "Australia/Sydney": "Sydney"]
-        return aliases[tz] ?? tz
+    public static let tzAliases = ["Asia/Kolkata": "IST", "UTC": "UTC", "America/New_York": "ET", "America/Los_Angeles": "PT",
+                                   "Europe/London": "UK", "Asia/Dubai": "GST", "Asia/Singapore": "SGT", "Asia/Tokyo": "JST",
+                                   "Australia/Sydney": "Sydney"]
+
+    private static let gmtRe = JSRegex(#"^GMT([+-])0?(\d{1,2})(?::?(\d\d))?$"#)
+    private static var shortNameCache: [String: DateFormatter] = [:]
+    private static let cacheLock = NSLock()
+
+    /// `tzLabel(tz, at)` (changelog C27): the nine aliases; any other zone
+    /// takes the en-US short name for the moment `at` ("CDT", "MST") or a GMT
+    /// offset ("GMT-3", "GMT+5:45"); "local time" when the platform gives
+    /// nothing. Never the IANA id.
+    public static func tzLabel(_ tz: String = zoneID, at ms: Double? = nil) -> String {
+        if let a = tzAliases[tz] { return a }
+        guard let zone = TimeZone(identifier: tz) else { return "local time" }
+        cacheLock.lock()
+        let f: DateFormatter
+        if let c = shortNameCache[tz] { f = c } else {
+            f = DateFormatter()
+            f.locale = Locale(identifier: "en_US")
+            f.timeZone = zone
+            f.dateFormat = "zzz"
+            shortNameCache[tz] = f
+        }
+        let raw = f.string(from: Date(timeIntervalSince1970: (ms ?? now()) / 1000))
+        cacheLock.unlock()
+        return normaliseZoneName(raw, offsetSeconds: zone.secondsFromGMT(for: Date(timeIntervalSince1970: (ms ?? now()) / 1000)))
+    }
+
+    /// "GMT-03:00" and "GMT+0545" become "GMT-3" and "GMT+5:45"; an empty or
+    /// numeric-only name is rebuilt from the offset.
+    static func normaliseZoneName(_ raw: String, offsetSeconds: Int) -> String {
+        let t = JS.trim(raw)
+        if let m = gmtRe.exec(t), let sign = m[1], let h = m[2].flatMap({ Int($0) }) {
+            let mm = m[3] ?? "00"
+            return "GMT" + sign + String(h) + (mm == "00" ? "" : ":" + mm)
+        }
+        if t.isEmpty || t.hasPrefix("+") || t.hasPrefix("-") || t.first?.isNumber == true {
+            if offsetSeconds == 0 { return "GMT" }
+            let a = abs(offsetSeconds), h = a / 3600, mi = (a % 3600) / 60
+            return "GMT" + (offsetSeconds < 0 ? "-" : "+") + String(h) + (mi == 0 ? "" : ":" + two(mi))
+        }
+        return t
+    }
+
+    /// `tzMenuLabel(tz)`: the time zone menu's text for the chosen zone.
+    public static func tzMenuLabel(_ tz: String = zoneID, at ms: Double? = nil) -> String {
+        if tz == "Asia/Kolkata" { return "IST \u{00B7} India" }
+        let label = tzLabel(tz, at: ms)
+        let parts = tz.components(separatedBy: "/")
+        guard parts.count > 1, !tz.hasPrefix("Etc/"), !tz.hasPrefix("SystemV/") else { return label }
+        let city = parts.last!.replacingOccurrences(of: "_", with: " ")
+        return city.isEmpty || city == label ? label : label + " \u{00B7} " + city
     }
 
     public struct Parts { let year: Int, month: Int, day: Int, hour: Int, minute: Int }
@@ -148,7 +195,7 @@ public enum Format {
     public static func fmtDate(ms: Double, tz: String? = nil) -> String {
         let z = tz ?? zoneID
         let p = parts(ms, z)
-        return two(p.day) + " " + months[p.month - 1] + " \(p.year), " + clock(p) + " " + tzLabel(z)
+        return two(p.day) + " " + months[p.month - 1] + " \(p.year), " + clock(p) + " " + tzLabel(z, at: ms)
     }
 
     /// `fmtTime(v)`: `h:mm AM {tzLabel}`.
@@ -156,7 +203,7 @@ public enum Format {
         guard let v = v, !v.isEmpty else { return "-" }
         guard let ms = JSDate.ms(v) else { return v }
         let z = tz ?? zoneID
-        return clock(parts(ms, z)) + " " + tzLabel(z)
+        return clock(parts(ms, z)) + " " + tzLabel(z, at: ms)
     }
 
     private static let edgeRe = JSRegex(#"^(\d{4})-(\d\d)-(\d\d)T(00:00:00|23:59:59)(\.0+|\.9+)?Z$"#)

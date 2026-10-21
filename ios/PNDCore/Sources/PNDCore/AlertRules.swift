@@ -117,6 +117,11 @@ public enum AlertRules {
         return out
     }
 
+    /// Whether this device posts notifications now: the alerts switch is the
+    /// off-switch for every notification, and the OS must allow them. Saved
+    /// places are not required: major global events need none.
+    public static func notificationsAllowed(switchOn: Bool, permissionGranted: Bool) -> Bool { switchOn && permissionGranted }
+
     /// The notifications to post now, given what was sent before (`pnd_notified`),
     /// and the updated memory. Same 6-hour de-duplication for both rules.
     public static func plan(events: [Record], places: [Place], seen: [String: Double], now: Double) -> (toSend: [Alert], seen: [String: Double]) {

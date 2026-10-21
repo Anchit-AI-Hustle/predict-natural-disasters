@@ -41,8 +41,12 @@ struct HomeView: View {
     @State var candidates: [Place] = []
     @State var checked: Place?
     @State var autoAnswered = false
-    @State var sort = SortPicker.initial("home_sortBy", Sorts.eventSorts)
+    @State var sort = SortPicker.initial(Home.sortScreen, Home.sortKeys)
     @State var mapHazard = ""
+    @State var mapQuery = ""
+    @State var nudge: Screens.MapNudge?
+    @State var selectedID: String?
+    @State var focusID: String?
 
     var body: some View {
         ScreenScroll(title: "Predict Natural Disasters") {
@@ -149,27 +153,25 @@ struct HomeView: View {
     // MARK: KPIs
 
     var kpis: some View {
-        let k = Screens.homeKPIs(model.live)
+        let r = Home.render(model.live, hazardFilter: mapHazard, sort: sort)
         let loaded = model.feed != nil
+        let down = model.feedDown
+        let unavailable = "Live data unavailable"
         return VStack(alignment: .leading, spacing: 8) {
             Text("Around the world now").font(.title3.bold()).foregroundStyle(Theme.text)
             Text("What our sources are reporting right now.").font(.footnote).foregroundStyle(Theme.muted)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
-                kpi(loaded ? "\(k.liveEvents)" : "-", "Live events", k.liveSub, .collection(.events, query: nil))
-                kpi(loaded ? "\(k.warnings)" : "-", "Official warnings", "Red or orange level", .collection(.officialWarnings, query: nil))
-                kpi(loaded ? "\(k.openForecasts)" : "-", "Open forecasts", k.forecastSub, .collection(.forecastList, query: nil))
-                kpi(loaded ? "\(k.countries)" : "-", "Countries", "Named in live reports", .regions)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(Copy.quoteTitle).font(.subheadline.bold()).foregroundStyle(Theme.text)
-                    Text(Copy.quoteSub).font(.caption).foregroundStyle(Theme.muted)
-                }
-                .padding(10).frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-                .background(Color(hex: "#072B20"), in: RoundedRectangle(cornerRadius: 10))
+                kpi(loaded ? "\(r.kEvents)" : "-", "Live events", down ? unavailable : r.kEventsNote, .collection(.events, query: nil))
+                kpi(loaded ? "\(r.kWarnings)" : "-", "Official warnings", down ? unavailable : Home.warningsTileNote,
+                    .collection(.officialWarnings, query: nil), hint: Format.warningMeaning)
+                kpi(loaded ? "\(r.kForecasts)" : "-", "Open forecasts", down ? unavailable : r.kForecastsNote, .collection(.forecastList, query: nil))
+                kpi(loaded ? "\(r.kCountries)" : "-", "Countries", down ? unavailable : "Named in live reports", .regions)
+                QuoteTile()
             }
         }
     }
 
-    func kpi(_ value: String, _ label: String, _ sub: String, _ route: Route) -> some View {
+    func kpi(_ value: String, _ label: String, _ sub: String, _ route: Route, hint: String = "") -> some View {
         RouteLink(value: route) {
             VStack(alignment: .leading, spacing: 3) {
                 if model.status == .loading && model.feed == nil {
@@ -186,6 +188,7 @@ struct HomeView: View {
         }
         .buttonStyle(.plainArea)
         .accessibilityElement(children: .combine)
+        .accessibilityHint(hint)
         .accessibilityIdentifier("kpi-" + label)
     }
 
@@ -236,98 +239,105 @@ struct HomeView: View {
         }
     }
 
-    // MARK: map and tables
+    // MARK: map and tables (features.md section 1.6)
 
     var mapAndLists: some View {
-        let filtered = Sorts.apply(model.live.filter { mapHazard.isEmpty || $0.type.lowercased().contains(mapHazard.lowercased()) }, sort)
-        let top5 = Array(Sorts.apply(model.live, "severity").prefix(5))
-        let forecasts = Array(filtered.filter { $0.forecast && !$0.windowClosed }.prefix(6))
-        let events = Array(filtered.filter { !$0.forecast }.prefix(5))
-        let warnings = Array(filtered.filter { $0.isOfficial && $0.isRedOrOrange }.prefix(5))
+        let r = Home.render(model.live, hazardFilter: mapHazard, sort: sort)
         let tz = model.zoneID
+        let down = model.feedDown
         return VStack(alignment: .leading, spacing: 12) {
+            SearchField(prompt: "Search location", text: $mapQuery, onSubmit: mapSearch).accessibilityIdentifier("mapSearch")
             HStack {
                 MenuPicker(label: "Filter the map by hazard", selection: $mapHazard,
-                           options: [("", "All hazards")] + Copy.homeHazards.map { ($0, $0) })
-                SortPicker(screen: "home_sortBy", keys: Sorts.eventSorts, selection: $sort)
+                           options: Format.hazardOptions(model.live, selected: mapHazard).map { ($0.value, $0.label) })
+                Spacer()
             }
-            MapCard(records: filtered, height: 260) { model.push(Route.detail(for: $0)) }
-            Panel("Most serious live events", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.events, query: nil)).font(.caption))) {
-                if top5.isEmpty { Text(model.status == .failed ? Copy.loadError : Copy.loading).font(.footnote).foregroundStyle(Theme.muted) }
-                ForEach(Array(top5.enumerated()), id: \.offset) { i, e in
-                    RouteLink(value: Route.detail(for: e)) {
-                        HStack(alignment: .top, spacing: 10) {
-                            Text("\(i + 1)").font(.headline.monospacedDigit()).foregroundStyle(Theme.green).frame(width: 22)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(Format.titleOf(e)).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
-                                Text(e.type + " \u{00B7} " + Format.placeOf(e, "Global")).font(.caption).foregroundStyle(Theme.muted)
-                                Text("Updated " + Format.fmtDate(e.updated, tz: tz)).font(.caption2).foregroundStyle(Theme.muted)
-                            }
-                            Spacer()
-                            RecordRiskBadge(record: e)
-                        }
-                        .frame(minHeight: 44)
-                    }
-                    .buttonStyle(.plainArea)
-                }
+            MapCard(records: r.list, height: 260) { model.push(Route.detail(for: $0)) }
+                .picking(selected: selectedID, focus: focusID) { e in select(e) }
+            if let n = nudge { MapNudgeCard(nudge: n) }
+            liveEventsPanel(r, down: down, tz: tz)
+            stripPanel(r, down: down)
+            forecastsPanel(r, down: down, tz: tz)
+            latestPanel(r, down: down, tz: tz)
+            warningsPanel(r, down: down, tz: tz)
+        }
+    }
+
+    /// A marker tap: the selected-event card, no fly-to (changelog C12).
+    func select(_ e: Record) {
+        selectedID = e.id
+        nudge = Screens.selectedNudge(e)
+    }
+
+    /// The map search: an empty box does nothing; a hit is selected and the
+    /// map moves to it; a miss clears the selection and says so.
+    func mapSearch() {
+        guard let n = Screens.homeMapSearch(model.live, query: mapQuery) else { return }
+        nudge = n
+        if let e = n.record {
+            selectedID = e.id
+            focusID = e.id
+        } else {
+            selectedID = nil
+        }
+    }
+
+    func liveEventsPanel(_ r: Home.Render, down: Bool, tz: String) -> some View {
+        Panel(Home.liveEventsHeading, trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.events, query: nil)).font(.caption))) {
+            SortPicker(screen: Home.sortScreen, keys: Home.sortKeys, selection: $sort)
+            if down {
+                UnavailableCard()
+            } else if model.feed == nil {
+                Text(Copy.loading).font(.footnote).foregroundStyle(Theme.muted)
             }
-            Panel("Live events by type") {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
-                    ForEach(Screens.hazardStrip(model.live), id: \.type) { t in
-                        RouteLink(value: Route.hazard(type: t.type, region: nil)) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(t.type).font(.subheadline.bold()).foregroundStyle(Theme.text)
-                                Text("\(t.count) tracked" + (t.observedOnly ? " \u{00B7} observed only" : "")).font(.caption).foregroundStyle(Theme.muted)
-                            }
-                            .padding(8).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            .background(Theme.cardAlt, in: RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plainArea)
-                        .accessibilityHint(t.observedOnly ? "Observed only - no agency forecasts the onset of this hazard" : "")
-                    }
-                }
-            }
-            Panel("Latest forecasts", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.forecastList, query: nil)).font(.caption))) {
-                if forecasts.isEmpty { Text("No open forecasts right now.").font(.footnote).foregroundStyle(Theme.muted) }
-                ForEach(forecasts) { e in
-                    tableRow(e, [("Starts", Format.fmtWhen(e.first("targetStart", "updated")?.jsString, nil, nil, tz: tz)),
-                                 ("Location", Format.placeOf(e, "Global")), ("Hazard", e.type)])
-                }
-            }
-            Panel("Latest events", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.events, query: nil)).font(.caption))) {
-                ForEach(events) { e in
-                    tableRow(e, [("Time", Format.fmtDate(e.updated, tz: tz)), ("Location", Format.placeOf(e, "Global")),
-                                 ("Event", Format.titleOf(e)), ("Source", Format.shortSource(e.source))])
-                }
-            }
-            Panel("Official Warnings", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
-                if warnings.isEmpty { Text("No red or orange official warning right now.").font(.footnote).foregroundStyle(Theme.muted) }
-                ForEach(warnings) { e in
-                    let ends = e.first("expiresAt", "expectedEnd")?.jsString
-                    tableRow(e, [("Agency", Format.shortSource(e.source)), ("Location", Format.placeOf(e, "Global")),
-                                 ("Warning", Format.titleOf(e)), ("Ends", ends.map { Format.fmtDate($0, tz: tz) } ?? "Not stated")])
-                }
+            ForEach(Array(r.liveEvents.enumerated()), id: \.offset) { i, e in
+                LiveEventRow(index: i + 1, record: e, selected: e.id == selectedID, tz: tz)
             }
         }
     }
 
-    func tableRow(_ e: Record, _ cells: [(String, String)]) -> some View {
-        RouteLink(value: Route.detail(for: e)) {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(Array(cells.enumerated()), id: \.offset) { _, c in
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(c.0.uppercased()).font(.caption2.weight(.heavy)).foregroundStyle(Theme.label).frame(width: 80, alignment: .leading)
-                        Text(c.1).font(.footnote).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
-                        Spacer(minLength: 0)
-                    }
-                }
-                HStack { Text("RISK").font(.caption2.weight(.heavy)).foregroundStyle(Theme.label).frame(width: 80, alignment: .leading); RecordRiskBadge(record: e) }
+    func stripPanel(_ r: Home.Render, down: Bool) -> some View {
+        Panel("Live events by type") {
+            if down { Text(Copy.loadError).font(.footnote).foregroundStyle(Theme.muted) }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+                ForEach(r.hazardStrip, id: \.type) { t in HazardStripTile(tile: t) }
             }
-            .padding(8)
-            .background(Color(hex: "#08211A"), in: RoundedRectangle(cornerRadius: 9))
-            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.divider, lineWidth: 1))
         }
-        .buttonStyle(.plainArea)
+    }
+
+    func forecastsPanel(_ r: Home.Render, down: Bool, tz: String) -> some View {
+        Panel("Latest forecasts", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.forecastList, query: nil)).font(.caption))) {
+            if down {
+                Text(Copy.loadError).font(.footnote).foregroundStyle(Theme.muted)
+            } else if model.feed != nil && r.latestForecasts.isEmpty {
+                Text(Home.noForecasts).font(.footnote).foregroundStyle(Theme.muted)
+            }
+            ForEach(r.latestForecasts) { e in
+                HomeTableRow(record: e, labels: ["Starts", "Location", "Hazard"], cells: Array(Home.forecastCells(e, tz: tz).prefix(3)), showRisk: true)
+            }
+        }
+    }
+
+    func latestPanel(_ r: Home.Render, down: Bool, tz: String) -> some View {
+        Panel("Latest events", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.events, query: nil)).font(.caption))) {
+            if down { Text(Copy.loadError).font(.footnote).foregroundStyle(Theme.muted) }
+            ForEach(r.latestEvents) { e in
+                HomeTableRow(record: e, labels: ["Time", "Location", "Event", "Source"], cells: Home.latestEventCells(e, tz: tz), showRisk: false)
+            }
+        }
+    }
+
+    func warningsPanel(_ r: Home.Render, down: Bool, tz: String) -> some View {
+        Panel("Official Warnings", trailing: AnyView(RouteLink("View all \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
+            if down {
+                Text(Copy.loadError).font(.footnote).foregroundStyle(Theme.muted)
+            } else if model.feed != nil && r.officialWarnings.isEmpty {
+                Text(Home.noWarnings).font(.footnote).foregroundStyle(Theme.muted)
+            }
+            ForEach(r.officialWarnings) { e in
+                HomeTableRow(record: e, labels: ["Agency", "Location", "Warning", "Ends"], cells: Home.warningCells(e, tz: tz), showRisk: false)
+            }
+        }
     }
 
     var trackTeaser: some View {
@@ -346,6 +356,136 @@ struct HomeView: View {
             Text(Copy.howWeCheck).font(.footnote).foregroundStyle(Theme.text)
             RouteLink("See details \u{2192}", value: Route.verification).font(.footnote)
         }
+    }
+}
+
+/// The quote tile beside the figures.
+struct QuoteTile: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(Copy.quoteTitle).font(.subheadline.bold()).foregroundStyle(Theme.text)
+            Text(Copy.quoteSub).font(.caption).foregroundStyle(Theme.muted)
+        }
+        .padding(10).frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+        .background(Color(hex: "#072B20"), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+/// The card over the home map: the selected event, or what a search found.
+struct MapNudgeCard: View {
+    let nudge: Screens.MapNudge
+    var body: some View {
+        CardBox {
+            Eyebrow(text: nudge.eyebrow)
+            Text(nudge.title).font(.headline).foregroundStyle(Theme.text).fixedSize(horizontal: false, vertical: true)
+            Text(nudge.meta).font(.footnote).foregroundStyle(Theme.textSoft).fixedSize(horizontal: false, vertical: true)
+            if let e = nudge.record {
+                RouteLink("See details \u{2192}", value: Route.detail(for: e)).buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("nudgeDetail")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("mapNudge")
+    }
+}
+
+/// One row of the "Live events" card.
+struct LiveEventRow: View {
+    let index: Int
+    let record: Record
+    let selected: Bool
+    let tz: String
+    var body: some View {
+        RouteLink(value: Route.detail(for: record)) {
+            HStack(alignment: .top, spacing: 10) {
+                Text("\(index)").font(.headline.monospacedDigit()).foregroundStyle(Theme.green).frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(record.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
+                    Text(record.type + " \u{00B7} " + Format.placeOf(record, "Global")).font(.caption).foregroundStyle(Theme.muted)
+                    Text("Updated " + Format.fmtDate(record.updated, tz: tz)).font(.caption2).foregroundStyle(Theme.muted)
+                }
+                Spacer()
+                RecordRiskBadge(record: record)
+            }
+            .frame(minHeight: 44)
+            .padding(4)
+            .background(selected ? Color(hex: "#0C3527") : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plainArea)
+        .accessibilityIdentifier("liveEvent")
+    }
+}
+
+/// A chip of the home hazard strip (changelog C13).
+struct HazardStripTile: View {
+    let tile: Screens.HazardTile
+    var body: some View {
+        RouteLink(value: Route.hazard(type: tile.type, region: nil)) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tile.icon + " " + tile.type).font(.subheadline.bold()).foregroundStyle(Theme.text)
+                Text(tile.text).font(.caption).foregroundStyle(Theme.muted)
+            }
+            .padding(8).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(Theme.cardAlt, in: RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plainArea)
+        .accessibilityHint(tile.observedOnly ? "Observed only - no agency forecasts the onset of this hazard" : "")
+        .accessibilityIdentifier("hazardChip")
+    }
+}
+
+/// One row of the home tables, as labelled cells.
+struct HomeTableRow: View {
+    let record: Record
+    let labels: [String]
+    let cells: [String]
+    let showRisk: Bool
+    var body: some View {
+        RouteLink(value: Route.detail(for: record)) {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(zip(labels, cells).enumerated()), id: \.offset) { _, c in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(c.0.uppercased()).font(.caption2.weight(.heavy)).foregroundStyle(Theme.label).frame(width: 80, alignment: .leading)
+                        Text(c.1).font(.footnote).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                    }
+                }
+                if showRisk {
+                    HStack {
+                        Text("RISK").font(.caption2.weight(.heavy)).foregroundStyle(Theme.label).frame(width: 80, alignment: .leading)
+                        RecordRiskBadge(record: record)
+                    }
+                }
+            }
+            .padding(8)
+            .background(Color(hex: "#08211A"), in: RoundedRectangle(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.divider, lineWidth: 1))
+        }
+        .buttonStyle(.plainArea)
+    }
+}
+
+/// The place answer's badge: a level, "Nothing reported nearby" once the
+/// feed has loaded, or "Checking…" / "Live data unavailable" before it.
+struct AnswerBadge: View {
+    let card: PlaceRisk.AnswerCard
+    var body: some View {
+        if let l = card.level {
+            RiskBadge(level: l)
+        } else if card.state == .loaded {
+            NothingNearbyChip()
+        } else {
+            PendingChip(text: card.badge)
+        }
+    }
+}
+
+/// "Checking…" or "Live data unavailable": the unknown style, never a level.
+struct PendingChip: View {
+    let text: String
+    var body: some View {
+        RiskBadge(level: .unknown, text: text, accessibilityText: text)
+            .accessibilityIdentifier("pendingChip")
     }
 }
 
@@ -370,50 +510,37 @@ struct PlaceResultCard: View {
     @State var saveNote: String?
 
     var body: some View {
-        let a = PlaceRisk.assess(place, model.live, generatedAt: model.feed?.generatedAt)
-        let acts = PlaceRisk.actionsFor(a)
-        let lead = a.lead?.event
-        let tz = model.zoneID
+        // Before the feed loads the answer is "Checking…" or "Live data
+        // unavailable", never an all-clear (changelog C26). It answers again
+        // by itself when the data arrives; a later failed refresh keeps it.
+        let card = PlaceRisk.answerCard(place, events: model.live, state: model.placeFeedState,
+                                        generatedAt: model.feed?.generatedAt, tz: model.zoneID)
         VStack(alignment: .leading, spacing: 10) {
-            Eyebrow(text: "Current risk")
+            Eyebrow(text: card.eyebrow)
             HStack(alignment: .center, spacing: 8) {
-                if let l = a.level { RiskBadge(level: l) } else { NothingNearbyChip() }
+                AnswerBadge(card: card)
                 Text(place.name).font(.headline).foregroundStyle(Theme.text).fixedSize(horizontal: false, vertical: true)
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("placeResultHeader")
-            block("What\u{2019}s happening") {
-                if let e = lead {
-                    Text(Format.titleOf(e)).font(.subheadline.bold()).foregroundStyle(Color(hex: "#DCECE4"))
-                    Text(e.type + " \u{00B7} " + Format.placeOf(e, "Place not given") + " \u{00B7} reported " + Format.age(e.updated))
-                        .font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
-                } else {
-                    Text("None of our sources reports anything at this place right now.").font(.subheadline).foregroundStyle(Color(hex: "#DCECE4"))
-                }
+            block("What\u{2019}s happening") { happening(card) }
+            if let why = card.why {
+                block("Why we\u{2019}re showing this") { Text(why).font(.subheadline).foregroundStyle(Color(hex: "#DCECE4")).accessibilityIdentifier("placeWhy") }
             }
-            block("Why we\u{2019}re showing this") { Text(a.why).font(.subheadline).foregroundStyle(Color(hex: "#DCECE4")).accessibilityIdentifier("placeWhy") }
             block("What should I do?") {
-                ForEach(acts.steps, id: \.self) { s in
+                ForEach(card.steps, id: \.self) { s in
                     HStack(alignment: .top, spacing: 6) { Text("\u{2022}"); Text(s) }.font(.subheadline).foregroundStyle(Color(hex: "#DCECE4"))
                 }
-                Text(acts.authority).font(.subheadline).foregroundStyle(Theme.authority)
+                Text(card.authority).font(.subheadline).foregroundStyle(Theme.authority)
             }
-            block("Source") {
-                if let e = lead {
-                    Text(Format.provenance(e) + " \u{00B7} " + e.source).font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
-                    if let u = e.sourceURL { Link("Open the original report \u{2192}", destination: u).font(.footnote).foregroundStyle(Theme.link) }
-                } else {
-                    Text("No report was used for this answer.").font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
-                }
-            }
+            if card.state == .loaded { block("Source") { source(card.lead) } }
             block("Last checked") {
-                Text(model.feed?.generatedAt.map { Format.fmtDate($0, tz: tz) + " \u{00B7} " + Format.age($0) } ?? "not yet: the data is still loading")
-                    .font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+                Text(card.lastChecked).font(.footnote).foregroundStyle(Color(hex: "#DCECE4")).accessibilityIdentifier("lastChecked")
             }
             FlowRow(spacing: 8) {
                 Button("Save place") { save() }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("savePlace")
                 Button("Alert me if this changes") { alertMe() }.buttonStyle(SecondaryButtonStyle())
-                if let e = lead {
+                if let e = card.lead {
                     RouteLink("See details", value: Route.detail(for: e)).buttonStyle(SecondaryButtonStyle())
                 } else {
                     RouteLink("See details", value: Route.myPlaces).buttonStyle(SecondaryButtonStyle())
@@ -425,7 +552,29 @@ struct PlaceResultCard: View {
         .background(Theme.panelTop, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.panelBorder, lineWidth: 1))
         .accessibilityElement(children: .contain)
+        // iOS has no aria-busy; a card still checking is marked as updating.
+        .accessibilityAddTraits(card.busy ? .updatesFrequently : [])
         .accessibilityIdentifier("placeResult")
+    }
+
+    @ViewBuilder func happening(_ card: PlaceRisk.AnswerCard) -> some View {
+        if card.unavailableCard {
+            UnavailableCard()
+        } else if let t = card.leadTitle {
+            Text(t).font(.subheadline.bold()).foregroundStyle(Color(hex: "#DCECE4"))
+            Text(card.leadLine ?? "").font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+        } else {
+            Text(card.happeningText ?? "").font(.subheadline).foregroundStyle(Color(hex: "#DCECE4"))
+        }
+    }
+
+    @ViewBuilder func source(_ lead: Record?) -> some View {
+        if let e = lead {
+            Text(Format.provenance(e) + " \u{00B7} " + (e.source.isEmpty ? "Source not stated" : e.source)).font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+            if let u = e.sourceURL { Link("Open the original report \u{2192}", destination: u).font(.footnote).foregroundStyle(Theme.link) }
+        } else {
+            Text("No report was used for this answer.").font(.footnote).foregroundStyle(Color(hex: "#DCECE4"))
+        }
     }
 
     func block<C: View>(_ title: String, @ViewBuilder _ c: () -> C) -> some View {
