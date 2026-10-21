@@ -44,12 +44,12 @@
     .intelphone:hover{text-decoration:underline}
     .inteltag{font-size:9px;border:1px solid #2b624e;border-radius:999px;padding:2px 6px;color:#9fd0bb;margin-right:4px}
     .inteltag.verified{border-color:#25e29c;color:#8ff0ca}
-    .intelkv{display:grid;grid-template-columns:190px 1fr;gap:7px 14px;padding:14px}
+    .intelkv{padding:14px}.intelkvdl{display:grid;grid-template-columns:190px 1fr;gap:7px 14px;margin:0}
     .intelkv dt{color:#89ab9d;font-size:12px}
     .intelkv dd{margin:0;font-size:13px}
     a.intelcard{color:inherit;text-decoration:none;display:block}
     a.intelcard:hover{border-color:#35d79a}
-    @media(max-width:900px){.intelgrid,.intelgrid2{grid-template-columns:1fr}.intelkv{grid-template-columns:1fr}}
+    @media(max-width:900px){.intelgrid,.intelgrid2{grid-template-columns:1fr}.intelkvdl{grid-template-columns:1fr}}
   </style>`;
 
   const PANELS = [
@@ -107,7 +107,8 @@
       (e.sourceUrl ? ' · <a href="' + esc(e.sourceUrl) + '" target="_blank" rel="noopener">Open the original report ↗</a>' : ''));
     row('About these times', '<span class="muted">' + esc(when.note || '') + '</span>');
 
-    setBody('whenWhere', rows.join(''));
+    /* In a <dl>: a dt and dd straight inside a div is not a description list (axe dlitem, on every detail page). */
+    setBody('whenWhere', '<dl class="intelkvdl">' + rows.join('') + '</dl>');
     setMeta('whenWhere', 'Updated ' + fmt(d.generatedAt));
   }
 

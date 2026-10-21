@@ -39,6 +39,53 @@ const PND={
      storm's "Western Pacific Ocean" as another - is how the homepage came to
      report 195 countries. */
   countryCount(list){const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
+  /* One answer for each quantity the site states on more than one page.
+     Each page counted for itself, so at one moment the same feed read 92 open
+     forecasts on the home page and 93 on /forecasts, 687 events here and 780
+     on /regions/World, and 349 earthquakes against 339. */
+  /* What agencies reported and is still being updated: not our forecasts. */
+  observed(list){return (list||[]).filter(e=>e&&e.live!==false&&!e.forecast)},
+  /* Our forecasts whose window has not ended. One that ended is graded, not open. */
+  openForecasts(list){return (list||[]).filter(e=>e&&e.live!==false&&e.forecast&&!e.windowClosed)},
+  /* A report an agency rated red, orange or high. Never one of our forecasts. */
+  isHighAlert(e){return !!e&&!e.forecast&&['Red','Orange','High'].includes(e.alert)},
+  /* A warning an agency issued and that is in force, as the feed classifies it
+     (evidenceState). Counting every red or orange official record instead
+     made "17 official warnings" on the home page open a page saying 338, 329
+     of them earthquakes that had already happened. */
+  isOfficialWarning(e){if(!e||e.forecast)return false;const s=e.evidenceState;
+    return s?s==='official-warning':!!(e.sourceType==='official'&&e.expiresAt);},
+  officialWarnings(list){return (list||[]).filter(e=>e&&e.live!==false&&this.isOfficialWarning(e))},
+  /* What "official warnings" counts, said wherever the number is. */
+  WARNING_MEANING:'Warnings and watches issued by agencies and in force now. Reports of disasters that already happened are not counted.',
+  /* How many named sources a list comes from. */
+  sourcesReporting(list){return new Set((list||[]).map(e=>e&&e.source).filter(Boolean)).size},
+  /* The hazard a type names, matched whole. Matching on the first word made
+     "Extreme Cold" find every "Extreme Heat" forecast, and an unknown type
+     fell back to Flood. Types the hazard model knows resolve to its entry
+     ("Volcanic Eruption" is Volcano); any other type is only itself. */
+  hazardKey(t){const s=String(t||'').trim();const M=(typeof window!=='undefined'&&window.PNDHazards)||null;
+    if(M){const h=M.hazardOf(s);if(h&&h!==M.DEFAULT){for(const k in M.HAZARDS)if(M.HAZARDS[k]===h)return k}}
+    return s;},
+  sameHazard(a,b){return this.hazardKey(a).toLowerCase()===this.hazardKey(b).toLowerCase()},
+  /* A place box: a continent is the countries on it (continents.js), anything
+     else is matched against the record's place fields. */
+  inPlace(e,q){const C=(typeof window!=='undefined'&&window.PNDContinents)||null;
+    if(C&&C.continentNamed(q))return C.onContinent(e,q);
+    /* The feed names a record's countries in `countries` as well, and fills it
+       from the map outline where a provider gave none. */
+    const t=String(q||'').toLowerCase().trim();
+    return this.matchesPlace(e,t)||(Array.isArray(e&&e.countries)&&e.countries.some(c=>String(c).toLowerCase().includes(t)));},
+  /* A failed load is not a quiet world. Zeros and a stuck "Loading…" both
+     read as nothing happening, so every figure says it is unavailable and
+     every list says why it is empty. */
+  unavailableHtml(){return '<div class="card unavailable" role="status"><b>Live data unavailable.</b><p class="muted">We could not load the latest reports, so nothing can be shown here. This does not mean nothing is happening. Trying again automatically.</p></div>'},
+  feedDown(kpis,lists){(kpis||[]).forEach(id=>{const el=document.getElementById(id);if(el){el.textContent='Unavailable';el.classList.remove('pending');el.removeAttribute('aria-busy')}});
+    (lists||[]).forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=this.unavailableHtml()});},
+  /* The data-status word for a record. A record its provider stopped
+     updating (live:false) was labelled "LIVE EVENT" and "Live" directly
+     under the note saying it had not been updated for 48 days. */
+  liveWord(e){return !e?'-':e.cached?'Saved copy':e.forecast?'Our forecast':e.live===false?'Not updated recently':'Live'},
   /* Shown under a detail page's heading when the record is no longer live. */
   showQuiet(e,after,text){const t=text||this.quietNote(e);let n=document.getElementById('quietNote');
     if(!t){if(n)n.remove();return}
@@ -52,8 +99,26 @@ const PND={
   pathParam(k){const p=location.pathname.split('/').filter(Boolean);const map={disasters:'id',calamities:'id',alerts:'id',forecasts:'id',history:'id',regions:'region',locations:'location',hazards:'type',sources:'source'};if(p.length>=2&&map[p[0]]===k){try{return decodeURIComponent(p.slice(1).join('/'))}catch(e){return p.slice(1).join('/')}}return ''},
   qs(k){return new URLSearchParams(location.search).get(k)||this.pathParam(k)||'';},
   getTZ(){return this.timezone;},
-  tzLabel(tz=this.timezone){const aliases={'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'};return aliases[tz]||tz;},
-  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+  /* The zone's name beside a time (C27). The short aliases first; any other
+     zone takes its en-US short name for that moment ("CDT", "MST"), which is
+     an offset ("GMT-3", "GMT+5:45") where it has none. Never the raw IANA id:
+     since the site follows the device's zone, that put
+     "America/Argentina/Buenos_Aires" after every time. The locale is fixed so
+     the label does not change with the browser's language. */
+  TZ_ALIASES:{'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
+  tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
+    try{const d=at===undefined?new Date(Date.now()):new Date(at);const p=this._fmt('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(isNaN(d)?new Date(Date.now()):d).find(x=>x.type==='timeZoneName');if(p&&p.value)return p.value}catch(e){}
+    return 'local time';},
+  /* The time zone menu's own words for the chosen zone: its label and its
+     city ("GMT-3 · Buenos Aires"). The other options stay IANA ids. */
+  tzMenuLabel(tz=this.timezone,at){if(tz==='Asia/Kolkata')return 'IST · India';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
+  /* One formatter per zone and shape, made once. toLocaleString builds a new
+     one on every call, and /accuracy formats thousands of dates: it was the
+     largest single cost of that page's 6-second main-thread task. Output is
+     identical, since toLocaleString is defined as exactly this. */
+  _fmts:{},
+  _fmt(locale,opts){const k=locale+JSON.stringify(opts);return this._fmts[k]||(this._fmts[k]=new Intl.DateTimeFormat(locale,opts))},
+  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
   /* A forecast window edge. Whole-day windows are stored as UTC midnight to
      23:59:59Z, or midnight to midnight with the end excluded, and fmtDate
      turned each edge into a time of day in the reader's zone: "19 Oct to
@@ -67,8 +132,8 @@ const PND={
     const edge=x=>{const m=/^(\d{4})-(\d\d)-(\d\d)T(00:00:00|23:59:59)(\.0+|\.9+)?Z$/.exec(String(x||''));return m?{t:Date.UTC(+m[1],+m[2]-1,+m[3]),last:m[4]==='23:59:59'}:null};
     const m=edge(v);if(!m||(other&&!edge(other)))return this.fmtDate(v);
     const day=m.last||role!=='end'?m.t:m.t-864e5;
-    return new Date(day).toLocaleDateString('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'});},
-  fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel();},
+    return this._fmt('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(new Date(day));},
+  fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
   age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
   /* The one risk scale, from risk.js. This used to be a second vocabulary
      mapping onto a second palette, which is how `.badge.watch` came to be
@@ -357,7 +422,9 @@ const PND={
     source:{label:'Source (A to Z)',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
     title:{label:'Name (A to Z)',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
     distance:{label:'Nearest first',cmp(a,b){return (Number.isFinite(a._d)?a._d:Infinity)-(Number.isFinite(b._d)?b._d:Infinity)}},
-    windowEnd:{label:'Ending soonest first',cmp(a,b){const x=Date.parse(a.targetEnd||'')||Infinity,y=Date.parse(b.targetEnd||'')||Infinity;return x-y}},
+    /* A window that already ended is not ending soon: it sank to the top as the
+       earliest end of all, so a forecast over since September led the list. */
+    windowEnd:{label:'Ending soonest first',cmp(a,b){const now=Date.now(),x=Date.parse(a.targetEnd||'')||Infinity,y=Date.parse(b.targetEnd||'')||Infinity,xa=x<=now||!!a.windowClosed,ya=y<=now||!!b.windowClosed;return xa!==ya?(xa?1:-1):xa?y-x:x-y}},
     yearNew:{label:'Most recent first',cmp(a,b){return PND.numOf(b.sort)-PND.numOf(a.sort)}},
     yearOld:{label:'Earliest first',cmp(a,b){return PND.numOf(a.sort)-PND.numOf(b.sort)}},
     name:{label:'Name (A to Z)',cmp(a,b){return PND.textOf(a,'name','title').localeCompare(PND.textOf(b,'name','title'))}},
@@ -417,7 +484,7 @@ const PND={
      promise-driven data load can complete in one turn, so that "moment" lasted
      over a second and anything looking at the page in it saw a dropdown with
      nothing to pick. */
-  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'?'IST · India':z)}</option>`).join('');},
+  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'||z===this.timezone?this.tzMenuLabel(z):z)}</option>`).join('');},
   /* Still here for a header put into the page some other way; a no-op once the
      markup already carries its own options. */
   initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s||s.options.length)return;s.innerHTML=this.timezoneOptions();},
@@ -544,7 +611,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
      its recovery link is deliberately in query form, and rewriting it back to the
      pretty URL the visitor just failed to open would send them straight back. */
   function normalizeLinks(root=document){root.querySelectorAll('a[href]:not([data-keep-href])').forEach(a=>{const old=a.getAttribute('href'),next=PND.canonicalDetailUrl(old);if(next&&next!==old)a.setAttribute('href',next);});}
-  function normalizeRows(root=document){root.querySelectorAll(clickableSelectors).forEach(el=>{const href=PND.routeFromDataset(el);if(href)el.dataset.href=href;if(!el.dataset.href)return;el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.title='Open details';el.setAttribute('role','link');el.setAttribute('tabindex','0');});root.querySelectorAll('.event,.riskitem,.calamity-card,.forecast-card,.alert-card,.region-card,.hazard-card,.historical-card').forEach(el=>{if(!el.dataset.href){const href=PND.routeFromDataset(el);if(href)el.dataset.href=href}if(el.dataset.href){el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.setAttribute('role','link');el.setAttribute('tabindex','0');el.title='Open details';}});}
+  function normalizeRows(root=document){root.querySelectorAll(clickableSelectors).forEach(el=>{/* Inside a card that is already a link, a chip made into a second link is a control nested in a control, and a 17px target: the card's own link is the one way in. */if(el.parentElement&&el.parentElement.closest('a[href],button'))return;const href=PND.routeFromDataset(el);if(href)el.dataset.href=href;if(!el.dataset.href)return;el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.title='Open details';el.setAttribute('role','link');el.setAttribute('tabindex','0');});root.querySelectorAll('.event,.riskitem,.calamity-card,.forecast-card,.alert-card,.region-card,.hazard-card,.historical-card').forEach(el=>{if(!el.dataset.href){const href=PND.routeFromDataset(el);if(href)el.dataset.href=href}if(el.dataset.href){el.dataset.href=PND.canonicalDetailUrl(el.dataset.href);el.style.cursor='pointer';el.style.pointerEvents='auto';el.setAttribute('role','link');el.setAttribute('tabindex','0');el.title='Open details';}});}
   function normalizeInlineHandlers(root=document){root.querySelectorAll('[onclick]').forEach(el=>{if(el.dataset.href)return;const raw=el.getAttribute('onclick')||'';const m=raw.match(/(?:window\.)?location(?:\.href)?\s*=\s*['\"]([^'\"]+)/)||raw.match(/location\.assign\(['\"]([^'\"]+)/);if(m){el.dataset.href=PND.canonicalDetailUrl(m[1]);el.removeAttribute('onclick');el.style.cursor='pointer';el.setAttribute('role','link');el.setAttribute('tabindex','0');}});}
   function wire(root=document){normalizeLinks(root);normalizeViewAll(root);normalizeRows(root);normalizeInlineHandlers(root);}
   function navigateFrom(el){const href=el&&el.dataset&&el.dataset.href;if(href)PND.redirect(href);}
@@ -596,6 +663,13 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
       }
     });
   }
-  function init(){if(document.body&&!document.querySelector('.sitefoot,.seo-nav'))document.body.insertAdjacentHTML('beforeend',PND.footer());document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#refresh'))PND._freshNext=true},true);wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
+  /* A skip link, and every part of the page inside a named landmark. Each
+     page's hero and the enrichment section sat outside <main>, unnamed, and
+     no page had a way past the header and its links. */
+  function landmarks(){const main=document.querySelector('main');if(!main)return;if(!main.id)main.id=document.getElementById('main')?'main-content':'main';if(!main.hasAttribute('tabindex'))main.setAttribute('tabindex','-1');
+    if(!document.querySelector('a.skip'))document.body.insertAdjacentHTML('afterbegin','<a class="skip" href="#'+main.id+'">Skip to main content</a>');
+    document.querySelectorAll('body > section').forEach(sec=>{if(sec.hasAttribute('aria-label')||sec.hasAttribute('aria-labelledby'))return;const h=sec.querySelector('h1,h2');
+      if(h){if(!h.id)h.id='h-'+Math.random().toString(36).slice(2,8);sec.setAttribute('aria-labelledby',h.id)}else sec.setAttribute('aria-label',sec.id==='eventEnrichment'?'More about this':'Summary')});}
+  function init(){landmarks();if(document.body&&!document.querySelector('.sitefoot,.seo-nav'))document.body.insertAdjacentHTML('beforeend',PND.footer());document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#refresh'))PND._freshNext=true},true);wire();fillRiskFilters();const mo=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1){wire(n);fillRiskFilters(n)}});mo.observe(document.body,{childList:true,subtree:true});attachEnrichment();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

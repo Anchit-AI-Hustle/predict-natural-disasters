@@ -228,7 +228,33 @@
     return { steps: steps, authority: AUTHORITY_LINE, official: !!official };
   }
 
+  /*
+   * Before there is a feed to answer from (C26).
+   *
+   * assess() on an empty list says "Nothing reported nearby", which is true
+   * only of a feed that loaded. Asked while the first load is still in flight,
+   * or after it failed, that read as an all-clear for the reader's own place
+   * while the site knew nothing at all. Every place answer asks feedState()
+   * first and shows these words, in the unknown style, until the data
+   * arrives; then it answers again by itself.
+   *
+   * `loaded` is whether any feed has loaded on this page; `failed` whether
+   * the last attempt failed. A later failed refresh keeps the last answer,
+   * as the rest of the page keeps its last figures.
+   */
+  function feedState(loaded, failed) { return loaded ? 'loaded' : failed ? 'failed' : 'loading'; }
+  var PENDING = {
+    loading: { headline: 'Checking…', text: 'Checking the latest reports for this place.',
+      lastChecked: 'not yet: the data is still loading' },
+    failed: { headline: 'Live data unavailable',
+      text: 'We could not load the latest reports, so nothing can be shown here. This does not mean nothing is happening. Trying again automatically.',
+      lastChecked: 'not yet: the latest data could not be loaded' }
+  };
+  /* The one step that holds with no data: who to ask. */
+  var PENDING_STEP = 'For official information about this place, check your national or local disaster agency.';
+
   var P = { rowsFor: rowsFor, assess: assess, actionsFor: actionsFor,
+    feedState: feedState, PENDING: PENDING, PENDING_STEP: PENDING_STEP,
     NEAR_KM: NEAR_KM, MODERATE_KM: MODERATE_KM, AUTHORITY_LINE: AUTHORITY_LINE };
   if (typeof window !== 'undefined') window.PNDPlaceRisk = P;
   if (typeof module !== 'undefined' && module.exports) module.exports = P;

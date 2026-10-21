@@ -48,7 +48,24 @@
   var TERRAIN_CREDIT =
     '<a href="https://terrain.reearth.land/" target="_blank" rel="noopener">Re:Earth terrain</a> (CC BY 4.0)';
 
+  /* With no choice made, a phone, a touch screen or a reader asking to save
+     data opens on the flat map: the globe's library is 1.45 MB compressed
+     (5.1 MB unpacked) and was fetched on every map page, phones included.
+     It is fetched on the first press of Globe instead, as it already was
+     for a reader who had chosen Flat. A choice once made is kept. */
+  function lightByDefault() {
+    try {
+      var c = navigator.connection;
+      if (c && c.saveData) return true;
+      var mq = window.matchMedia;
+      return !!(mq && (mq('(max-width: 900px)').matches || mq('(pointer: coarse)').matches));
+    } catch (e) { return false; }
+  }
+  function stored() {
+    try { return localStorage.getItem(PREF) || ''; } catch (e) { return ''; }
+  }
   function prefers() {
+    if (!stored() && lightByDefault()) return 'flat';
     try { return localStorage.getItem(PREF) || 'globe'; } catch (e) { return 'globe'; }
   }
   function remember(v) {

@@ -29,6 +29,33 @@
       ]
     },
     {
+      "source": "/(alert-rules|alerts-client|backtest-view|collection|continents|event-enrichment|forecast-models|forecast-table|globe|glossary|hazard-model|history-data|map-setup|observed-model|place-risk|place-search|risk|search|trust|verdicts|verification-model)\\.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=600"
+        }
+      ]
+    },
+    {
+      "source": "/(app-pages|risk|portal)\\.css",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=600"
+        }
+      ]
+    },
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/api/(.*)",
       "headers": [
         {

@@ -94,6 +94,8 @@ const S={
   /* An empty result is ambiguous - a broken box looks exactly like a feed with
      nothing in it. Say which one it is, and say it from the data rather than
      from a guess. */
+  /* The same count as PND.countryCount, for the pages that load only this file. */
+  countryCount(list){const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
   emptyHtml(query,pool,all,noun){
     const q=String(query==null?'':query).trim();
     const what=noun||'events';
@@ -108,11 +110,15 @@ const S={
         '<p><a class="btn" href="/events?q='+encodeURIComponent(q)+
         '">See '+(elsewhere===1?'it':'all '+elsewhere)+' on the events page →</a></p>';
     }else{
-      const countries=[];
-      for(const e of whole){const c=e&&e.country;if(c&&countries.indexOf(c)<0)countries.push(c)}
+      /* Counted as every page counts them: reports only, not our forecasts,
+         and a record naming three countries names three. Counting raw
+         country strings read "780 events from 107 countries" beside a page
+         saying 687 events from 128. */
+      const reports=whole.filter(e=>e&&e.live!==false&&!e.forecast);
+      const n=S.countryCount(reports);
       msg+='<p class="muted">Nothing in our current data matches it. Right now we have '+
-        whole.length+' event'+(whole.length===1?'':'s')+' from '+countries.length+
-        (countries.length===1?' country or territory':' countries and territories')+'. '+
+        reports.length+' event'+(reports.length===1?'':'s')+' from '+n+
+        (n===1?' country or territory':' countries and territories')+'. '+
         'We only show what official sources are reporting. If a place has no current '+
         'official report, it is not listed here. That does not mean nothing is happening there.</p>';
     }
