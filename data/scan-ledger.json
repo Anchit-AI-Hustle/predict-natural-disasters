@@ -7121,6 +7121,86 @@
           "failureReason": null
         }
       ]
+    },
+    {
+      "scanId": "scan-2026-10-21T22-20-23-287Z",
+      "scanTimestamp": "2026-10-21T22:20:23.287Z",
+      "engineVersion": "scan-1.0.0",
+      "providerVersion": "9c77e423650d",
+      "providers": [
+        {
+          "provider": "gdacs",
+          "status": "INCOMPLETE_SCAN",
+          "success": true,
+          "recordsEvaluated": 946,
+          "recordsServed": 836,
+          "dataFreshness": "2026-10-21T22:18:09.000Z",
+          "failureReason": "GDACS was not read in full for earthquake, wildfire: the search failed or every page asked for came back full."
+        },
+        {
+          "provider": "usgs",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 375,
+          "recordsServed": 353,
+          "dataFreshness": "2026-10-21T22:17:19.451Z",
+          "failureReason": null
+        },
+        {
+          "provider": "emsc",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 80,
+          "recordsServed": 4,
+          "dataFreshness": "2026-10-21T20:42:05.806Z",
+          "failureReason": null
+        },
+        {
+          "provider": "eonet",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 300,
+          "recordsServed": 291,
+          "dataFreshness": "2026-10-21T06:00:00.000Z",
+          "failureReason": null
+        },
+        {
+          "provider": "nhc",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 2,
+          "recordsServed": 2,
+          "dataFreshness": "2026-10-21T21:00:00.000Z",
+          "failureReason": null
+        },
+        {
+          "provider": "nws",
+          "status": "INCOMPLETE_SCAN",
+          "success": true,
+          "recordsEvaluated": 13,
+          "recordsServed": 13,
+          "dataFreshness": "2026-10-21T22:05:00.000Z",
+          "failureReason": "18 alert(s) could not be placed and were left out."
+        },
+        {
+          "provider": "reliefweb",
+          "status": "DATA_UNAVAILABLE",
+          "success": false,
+          "recordsEvaluated": 0,
+          "recordsServed": 0,
+          "dataFreshness": null,
+          "failureReason": "no <item> elements at https://reliefweb.int/disasters/rss.xml"
+        },
+        {
+          "provider": "usgs_volcano",
+          "status": "SCANNED",
+          "success": true,
+          "recordsEvaluated": 4,
+          "recordsServed": 4,
+          "dataFreshness": "2026-10-21T19:27:38.000Z",
+          "failureReason": null
+        }
+      ]
     }
   ],
   "engineVersion": "scan-1.0.0",
@@ -7486,6 +7566,187 @@
           "endpoint": "https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes"
         }
       }
+    },
+    "9c77e423650d": {
+      "firstSeenAt": "2026-10-21T22:20:23.287Z",
+      "providers": {
+        "gdacs": {
+          "label": "GDACS (Global Disaster Alert and Coordination System)",
+          "hazards": [
+            "Earthquake",
+            "Tropical Cyclone",
+            "Flood",
+            "Drought",
+            "Wildfire",
+            "Volcano"
+          ],
+          "geographicCoverage": "Global",
+          "coverageResolution": "Only events GDACS itself raises to an alert level. Flood, drought and wildfire records describe alert areas, not incident points.",
+          "scope": {
+            "kind": "global"
+          },
+          "completeness": "selective",
+          "completenessBasis": "GDACS lists only events it raises to an alert level, so a disaster it does not carry may simply be below that threshold.",
+          "recordsObservations": true,
+          "inputKind": "observation",
+          "inputBasis": "GDACS raises alerts on events it has already detected, so its records say what is happening rather than what will.",
+          "endpoint": "https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP"
+        },
+        "usgs": {
+          "label": "USGS Earthquake Hazards Program",
+          "hazards": [
+            "Earthquake"
+          ],
+          "geographicCoverage": "Global",
+          "coverageResolution": "Every earthquake of magnitude 2.5 or above in the past seven days, at its epicentre. Anything smaller, or older, is outside this feed.",
+          "scope": {
+            "kind": "global"
+          },
+          "completeness": "exhaustive",
+          "completenessBasis": "A complete catalogue of earthquakes of magnitude 2.5 and above for the past seven days, so an absence above that threshold is meaningful.",
+          "recordsObservations": true,
+          "inputKind": "observation",
+          "inputBasis": "A catalogue of earthquakes that have occurred.",
+          "endpoint": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson"
+        },
+        "emsc": {
+          "label": "EMSC (European-Mediterranean Seismological Centre)",
+          "hazards": [
+            "Earthquake"
+          ],
+          "geographicCoverage": "Global, with the densest network in Europe and the Mediterranean",
+          "coverageResolution": "Earthquakes of magnitude 4.5 or above, at epicentre.",
+          "scope": {
+            "kind": "global"
+          },
+          "completeness": "exhaustive",
+          "completenessBasis": "A complete catalogue above magnitude 4.5.",
+          "recordsObservations": true,
+          "inputKind": "observation",
+          "inputBasis": "A catalogue of earthquakes that have occurred.",
+          "endpoint": "https://www.emsc-csem.org/"
+        },
+        "eonet": {
+          "label": "NASA EONET",
+          "hazards": [
+            "Wildfire",
+            "Volcano",
+            "Severe Storm",
+            "Tropical Cyclone",
+            "Ice",
+            "Landslide"
+          ],
+          "geographicCoverage": "Global",
+          "coverageResolution": "A curated set of events drawn from Earth-observation sources. EONET does not claim to list every event, so absence here is not evidence of absence.",
+          "scope": {
+            "kind": "global"
+          },
+          "completeness": "selective",
+          "completenessBasis": "A curated set; EONET does not claim to list every event, so its silence is not evidence.",
+          "recordsObservations": true,
+          "inputKind": "observation",
+          "inputBasis": "A curated catalogue of natural events already under way.",
+          "endpoint": "https://eonet.gsfc.nasa.gov/api/v3/events"
+        },
+        "nhc": {
+          "label": "NOAA National Hurricane Center",
+          "hazards": [
+            "Tropical Cyclone"
+          ],
+          "geographicCoverage": "Atlantic, eastern Pacific and central Pacific basins only",
+          "coverageResolution": "Active tropical cyclones, at storm centre. Storms in the western Pacific, Indian Ocean and southern hemisphere are outside this provider entirely.",
+          "scope": {
+            "kind": "boxes",
+            "boxes": [
+              {
+                "name": "Atlantic",
+                "minLat": -5,
+                "maxLat": 60,
+                "minLon": -100,
+                "maxLon": 0
+              },
+              {
+                "name": "Eastern and central Pacific",
+                "minLat": -5,
+                "maxLat": 60,
+                "minLon": -180,
+                "maxLon": -75
+              }
+            ]
+          },
+          "completeness": "exhaustive",
+          "completenessBasis": "Every active tropical cyclone in the basins it publishes for.",
+          "recordsObservations": true,
+          "inputKind": "forecast",
+          "inputBasis": "The hurricane centre publishes advisories for active systems, including where a storm is expected to go, which is an input to a forecast of what it has not yet done.",
+          "endpoint": "https://www.nhc.noaa.gov/CurrentStorms.json"
+        },
+        "nws": {
+          "label": "NOAA / National Weather Service",
+          "hazards": [
+            "Flood",
+            "Severe Weather",
+            "Extreme Heat",
+            "Winter Storm",
+            "Tornado"
+          ],
+          "geographicCoverage": "United States and its territories only",
+          "coverageResolution": "Alerts at severe or extreme severity, carrying the affected-area polygon where the agency published one and a forecast-zone centre where it did not.",
+          "scope": {
+            "kind": "countries",
+            "countries": [
+              "United States"
+            ]
+          },
+          "completeness": "selective",
+          "completenessBasis": "Exhaustive for active warnings, but a warning is not an observation: these records never enter the observed-disaster ledger, so this provider cannot establish that no disaster occurred.",
+          "recordsObservations": false,
+          "inputKind": "forecast",
+          "inputBasis": "A watch or warning states that severe weather is expected, which is a statement about what has not happened yet.",
+          "endpoint": "https://api.weather.gov/alerts/active"
+        },
+        "reliefweb": {
+          "label": "ReliefWeb (UN OCHA)",
+          "hazards": [
+            "Flood",
+            "Drought",
+            "Earthquake",
+            "Tropical Cyclone",
+            "Complex Emergency"
+          ],
+          "geographicCoverage": "Global",
+          "coverageResolution": "Country-level humanitarian disaster declarations. These carry no incident coordinates and are placed at a country centroid.",
+          "scope": {
+            "kind": "global"
+          },
+          "completeness": "selective",
+          "completenessBasis": "Only disasters ReliefWeb has declared, which is a subset of those that occur.",
+          "recordsObservations": true,
+          "inputKind": "observation",
+          "inputBasis": "Situation reports and declarations published after a disaster has occurred.",
+          "endpoint": "https://reliefweb.int/disasters/rss.xml"
+        },
+        "usgs_volcano": {
+          "label": "USGS Volcano Hazards Program",
+          "hazards": [
+            "Volcano"
+          ],
+          "geographicCoverage": "Volcanoes monitored by the United States volcano observatories",
+          "coverageResolution": "Volcanoes currently at an elevated alert level. Volcanoes outside the US observatory network are not covered by this provider.",
+          "scope": {
+            "kind": "countries",
+            "countries": [
+              "United States"
+            ]
+          },
+          "completeness": "exhaustive",
+          "completenessBasis": "Exhaustive for elevated alert levels in the observatory network it covers, which is not the same as exhaustive for eruptions that caused harm: an alert level is a published status, these records never enter the observed-disaster ledger, and their silence establishes only that nothing was elevated.",
+          "recordsObservations": false,
+          "inputKind": "forecast",
+          "inputBasis": "A volcano alert level states expected activity - a watch or warning is issued for unrest before an eruption, not after it.",
+          "endpoint": "https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes"
+        }
+      }
     }
   },
   "providers": {
@@ -7643,7 +7904,7 @@
       "recordsObservations": true,
       "inputKind": "observation",
       "inputBasis": "Situation reports and declarations published after a disaster has occurred.",
-      "endpoint": "https://reliefweb.int/disasters/feed"
+      "endpoint": "https://reliefweb.int/disasters/rss.xml"
     },
     "usgs_volcano": {
       "label": "USGS Volcano Hazards Program",
@@ -7668,74 +7929,74 @@
   },
   "providerVersionNote": "Each scan records the provider definitions in force when it ran, under providerVersions. A definition is never applied backwards: widening a provider’s scope or calling it exhaustive changes what future scans can establish, never what past ones did.",
   "aggregate": {
-    "scansRecorded": 89,
+    "scansRecorded": 90,
     "byProvider": {
       "gdacs": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
           "SCANNED": 21,
-          "INCOMPLETE_SCAN": 68
+          "INCOMPLETE_SCAN": 69
         },
-        "recordsEvaluated": 64078
+        "recordsEvaluated": 65024
       },
       "usgs": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "SCANNED": 89
+          "SCANNED": 90
         },
-        "recordsEvaluated": 31196
+        "recordsEvaluated": 31571
       },
       "emsc": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "SCANNED": 89
+          "SCANNED": 90
         },
-        "recordsEvaluated": 7120
+        "recordsEvaluated": 7200
       },
       "eonet": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "SCANNED": 88,
+          "SCANNED": 89,
           "DATA_UNAVAILABLE": 1
         },
-        "recordsEvaluated": 26400
+        "recordsEvaluated": 26700
       },
       "nhc": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "SCANNED": 89
+          "SCANNED": 90
         },
-        "recordsEvaluated": 198
+        "recordsEvaluated": 200
       },
       "nws": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "INCOMPLETE_SCAN": 51,
+          "INCOMPLETE_SCAN": 52,
           "SCANNED": 38
         },
-        "recordsEvaluated": 1481
+        "recordsEvaluated": 1494
       },
       "reliefweb": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "DATA_UNAVAILABLE": 89
+          "DATA_UNAVAILABLE": 90
         },
         "recordsEvaluated": 0
       },
       "usgs_volcano": {
-        "scans": 89,
+        "scans": 90,
         "byStatus": {
-          "SCANNED": 89
+          "SCANNED": 90
         },
-        "recordsEvaluated": 372
+        "recordsEvaluated": 376
       }
     }
   },
   "retention": {
-    "detailedScansRetained": 89,
+    "detailedScansRetained": 90,
     "retainLimit": 2000,
     "detailFrom": "2026-09-23T11:08:51.550Z",
     "note": "Per-scan detail is held for the most recent 2000 scans. Coverage before detailFrom cannot be established from this ledger and must be reported as DATA_UNAVAILABLE, never as scanned or unscanned."
   },
-  "updatedAt": "2026-10-21T18:38:10.028Z"
+  "updatedAt": "2026-10-21T22:20:23.287Z"
 }
