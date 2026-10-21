@@ -33,26 +33,74 @@ final class PNDUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
 
-    /// Opens a section: the tab bar (or its More list) on iPhone, the sidebar on iPad.
+    /// Scrolls the main content up until `e` exists (and, when `hittable`,
+    /// can be tapped). Lazy stacks and lists only build rows near the screen,
+    /// so anything below the fold has to be scrolled to. The drag runs along
+    /// the right edge so it never pans the map card.
+    @discardableResult
+    func scrollTo(_ app: XCUIApplication, _ e: XCUIElement, hittable: Bool = false, swipes: Int = 15, down: Bool = false,
+                  file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+        _ = e.waitForExistence(timeout: 5)
+        var n = 0
+        // isHittable is already true when one edge of a row peeks in at the
+        // bottom, so a tap target must sit well inside the window.
+        func onScreen() -> Bool {
+            guard e.isHittable else { return false }
+            let w = app.windows.firstMatch.frame
+            let f = e.frame
+            return f.minY >= w.minY + 60 && min(f.maxY, f.minY + 120) <= w.maxY - 100
+        }
+        while !(e.exists && (!hittable || onScreen())) && n < swipes {
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.3 : 0.78))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.985, dy: down ? 0.78 : 0.3))
+            // Holding at the end of the drag leaves no momentum, so a tap that
+            // follows lands on a still page instead of only stopping the scroll.
+            start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
+            n += 1
+        }
+        if hittable && e.exists {
+            // Wait until the element stops moving before anyone taps it.
+            var last = e.frame
+            for _ in 0..<10 {
+                Thread.sleep(forTimeInterval: 0.3)
+                let now = e.frame
+                if now == last { break }
+                last = now
+            }
+        }
+        XCTAssertTrue(e.exists, "missing after scrolling: \(e)", file: file, line: line)
+        return e
+    }
+
+    /// Opens a section: the five-tab bar on iPhone, the sidebar on iPad.
     func open(_ app: XCUIApplication, tab: String, title: String) {
         if isPad {
             let item = el(app, "sidebar-" + tab)
-            if !item.exists {
+            if !(item.exists && item.isHittable) {
                 // Portrait iPad may hide the sidebar behind a button.
-                let toggle = app.navigationBars.buttons["Show Sidebar"]
-                if toggle.exists { toggle.tap() }
+                for name in ["ToggleSidebar", "Show Sidebar", "Sections"] {
+                    let toggle = app.navigationBars.buttons[name].firstMatch
+                    if toggle.exists && toggle.isHittable { toggle.tap(); break }
+                }
             }
-            if item.waitForExistence(timeout: 5) { item.tap(); return }
-            let cell = app.staticTexts[title]
-            if cell.exists { cell.tap() }
+            if item.waitForExistence(timeout: 5) {
+                if item.isHittable { item.tap() } else { item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+            } else {
+                let cell = app.staticTexts[title]
+                if cell.exists { cell.tap() }
+            }
+            // In portrait the sidebar floats over the page; close it so the page can be tapped.
+            let dismiss = el(app, "PopoverDismissRegion")
+            if dismiss.waitForExistence(timeout: 2) && dismiss.isHittable { dismiss.tap() }
             return
         }
-        let button = app.tabBars.buttons[title]
-        if button.exists { button.tap(); return }
-        app.tabBars.buttons["More"].tap()
-        let cell = app.tables.cells.staticTexts[title].firstMatch
-        if cell.waitForExistence(timeout: 5) { cell.tap() } else { app.staticTexts[title].firstMatch.tap() }
+        let button = el(app, "tab-" + tab)
+        waitFor(button)
+        button.tap()
     }
+
+    /// The site's five tabs, in its order (features.md section 0.1).
+    let barTabs = ["map", "alerts", "forecasts", "places", "track"]
 
     func testHomeShowsTrustNoteAndFigures() {
         let app = launch()
@@ -80,13 +128,67 @@ final class PNDUITests: XCTestCase {
             if t.0 == "track" { waitFor(el(app, "answerLead"), 60) }
             shot(app, String(format: "%02d-", i + 2) + t.0)
         }
+        // Home is reached from the logo, as on the site.
+        let logo = el(app, "logoButton")
+        waitFor(logo)
+        logo.tap()
+        waitFor(app.staticTexts["Is a place you care about at risk?"].firstMatch)
+    }
+
+    /// Five tabs and no system "More" tab: Map and Track record are never
+    /// hidden behind one (iOS-only fix a). iPad shows the same five in its sidebar.
+    func testFiveTabsAndNoSystemMoreTab() {
+        let app = launch()
+        waitFor(el(app, "trustNote"))
+        if !isPad {
+            for t in barTabs { waitFor(el(app, "tab-" + t), 10) }
+            XCTAssertFalse(el(app, "tab-home").exists, "Home is not a tab")
+            XCTAssertFalse(app.tabBars.buttons["More"].exists, "no system More tab")
+        }
+        open(app, tab: "track", title: "Track record")
+        waitFor(app.staticTexts["Track record"].firstMatch)
+        open(app, tab: "map", title: "Map")
+        waitFor(app.staticTexts["Live disaster map"].firstMatch)
+        shot(app, "05-five-tabs")
+    }
+
+    /// Alerts shows 40 at a time and says so (changelog C6, vectors alerts.pager).
+    func testAlertsPager() {
+        let app = launch(["-PNDFixturePager"])
+        open(app, tab: "alerts", title: "Alerts & events")
+        waitFor(el(app, "alertCard"))
+        let more = el(app, "showMore")
+        scrollTo(app, more, hittable: true, swipes: 60)
+        XCTAssertEqual(more.label, "Show 5 more")
+        XCTAssertTrue(app.staticTexts["Showing 40 of 45."].exists)
+        shot(app, "12-alerts-pager")
+        more.tap()
+        let all = app.staticTexts["Showing all 45."].firstMatch
+        scrollTo(app, all, swipes: 20)
+        XCTAssertFalse(el(app, "showMore").exists)
+        shot(app, "13-alerts-pager-all")
+    }
+
+    /// The ND-001 check shows all eight rows (changelog C11, vectors verificationDetail.render).
+    func testForecastCheckEightRows() {
+        let app = launch(["-PNDOpenRoute", "/verification-detail"])
+        waitFor(app.staticTexts["ND-001 \u{00B7} Central Vietnam flood and landslide forecast"].firstMatch, 30)
+        waitFor(el(app, "trustNote"))
+        let metrics = ["Area", "Start date", "Start time", "Duration", "How widespread", "Strength or severity", "Lives lost", "Missing people"]
+        for (i, m) in metrics.enumerated() {
+            let row = el(app, "compareRow-\(i)")
+            scrollTo(app, row)
+            XCTAssertTrue(row.staticTexts[m].exists, "row \(i) is \(m)")
+        }
+        XCTAssertFalse(el(app, "compareRow-8").exists, "eight rows, no more")
+        shot(app, "70-forecast-check")
     }
 
     func testDetailNavigationFromAlerts() {
         let app = launch()
         open(app, tab: "alerts", title: "Alerts & events")
         let card = el(app, "alertCard")
-        waitFor(card)
+        scrollTo(app, card, hittable: true)
         card.tap()
         waitFor(el(app, "trustNote"))
         waitFor(app.staticTexts["OFFICIAL ALERT"].firstMatch)
@@ -106,7 +208,7 @@ final class PNDUITests: XCTestCase {
             ("hazard", "/hazards/Flood", "Flood events"),
             ("history", "/history/mount-vesuvius-eruption", "Mount Vesuvius eruption"),
             ("source", "/sources/USGS", "USGS"),
-            ("quiet", "/disasters/usgs-us7000ijkl", "LIVE EVENT"),
+            ("quiet", "/disasters/usgs-us7000ijkl", "EVENT NO LONGER UPDATED"),
             ("notfound", "/disasters/no-such-record", "Event not found")
         ]
         for r in routes {
@@ -114,7 +216,8 @@ final class PNDUITests: XCTestCase {
             waitFor(app.staticTexts[r.2].firstMatch, 30)
             if r.0 != "history" && r.0 != "notfound" { waitFor(el(app, "trustNote")) }
             if r.0 == "quiet" { waitFor(el(app, "quietNote")) }
-            if r.0 != "notfound" { waitFor(el(app, "enrichment"), 30) }
+            // The source page has no enrichment block (features.md 10.2).
+            if r.0 != "notfound" && r.0 != "source" { scrollTo(app, el(app, "enrichment")) }
             shot(app, "20-detail-" + r.0)
             app.terminate()
         }
@@ -125,18 +228,19 @@ final class PNDUITests: XCTestCase {
         let field = app.textFields["Search city, area or address"]
         waitFor(field)
         field.tap()
-        field.typeText("Kathmandu")
-        el(app, "checkRisk").tap()
+        field.typeText("Kathmandu\n")
         let candidate = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Kathmandu'")).firstMatch
         waitFor(candidate)
         candidate.tap()
         waitFor(el(app, "placeResult"))
-        waitFor(el(app, "placeWhy"))
+        scrollTo(app, el(app, "placeWhy"))
         shot(app, "30-place-result")
-        el(app, "savePlace").tap()
+        let save = el(app, "savePlace")
+        scrollTo(app, save, hittable: true)
+        save.tap()
         waitFor(app.staticTexts["Saved. You can find it on the My places page."])
         open(app, tab: "places", title: "My places")
-        waitFor(el(app, "savedPlace"))
+        scrollTo(app, el(app, "savedPlace"))
         shot(app, "31-my-places-saved")
     }
 
@@ -146,9 +250,31 @@ final class PNDUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Live data unavailable. Trying again automatically."].firstMatch.exists)
         waitFor(app.staticTexts["The live data did not load, so no update time can be shown"].firstMatch)
         shot(app, "40-offline-home")
+        scrollTo(app, el(app, "unavailableCard"))
         open(app, tab: "alerts", title: "Alerts & events")
         waitFor(el(app, "feedError"))
+        scrollTo(app, el(app, "unavailableCard"))
         shot(app, "41-offline-alerts")
+    }
+
+    /// A failed first load is not an all-clear for the reader's own place
+    /// (changelog C26): Home and My places say the data is unavailable.
+    func testFailedFeedIsNotAnAllClear() {
+        let app = launch(["-PNDFixtureFail", "-PNDFixturePlaces"])
+        let card = el(app, "placeResult")
+        waitFor(card, 30)
+        waitFor(card.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Live data unavailable")).firstMatch, 30)
+        let allClear = NSPredicate(format: "label CONTAINS[c] 'Nothing reported nearby'")
+        XCTAssertEqual(app.descendants(matching: .any).matching(allClear).count, 0, "no false all-clear on Home")
+        scrollTo(app, el(app, "lastChecked"))
+        XCTAssertEqual(el(app, "lastChecked").label, "not yet: the latest data could not be loaded")
+        shot(app, "42-offline-place-answer")
+        open(app, tab: "places", title: "My places")
+        let chip = el(app, "placeChip")
+        scrollTo(app, chip)
+        XCTAssertTrue(chip.label.contains("LIVE DATA UNAVAILABLE"), chip.label)
+        XCTAssertEqual(app.descendants(matching: .any).matching(allClear).count, 0, "no false all-clear on My places")
+        shot(app, "43-offline-my-places")
     }
 
     func testMoreScreenAndSettings() {
@@ -156,9 +282,13 @@ final class PNDUITests: XCTestCase {
         let more = el(app, "moreButton")
         waitFor(more)
         more.tap()
-        waitFor(el(app, "footerAgencies"))
+        waitFor(el(app, "moreScreen"))
         shot(app, "50-more")
-        app.staticTexts["Settings and time zone"].firstMatch.tap()
+        let settings = app.buttons["Settings and time zone"].firstMatch
+        scrollTo(app, el(app, "footerAgencies"))
+        shot(app, "52-more-footer")
+        scrollTo(app, settings, hittable: true, down: true)
+        settings.tap()
         waitFor(el(app, "settingsScreen"))
         shot(app, "51-settings")
     }
@@ -168,7 +298,7 @@ final class PNDUITests: XCTestCase {
         waitFor(el(app, "trustNote"))
         shot(app, "60-home-axl")
         open(app, tab: "alerts", title: "Alerts & events")
-        waitFor(el(app, "alertCard"))
+        scrollTo(app, el(app, "alertCard"))
         shot(app, "61-alerts-axl")
         let app2 = launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL", "-PNDOpenRoute", "/alerts/gdacs-FL-1104999"])
         waitFor(app2.staticTexts["OFFICIAL ALERT"].firstMatch, 30)

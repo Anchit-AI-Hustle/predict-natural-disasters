@@ -105,7 +105,7 @@ public enum Geo {
 
     /// ICU's English names, adjusted to the forms `Intl.DisplayNames` gives in
     /// browsers where Foundation's data differs.
-    static func englishRegionName(_ code: String) -> String? {
+    public static func englishRegionName(_ code: String) -> String? {
         let overrides: [String: String] = ["MM": "Myanmar (Burma)"]
         if let o = overrides[code] { return o }
         return Locale(identifier: "en").localizedString(forRegionCode: code)

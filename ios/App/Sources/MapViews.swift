@@ -36,7 +36,9 @@ final class CentreAnnotation: NSObject, MKAnnotation {
 }
 
 /// Draws a level's marker: the shape filled with the level colour, a white
-/// halo and a dark outline, sized 9 + rank*3 (design.md section 3.3).
+/// halo and a dark outline, sized 9 + rank*3 (design.md section 3.3). The
+/// mark keeps its size, centred in a clear square of at least 24 points that
+/// takes the tap (changelog C24).
 enum MarkerImage {
     static var cache: [RiskLevel: UIImage] = [:]
 
@@ -44,9 +46,10 @@ enum MarkerImage {
         if let i = cache[level] { return i }
         let size = CGFloat(level.markerSize)
         let pad: CGFloat = 3
-        let r = UIGraphicsImageRenderer(size: CGSize(width: size + pad * 2, height: size + pad * 2))
+        let side = max(CGFloat(level.markerTapSide), size + pad * 2)
+        let r = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
         let img = r.image { ctx in
-            let rect = CGRect(x: pad, y: pad, width: size, height: size)
+            let rect = CGRect(x: (side - size) / 2, y: (side - size) / 2, width: size, height: size)
             let path = UIBezierPath(cgPath: RiskShape(level: level == .unknown ? .low : level).path(in: rect).cgPath)
             path.usesEvenOddFillRule = level == .watch
             let cg = ctx.cgContext
@@ -74,6 +77,14 @@ struct RiskMapView: UIViewRepresentable {
     var showCentreDot = false
     var fitToRecords = false
     var onSelect: ((Record) -> Void)? = nil
+    /// Home map: a marker tap shows the selected-event card (no callout).
+    var onPick: ((Record) -> Void)? = nil
+    /// The record whose marker wears the selection ring.
+    var selectedID: String? = nil
+    /// A change moves the map to this record (a search hit).
+    var focusID: String? = nil
+    /// A new value fits the map to the markers, at most zoom 6 (a new search).
+    var fitKey: String? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -113,6 +124,19 @@ struct RiskMapView: UIViewRepresentable {
                 m.setRegion(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 20, longitude: 20), span: MKCoordinateSpan(latitudeDelta: 140, longitudeDelta: 300)), animated: false)
             }
         }
+        if let k = fitKey, k != c.fitKey {
+            c.fitKey = k
+            c.fit(m)
+        } else if fitKey == nil {
+            c.fitKey = nil
+        }
+        if let f = focusID, f != c.focusID {
+            c.focusID = f
+            c.focus(m, id: f)
+        } else if focusID == nil {
+            c.focusID = nil
+        }
+        c.ringSelected(m)
     }
 
     final class Coordinator: NSObject, MKMapViewDelegate {
@@ -120,7 +144,44 @@ struct RiskMapView: UIViewRepresentable {
         var ids: [String] = []
         var regionKey = ""
         var layer: MapLayer?
+        var fitKey: String?
+        var focusID: String?
         init(_ p: RiskMapView) { parent = p }
+
+        /// Fits the map to its markers with a quarter's padding, never closer
+        /// than zoom 6 (about six degrees across).
+        func fit(_ m: MKMapView) {
+            let pts = m.annotations.compactMap { $0 as? RecordAnnotation }.map { $0.coordinate }
+            guard let first = pts.first else { return }
+            var minLat = first.latitude, maxLat = first.latitude, minLon = first.longitude, maxLon = first.longitude
+            for p in pts {
+                minLat = min(minLat, p.latitude); maxLat = max(maxLat, p.latitude)
+                minLon = min(minLon, p.longitude); maxLon = max(maxLon, p.longitude)
+            }
+            let latSpan = min(170, max(6, (maxLat - minLat) * 1.5))
+            let lonSpan = min(355, max(6, (maxLon - minLon) * 1.5))
+            let centre = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2)
+            m.setRegion(MKCoordinateRegion(center: centre, span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)), animated: true)
+        }
+
+        /// Moves to one record, at least as close as zoom 5.
+        func focus(_ m: MKMapView, id: String) {
+            guard let a = m.annotations.compactMap({ $0 as? RecordAnnotation }).first(where: { $0.record.id == id }) else { return }
+            let span = min(m.region.span.latitudeDelta, 12)
+            m.setRegion(MKCoordinateRegion(center: a.coordinate, span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)), animated: true)
+        }
+
+        func ringSelected(_ m: MKMapView) {
+            for a in m.annotations.compactMap({ $0 as? RecordAnnotation }) {
+                if let v = m.view(for: a) { ring(v, on: a.record.id == parent.selectedID) }
+            }
+        }
+
+        func ring(_ v: MKAnnotationView, on: Bool) {
+            v.layer.borderColor = UIColor.white.cgColor
+            v.layer.borderWidth = on ? 2 : 0
+            v.layer.cornerRadius = v.bounds.width / 2
+        }
 
         func applyLayer(_ m: MKMapView, _ l: MapLayer) {
             layer = l
@@ -158,12 +219,17 @@ struct RiskMapView: UIViewRepresentable {
                 v.image = MarkerImage.image(a.marker.level)
                 v.zPriority = MKAnnotationViewZPriority(rawValue: Float(a.marker.level.rank * 150))
                 v.displayPriority = .required
-                v.canShowCallout = true
-                let b = UIButton(type: .detailDisclosure)
-                b.accessibilityLabel = "See details"
-                v.rightCalloutAccessoryView = b
+                v.canShowCallout = parent.onPick == nil
+                if parent.onPick == nil {
+                    let b = UIButton(type: .detailDisclosure)
+                    b.accessibilityLabel = "See details"
+                    v.rightCalloutAccessoryView = b
+                } else {
+                    v.rightCalloutAccessoryView = nil
+                }
                 v.isAccessibilityElement = true
                 v.accessibilityLabel = a.marker.label
+                ring(v, on: a.record.id == parent.selectedID)
                 return v
             }
             if annotation is CentreAnnotation {
@@ -178,6 +244,12 @@ struct RiskMapView: UIViewRepresentable {
                 return v
             }
             return nil
+        }
+
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            guard let pick = parent.onPick, let a = view.annotation as? RecordAnnotation else { return }
+            mapView.deselectAnnotation(a, animated: false)
+            pick(a.record)
         }
 
         func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
@@ -198,6 +270,10 @@ struct MapCard: View {
     var showCentreDot: Bool
     var fitToRecords: Bool
     var onSelect: ((Record) -> Void)?
+    var onPick: ((Record) -> Void)? = nil
+    var selectedID: String? = nil
+    var focusID: String? = nil
+    var fitKey: String? = nil
     @AppStorage("pnd_map_layer") var layerRaw = MapLayer.map.rawValue
     @State var showKey = false
 
@@ -225,7 +301,8 @@ struct MapCard: View {
             }
             RiskMapView(records: records, layer: layer, center: center, spanDegrees: spanDegrees, circleKm: circleKm,
                         circleColor: UIColor(circleColor), circleFill: circleFill, showCentreDot: showCentreDot,
-                        fitToRecords: fitToRecords, onSelect: onSelect)
+                        fitToRecords: fitToRecords, onSelect: onSelect, onPick: onPick, selectedID: selectedID,
+                        focusID: focusID, fitKey: fitKey)
                 .frame(height: height)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
@@ -258,6 +335,25 @@ struct MapKey: View {
         .padding(10)
         .background(Color(hex: "#04120E").opacity(0.92), in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#1F4A3C"), lineWidth: 1))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("mapKey")
+    }
+}
+
+extension MapCard {
+    /// Home map: a marker tap selects (the card shows) instead of a callout.
+    func picking(selected: String?, focus: String?, _ pick: @escaping (Record) -> Void) -> MapCard {
+        var c = self
+        c.onPick = pick
+        c.selectedID = selected
+        c.focusID = focus
+        return c
+    }
+
+    /// Fits the map to its markers whenever `key` changes to a new value.
+    func fitting(_ key: String?) -> MapCard {
+        var c = self
+        c.fitKey = key
+        return c
     }
 }

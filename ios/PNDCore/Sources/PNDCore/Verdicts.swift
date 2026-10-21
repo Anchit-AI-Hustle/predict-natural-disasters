@@ -2,7 +2,7 @@ import Foundation
 
 /// `verdicts.js` (logic.md sections 10.1 to 10.3).
 public enum Verdicts {
-    static let verdicts: [String: String] = [
+    public static let verdicts: [String: String] = [
         "VERIFIED": "VERIFIED", "PARTIAL_VERIFICATION": "PARTIAL", "PARTIAL": "PARTIAL",
         "FALSE_ALARM": "FALSE_ALARM", "MISS_FALSE_POSITIVE": "FALSE_ALARM",
         "MISSED_EVENT": "MISSED", "FALSE_NEGATIVE_UNPREDICTED_EVENT": "MISSED",
@@ -28,7 +28,7 @@ public enum Verdicts {
         "UNGRADEABLE": "ungradeable", "NOT_A_PREDICTION": "notprediction", "UNKNOWN": "unknown"
     ]
 
-    static let engineStates = ["HIT": "VERIFIED", "PARTIAL_HIT": "PARTIAL", "MISS_FALSE_POSITIVE": "FALSE_ALARM",
+    public static let engineStates = ["HIT": "VERIFIED", "PARTIAL_HIT": "PARTIAL", "MISS_FALSE_POSITIVE": "FALSE_ALARM",
                                "INVALID_POST_EVENT": "NOT_A_PREDICTION"]
 
     public static func normalise(_ status: String?) -> String {
@@ -40,6 +40,56 @@ public enum Verdicts {
     public static func normalise(_ v: JSONValue?) -> String {
         guard let v = v, !v.isNull else { return "" }
         return normalise(v.jsString)
+    }
+
+    /// `LABELS[normalise(status)]`, nil when there is none (empty, PENDING).
+    public static func label(_ status: JSONValue?) -> String? { labels[normalise(status)] }
+
+    public struct Grade: Equatable, Sendable { public let label: String; public let summary: String }
+
+    /// `forecast-detail.html gradeOf(id)` (logic.md section 10.4b, changelog C4).
+    /// `ledger` is `/data/verification-ledger.json` and `models`
+    /// `/data/model-verdicts.json` (nil when the read failed or was not made).
+    /// The ledger wins when an id is in both.
+    public static func gradeOf(id: String, ledger: JSONValue?, models: JSONValue?) -> Grade? {
+        if let v = (ledger?["verifications"]?.arrayValue ?? []).first(where: { $0["id"]?.stringValue == id }) {
+            let k = normalise(v["status"])
+            if !k.isEmpty && k != "PENDING" && k != "UNKNOWN" {
+                return Grade(label: labels[k] ?? k, summary: v["summary"]?.isTruthy == true ? v["summary"]!.jsString : "")
+            }
+        }
+        if id.hasPrefix("model-"), let o = (models?["outlooks"]?.arrayValue ?? []).first(where: { $0["id"]?.stringValue == id }) {
+            if o["verdict"]?.stringValue == "correct" { return Grade(label: labels["VERIFIED"]!, summary: "") }
+            if o["verdict"]?.stringValue == "false alarm" { return Grade(label: labels["FALSE_ALARM"]!, summary: "") }
+        }
+        return nil
+    }
+
+    /// Whether `gradeOf` needs the model verdict file for this id.
+    public static func needsModelVerdicts(id: String, ledger: JSONValue?) -> Bool {
+        guard id.hasPrefix("model-") else { return false }
+        if let v = (ledger?["verifications"]?.arrayValue ?? []).first(where: { $0["id"]?.stringValue == id }) {
+            let k = normalise(v["status"])
+            if !k.isEmpty && k != "PENDING" && k != "UNKNOWN" { return false }
+        }
+        return true
+    }
+
+    /// The forecast screen's STATUS: the grade when there is one, otherwise
+    /// "Ended, not yet checked" or "Active".
+    public static func forecastStatus(grade: Grade?, targetEnd: String?, now: Double) -> String {
+        if let g = grade { return "Checked: " + g.label }
+        if let t = JSDate.ms(targetEnd), t < now { return "Ended, not yet checked" }
+        return "Active"
+    }
+
+    /// The ND-001 check screen's Result: `LABELS[VERDICTS[row.status]]` with
+    /// the raw status as the key; "Not available" when the request failed.
+    public static func checkResult(id: String, ledger: JSONValue?, requestFailed: Bool) -> String {
+        if requestFailed { return "Not available" }
+        let row = (ledger?["verifications"]?.arrayValue ?? []).first { $0["id"]?.stringValue == id }
+        if let st = row?["status"]?.stringValue, let key = verdicts[st], let l = labels[key] { return l }
+        return "Not checked yet"
     }
 
     public static func stateOf(_ r: Record, now: Double) -> String {
@@ -147,7 +197,7 @@ public enum Verdicts {
         return Hazards.classifyForecast(Record(raw))?.forecastClass
     }
 
-    static func isForecastRow(_ r: Record) -> Bool {
+    public static func isForecastRow(_ r: Record) -> Bool {
         r.truthy("targetStart") || r.truthy("targetEnd") || r.truthy("forecastKind") || r.truthy("forecastClass")
     }
 

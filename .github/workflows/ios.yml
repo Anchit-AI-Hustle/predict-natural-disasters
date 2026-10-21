@@ -106,32 +106,51 @@ jobs:
           cat "$GITHUB_OUTPUT"
 
       - name: Build for testing
+        id: build
         working-directory: ios
         run: |
           set -o pipefail
+          set +e
           xcodebuild build-for-testing \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.phone }}" -destination "id=${{ steps.sims.outputs.pad }}" \
-            -derivedDataPath "$RUNNER_TEMP/dd" $SIM_SIGNING | tail -n 200
+            -derivedDataPath "$RUNNER_TEMP/dd" $SIM_SIGNING > "$RUNNER_TEMP/build.log" 2>&1
+          code=$?
+          echo "::group::Compiler errors"
+          grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -n 300
+          echo "::endgroup::"
+          tail -n 40 "$RUNNER_TEMP/build.log"
+          exit $code
 
       - name: UI tests on iPhone (${{ steps.sims.outputs.phone_name }})
+        if: steps.build.outcome == 'success'
         working-directory: ios
         run: |
           set -o pipefail
+          set +e
           xcodebuild test-without-building \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.phone }}" -derivedDataPath "$RUNNER_TEMP/dd" \
-            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" $SIM_SIGNING | tail -n 200
+            -resultBundlePath "$RUNNER_TEMP/iPhone.xcresult" $SIM_SIGNING > "$RUNNER_TEMP/iPhone-test.log" 2>&1
+          code=$?
+          grep -E "error:|Test Case .*(passed|failed)|Executed [0-9]+ test" "$RUNNER_TEMP/iPhone-test.log" | grep -v PNDCoreTests || true
+          tail -n 30 "$RUNNER_TEMP/iPhone-test.log"
+          exit $code
 
       - name: UI tests on iPad (${{ steps.sims.outputs.pad_name }})
-        if: always()
+        if: always() && steps.build.outcome == 'success'
         working-directory: ios
         run: |
           set -o pipefail
+          set +e
           xcodebuild test-without-building \
             -project PredictNaturalDisasters.xcodeproj -scheme PredictNaturalDisasters \
             -destination "id=${{ steps.sims.outputs.pad }}" -derivedDataPath "$RUNNER_TEMP/dd" \
-            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" $SIM_SIGNING | tail -n 200
+            -resultBundlePath "$RUNNER_TEMP/iPad.xcresult" $SIM_SIGNING > "$RUNNER_TEMP/iPad-test.log" 2>&1
+          code=$?
+          grep -E "error:|Test Case .*(passed|failed)|Executed [0-9]+ test" "$RUNNER_TEMP/iPad-test.log" | grep -v PNDCoreTests || true
+          tail -n 30 "$RUNNER_TEMP/iPad-test.log"
+          exit $code
 
       - name: Export screenshots
         if: always()
@@ -139,17 +158,18 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ios-xcresults
           path: |
             ${{ runner.temp }}/iPhone.xcresult
             ${{ runner.temp }}/iPad.xcresult
+            ${{ runner.temp }}/build.log
           if-no-files-found: warn
 
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ios-screenshots
           path: ${{ runner.temp }}/screenshots

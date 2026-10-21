@@ -3,8 +3,8 @@ import Foundation
 /// Saved places (`pnd_saved_locations`), kept on the device only.
 public final class PlacesStore: @unchecked Sendable {
     public static let key = "pnd_saved_locations"
-    let defaults: UserDefaults
-    let lock = NSLock()
+    public let defaults: UserDefaults
+    public let lock = NSLock()
     public var clock: () -> Double = { Date().timeIntervalSince1970 * 1000 }
 
     public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
@@ -15,7 +15,7 @@ public final class PlacesStore: @unchecked Sendable {
         return (try? JSONDecoder().decode([Place].self, from: d)) ?? []
     }
 
-    func write(_ a: [Place]) {
+    public func write(_ a: [Place]) {
         lock.lock(); defer { lock.unlock() }
         if let d = try? JSONEncoder().encode(a) { defaults.set(d, forKey: Self.key) }
     }
@@ -53,7 +53,7 @@ public final class PlacesStore: @unchecked Sendable {
 /// What notifications were sent, by key (`pnd_notified`), for 6-hour de-duplication.
 public final class NotificationMemory: @unchecked Sendable {
     public static let key = "pnd_notified"
-    let defaults: UserDefaults
+    public let defaults: UserDefaults
     public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
     public var seen: [String: Double] {
@@ -70,8 +70,8 @@ public final class NotificationMemory: @unchecked Sendable {
 /// past the edge copy (`?ts=`) only on an explicit refresh, keeps the last
 /// good copy in memory and on disk (api.md section 8).
 public actor FeedRepository {
-    let client: APIClient
-    let cache: FeedCache?
+    public let client: APIClient
+    public let cache: FeedCache?
     public private(set) var last: Feed?
     public private(set) var lastError: Error?
     private var inFlight: Task<Feed, Error>?

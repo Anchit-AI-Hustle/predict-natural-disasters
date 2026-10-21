@@ -11,7 +11,7 @@ public enum Format {
     /// Injectable clock for every "now" read (logic.md section 1).
     public static var now: () -> Double = { Date().timeIntervalSince1970 * 1000 }
 
-    static let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"]
+    public static let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"]
 
     // MARK: places and names
 
@@ -19,7 +19,7 @@ public enum Format {
     private static let hazardInRe = JSRegex(#"^(flood|drought|wildfire|forest fires?|earthquake|volcano|tropical cyclone)\b.*\bin\b"#, caseInsensitive: true)
     private static let tcRe = JSRegex(#"^tropical cyclone\s"#, caseInsensitive: true)
 
-    static func tidy(_ v: String) -> String {
+    public static func tidy(_ v: String) -> String {
         trailing.replace(v) { _ in "" }.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -54,7 +54,7 @@ public enum Format {
         return t
     }
 
-    static let sourceAbbr: [String: String] = [
+    public static let sourceAbbr: [String: String] = [
         "NOAA / National Weather Service": "NOAA/NWS",
         "NOAA National Weather Service": "NOAA/NWS",
         "NOAA National Hurricane Center": "NOAA/NHC",
@@ -83,13 +83,13 @@ public enum Format {
         return clipSource(s)
     }
 
-    static func clipSource(_ s: String) -> String {
+    public static func clipSource(_ s: String) -> String {
         if utf16Count(s) <= 28 { return s }
         return clipTrail.replace(utf16Prefix(s, 27)) { _ in "" } + "\u{2026}"
     }
 
-    static func utf16Count(_ s: String) -> Int { (s as NSString).length }
-    static func utf16Prefix(_ s: String, _ n: Int) -> String {
+    public static func utf16Count(_ s: String) -> Int { (s as NSString).length }
+    public static func utf16Prefix(_ s: String, _ n: Int) -> String {
         let ns = s as NSString
         return ns.substring(to: min(n, ns.length))
     }
@@ -112,17 +112,64 @@ public enum Format {
 
     // MARK: dates
 
-    /// `tzLabel(tz)`.
-    public static func tzLabel(_ tz: String = zoneID) -> String {
-        let aliases = ["Asia/Kolkata": "IST", "UTC": "UTC", "America/New_York": "ET", "America/Los_Angeles": "PT",
-                       "Europe/London": "UK", "Asia/Dubai": "GST", "Asia/Singapore": "SGT", "Asia/Tokyo": "JST",
-                       "Australia/Sydney": "Sydney"]
-        return aliases[tz] ?? tz
+    public static let tzAliases = ["Asia/Kolkata": "IST", "UTC": "UTC", "America/New_York": "ET", "America/Los_Angeles": "PT",
+                                   "Europe/London": "UK", "Asia/Dubai": "GST", "Asia/Singapore": "SGT", "Asia/Tokyo": "JST",
+                                   "Australia/Sydney": "Sydney"]
+
+    private static let gmtRe = JSRegex(#"^GMT([+-])0?(\d{1,2})(?::?(\d\d))?$"#)
+    private static var shortNameCache: [String: DateFormatter] = [:]
+    private static let cacheLock = NSLock()
+
+    /// `tzLabel(tz, at)` (changelog C27): the nine aliases; any other zone
+    /// takes the en-US short name for the moment `at` ("CDT", "MST") or a GMT
+    /// offset ("GMT-3", "GMT+5:45"); "local time" when the platform gives
+    /// nothing. Never the IANA id.
+    public static func tzLabel(_ tz: String = zoneID, at ms: Double? = nil) -> String {
+        if let a = tzAliases[tz] { return a }
+        guard let zone = TimeZone(identifier: tz) else { return "local time" }
+        cacheLock.lock()
+        let f: DateFormatter
+        if let c = shortNameCache[tz] { f = c } else {
+            f = DateFormatter()
+            f.locale = Locale(identifier: "en_US")
+            f.timeZone = zone
+            f.dateFormat = "zzz"
+            shortNameCache[tz] = f
+        }
+        let raw = f.string(from: Date(timeIntervalSince1970: (ms ?? now()) / 1000))
+        cacheLock.unlock()
+        return normaliseZoneName(raw, offsetSeconds: zone.secondsFromGMT(for: Date(timeIntervalSince1970: (ms ?? now()) / 1000)))
     }
 
-    struct Parts { let year: Int, month: Int, day: Int, hour: Int, minute: Int }
+    /// "GMT-03:00" and "GMT+0545" become "GMT-3" and "GMT+5:45"; an empty or
+    /// numeric-only name is rebuilt from the offset.
+    static func normaliseZoneName(_ raw: String, offsetSeconds: Int) -> String {
+        let t = JS.trim(raw)
+        if let m = gmtRe.exec(t), let sign = m[1], let h = m[2].flatMap({ Int($0) }) {
+            let mm = m[3] ?? "00"
+            return "GMT" + sign + String(h) + (mm == "00" ? "" : ":" + mm)
+        }
+        if t.isEmpty || t.hasPrefix("+") || t.hasPrefix("-") || t.first?.isNumber == true {
+            if offsetSeconds == 0 { return "GMT" }
+            let a = abs(offsetSeconds), h = a / 3600, mi = (a % 3600) / 60
+            return "GMT" + (offsetSeconds < 0 ? "-" : "+") + String(h) + (mi == 0 ? "" : ":" + two(mi))
+        }
+        return t
+    }
 
-    static func parts(_ ms: Double, _ tz: String) -> Parts {
+    /// `tzMenuLabel(tz)`: the time zone menu's text for the chosen zone.
+    public static func tzMenuLabel(_ tz: String = zoneID, at ms: Double? = nil) -> String {
+        if tz == "Asia/Kolkata" { return "IST \u{00B7} India" }
+        let label = tzLabel(tz, at: ms)
+        let parts = tz.components(separatedBy: "/")
+        guard parts.count > 1, !tz.hasPrefix("Etc/"), !tz.hasPrefix("SystemV/") else { return label }
+        let city = parts.last!.replacingOccurrences(of: "_", with: " ")
+        return city.isEmpty || city == label ? label : label + " \u{00B7} " + city
+    }
+
+    public struct Parts { let year: Int, month: Int, day: Int, hour: Int, minute: Int }
+
+    public static func parts(_ ms: Double, _ tz: String) -> Parts {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: tz) ?? TimeZone(identifier: "UTC")!
         let d = Date(timeIntervalSince1970: ms / 1000)
@@ -130,9 +177,9 @@ public enum Format {
         return Parts(year: c.year ?? 1970, month: c.month ?? 1, day: c.day ?? 1, hour: c.hour ?? 0, minute: c.minute ?? 0)
     }
 
-    static func two(_ n: Int) -> String { n < 10 ? "0\(n)" : "\(n)" }
+    public static func two(_ n: Int) -> String { n < 10 ? "0\(n)" : "\(n)" }
 
-    static func clock(_ p: Parts) -> String {
+    public static func clock(_ p: Parts) -> String {
         let h12 = p.hour % 12 == 0 ? 12 : p.hour % 12
         return "\(h12):" + two(p.minute) + (p.hour < 12 ? " AM" : " PM")
     }
@@ -148,7 +195,7 @@ public enum Format {
     public static func fmtDate(ms: Double, tz: String? = nil) -> String {
         let z = tz ?? zoneID
         let p = parts(ms, z)
-        return two(p.day) + " " + months[p.month - 1] + " \(p.year), " + clock(p) + " " + tzLabel(z)
+        return two(p.day) + " " + months[p.month - 1] + " \(p.year), " + clock(p) + " " + tzLabel(z, at: ms)
     }
 
     /// `fmtTime(v)`: `h:mm AM {tzLabel}`.
@@ -156,12 +203,12 @@ public enum Format {
         guard let v = v, !v.isEmpty else { return "-" }
         guard let ms = JSDate.ms(v) else { return v }
         let z = tz ?? zoneID
-        return clock(parts(ms, z)) + " " + tzLabel(z)
+        return clock(parts(ms, z)) + " " + tzLabel(z, at: ms)
     }
 
     private static let edgeRe = JSRegex(#"^(\d{4})-(\d\d)-(\d\d)T(00:00:00|23:59:59)(\.0+|\.9+)?Z$"#)
 
-    static func edge(_ x: String?) -> (t: Double, last: Bool)? {
+    public static func edge(_ x: String?) -> (t: Double, last: Bool)? {
         guard let x = x, let m = edgeRe.exec(x), let y = Int(m[1] ?? ""), let mo = Int(m[2] ?? ""), let d = Int(m[3] ?? "") else { return nil }
         return (Double(JSDate.daysFromCivil(y, mo, d)) * 86_400_000, m[4] == "23:59:59")
     }
@@ -400,7 +447,7 @@ public enum Format {
         return "/disasters/" + id
     }
 
-    static func norm(_ v: String) -> String {
+    public static func norm(_ v: String) -> String {
         String(v.lowercased().unicodeScalars.filter { ($0.value >= 0x61 && $0.value <= 0x7A) || ($0.value >= 0x30 && $0.value <= 0x39) }.map { Character($0) })
     }
 
@@ -421,7 +468,7 @@ public enum Format {
 
 extension Optional where Wrapped == JSONValue {
     /// `String(x)` where x may be undefined.
-    var jsOrUndefined: String {
+    public var jsOrUndefined: String {
         switch self {
         case .none: return "undefined"
         case .some(let v): return v.jsString
@@ -430,5 +477,5 @@ extension Optional where Wrapped == JSONValue {
 }
 
 extension Optional where Wrapped == String {
-    var orUndefined: String { self ?? "undefined" }
+    public var orUndefined: String { self ?? "undefined" }
 }

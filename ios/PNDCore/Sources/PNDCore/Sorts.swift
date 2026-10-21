@@ -2,7 +2,7 @@ import Foundation
 
 /// `PND.SORT_DEFS` and the per-screen extras (logic.md section 8).
 public enum Sorts {
-    static let riskRank: [String: Int] = ["red": 5, "critical": 5, "orange": 4, "high": 4, "veryhigh": 4,
+    public static let riskRank: [String: Int] = ["red": 5, "critical": 5, "orange": 4, "high": 4, "veryhigh": 4,
                                           "moderate": 3, "watch": 2, "green": 1, "low": 1]
 
     /// `rankOf(e)`: severityRank when finite and > 0, else the alert word's rank.
@@ -23,7 +23,7 @@ public enum Sorts {
 
     /// A JavaScript-style comparator result; NaN (Infinity minus Infinity)
     /// counts as equal, as it does for `Array.prototype.sort`.
-    static func sub(_ a: Double, _ b: Double) -> Double {
+    public static func sub(_ a: Double, _ b: Double) -> Double {
         let d = a - b
         return d.isNaN ? 0 : d
     }
@@ -33,22 +33,32 @@ public enum Sorts {
     public struct Def: Sendable {
         public let key: String
         public let label: String
-        let cmp: @Sendable (Record, Record) -> Double
+        public let cmp: @Sendable (Record, Record) -> Double
     }
 
-    static func chain(_ parts: Double...) -> Double {
+    public static func chain(_ parts: Double...) -> Double {
         for p in parts where p != 0 { return p }
         return 0
     }
 
-    static func windowEndMs(_ e: Record) -> Double {
+    public static func windowEndMs(_ e: Record) -> Double {
         let v = e.ms("targetEnd") ?? 0
         return v == 0 ? .infinity : v
     }
 
-    static let observedRank: [String: Int] = ["CATASTROPHIC": 6, "EXTREME": 5, "SEVERE": 4, "SIGNIFICANT": 3, "MODERATE": 2, "MINOR": 1]
+    /// `SORT_DEFS.windowEnd` (changelog C16): open windows first, soonest
+    /// ending first; then ended ones (`targetEnd <= now` or `windowClosed`),
+    /// most recently ended first. A missing end is open and last.
+    public static func windowEndCompare(_ a: Record, _ b: Record, now: Double) -> Double {
+        let x = windowEndMs(a), y = windowEndMs(b)
+        let xa = x <= now || a.windowClosed, ya = y <= now || b.windowClosed
+        if xa != ya { return xa ? 1 : -1 }
+        return xa ? sub(y, x) : sub(x, y)
+    }
 
-    static func recordedMs(_ e: Record) -> Double {
+    public static let observedRank: [String: Int] = ["CATASTROPHIC": 6, "EXTREME": 5, "SEVERE": 4, "SIGNIFICANT": 3, "MODERATE": 2, "MINOR": 1]
+
+    public static func recordedMs(_ e: Record) -> Double {
         JSDate.ms(e.first("recordedAt", "observedAt")?.jsString) ?? .nan
     }
 
@@ -78,7 +88,7 @@ public enum Sorts {
             let x = a.num("_d") ?? .infinity, y = b.num("_d") ?? .infinity
             return sub(x, y)
         }
-        add("windowEnd", "Ending soonest first") { a, b in sub(windowEndMs(a), windowEndMs(b)) }
+        add("windowEnd", "Ending soonest first") { a, b in windowEndCompare(a, b, now: Format.now()) }
         add("yearNew", "Most recent first") { a, b in b.numOf("sort") - a.numOf("sort") }
         add("yearOld", "Earliest first") { a, b in a.numOf("sort") - b.numOf("sort") }
         add("name", "Name (A to Z)") { a, b in Double(JS.localeCompare(textOf(a, "name", "title"), textOf(b, "name", "title"))) }

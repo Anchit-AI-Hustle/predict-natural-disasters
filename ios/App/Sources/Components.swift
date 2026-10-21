@@ -1,6 +1,49 @@
 import SwiftUI
 import PNDCore
 
+/// Which tab's stack a view sits in, so links push onto the stack the person sees.
+private struct StackTabKey: EnvironmentKey { static let defaultValue: AppTab = .home }
+extension EnvironmentValues {
+    var stackTab: AppTab {
+        get { self[StackTabKey.self] }
+        set { self[StackTabKey.self] = newValue }
+    }
+}
+
+/// A link to an in-app route. It appends the route to the path of the stack it
+/// sits in, the same way deep links open screens. SwiftUI value links did not
+/// push inside the iPad split view's detail column, so every route link in the
+/// app goes through this one path on iPhone and iPad alike.
+struct RouteLink<Label: View>: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.stackTab) var stackTab
+    let route: Route
+    let label: Label
+
+    init(value: Route, @ViewBuilder label: () -> Label) {
+        self.route = value
+        self.label = label()
+    }
+
+    var body: some View {
+        Button {
+            // A tab's own screen opens its tab ("Risk map" selects Map), not
+            // a copy of it inside the current stack.
+            if let tab = AppTab.allCases.first(where: { $0.rootRoute == route }) {
+                model.showTab(tab)
+            } else {
+                model.paths[stackTab, default: []].append(route)
+            }
+        } label: { label }
+    }
+}
+
+extension RouteLink where Label == Text {
+    init(_ title: String, value: Route) {
+        self.init(value: value) { Text(title) }
+    }
+}
+
 /// The shared record card (features.md section 0.4).
 struct EventCard: View {
     @EnvironmentObject var model: AppModel
@@ -9,7 +52,7 @@ struct EventCard: View {
     var showSavedCopy = false
 
     var body: some View {
-        NavigationLink(value: Route.detail(for: record)) {
+        RouteLink(value: Route.detail(for: record)) {
             CardBox {
                 FlowRow {
                     RecordRiskBadge(record: record)
@@ -31,7 +74,7 @@ struct EventCard: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
         .accessibilityIdentifier("eventCard")
     }
 
@@ -123,7 +166,7 @@ struct RelatedRow: View {
     let record: Record
     var line: String
     var body: some View {
-        NavigationLink(value: Route.detail(for: record)) {
+        RouteLink(value: Route.detail(for: record)) {
             CardBox {
                 FlowRow { RecordRiskBadge(record: record); SourcePill(source: record.source) }
                 Text(record.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
@@ -131,7 +174,7 @@ struct RelatedRow: View {
                 Text(Format.fmtDate(record.updated, tz: model.zoneID)).font(.caption).foregroundStyle(Theme.muted)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plainArea)
     }
 }
 
@@ -178,5 +221,15 @@ struct QuietNote: View {
     let text: String
     var body: some View {
         if !text.isEmpty { Notice(text: text, stale: true).accessibilityIdentifier("quietNote") }
+    }
+}
+
+/// `PND.unavailableHtml()`: the card a list shows when nothing has loaded
+/// (changelog C19). A failed load is not an empty world.
+struct UnavailableCard: View {
+    var body: some View {
+        MessageCard(title: Format.unavailableTitle, detail: Format.unavailableBody)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("unavailableCard")
     }
 }

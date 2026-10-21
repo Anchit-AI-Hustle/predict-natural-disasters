@@ -8,9 +8,9 @@ public enum AlertRules {
     public static let recentHours = 72.0
     /// Re-notify the same key only after six hours.
     public static let dedupeMs = 21_600_000.0
-    static let severe = JSRegex("red|orange|severe|extreme|catastrophic", caseInsensitive: true)
+    public static let severe = JSRegex("red|orange|severe|extreme|catastrophic", caseInsensitive: true)
 
-    static let kindLabel = ["Home": "home", "Office": "office", "Family": "family place", "Travel": "travel place",
+    public static let kindLabel = ["Home": "home", "Office": "office", "Family": "family place", "Travel": "travel place",
                             "Current location": "current location"]
 
     public static func placeLabel(_ p: Place) -> String { "your " + (kindLabel[p.kind] ?? "saved place") }
@@ -87,9 +87,9 @@ public enum AlertRules {
         return Sorts.stableSort(order.map { best[$0]! }) { a, b in b.rank - a.rank }
     }
 
-    static let tsunamiRe = JSRegex("tsunami", caseInsensitive: true)
-    static let cycloneRe = JSRegex("cyclone|typhoon|hurricane", caseInsensitive: true)
-    static let severeCycloneRe = JSRegex(#"cat(egory)?\s*[345]|severe|super"#, caseInsensitive: true)
+    public static let tsunamiRe = JSRegex("tsunami", caseInsensitive: true)
+    public static let cycloneRe = JSRegex("cyclone|typhoon|hurricane", caseInsensitive: true)
+    public static let severeCycloneRe = JSRegex(#"cat(egory)?\s*[345]|severe|super"#, caseInsensitive: true)
 
     /// The major global event rule (`evaluateRiskNotifications`, second half).
     public static func majorEventAlerts(_ events: [Record], now: Double) -> [Alert] {
@@ -116,6 +116,11 @@ public enum AlertRules {
         }
         return out
     }
+
+    /// Whether this device posts notifications now: the alerts switch is the
+    /// off-switch for every notification, and the OS must allow them. Saved
+    /// places are not required: major global events need none.
+    public static func notificationsAllowed(switchOn: Bool, permissionGranted: Bool) -> Bool { switchOn && permissionGranted }
 
     /// The notifications to post now, given what was sent before (`pnd_notified`),
     /// and the updated memory. Same 6-hour de-duplication for both rules.

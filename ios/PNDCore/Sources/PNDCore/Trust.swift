@@ -33,7 +33,7 @@ public enum Trust {
                                    url: "https://wmo.int/about/governance/wmo-members")
 
     public static let headline = "Experimental model, not an official warning."
-    public static let lead = "For real alerts, follow your national weather or disaster agency:"
+    public static let lead = "For real alerts, follow your national agency:"
 
     /// The full sentence as one plain string (for accessibility and tests).
     public static var noteText: String {
@@ -99,22 +99,26 @@ public enum Trust {
 
     public static func list(_ groups: [Group]) -> [Source] { groups.flatMap { sources[$0] ?? [] } }
 
-    /// "Data sources (N): GDACS, USGS, ..."
+    /// "Data sources: GDACS, USGS, ..." (names only, no count; changelog C10).
     public static func summary(_ groups: [Group]) -> String {
-        let all = list(groups)
         var short: [String] = []
-        for s in all where !short.contains(s.short) { short.append(s.short) }
-        return "Data sources (\(all.count)): " + short.joined(separator: ", ")
+        for s in list(groups) where !short.contains(s.short) { short.append(s.short) }
+        return "Data sources: " + short.joined(separator: ", ")
     }
 
-    /// `when(iso)`: `d MMM yyyy, h:mm a {short zone}` in the chosen zone.
+    /// `when(iso)`: the screen's own `fmtDate`, so the note and the rest of
+    /// the screen write one moment in one zone (changelog C9). Never the
+    /// platform's short zone name ("GMT+5:30").
     public static func when(_ iso: String?, tz: String? = nil) -> String {
         guard let ms = JSDate.ms(iso) else { return "" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.timeZone = TimeZone(identifier: tz ?? Format.zoneID) ?? TimeZone(identifier: "UTC")
-        f.dateFormat = "d MMM yyyy, h:mm a zzz"
-        return f.string(from: Date(timeIntervalSince1970: ms / 1000))
+        return Format.fmtDate(ms: ms, tz: tz)
+    }
+
+    /// The tooltip / accessibility value of a `when()`: `yyyy-MM-dd HH:mm UTC`.
+    public static func utc(_ iso: String?) -> String {
+        guard let ms = JSDate.ms(iso) else { return "" }
+        let s = JSDate.iso(ms)
+        return String(s.prefix(16)).replacingOccurrences(of: "T", with: " ") + " UTC"
     }
 
     public enum Status: Equatable, Sendable { case answered, notAnswering, none }
@@ -145,14 +149,14 @@ public enum Trust {
         if groups.contains(.feed) {
             switch feed {
             case .loaded(let at, let m):
-                bits.append("Live data fetched from the agencies " + when(at, tz: tz) +
+                bits.append("Live data from the agencies " + when(at, tz: tz) +
                     (m?["live"] == .bool(false) ? " (they were not answering, so saved copies are shown)" : ""))
             case .failed: bits.append("The live data did not load, so no update time can be shown")
             case .loading: bits.append("Live data: loading\u{2026}")
             }
         }
         if groups.contains(.models), let mr = meta?["modelRun"], mr.isTruthy, let at = mr["at"], at.isTruthy {
-            bits.append("weather models last run " + when(at.jsString, tz: tz) +
+            bits.append("weather models run " + when(at.jsString, tz: tz) +
                 ((mr["served"]?.isTruthy ?? false) ? "" : " (over 36 hours ago, so their forecasts are not shown)"))
         }
         if groups.contains(.ledger) {

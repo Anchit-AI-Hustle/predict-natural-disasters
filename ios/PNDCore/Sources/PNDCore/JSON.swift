@@ -171,6 +171,9 @@ extension JSONValue: ExpressibleByStringLiteral, ExpressibleByFloatLiteral, Expr
 
 /// JavaScript helpers used across the ports.
 public enum JS {
+    /// `String.prototype.trim`.
+    public static func trim(_ s: String) -> String { s.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     /// `Number(string)`: trimmed, empty is 0, otherwise a decimal (or hex,
     /// Infinity) literal, else NaN.
     public static func number(_ s: String) -> Double {

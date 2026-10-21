@@ -98,16 +98,16 @@ public enum TrackRecord {
         public var updatedTimes: [String] = []
     }
 
-    static func pl(_ x: Int, _ one: String, _ many: String) -> String { "\(x) " + (x == 1 ? one : many) }
-    static func listText(_ a: [String], _ conj: String) -> String {
+    public static func pl(_ x: Int, _ one: String, _ many: String) -> String { "\(x) " + (x == 1 ? one : many) }
+    public static func listText(_ a: [String], _ conj: String) -> String {
         a.count < 2 ? a.joined() : a.dropLast().joined(separator: ", ") + " " + conj + " " + a.last!
     }
-    static func sentence(_ v: String) -> String { v.isEmpty ? "" : v.prefix(1).uppercased() + v.dropFirst().lowercased() }
+    public static func sentence(_ v: String) -> String { v.isEmpty ? "" : v.prefix(1).uppercased() + v.dropFirst().lowercased() }
 
-    static let isoRe = JSRegex(#"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})"#)
-    static func niceDates(_ t: String, tz: String?) -> String { isoRe.replace(t) { g in Format.fmtDate(g[0] ?? "", tz: tz) } }
+    public static let isoRe = JSRegex(#"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})"#)
+    public static func niceDates(_ t: String, tz: String?) -> String { isoRe.replace(t) { g in Format.fmtDate(g[0] ?? "", tz: tz) } }
 
-    static let whyNotText: [String: (String, String)] = [
+    public static let whyNotText: [String: (String, String)] = [
         "ABSENCE_NOT_ESTABLISHABLE": (" is for a hazard and place that none of our sources fully covers, so a lack of reports there proves nothing", " are for a hazard and place that none of our sources fully covers, so a lack of reports there proves nothing"),
         "OBSERVED_RECORD_EMPTY": (" had no check of our sources on record to compare with", " had no check of our sources on record to compare with"),
         "OBSERVED_RECORD_STARTS_LATER": (" started before we first checked its hazard and place", " started before we first checked their hazard and place"),
@@ -117,7 +117,7 @@ public enum TrackRecord {
         "CONTINUATION_EVIDENCE_UNAVAILABLE": (" followed a disaster with no report dated inside the forecast period", " followed disasters with no report dated inside the forecast period")
     ]
 
-    static func whyNot(_ s: Verification.Score) -> String {
+    public static func whyNot(_ s: Verification.Score) -> String {
         let keys = Sorts.stableSort(s.ungradeableOrder) { a, b in Double((s.ungradeableBy[b] ?? 0) - (s.ungradeableBy[a] ?? 0)) }
         return keys.map { k in
             let n = s.ungradeableBy[k] ?? 0
@@ -125,12 +125,12 @@ public enum TrackRecord {
         }.joined(separator: "; ")
     }
 
-    static let forecastInAdvance = ["NOT_FORECASTABLE": "No: cannot be forecast", "DATA_UNAVAILABLE": "No: reason unknown",
+    public static let forecastInAdvance = ["NOT_FORECASTABLE": "No: cannot be forecast", "DATA_UNAVAILABLE": "No: reason unknown",
                                     "COVERAGE_FAILURE": "No: not checking there", "FORECAST_FAILURE": "No: missed by our forecasts",
                                     "NO_PROSPECTIVE_INPUT": "No: no advance source"]
-    static let covered = ["SCANNED": "Yes", "UNVERIFIABLE_NO_SCAN_LEDGER": "We cannot tell: no record of checks"]
+    public static let covered = ["SCANNED": "Yes", "UNVERIFIABLE_NO_SCAN_LEDGER": "We cannot tell: no record of checks"]
 
-    static func pct(_ x: Double?, _ n: String, _ unit: String) -> String {
+    public static func pct(_ x: Double?, _ n: String, _ unit: String) -> String {
         guard let x = x else { return "Cannot be calculated" }
         return JS.numberString(JS.round(x * 1000) / 10) + "% (" + n + " " + unit + ")"
     }
@@ -359,7 +359,7 @@ public enum TrackRecord {
         return r
     }
 
-    static func row(rec r: Record, state: String, ledgerState: String?, unrep: Bool, v: JSONValue?, graded: Bool, tz: String?) -> LedgerRow {
+    public static func row(rec r: Record, state: String, ledgerState: String?, unrep: Bool, v: JSONValue?, graded: Bool, tz: String?) -> LedgerRow {
         var notes: [String] = []
         if !graded { notes.append("We could not load the record needed to check this forecast, so no result is shown.") }
         if let ls = ledgerState { notes.append("Checked by hand as \u{201C}" + (Verdicts.labels[ls] ?? ls) + "\u{201D}. The automatic result is the one we count.") }

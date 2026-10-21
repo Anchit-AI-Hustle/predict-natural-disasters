@@ -44,12 +44,15 @@ public enum API {
     public static var ledgerURL: URL { URL(string: "/api/events?ledger=1", relativeTo: baseURL)!.absoluteURL }
     public static var alertsURL: URL { URL(string: "/api/alerts", relativeTo: baseURL)!.absoluteURL }
 
-    public static func dataURL(_ file: String, now: Double = Format.now()) -> URL {
-        URL(string: "/data/\(file)?ts=\(Int64(now))", relativeTo: baseURL)!.absoluteURL
+    /// A static data file. Served `max-age=0, must-revalidate`, so it is read
+    /// without a `?ts=` cache-buster (changelog C25); the transport never
+    /// answers from a local cache.
+    public static func dataURL(_ file: String) -> URL {
+        URL(string: "/data/\(file)", relativeTo: baseURL)!.absoluteURL
     }
 
     /// Query component encoding that matches `encodeURIComponent`.
-    static func q(_ s: String) -> String { JS.encodeURIComponent(s) }
+    public static func q(_ s: String) -> String { JS.encodeURIComponent(s) }
 
     /// `URLSearchParams` (form) encoding: space is "+", and only
     /// alphanumerics and `*-._` stay as they are.
@@ -104,7 +107,7 @@ public protocol HTTPTransport: Sendable {
 }
 
 public struct URLSessionTransport: HTTPTransport {
-    let session: URLSession
+    public let session: URLSession
     public init(session: URLSession = .shared) { self.session = session }
 
     public func get(_ url: URL, headers: [String: String], timeout: TimeInterval) async throws -> (Data, Int) {
@@ -126,7 +129,7 @@ public final class APIClient: @unchecked Sendable {
     public let transport: HTTPTransport
     public init(transport: HTTPTransport = URLSessionTransport()) { self.transport = transport }
 
-    var headers: [String: String] { ["Accept": "application/json", "User-Agent": API.userAgent] }
+    public var headers: [String: String] { ["Accept": "application/json", "User-Agent": API.userAgent] }
 
     public func getJSON(_ url: URL, timeout: TimeInterval = 25) async throws -> JSONValue {
         let (data, code) = try await transport.get(url, headers: headers, timeout: timeout)

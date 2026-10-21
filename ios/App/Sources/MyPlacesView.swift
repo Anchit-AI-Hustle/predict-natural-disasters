@@ -10,6 +10,8 @@ struct MyPlacesView: View {
     @State var latText = ""
     @State var lonText = ""
     @State var chosen: Place?
+    /// What the search filled in (`chosenAs = name|lat|lon`, changelog C23).
+    @State var chosenAs = ""
     @State var candidates: [Place] = []
     @State var formNote: String?
     @State var alertNote: String?
@@ -147,20 +149,50 @@ struct MyPlacesView: View {
 
     func savedCard(_ p: Place) -> some View {
         let a = PlaceRisk.assess(p, model.live, generatedAt: model.feed?.generatedAt)
+        let state = model.placeFeedState
         let coords = (p.lat.map { JS.numberString($0) } ?? "-") + ", " + (p.lon.map { JS.numberString($0) } ?? "-")
         return CardBox {
             Text(p.displayName).font(.headline).foregroundStyle(Theme.text)
-            Text(coords + (p.country.isEmpty ? " \u{00B7} country unknown" : " \u{00B7} " + p.country) + (p.updatedAt.map { " \u{00B7} updated " + Format.age($0) } ?? ""))
+            Text(placeLine(p, coords: coords))
                 .font(.footnote).foregroundStyle(Theme.muted)
             HStack {
-                if a.level == nil { NothingNearbyChip() } else { RiskBadge(level: a.level!, text: a.headline) }
-                Text(PlaceRisk.summaryChip(a)).font(.caption.weight(.heavy)).foregroundStyle(Theme.textSoft)
+                // CHECKING… / LIVE DATA UNAVAILABLE before the feed loads (changelog C26).
+                if let pend = PlaceRisk.pending(state) {
+                    PendingChip(text: pend.headline)
+                } else if let l = a.level {
+                    RiskBadge(level: l, text: a.headline)
+                } else {
+                    NothingNearbyChip()
+                }
+                Text(PlaceRisk.summaryChip(p, model.live, state: state)).font(.caption.weight(.heavy)).foregroundStyle(Theme.textSoft)
             }
             .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("placeChip")
             Button("Remove") { model.removePlace(p.id) }.buttonStyle(SecondaryButtonStyle())
                 .accessibilityLabel("Remove " + p.displayName)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("savedPlace")
+    }
+
+    func placeLine(_ p: Place, coords: String) -> String {
+        var t: String = coords
+        t += p.country.isEmpty ? " \u{00B7} country unknown" : " \u{00B7} " + p.country
+        if let u = p.updatedAt { t += " \u{00B7} updated " + Format.age(u) }
+        return t
+    }
+
+    func scopeNote(noCountry: Int, countryWide: Int) -> String {
+        let has: String = noCountry == 1 ? "has" : "have"
+        let fs: String = countryWide == 1 ? "" : "s"
+        let apply: String = countryWide == 1 ? "applies" : "apply"
+        let them: String = noCountry == 1 ? "it" : "them"
+        return "\(noCountry) of your saved places \(has) no country recorded, so we cannot tell whether \(countryWide) forecast\(fs) that cover a whole country \(apply) to \(them). Search for the place by name instead of typing coordinates, and we can check."
+    }
+
+    func rowLine(_ r: DangerRow) -> String {
+        let where_: String = r.row.claimDistance ? JS.numberString(JS.round(r.d)) + " km from " + r.place.name : r.place.name
+        return where_ + " \u{00B7} " + r.record.type
     }
 
     func find() {
@@ -186,15 +218,20 @@ struct MyPlacesView: View {
         name = c.name
         latText = JS.toFixed(c.lat ?? 0, 6)
         lonText = JS.toFixed(c.lon ?? 0, 6)
+        chosenAs = PlaceSearch.chosenAs(name: c.name, lat: JS.toFixed(c.lat ?? 0, 6), lon: JS.toFixed(c.lon ?? 0, 6))
         formNote = "Chosen: \(c.name) (\((c.level ?? "place").lowercased())). Choose the kind of place and press Save."
     }
 
-    /// Any edit after choosing clears the remembered country.
+    /// An edit by the reader forgets the country the search found. A change
+    /// whose values still equal what the search filled in (the one that
+    /// follows pressing Enter) keeps it (changelog C23).
     func edited() {
         guard let c = chosen else { return }
-        if name != c.name || latText != JS.toFixed(c.lat ?? 0, 6) || lonText != JS.toFixed(c.lon ?? 0, 6) {
+        let now = PlaceSearch.chosenAs(name: name, lat: latText, lon: lonText)
+        if PlaceSearch.editForgetsCountry(chosenAs: chosenAs, now: now, hasCountry: !c.country.isEmpty || !c.countryCode.isEmpty) {
             chosen = nil
-            formNote = "You changed the place, so we no longer know its country. Search for it by name again to record the country."
+            chosenAs = ""
+            formNote = PlaceSearch.countryForgotten
         }
     }
 
@@ -207,7 +244,7 @@ struct MyPlacesView: View {
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
         model.savePlace(Place(kind: kind, name: n.isEmpty ? kind : n, lat: la, lon: lo, country: chosen?.country ?? "", countryCode: chosen?.countryCode ?? ""))
         formNote = "Saved."
-        name = ""; latText = ""; lonText = ""; chosen = nil
+        name = ""; latText = ""; lonText = ""; chosen = nil; chosenAs = ""
     }
 
     // MARK: dangers near your places (5.3)
@@ -248,19 +285,23 @@ struct MyPlacesView: View {
             Text("Grouped by how sure we can be that each one affects your place. We show a distance only when the report gives the exact spot.")
                 .font(.footnote).foregroundStyle(Theme.muted)
             HStack {
-                Text("Updated " + Format.age(model.feed?.generatedAt)).font(.footnote).foregroundStyle(Theme.muted)
+                Text(model.placeFeedState == .failed ? "Live data unavailable" : "Updated " + Format.age(model.feed?.generatedAt)).font(.footnote).foregroundStyle(Theme.muted)
                 Spacer()
                 SortPicker(screen: "personal-risk_sortBy", keys: Sorts.myPlacesSorts, selection: $sort)
             }
-            if model.status == .failed {
+            // No feed yet: an empty list while loading, and the unavailable card
+            // when it failed, not five empty bands (changelog C26). The model
+            // tries again every 60 s until a load succeeds.
+            if model.placeFeedState == .failed {
+                UnavailableCard()
+                Notice(text: "Do not rely on this page in an emergency. Check with your local authorities.", stale: true)
+            } else if model.status == .failed {
                 Notice(text: "We could not load the latest data. Do not rely on this page in an emergency. Check with your local authorities.", stale: true)
             }
             if countryWide > 0 && noCountry > 0 {
-                Notice(text: "\(noCountry) of your saved places " + (noCountry == 1 ? "has" : "have") + " no country recorded, so we cannot tell whether \(countryWide) forecast" +
-                       (countryWide == 1 ? "" : "s") + " that cover a whole country " + (countryWide == 1 ? "applies" : "apply") + " to " + (noCountry == 1 ? "it" : "them") +
-                       ". Search for the place by name instead of typing coordinates, and we can check.")
+                Notice(text: scopeNote(noCountry: noCountry, countryWide: countryWide))
             }
-            ForEach(PlaceRisk.bands, id: \.band) { b in
+            ForEach(model.placeFeedState == .loaded ? PlaceRisk.bands : [], id: \.band) { b in
                 let inBand = all.filter { $0.row.band == b.band }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(b.title).font(.subheadline.bold()).foregroundStyle(Theme.text).accessibilityAddTraits(.isHeader)
@@ -269,19 +310,20 @@ struct MyPlacesView: View {
                         Text(b.empty).font(.footnote).foregroundStyle(Theme.muted)
                     }
                     ForEach(inBand.prefix(30)) { r in
-                        NavigationLink(value: Route.detail(for: r.record)) {
+                        RouteLink(value: Route.detail(for: r.record)) {
                             CardBox {
                                 Pill(text: Format.provenance(r.record))
                                 Text(r.record.title).font(.subheadline.bold()).foregroundStyle(Theme.text).multilineTextAlignment(.leading)
-                                Text((r.row.claimDistance ? JS.numberString(JS.round(r.d)) + " km from " + r.place.name : r.place.name) + " \u{00B7} " + r.record.type)
+                                Text(rowLine(r))
                                     .font(.footnote).foregroundStyle(Theme.muted)
                                 if !r.row.applicability.isEmpty { Text(r.row.applicability).font(.caption).foregroundStyle(Theme.muted) }
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plainArea)
                     }
                 }
                 .padding(.vertical, 4)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("band-" + b.band.rawValue)
             }
         }
