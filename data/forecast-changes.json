@@ -30202,18 +30202,228 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-21T18:38:17.716Z",
+      "sinceHours": 4.84,
+      "active": 66,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-10a6facf83c56f9e458733d0e2812aa0cee814cf-001-1",
+          "type": "Tornado",
+          "title": "Tornado risk in Coconino, Arizona, United States - 24-hour forecast",
+          "country": "United States",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-21T18:32:00.000Z",
+          "targetEnd": "2026-10-22T18:32:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-5f03d0347b93cd2db61dfed35a25dd755aa1811b-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Garfield, Utah and 2 nearby areas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-21T18:35:00.000Z",
+          "targetEnd": "2026-10-24T18:35:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-b8c68d04487567af2b041e0f1c751dbba00824a5-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Northern Denali Borough and 1 nearby area, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-21T11:42:00.000Z",
+          "targetEnd": "2026-10-23T11:42:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-cd3dae162a18e25d3dc312cc5d1253e1e5168bfe-002-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Bering Sea Offshore West of 180 and East of the International Date Line, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-21T11:08:00.000Z",
+          "targetEnd": "2026-10-23T11:08:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-nhc-ep222026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Depression Twenty-Two-E - 5-day forecast",
+          "country": "Twenty-Two-E (eastern Pacific system 2)",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-21T15:00:00.000Z",
+          "targetEnd": "2026-10-26T15:00:00.000Z",
+          "provider": "nhc"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032991",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mozambique - 3-day forecast",
+          "country": "Mozambique",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-21T00:00:00.000Z",
+          "targetEnd": "2026-10-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032986",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar - 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-21T00:00:00.000Z",
+          "targetEnd": "2026-10-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032982",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Zambia and Zimbabwe - 3-day forecast",
+          "country": "Zambia, Zimbabwe",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-20T00:00:00.000Z",
+          "targetEnd": "2026-10-23T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-TC-1001338",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Super Typhoon Champi - 5-day forecast",
+          "country": "Philippines, Guam, Northern Mariana Islands, Japan",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-10-21T12:00:00.000Z",
+          "targetEnd": "2026-10-26T12:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-26T06:00:00.000Z",
+          "toEnd": "2026-10-26T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032933",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Botswana - 3-day forecast",
+          "country": "Botswana",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-21T00:00:00.000Z",
+          "targetEnd": "2026-10-24T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-23T00:00:00.000Z",
+          "toEnd": "2026-10-24T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-2befa24596dc70e7ba25b591961e08e4fcb9d5ac-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Upper Gila River and Aravaipa Valleys including Clifton/Safford and 2 nearby areas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-21T13:45:00.000Z",
+          "targetEnd": "2026-10-24T13:45:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-dcb7611573aeeb1bd9e8c2a5ef3a8f42bea570cb-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Coconino, Arizona and 1 nearby area, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-21T13:44:00.000Z",
+          "targetEnd": "2026-10-23T13:44:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-cd3dae162a18e25d3dc312cc5d1253e1e5168bfe-003-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Bering Sea Offshore 171W to 180 and North of 56N, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-21T11:08:00.000Z",
+          "targetEnd": "2026-10-23T11:08:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032855",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mozambique - 3-day forecast",
+          "country": "Mozambique",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-21T00:00:00.000Z",
+          "targetEnd": "2026-10-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032953",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Zambia and Zimbabwe - 3-day forecast",
+          "country": "Zambia, Zimbabwe",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-20T00:00:00.000Z",
+          "targetEnd": "2026-10-23T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032876",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar - 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-20T00:00:00.000Z",
+          "targetEnd": "2026-10-23T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
+    "OUT-0-10a6facf83c56f9e458733d0e2812aa0cee814cf-001-1": {
+      "id": "OUT-0-10a6facf83c56f9e458733d0e2812aa0cee814cf-001-1",
+      "type": "Tornado",
+      "title": "Tornado risk in Coconino, Arizona, United States - 24-hour forecast",
+      "country": "United States",
+      "alert": "High",
+      "rank": 3,
+      "targetStart": "2026-10-21T18:32:00.000Z",
+      "targetEnd": "2026-10-22T18:32:00.000Z",
+      "provider": "nws"
+    },
     "OUT-gdacs-TC-1001338": {
       "id": "OUT-gdacs-TC-1001338",
       "type": "Tropical Cyclone",
       "title": "Storm risk from Super Typhoon Champi - 5-day forecast",
-      "country": "Guam, Northern Mariana Islands, Japan",
+      "country": "Philippines, Guam, Northern Mariana Islands, Japan",
       "alert": "High",
       "rank": 3,
-      "targetStart": "2026-10-21T06:00:00.000Z",
-      "targetEnd": "2026-10-26T06:00:00.000Z",
+      "targetStart": "2026-10-21T12:00:00.000Z",
+      "targetEnd": "2026-10-26T12:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-aftershock-usgs-us6000u2mq": {
@@ -30227,32 +30437,32 @@
       "targetEnd": "2026-10-23T03:35:31.925Z",
       "provider": "usgs"
     },
-    "OUT-0-2befa24596dc70e7ba25b591961e08e4fcb9d5ac-001-1": {
-      "id": "OUT-0-2befa24596dc70e7ba25b591961e08e4fcb9d5ac-001-1",
+    "OUT-0-5f03d0347b93cd2db61dfed35a25dd755aa1811b-001-1": {
+      "id": "OUT-0-5f03d0347b93cd2db61dfed35a25dd755aa1811b-001-1",
       "type": "Flood",
-      "title": "Flood risk in Upper Gila River and Aravaipa Valleys including Clifton/Safford and 2 nearby areas, United States - 3-day forecast",
+      "title": "Flood risk in Garfield, Utah and 2 nearby areas, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-21T13:45:00.000Z",
-      "targetEnd": "2026-10-24T13:45:00.000Z",
+      "targetStart": "2026-10-21T18:35:00.000Z",
+      "targetEnd": "2026-10-24T18:35:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-dcb7611573aeeb1bd9e8c2a5ef3a8f42bea570cb-001-1": {
-      "id": "OUT-0-dcb7611573aeeb1bd9e8c2a5ef3a8f42bea570cb-001-1",
+    "OUT-0-b8c68d04487567af2b041e0f1c751dbba00824a5-001-1": {
+      "id": "OUT-0-b8c68d04487567af2b041e0f1c751dbba00824a5-001-1",
       "type": "Severe Storm",
-      "title": "Severe Storm risk in Coconino, Arizona and 1 nearby area, United States - 2-day forecast",
+      "title": "Severe Storm risk in Northern Denali Borough and 1 nearby area, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-21T13:44:00.000Z",
-      "targetEnd": "2026-10-23T13:44:00.000Z",
+      "targetStart": "2026-10-21T11:42:00.000Z",
+      "targetEnd": "2026-10-23T11:42:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-cd3dae162a18e25d3dc312cc5d1253e1e5168bfe-003-1": {
-      "id": "OUT-0-cd3dae162a18e25d3dc312cc5d1253e1e5168bfe-003-1",
+    "OUT-0-cd3dae162a18e25d3dc312cc5d1253e1e5168bfe-002-1": {
+      "id": "OUT-0-cd3dae162a18e25d3dc312cc5d1253e1e5168bfe-002-1",
       "type": "Storm Warning",
-      "title": "Storm Warning risk in Bering Sea Offshore 171W to 180 and North of 56N, United States - 2-day forecast",
+      "title": "Storm Warning risk in Bering Sea Offshore West of 180 and East of the International Date Line, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
@@ -30381,6 +30591,17 @@
       "targetEnd": "2026-10-22T11:07:01.800Z",
       "provider": "usgs"
     },
+    "OUT-nhc-ep222026": {
+      "id": "OUT-nhc-ep222026",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Tropical Depression Twenty-Two-E - 5-day forecast",
+      "country": "Twenty-Two-E (eastern Pacific system 2)",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-21T15:00:00.000Z",
+      "targetEnd": "2026-10-26T15:00:00.000Z",
+      "provider": "nhc"
+    },
     "OUT-gdacs-FL-1104220": {
       "id": "OUT-gdacs-FL-1104220",
       "type": "Flood",
@@ -30469,6 +30690,17 @@
       "targetEnd": "2026-10-24T00:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-WF-1032933": {
+      "id": "OUT-gdacs-WF-1032933",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Botswana - 3-day forecast",
+      "country": "Botswana",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-21T00:00:00.000Z",
+      "targetEnd": "2026-10-24T00:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-WF-1032969": {
       "id": "OUT-gdacs-WF-1032969",
       "type": "Wildfire",
@@ -30491,8 +30723,8 @@
       "targetEnd": "2026-10-24T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032855": {
-      "id": "OUT-gdacs-WF-1032855",
+    "OUT-gdacs-WF-1032991": {
+      "id": "OUT-gdacs-WF-1032991",
       "type": "Wildfire",
       "title": "Wildfire risk in Mozambique - 3-day forecast",
       "country": "Mozambique",
@@ -30518,6 +30750,17 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Chad - 3-day forecast",
       "country": "Chad",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-21T00:00:00.000Z",
+      "targetEnd": "2026-10-24T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032986": {
+      "id": "OUT-gdacs-WF-1032986",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Madagascar - 3-day forecast",
+      "country": "Madagascar",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-21T00:00:00.000Z",
@@ -30612,17 +30855,6 @@
       "targetEnd": "2026-10-23T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032933": {
-      "id": "OUT-gdacs-WF-1032933",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Botswana - 3-day forecast",
-      "country": "Botswana",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-20T00:00:00.000Z",
-      "targetEnd": "2026-10-23T00:00:00.000Z",
-      "provider": "gdacs"
-    },
     "OUT-gdacs-WF-1032974": {
       "id": "OUT-gdacs-WF-1032974",
       "type": "Wildfire",
@@ -30634,11 +30866,11 @@
       "targetEnd": "2026-10-23T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032957": {
-      "id": "OUT-gdacs-WF-1032957",
+    "OUT-gdacs-WF-1032982": {
+      "id": "OUT-gdacs-WF-1032982",
       "type": "Wildfire",
-      "title": "Wildfire risk in Mozambique and Zambia - 3-day forecast",
-      "country": "Mozambique, Zambia",
+      "title": "Wildfire risk in Zambia and Zimbabwe - 3-day forecast",
+      "country": "Zambia, Zimbabwe",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-20T00:00:00.000Z",
@@ -30656,22 +30888,11 @@
       "targetEnd": "2026-10-23T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1032943": {
-      "id": "OUT-gdacs-WF-1032943",
+    "OUT-gdacs-WF-1032957": {
+      "id": "OUT-gdacs-WF-1032957",
       "type": "Wildfire",
-      "title": "Wildfire risk in Botswana and South Africa - 3-day forecast",
-      "country": "Botswana, South Africa",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-20T00:00:00.000Z",
-      "targetEnd": "2026-10-23T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032953": {
-      "id": "OUT-gdacs-WF-1032953",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Zambia and Zimbabwe - 3-day forecast",
-      "country": "Zambia, Zimbabwe",
+      "title": "Wildfire risk in Mozambique and Zambia - 3-day forecast",
+      "country": "Mozambique, Zambia",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-20T00:00:00.000Z",
@@ -30683,6 +30904,17 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
       "country": "Nigeria, Cameroon",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-20T00:00:00.000Z",
+      "targetEnd": "2026-10-23T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1032943": {
+      "id": "OUT-gdacs-WF-1032943",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Botswana and South Africa - 3-day forecast",
+      "country": "Botswana, South Africa",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-20T00:00:00.000Z",
@@ -30705,17 +30937,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Botswana and Zimbabwe - 3-day forecast",
       "country": "Botswana, Zimbabwe",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-20T00:00:00.000Z",
-      "targetEnd": "2026-10-23T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032876": {
-      "id": "OUT-gdacs-WF-1032876",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Madagascar - 3-day forecast",
-      "country": "Madagascar",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-20T00:00:00.000Z",
@@ -30910,10 +31131,10 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-21T13:47:40.664Z",
+  "updatedAt": "2026-10-21T18:38:17.716Z",
   "observedCadenceHours": {
-    "runs": 96,
-    "median": 4.7,
+    "runs": 97,
+    "median": 4.75,
     "min": 1.54,
     "max": 189.21
   }
