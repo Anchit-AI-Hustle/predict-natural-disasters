@@ -1,12 +1,12 @@
 {
  "note": "How each published model forecast turned out, by tools/run-models.js: correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day has been measured by NASA POWER. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it.",
- "generatedAt": "2026-10-22T09:37:26.696Z",
+ "generatedAt": "2026-10-23T09:33:44.413Z",
  "counts": {
-  "issued": 155,
-  "correct": 7,
+  "issued": 181,
+  "correct": 12,
   "falseAlarms": 8,
-  "pending": 140,
-  "missedDays": 246
+  "pending": 161,
+  "missedDays": 282
  },
  "outlooks": [
   {
@@ -148,8 +148,11 @@
    "id": "model-heat-lagos-ng-2026-10-19",
    "hazard": "heat",
    "placeId": "lagos-ng",
-   "verdict": "pending",
-   "crossed": []
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-19",
+    "2026-10-20"
+   ]
   },
   {
    "id": "model-heat-antananarivo-mg-2026-10-20",
@@ -225,8 +228,10 @@
    "id": "model-rain-havana-cu-2026-10-20",
    "hazard": "rain",
    "placeId": "havana-cu",
-   "verdict": "pending",
-   "crossed": []
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-20"
+   ]
   },
   {
    "id": "model-heat-lima-pe-2026-10-15",
@@ -304,8 +309,12 @@
    "id": "model-rain-seoul-kr-2026-10-18",
    "hazard": "rain",
    "placeId": "seoul-kr",
-   "verdict": "pending",
-   "crossed": []
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-18",
+    "2026-10-19",
+    "2026-10-20"
+   ]
   },
   {
    "id": "model-rain-wuhan-cn-2026-10-18",
@@ -376,8 +385,10 @@
    "id": "model-rain-marseille-fr-2026-10-20",
    "hazard": "rain",
    "placeId": "marseille-fr",
-   "verdict": "pending",
-   "crossed": []
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-20"
+   ]
   },
   {
    "id": "model-rain-london-gb-2026-10-23",
@@ -628,8 +639,10 @@
    "id": "model-rain-manaus-br-2026-10-20",
    "hazard": "rain",
    "placeId": "manaus-br",
-   "verdict": "pending",
-   "crossed": []
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-20"
+   ]
   },
   {
    "id": "model-heat-kolkata-in-2026-10-26",
@@ -1109,6 +1122,188 @@
   },
   {
    "id": "model-rain-recife-br-2026-10-29",
+   "hazard": "rain",
+   "placeId": "recife-br",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-chennai-in-2026-10-29",
+   "hazard": "heat",
+   "placeId": "chennai-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-chennai-in-2026-10-25",
+   "hazard": "rain",
+   "placeId": "chennai-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-patna-in-2026-10-28",
+   "hazard": "rain",
+   "placeId": "patna-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-chittagong-bd-2026-10-26",
+   "hazard": "heat",
+   "placeId": "chittagong-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-karachi-pk-2026-10-26",
+   "hazard": "heat",
+   "placeId": "karachi-pk",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-baghdad-iq-2026-10-30",
+   "hazard": "rain",
+   "placeId": "baghdad-iq",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-hanoi-vn-2026-10-26",
+   "hazard": "heat",
+   "placeId": "hanoi-vn",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-kuala-lumpur-my-2026-10-26",
+   "hazard": "rain",
+   "placeId": "kuala-lumpur-my",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-hong-kong-hk-2026-10-24",
+   "hazard": "heat",
+   "placeId": "hong-kong-hk",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-nairobi-ke-2026-10-24",
+   "hazard": "heat",
+   "placeId": "nairobi-ke",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-mogadishu-so-2026-10-27",
+   "hazard": "heat",
+   "placeId": "mogadishu-so",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-10-24",
+   "hazard": "heat",
+   "placeId": "niamey-ne",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lagos-ng-2026-10-24",
+   "hazard": "heat",
+   "placeId": "lagos-ng",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-istanbul-tr-2026-10-27",
+   "hazard": "rain",
+   "placeId": "istanbul-tr",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-antananarivo-mg-2026-10-30",
+   "hazard": "rain",
+   "placeId": "antananarivo-mg",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-kyiv-ua-2026-10-27",
+   "hazard": "rain",
+   "placeId": "kyiv-ua",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-toronto-ca-2026-10-29",
+   "hazard": "heat",
+   "placeId": "toronto-ca",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-chicago-us-2026-10-30",
+   "hazard": "rain",
+   "placeId": "chicago-us",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-miami-us-2026-10-29",
+   "hazard": "rain",
+   "placeId": "miami-us",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-mexico-city-mx-2026-10-28",
+   "hazard": "rain",
+   "placeId": "mexico-city-mx",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-caracas-ve-2026-10-28",
+   "hazard": "rain",
+   "placeId": "caracas-ve",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-rio-de-janeiro-br-2026-10-26",
+   "hazard": "rain",
+   "placeId": "rio-de-janeiro-br",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-rio-de-janeiro-br-2026-10-30",
+   "hazard": "rain",
+   "placeId": "rio-de-janeiro-br",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-s-o-paulo-br-2026-10-30",
+   "hazard": "rain",
+   "placeId": "s-o-paulo-br",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lima-pe-2026-10-24",
+   "hazard": "heat",
+   "placeId": "lima-pe",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-recife-br-2026-10-30",
    "hazard": "rain",
    "placeId": "recife-br",
    "verdict": "pending",
@@ -2345,6 +2540,186 @@
    "placeId": "yangon-mm",
    "hazard": "rain",
    "day": "2026-10-19"
+  },
+  {
+   "placeId": "istanbul-tr",
+   "hazard": "rain",
+   "day": "2026-10-19"
+  },
+  {
+   "placeId": "adelaide-au",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "antananarivo-mg",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "baghdad-iq",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "bangkok-th",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "beijing-cn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "bogot-co",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "brisbane-au",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "caracas-ve",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "chennai-in",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "chongqing-cn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "da-nang-vn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "dakar-sn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "dubai-ae",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "guatemala-city-gt",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "ho-chi-minh-city-vn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "hyderabad-in",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "kinshasa-cd",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "kuala-lumpur-my",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "kyiv-ua",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "lagos-ng",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "las-vegas-us",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "lima-pe",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "mexico-city-mx",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "muscat-om",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "osaka-jp",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "paris-fr",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "perth-au",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "rio-de-janeiro-br",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "rome-it",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "s-o-paulo-br",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "shanghai-cn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "singapore-sg",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "warsaw-pl",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "wuhan-cn",
+   "hazard": "rain",
+   "day": "2026-10-20"
+  },
+  {
+   "placeId": "yangon-mm",
+   "hazard": "rain",
+   "day": "2026-10-20"
   }
  ]
 }
