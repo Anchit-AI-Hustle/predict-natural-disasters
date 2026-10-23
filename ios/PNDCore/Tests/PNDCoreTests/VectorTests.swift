@@ -227,27 +227,29 @@ final class VectorTests: XCTestCase {
     }
 
     func testSorts() {
-        let labels = Fixtures.vectors["portal.SORT_DEFS.labels"]?.objectValue ?? [:]
-        for (k, v) in labels { XCTAssertEqual(Sorts.label(k), v.stringValue, k) }
-        XCTAssertEqual(Sorts.eventSorts, Fixtures.vectors["portal.EVENT_SORTS"]?.arrayValue?.compactMap { $0.stringValue })
-        let fixture = Fixtures.group("sort.fixture").map { rec($0) }
-        for (k, v) in Fixtures.vectors["sort.results"]?.objectValue ?? [:] {
-            XCTAssertEqual(Sorts.apply(fixture, k).map { $0.id }, v.arrayValue?.compactMap { $0.stringValue }, "sort " + k)
-        }
-        let byId = Dictionary(uniqueKeysWithValues: fixture.map { ($0.id, $0) })
-        for v in Fixtures.group("sort.rankOf") {
-            let id = v["id"]!.stringValue!
-            let e: Record
-            switch id {
-            case "alertOnly-High": e = Record(["alert": "High"])
-            case "alertOnly-Severe": e = Record(["alert": "Severe"])
-            case "rank0": e = Record(["severityRank": 0, "alert": "Orange"])
-            default: e = byId[id]!
+        withZone(nil) {
+            let labels = Fixtures.vectors["portal.SORT_DEFS.labels"]?.objectValue ?? [:]
+            for (k, v) in labels { XCTAssertEqual(Sorts.label(k), v.stringValue, k) }
+            XCTAssertEqual(Sorts.eventSorts, Fixtures.vectors["portal.EVENT_SORTS"]?.arrayValue?.compactMap { $0.stringValue })
+            let fixture = Fixtures.group("sort.fixture").map { rec($0) }
+            for (k, v) in Fixtures.vectors["sort.results"]?.objectValue ?? [:] {
+                XCTAssertEqual(Sorts.apply(fixture, k).map { $0.id }, v.arrayValue?.compactMap { $0.stringValue }, "sort " + k)
             }
-            XCTAssertEqual(Double(Sorts.rankOf(e)), v["rank"]?.numberValue, "rankOf " + id)
-        }
-        for v in Fixtures.group("sort.timeOf") {
-            XCTAssertEqual(byId[v["id"]!.stringValue!]!.time, v["t"]?.numberValue, "timeOf")
+            let byId = Dictionary(uniqueKeysWithValues: fixture.map { ($0.id, $0) })
+            for v in Fixtures.group("sort.rankOf") {
+                let id = v["id"]!.stringValue!
+                let e: Record
+                switch id {
+                case "alertOnly-High": e = Record(["alert": "High"])
+                case "alertOnly-Severe": e = Record(["alert": "Severe"])
+                case "rank0": e = Record(["severityRank": 0, "alert": "Orange"])
+                default: e = byId[id]!
+                }
+                XCTAssertEqual(Double(Sorts.rankOf(e)), v["rank"]?.numberValue, "rankOf " + id)
+            }
+            for v in Fixtures.group("sort.timeOf") {
+                XCTAssertEqual(byId[v["id"]!.stringValue!]!.time, v["t"]?.numberValue, "timeOf")
+            }
         }
     }
 
