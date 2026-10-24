@@ -37265,6 +37265,128 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-10-24T18:08:35.017Z",
+      "sinceHours": 3.61,
+      "active": 75,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-9b4429da659d28db00fb08fc0e3ae6fa5f792a9a-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Western Arctic Coast, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-24T17:49:00.000Z",
+          "targetEnd": "2026-10-26T17:49:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-213ba221d7b769dbc77d0a70fed84b33a31dcfd5-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Alamosa, Colorado and 1 nearby area, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-24T15:52:00.000Z",
+          "targetEnd": "2026-10-27T15:52:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1573640",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Bouvet Island region - 7-day forecast",
+          "country": "Bouvet Island Region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-24T15:24:19.000Z",
+          "targetEnd": "2026-10-31T15:24:19.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033147",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-24T00:00:00.000Z",
+          "targetEnd": "2026-10-27T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-ep222026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Hurricane Vance - 5-day forecast",
+          "country": "Vance (eastern Pacific system 2)",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-24T15:00:00.000Z",
+          "targetEnd": "2026-10-29T15:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-10-29T09:00:00.000Z",
+          "toEnd": "2026-10-29T15:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033007",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Namibia - 3-day forecast",
+          "country": "Namibia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-24T00:00:00.000Z",
+          "targetEnd": "2026-10-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-10-26T00:00:00.000Z",
+          "toEnd": "2026-10-27T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-c95dab2c2454d2c82a21e0c36300df95bcb194be-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Southern Trinity and 5 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-24T12:54:00.000Z",
+          "targetEnd": "2026-10-29T12:54:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-7f3939ff90b1c468e1dbcf699c597a3cd3c223bf-002-2",
+          "type": "Flood",
+          "title": "Flood risk in Coastal Indian River and 4 nearby areas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-10-24T06:35:00.000Z",
+          "targetEnd": "2026-10-27T06:35:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1032969",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-10-23T00:00:00.000Z",
+          "targetEnd": "2026-10-26T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
@@ -37301,16 +37423,38 @@
       "targetEnd": "2026-10-29T14:33:40.353Z",
       "provider": "usgs"
     },
-    "OUT-0-c95dab2c2454d2c82a21e0c36300df95bcb194be-001-1": {
-      "id": "OUT-0-c95dab2c2454d2c82a21e0c36300df95bcb194be-001-1",
-      "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Southern Trinity and 5 nearby areas, United States - 5-day forecast",
+    "OUT-0-9b4429da659d28db00fb08fc0e3ae6fa5f792a9a-001-1": {
+      "id": "OUT-0-9b4429da659d28db00fb08fc0e3ae6fa5f792a9a-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Western Arctic Coast, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-24T12:54:00.000Z",
-      "targetEnd": "2026-10-29T12:54:00.000Z",
+      "targetStart": "2026-10-24T17:49:00.000Z",
+      "targetEnd": "2026-10-26T17:49:00.000Z",
       "provider": "nws"
+    },
+    "OUT-0-213ba221d7b769dbc77d0a70fed84b33a31dcfd5-001-1": {
+      "id": "OUT-0-213ba221d7b769dbc77d0a70fed84b33a31dcfd5-001-1",
+      "type": "Flood",
+      "title": "Flood risk in Alamosa, Colorado and 1 nearby area, United States - 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-24T15:52:00.000Z",
+      "targetEnd": "2026-10-27T15:52:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-aftershock-gdacs-EQ-1573640": {
+      "id": "OUT-aftershock-gdacs-EQ-1573640",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Bouvet Island region - 7-day forecast",
+      "country": "Bouvet Island Region",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-10-24T15:24:19.000Z",
+      "targetEnd": "2026-10-31T15:24:19.000Z",
+      "provider": "gdacs"
     },
     "OUT-nhc-ep222026": {
       "id": "OUT-nhc-ep222026",
@@ -37319,8 +37463,8 @@
       "country": "Vance (eastern Pacific system 2)",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-10-24T09:00:00.000Z",
-      "targetEnd": "2026-10-29T09:00:00.000Z",
+      "targetStart": "2026-10-24T15:00:00.000Z",
+      "targetEnd": "2026-10-29T15:00:00.000Z",
       "provider": "nhc"
     },
     "OUT-aftershock-usgs-us6000u4lm": {
@@ -37344,17 +37488,6 @@
       "targetStart": "2026-10-24T06:43:09.602Z",
       "targetEnd": "2026-10-31T06:43:09.602Z",
       "provider": "usgs"
-    },
-    "OUT-0-7f3939ff90b1c468e1dbcf699c597a3cd3c223bf-002-2": {
-      "id": "OUT-0-7f3939ff90b1c468e1dbcf699c597a3cd3c223bf-002-2",
-      "type": "Flood",
-      "title": "Flood risk in Coastal Indian River and 4 nearby areas, United States - 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-10-24T06:35:00.000Z",
-      "targetEnd": "2026-10-27T06:35:00.000Z",
-      "provider": "nws"
     },
     "OUT-aftershock-usgs-us6000u4k6": {
       "id": "OUT-aftershock-usgs-us6000u4k6",
@@ -37642,6 +37775,17 @@
       "targetEnd": "2026-10-27T00:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-WF-1033147": {
+      "id": "OUT-gdacs-WF-1033147",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Nigeria - 3-day forecast",
+      "country": "Nigeria",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-24T00:00:00.000Z",
+      "targetEnd": "2026-10-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-WF-1032814": {
       "id": "OUT-gdacs-WF-1032814",
       "type": "Wildfire",
@@ -37658,6 +37802,17 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Zimbabwe, Mozambique and Zambia - 3-day forecast",
       "country": "Zimbabwe, Mozambique, Zambia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-10-24T00:00:00.000Z",
+      "targetEnd": "2026-10-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1033007": {
+      "id": "OUT-gdacs-WF-1033007",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Namibia - 3-day forecast",
+      "country": "Namibia",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-24T00:00:00.000Z",
@@ -37788,8 +37943,8 @@
     "OUT-gdacs-WF-1033101": {
       "id": "OUT-gdacs-WF-1033101",
       "type": "Wildfire",
-      "title": "Wildfire risk in Mali and Mauritania - 3-day forecast",
-      "country": "Mali, Mauritania",
+      "title": "Wildfire risk in Mauritania and Mali - 3-day forecast",
+      "country": "Mauritania, Mali",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-23T00:00:00.000Z",
@@ -37807,22 +37962,22 @@
       "targetEnd": "2026-10-26T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1033080": {
-      "id": "OUT-gdacs-WF-1033080",
+    "OUT-gdacs-WF-1033079": {
+      "id": "OUT-gdacs-WF-1033079",
       "type": "Wildfire",
-      "title": "Wildfire risk in Central African Republic and Sudan - 3-day forecast",
-      "country": "Central African Republic, Sudan",
+      "title": "Wildfire risk in Sudan - 3-day forecast",
+      "country": "Sudan",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-23T00:00:00.000Z",
       "targetEnd": "2026-10-26T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1033079": {
-      "id": "OUT-gdacs-WF-1033079",
+    "OUT-gdacs-WF-1033080": {
+      "id": "OUT-gdacs-WF-1033080",
       "type": "Wildfire",
-      "title": "Wildfire risk in Sudan - 3-day forecast",
-      "country": "Sudan",
+      "title": "Wildfire risk in Central African Republic and Sudan - 3-day forecast",
+      "country": "Central African Republic, Sudan",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-23T00:00:00.000Z",
@@ -37895,33 +38050,11 @@
       "targetEnd": "2026-10-26T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1033007": {
-      "id": "OUT-gdacs-WF-1033007",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Namibia - 3-day forecast",
-      "country": "Namibia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-23T00:00:00.000Z",
-      "targetEnd": "2026-10-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
     "OUT-gdacs-WF-1032998": {
       "id": "OUT-gdacs-WF-1032998",
       "type": "Wildfire",
       "title": "Wildfire risk in Chad, Nigeria and Cameroon - 3-day forecast",
       "country": "Chad, Nigeria, Cameroon",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-23T00:00:00.000Z",
-      "targetEnd": "2026-10-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1032969": {
-      "id": "OUT-gdacs-WF-1032969",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria - 3-day forecast",
-      "country": "Nigeria",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-23T00:00:00.000Z",
@@ -38083,9 +38216,9 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-10-24T14:31:41.699Z",
+  "updatedAt": "2026-10-24T18:08:35.017Z",
   "observedCadenceHours": {
-    "runs": 112,
+    "runs": 113,
     "median": 4.75,
     "min": 1.54,
     "max": 189.21
