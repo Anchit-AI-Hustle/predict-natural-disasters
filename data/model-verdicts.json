@@ -1,11 +1,11 @@
 {
  "note": "How each published model forecast turned out, by tools/run-models.js: correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day has been measured by NASA POWER. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it.",
- "generatedAt": "2026-10-25T09:23:59.561Z",
+ "generatedAt": "2026-10-26T10:38:13.729Z",
  "counts": {
-  "issued": 214,
+  "issued": 235,
   "correct": 22,
   "falseAlarms": 14,
-  "pending": 178,
+  "pending": 199,
   "missedDays": 329
  },
  "outlooks": [
@@ -1579,6 +1579,153 @@
   },
   {
    "id": "model-heat-lima-pe-2026-10-26",
+   "hazard": "heat",
+   "placeId": "lima-pe",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-hyderabad-in-2026-11-02",
+   "hazard": "rain",
+   "placeId": "hyderabad-in",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-chittagong-bd-2026-10-27",
+   "hazard": "heat",
+   "placeId": "chittagong-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-bangkok-th-2026-10-28",
+   "hazard": "rain",
+   "placeId": "bangkok-th",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-bangkok-th-2026-11-01",
+   "hazard": "rain",
+   "placeId": "bangkok-th",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-yangon-mm-2026-11-01",
+   "hazard": "rain",
+   "placeId": "yangon-mm",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-melbourne-au-2026-10-31",
+   "hazard": "rain",
+   "placeId": "melbourne-au",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-nairobi-ke-2026-10-28",
+   "hazard": "rain",
+   "placeId": "nairobi-ke",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lagos-ng-2026-11-01",
+   "hazard": "heat",
+   "placeId": "lagos-ng",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-10-27",
+   "hazard": "heat",
+   "placeId": "niamey-ne",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-luanda-ao-2026-11-01",
+   "hazard": "rain",
+   "placeId": "luanda-ao",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-athens-gr-2026-11-02",
+   "hazard": "rain",
+   "placeId": "athens-gr",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-istanbul-tr-2026-10-29",
+   "hazard": "rain",
+   "placeId": "istanbul-tr",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-bucharest-ro-2026-10-27",
+   "hazard": "rain",
+   "placeId": "bucharest-ro",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-bucharest-ro-2026-11-01",
+   "hazard": "rain",
+   "placeId": "bucharest-ro",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-atlanta-us-2026-11-01",
+   "hazard": "rain",
+   "placeId": "atlanta-us",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-havana-cu-2026-10-28",
+   "hazard": "rain",
+   "placeId": "havana-cu",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-caracas-ve-2026-11-01",
+   "hazard": "rain",
+   "placeId": "caracas-ve",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-bogot-co-2026-10-27",
+   "hazard": "rain",
+   "placeId": "bogot-co",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-bogot-co-2026-10-29",
+   "hazard": "rain",
+   "placeId": "bogot-co",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-rio-de-janeiro-br-2026-10-29",
+   "hazard": "rain",
+   "placeId": "rio-de-janeiro-br",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lima-pe-2026-10-27",
    "hazard": "heat",
    "placeId": "lima-pe",
    "verdict": "pending",
