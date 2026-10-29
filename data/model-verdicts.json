@@ -1,11 +1,11 @@
 {
  "note": "How each published model forecast turned out, by tools/run-models.js: correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day has been measured by NASA POWER. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it.",
- "generatedAt": "2026-10-28T10:48:41.041Z",
+ "generatedAt": "2026-10-29T11:05:06.067Z",
  "counts": {
-  "issued": 272,
+  "issued": 285,
   "correct": 14,
   "falseAlarms": 22,
-  "pending": 236,
+  "pending": 249,
   "missedDays": 329
  },
  "outlooks": [
@@ -1964,6 +1964,97 @@
   },
   {
    "id": "model-heat-lima-pe-2026-10-29",
+   "hazard": "heat",
+   "placeId": "lima-pe",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-chittagong-bd-2026-10-30",
+   "hazard": "heat",
+   "placeId": "chittagong-bd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-fire-karachi-pk-2026-10-30",
+   "hazard": "fire",
+   "placeId": "karachi-pk",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-riyadh-sa-2026-10-30",
+   "hazard": "heat",
+   "placeId": "riyadh-sa",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-hanoi-vn-2026-11-01",
+   "hazard": "heat",
+   "placeId": "hanoi-vn",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-hanoi-vn-2026-11-05",
+   "hazard": "rain",
+   "placeId": "hanoi-vn",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-adelaide-au-2026-10-30",
+   "hazard": "rain",
+   "placeId": "adelaide-au",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-mogadishu-so-2026-11-01",
+   "hazard": "heat",
+   "placeId": "mogadishu-so",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-khartoum-sd-2026-11-02",
+   "hazard": "heat",
+   "placeId": "khartoum-sd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-kinshasa-cd-2026-11-03",
+   "hazard": "heat",
+   "placeId": "kinshasa-cd",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-10-30",
+   "hazard": "heat",
+   "placeId": "niamey-ne",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-toronto-ca-2026-11-05",
+   "hazard": "rain",
+   "placeId": "toronto-ca",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-rain-miami-us-2026-11-01",
+   "hazard": "rain",
+   "placeId": "miami-us",
+   "verdict": "pending",
+   "crossed": []
+  },
+  {
+   "id": "model-heat-lima-pe-2026-10-30",
    "hazard": "heat",
    "placeId": "lima-pe",
    "verdict": "pending",
