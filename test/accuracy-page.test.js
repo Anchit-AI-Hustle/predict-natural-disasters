@@ -20,7 +20,7 @@ const { renderPage, closeAllWindows } = require('./render.js');
 test.after(closeAllWindows);
 
 const ROOT = path.join(__dirname, '..');
-const open = () => renderPage('accuracy.html', {
+const open = () => renderPage('accuracy.html', { search: '?full=1',
   waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-'
 });
 const text = (r, id) => (r.document.getElementById(id) || {}).textContent;
@@ -102,9 +102,12 @@ test('a matured forecast is called a false positive only where the scans could h
     assert.ok(cov.intervals.some(iv => ms(iv.from) <= from && ms(iv.to) >= to),
       v.predictionId + ' was failed against a record that did not watch its whole window');
   }
-  const conditional = failed.filter(x => x.v.forecastClass !== 'independent-prospective').length;
+  /* Counted once per forecast, by its first recorded version (launch audit C2). */
+  const first = require(path.join(ROOT, 'accuracy-model.js')).firstVersionIndex(ver.preds);
+  const once = ver.verdicts.map((v, i) => ({ v, i })).filter(x => first[x.i] && x.v.classification === 'MISS_FALSE_POSITIVE');
+  const conditional = once.filter(x => x.v.forecastClass !== 'independent-prospective').length;
   assert.equal(text(r, 'cdMiss'), String(conditional), 'the page counts false positives the engine did not find');
-  assert.equal(text(r, 'ipMiss'), String(failed.length - conditional));
+  assert.equal(text(r, 'ipMiss'), String(once.length - conditional));
   /* Every window that cannot be graded is given its own reason, whether or
      not any other window could be. The note used to say all of them fell
      outside the scans, when most had been scanned and simply had no source
@@ -254,7 +257,7 @@ function gradingFixture() {
 }
 
 function openWith({ scan, observed }) {
-  return renderPage('accuracy.html', {
+  return renderPage('accuracy.html', { search: '?full=1',
     mock: {},
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
@@ -338,7 +341,8 @@ test('a graded window appears in the predicted-against-observed comparison', asy
   const fx = gradingFixture();
   const r = await openWith(fx);
   const V = require(path.join(ROOT, 'verdicts.js'));
-  const graded = ver => ver.records.filter(x => ['VERIFIED', 'PARTIAL', 'FALSE_ALARM'].includes(x._state));
+  /* One card per forecast, by its first recorded version (launch audit C2). */
+  const graded = ver => ver.records.filter(x => x._counted && ['VERIFIED', 'PARTIAL', 'FALSE_ALARM'].includes(x._state));
   const ver = r.window.__verification;
   assert.ok(graded(ver).length > 0, 'nothing was graded, so this proves nothing');
   const cards = [...r.document.querySelectorAll('#cmpList .cmp')];
@@ -403,7 +407,7 @@ test('a ledger it could not read is not a ledger that is empty', async () => {
      recorded yet" - and the page then explained at length that an empty
      record is not a claim that nothing happened, while itself making exactly
      that substitution. */
-  const r = await renderPage('accuracy.html', {
+  const r = await renderPage('accuracy.html', { search: '?full=1',
     mock: {},
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
@@ -445,7 +449,7 @@ test('every record this page reads is reported when it cannot be read', async ()
     ['verification-ledger.json', /hand-checked results/i],
     ['observed-disasters.json', /record of disasters/i],
     ['scan-ledger.json', /which places we checked/i]]) {
-    const r = await renderPage('accuracy.html', {
+    const r = await renderPage('accuracy.html', { search: '?full=1',
       mock: {},
       waitFor: d => !!d.getElementById('ledgerError'),
       beforeParse(w) {
@@ -494,7 +498,7 @@ test('two claims under one id keep their own verdicts', async () => {
     targetEnd: new Date(Date.parse(base.targetEnd) + 3 * 864e5).toISOString()
   });
   const ledger = [base, revised];
-  const r = await renderPage('accuracy.html', {
+  const r = await renderPage('accuracy.html', { search: '?full=1',
     mock: {},
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
@@ -540,7 +544,7 @@ test('a ledger it could not read is not graded against', async () => {
      false positive against a record the page had never read. The warning sat
      above a table of fabricated verdicts. */
   const fx = gradingFixture();
-  const r = await renderPage('accuracy.html', {
+  const r = await renderPage('accuracy.html', { search: '?full=1',
     mock: {},
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {
@@ -590,19 +594,43 @@ test('a ledger that really is empty is still reported as empty', async () => {
 
 /* ------------------------------------------------ the answer comes first */
 
-test('the page answers first, in words, from the same figures it publishes', async () => {
-  const r = await open();
-  const lead = text(r, 'answerLead');
-  const points = [...r.document.querySelectorAll('#answerPoints li')].map(li => li.textContent);
+test('the page answers first, from both ledgers, and the sections under it agree', async () => {
+  /* Launch audit C5: the headline was built from the outlook ledger alone,
+     so it said "We do not have a track record of advance forecasts yet"
+     above a section grading 285 model forecasts made in advance. It is built
+     from both ledgers now, by the same function as the full record. */
+  const r = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 30000,
+    waitFor: d => (d.getElementById('mTotal') || {}).textContent !== '-' && (d.getElementById('rForecasts') || {}).textContent !== '-' });
+  assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   const main = r.document.querySelector('main');
   assert.ok(main.children[1] && main.children[1].id === 'answer', 'the answer is not the first thing after the title');
-  if (text(r, 'ipTotal') === '0') assert.match(lead, /^We do not have a track record of advance forecasts yet/);
-  assert.ok(points.some(p => p.startsWith(text(r, 'mTotal') + ' forecasts have been recorded')),
-    'the summary and the figure for recorded windows disagree');
-  assert.ok(points.some(p => p.startsWith(text(r, 'mGraded') + ' forecast')), 'the summary and the graded figure disagree');
-  assert.ok(points.some(p => p.includes(text(r, 'mFalse') + ' wrong')), 'false alarms are missing from the answer');
-  assert.ok(points.some(p => p.startsWith(text(r, 'obTotal') + ' significant disaster')),
-    'the summary and the disaster count disagree');
+  const lead = text(r, 'answerLead');
+  const modelLedger = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'model-ledger.json'), 'utf8'));
+  const mv = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'model-verdicts.json'), 'utf8'));
+  assert.doesNotMatch(lead, /do not have a track record of advance forecasts/,
+    'the headline denies the advance forecasts the page grades below it');
+  assert.match(lead, new RegExp(modelLedger.length + ' forecasts in advance'));
+  assert.equal(text(r, 'aIssued'), String(modelLedger.length));
+  assert.equal(text(r, 'aCorrect'), String(mv.counts.correct));
+  assert.equal(text(r, 'aFalse'), String(mv.counts.falseAlarms));
+  assert.equal(text(r, 'aMissed'), String(mv.counts.missedDays));
+  /* The restated alerts at the top are the full record's own count of them,
+     one per forecast. */
+  const A = require(path.join(ROOT, 'accuracy-model.js'));
+  const V = require(path.join(ROOT, 'verdicts.js'));
+  const ver = r.window.__verification;
+  const restated = ver.counted.filter(x => A.bucketOf(x) === 'restated');
+  const t = V.tally(restated, Date.now());
+  assert.equal(text(r, 'rForecasts'), t.total.toLocaleString('en-GB'));
+  assert.equal(text(r, 'rCorrect'), String(t.verified));
+  assert.equal(text(r, 'rPartial'), String(t.partial));
+  assert.equal(text(r, 'rWrong'), String(t.falseAlarm));
+  /* And no forecast id is counted twice anywhere a count is made. */
+  const ids = ver.counted.filter(x => x.id && A.bucketOf(x) !== 'observed').map(x => x.id);
+  assert.equal(new Set(ids).size, ids.length, 'a forecast is counted more than once');
+  const cards = [...r.document.querySelectorAll('#verifiedList .cardrow')];
+  const cardIds = cards.map(c => c.getAttribute('href'));
+  assert.equal(new Set(cardIds).size, cardIds.length, 'the list of forecasts that came true repeats a forecast');
   r.close();
 });
 
@@ -627,7 +655,7 @@ test('the ledger is shown a page at a time, and every row is still there', async
 });
 
 test('a record that could not be read is announced above the answer, never folded away', async () => {
-  const r = await renderPage('accuracy.html', {
+  const r = await renderPage('accuracy.html', { search: '?full=1',
     mock: {},
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-',
     beforeParse(w) {

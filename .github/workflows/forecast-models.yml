@@ -130,10 +130,13 @@ jobs:
       - name: Run the models, add to the ledger, grade what has been measured
         run: node tools/run-models.js
 
+      - name: Write the track record summary from both ledgers
+        run: node tools/build-accuracy-summary.js
+
       - name: Commit the forecasts, the ledger and the grades
         run: |
           set -euo pipefail
-          git add data/model-outlooks.json data/model-runs.json data/model-ledger.json data/model-verdicts.json data/model-measured.json
+          git add data/model-outlooks.json data/model-runs.json data/model-ledger.json data/model-verdicts.json data/model-measured.json data/accuracy-summary.json data/forecast-verdicts.json
           if git diff --cached --quiet; then echo "unchanged"; exit 0; fi
           git config user.name "forecast-models"
           git config user.email "noreply@anthropic.com"
