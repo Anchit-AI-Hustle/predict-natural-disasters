@@ -278,9 +278,17 @@ test('outlook detail pages withhold donation prompts but still show helplines', 
 /* ------------------------------------------------ place and hazard pages */
 
 test('region, location and hazard pages carry support and relief context', async () => {
+  /* A place page carries the place's contacts only (launch audit A1): it is
+     not an event, so it has no relief appeal and no news of its own. */
+  const place = await renderPage('location-detail.html', { search: '?location=Nepal', timeoutMs: 9000,
+    waitFor: d => d.querySelector('#helplinesBody .intelphone') });
+  assert.equal(place.errors.length, 0, 'location-detail.html: ' + place.errors.map(String).join('|'));
+  assert.match(place.document.getElementById('helplinesBody').innerHTML, /href="tel:/, 'location-detail.html has no dialable helpline');
+  assert.equal(place.document.getElementById('reliefBody'), null, 'a place page asks for donations');
+  assert.equal(place.document.getElementById('newsBody'), null, 'a place page has a news panel of its own');
+  place.close();
   for (const [page, search] of [
     ['region-detail.html', '?region=Nepal'],
-    ['location-detail.html', '?location=Nepal'],
     ['hazard-detail.html', '?type=Flood&region=Nepal']
   ]) {
     const r = await renderPage(page, { search, waitFor: enriched, timeoutMs: 9000 });
@@ -394,7 +402,9 @@ test('no element id is shadowed by a built-in Window property', async () => {
 
 // Pages that are static prose with no list of records to order. 404.html belongs
 // here too: its only list is a fixed set of six places to go next.
-const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html', '404.html']);
+/* compare-locations.html shows the two or three places the reader chose, in
+   the order they chose them: it is a comparison, not a record list. */
+const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html', '404.html', 'compare-locations.html']);
 
 test('every page that lists records offers a sort control', async () => {
   const missing = [];
@@ -643,12 +653,17 @@ test('every homepage headline figure is measured, not written into the page', as
   assert.equal(doc.getElementById('kEvents').textContent, String(evs.length));
 
   // The headline count is mostly routine detections, so the note beside it
-  // breaks the total down by severity rather than describing where it came
-  // from. Both halves have to be countable in the feed.
+  // breaks the total down by level rather than describing where it came
+  // from. Every part is countable in the feed, and the parts add up to the
+  // total: "2 serious · 698 minor" of 723 left 23 out (launch audit A5). The
+  // levels are the map key's own, through the one PND.riskKey.
+  const P = r.window.PND, R = r.window.PNDRisk;
+  const split = list => { const by = {}; list.forEach(e => { const k = P.riskKey(e); by[k] = (by[k] || 0) + 1; });
+    return R.LEVELS.slice().reverse().concat([R.UNKNOWN]).filter(l => by[l.key])
+      .map(l => by[l.key] + ' ' + l.label.toLowerCase()).join(' · '); };
   const note = doc.getElementById('kEventsNote').textContent;
-  const bad = evs.filter(e => e.severityRank >= 4).length;
-  const routine = evs.filter(e => e.severityRank === 1).length;
-  assert.equal(note, `${bad} serious · ${routine} minor`);
+  assert.equal(note, split(evs));
+  assert.equal(note.split(' · ').reduce((n, p) => n + Number(p.split(' ')[0]), 0), evs.length);
 
   // Filtering the page must move the counters with it, and say that it did.
   const filter = doc.getElementById('hazardFilter');
@@ -661,13 +676,10 @@ test('every homepage headline figure is measured, not written into the page', as
   assert.ok(shown > 0 && shown < evs.length, 'the filter did not narrow the feed: ' + shown);
 
   // The note tracks the filter too - the split is of what is on screen now.
-  const inView = evs.filter(e => String(e.type).toLowerCase().includes(flood.value.toLowerCase()));
-  const badIn = inView.filter(e => e.severityRank >= 4).length;
-  const routineIn = inView.filter(e => e.severityRank === 1).length;
+  const inView = evs.filter(e => P.sameHazard(e.type, flood.value));
+  assert.equal(shown, inView.length);
   assert.equal(doc.getElementById('kEventsNote').textContent,
-    badIn || routineIn
-      ? `${badIn} serious · ${routineIn} minor`
-      : 'Matching the hazard you chose');
+    inView.length ? split(inView) : 'Matching the hazard you chose');
   assert.ok(Number(doc.getElementById('kCountries').textContent) <= countries.size);
   r.close();
 });

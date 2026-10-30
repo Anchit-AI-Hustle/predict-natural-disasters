@@ -301,7 +301,10 @@
   /* ------------------------------------------------------------- the footer */
 
   function footerHtml() {
-    return '<div class="trust-foot"><p><b>This is an experimental model, not an official warning service.</b> ' +
+    /* Each agency is already written out in full beside its short name, so
+       the glossary is kept off it: it turned "(USGS)" into a second copy of
+       the name ("... (earthquakes) (United States Geological Survey)"). */
+    return '<div class="trust-foot" data-keep-acronyms><p><b>This is an experimental model, not an official warning service.</b> ' +
       'For real alerts and what to do in an emergency, follow your national meteorological or disaster agency:</p><ul>' +
       OFFICIAL.map(function (r) {
         return '<li><span>' + esc(r.region) + ':</span> ' + r.agencies.map(function (a) {

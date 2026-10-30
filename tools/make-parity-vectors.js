@@ -623,7 +623,7 @@ async function homeVectors() {
     sortOptions: [...sortSel.options].map(o => ({ value: o.value, label: o.textContent })),
     warningsTileNote: d.querySelector('#kWarnings').closest('.kpi').querySelector('.delta').textContent.trim(),
     warningsTileTitle: d.querySelector('#kWarnings').closest('.kpi').querySelector('.delta').getAttribute('title'),
-    liveEventsHeading: [...d.querySelectorAll('h3')].map(h => h.textContent.trim()).find(t => /live events/i.test(t)) || null,
+    liveEventsHeading: [...d.querySelectorAll('h2, h3')].map(h => h.textContent.trim()).find(t => /live events/i.test(t)) || null,
     cases: []
   };
   for (const [hazard, sort] of [['', 'newest'], ['', 'severity'], ['', 'oldest'], ['', 'title'], ['Extreme Cold', 'newest'], ['Extreme Heat', 'newest'], ['Flood', 'severity'], ['Earthquake', 'newest']]) {

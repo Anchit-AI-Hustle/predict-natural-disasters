@@ -207,7 +207,8 @@ test('a hazard nobody forecasts the onset of is labelled observed only', async (
   const cls = quake ? quake.className : '';
   r.close();
   assert.ok(quake, 'the hazard strip should list earthquakes');
-  assert.match(text, /observed only/,
+  /* In plain words now (launch audit A32): "observed only" was jargon. */
+  assert.match(text, /reports only, no forecast/,
     'the site counted earthquakes under a forecast heading while forecasting none');
   assert.match(cls, /hazard-observed/);
   assert.equal(H.HAZARDS.Earthquake.forecastable, false);

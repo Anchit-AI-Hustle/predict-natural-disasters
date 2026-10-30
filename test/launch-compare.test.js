@@ -81,7 +81,7 @@ test('A4: places in the address are compared side by side, with the home page’
     /* glossary.js writes "M 5.8" out as "Magnitude 5.8" on the page, so the
        reason is compared up to its first full stop. */
     assert.ok(c.textContent.includes(want[i].why.split('. ')[0]), 'card ' + i + ' does not give the home page’s reason');
-    const more = c.querySelector('a.cmp-details');
+    const more = c.querySelector('a[data-cmp-details]');
     assert.ok(more, 'no way to the place page');
     const u = new URL(more.getAttribute('href'), 'http://x');
     assert.equal(u.pathname, '/location-detail');

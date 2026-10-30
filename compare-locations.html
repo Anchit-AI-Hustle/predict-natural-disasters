@@ -55,7 +55,7 @@ function detailsUrl(p){const q=new URLSearchParams({location:p.name,lat:String(p
 function steps(a){return '<ul>'+a.steps.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul><p style="color:#ffd9a8">'+esc(a.authority)+'</p>'}
 function card(p,i){const state=PNDPlaceRisk.feedState(feedLoaded,feedFailed);
   const head=b=>'<div class="pr-top"><span class="pr-eyebrow">Place '+(i+1)+' · current risk</span>'+b+'<h2>'+esc(p.name)+'</h2></div>';
-  const foot='<div class="cmp-actions"><a class="btn cmp-details" data-keep-href href="'+esc(detailsUrl(p))+'">See details for this place</a><button class="btn" type="button" data-drop="'+i+'">Remove</button></div>';
+  const foot='<div class="cmp-actions"><a class="btn" data-cmp-details data-keep-href href="'+esc(detailsUrl(p))+'">See details for this place</a><button class="btn" type="button" data-drop="'+i+'">Remove</button></div>';
   if(state!=='loaded'){const W=PNDPlaceRisk.PENDING[state];return '<article class="cmpcard" aria-busy="'+(state==='loading')+'">'+head('<span class="risk risk-unknown">'+esc(W.headline)+'</span>')+'<div class="pr-block"><h3>What\u2019s happening</h3>'+(state==='failed'?PND.unavailableHtml():'<p>'+esc(W.text)+'</p>')+'</div>'+foot+'</article>'}
   const A=PNDPlaceRisk.assess(p,events,{generatedAt}),act=PNDPlaceRisk.actionsFor(A),lead=A.lead&&A.lead.e;
   const badge=A.level?PNDRisk.badge(PNDRisk.BY_KEY[A.level].label):'<span class="risk risk-unknown">Nothing reported nearby</span>';
