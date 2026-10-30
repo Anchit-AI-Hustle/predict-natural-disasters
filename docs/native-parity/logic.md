@@ -1123,7 +1123,7 @@ or nil. `inRecallPeriod(e, since)` is `since != nil && parse(e.onset) != nil && 
 precision 0.5, recall 0.375 and F1 0.428571.
 
 Geography tolerance per hazard family (km): earthquake 250, tropical-cyclone 500, flood 300, landslide 150,
-wildfire 200, volcano 100, drought 600, extreme-heat 400, severe-weather 250, other 250. `VERIFICATION_VERSION` is `verify-1.3.1`.
+wildfire 200, volcano 100, drought 600, extreme-heat 400, severe-weather 250, other 250. `VERIFICATION_VERSION` is `verify-1.4.0`. Since 1.4.0 the `continuation-outlook` and `warning-derived` classes are graded on `new-impact` only (see features.md changelog C28).
 
 ### 10.6 `claimKey(f)` (used to key verdicts)
 `[id, type, targetStart, targetEnd, country, region, coord(lat), coord(lon), forecastScope, title-if-type-names-no-hazard]`.
@@ -1133,7 +1133,7 @@ Each part becomes `"-"` when absent, null or `""`, and is trimmed otherwise. The
 
 ### 10.7 Port strategy for `verify()` and `assessCoverage()`
 `verification-model.js` (1,274 lines) and `observed-model.js` (589 lines: hazard families, same-event merging,
-significance) hold the grading engine. It changes with versioned rules (`verify-1.3.1`). There are two acceptable approaches.
+significance) hold the grading engine. It changes with versioned rules (`verify-1.4.0`). There are two acceptable approaches.
 
 1. **Recommended: run the website's JS on device.** On iOS use **JavaScriptCore** (`JSContext`). On Android use
    `androidx.javascriptengine.JavaScriptSandbox`, or QuickJS (for example `app.cash.quickjs`). Load

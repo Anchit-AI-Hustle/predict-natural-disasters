@@ -430,17 +430,23 @@ test('a continuation outlook is graded on whether the disaster carried on', () =
   });
   const began = disaster({ onset: '2026-09-03T00:00:00Z' });
 
-  const quiet = grade(cont, [began]);
+  /* verify-1.4.0: what bears it out is a new impact reported inside the
+     window, the rule its page publishes - not the agency still listing it.
+     Where nothing could establish an absence it stays ungraded. */
+  const quiet = grade(cont, [began], { observedCoverage: { from: null, to: null } });
   assert.equal(quiet.classification, 'PENDING',
     'a continuation outlook was graded although nothing shows whether the disaster continued');
-  assert.equal(quiet.ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
   assert.equal(quiet.gradeable, false);
+  const listed = grade(cont, [disaster({ onset: '2026-09-03T00:00:00Z',
+    impactLastUpdated: '2026-09-05T12:00:00Z' })]);
+  assert.equal(listed.classification, 'MISS_FALSE_POSITIVE',
+    'a routine reassessment of the record this outlook restates was credited as the outlook coming true');
 
   const carried = grade(cont, [disaster({ onset: '2026-09-03T00:00:00Z',
-    impactLastUpdated: '2026-09-05T12:00:00Z' })]);
+    revisions: [{ at: '2026-09-05T12:00:00Z', field: 'deaths', from: 2, to: 5 }] })]);
   assert.equal(carried.classification, 'HIT',
-    'a disaster still being reported inside the window did not bear out the outlook that said it would continue');
-  assert.match(carried.classificationReason, /still being reported inside the window/i);
+    'a new impact reported inside the window did not bear out the outlook that said harm would continue');
+  assert.match(carried.classificationReason, /deaths rose to 5/i);
   assert.deepEqual(carried.observedEventIds, [began.canonicalEventId]);
   /* The evidence names the observation that bore it out - the report inside
      the window, after the freeze - not the onset, which predates the freeze
@@ -459,11 +465,15 @@ test('each class that follows a disaster is graded by its own rule', () => {
     freezeTimestamp: '2026-09-04T00:00:00Z',
     targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
   }, extra));
-  /* A continuation and a warning-derived outlook say the hazard itself
-     carries on, so the record being reassessed inside the window shows it. */
+  /* Since verify-1.4.0 a continuation and a warning-derived outlook are
+     held to the same rule as an aftershock outlook's second limb: a routine
+     reassessment of the record they restate is not evidence; a new impact is. */
   for (const k of ['continuation-outlook', 'warning-derived']) {
-    assert.equal(grade(windowed({ forecastClass: k }), [began]).classification, 'HIT',
-      k + ' cannot be borne out by the disaster it follows');
+    assert.notEqual(grade(windowed({ forecastClass: k }), [began]).classification, 'HIT',
+      k + ' was credited with a routine reassessment of the alert it restates');
+    assert.equal(grade(windowed({ forecastClass: k }), [disaster({ onset: '2026-09-03T00:00:00Z',
+      revisions: [{ at: '2026-09-05T12:00:00Z', field: 'displaced', from: 100, to: 900 }] })]).classification, 'HIT',
+      k + ' cannot be borne out by a new impact of the disaster it follows');
   }
   /* An aftershock outlook claims new activity or new impacts, so the same
      reassessment is not enough for it - that is the whole difference. */
@@ -489,15 +499,15 @@ test('a disaster that was over before the window opened did not continue into it
   });
   const finished = disaster({ onset: '2026-09-01T00:00:00Z', end: '2026-09-02T00:00:00Z' });
   const v = grade(cont, [finished]);
-  assert.equal(v.classification, 'PENDING',
+  assert.notEqual(v.classification, 'HIT',
     'an outlook was credited with a disaster that had already ended before its window opened');
-  assert.equal(v.ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+  assert.notEqual(v.classification, 'PARTIAL_HIT');
   /* A revision dated inside the window is evidence of its own. */
   const revised = disaster({ onset: '2026-09-01T00:00:00Z',
     revisions: [{ at: '2026-09-05T09:00:00Z', field: 'deaths', from: 3, to: 11 }] });
   const w = grade(cont, [revised]);
   assert.equal(w.classification, 'HIT');
-  assert.match(w.classificationReason, /deaths was revised/);
+  assert.match(w.classificationReason, /deaths rose to 11/);
 });
 
 test('a report dated after the window closed is not evidence from inside it', () => {
@@ -511,17 +521,20 @@ test('a report dated after the window closed is not evidence from inside it', ()
     forecastClass: 'continuation-outlook', freezeTimestamp: '2026-09-04T00:00:00Z',
     targetStart: '2026-09-04T00:00:00Z', targetEnd: '2026-09-07T00:00:00Z'
   });
-  const late = disaster({ onset: '2026-09-03T00:00:00Z', lastSeenAt: '2026-09-19T00:00:00Z' });
+  /* verify-1.4.0: the evidence is a new impact, and the same bound applies
+     to it: one reported a fortnight after the window closed is not inside. */
+  const late = disaster({ onset: '2026-09-03T00:00:00Z',
+    revisions: [{ at: '2026-09-19T00:00:00Z', field: 'deaths', from: 1, to: 4 }] });
   const v = grade(cont, [late]);
-  assert.equal(v.classification, 'PENDING',
-    'a sighting a fortnight after the window closed was counted as activity inside it');
-  assert.equal(v.ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+  assert.notEqual(v.classification, 'HIT',
+    'an impact reported a fortnight after the window closed was counted as inside it');
 
-  // Control: the same sighting, inside the window.
-  const inside = disaster({ onset: '2026-09-03T00:00:00Z', lastSeenAt: '2026-09-05T00:00:00Z' });
+  // Control: the same impact, inside the window.
+  const inside = disaster({ onset: '2026-09-03T00:00:00Z',
+    revisions: [{ at: '2026-09-05T00:00:00Z', field: 'deaths', from: 1, to: 4 }] });
   assert.equal(grade(cont, [inside]).classification, 'HIT');
 
-  // And the helper itself, at the boundary.
+  // And the helper itself, at the boundary, for the class that still reads sightings.
   const from = Date.parse('2026-09-04T00:00:00Z'), to = Date.parse('2026-09-07T00:00:00Z');
   const at = t => V.continuedActivity({ onset: '2026-09-03T00:00:00Z', lastSeenAt: t }, from, to);
   assert.ok(at('2026-09-07T00:00:00Z'), 'the closing instant is inside the window');
@@ -539,17 +552,17 @@ test('the scan a forecast was derived from is not evidence that came after it', 
   const p = prediction({ forecastClass: 'continuation-outlook',
     freezeTimestamp: '2026-09-02T00:00:00Z', sourceScanId: 'scan-1',
     targetStart: '2026-09-02T00:00:00Z', targetEnd: '2026-09-05T00:00:00Z' });
+  /* verify-1.4.0: the evidence is a new impact, so the snapshot rule is
+     asked of the revision that carries it. */
   const sighted = scan => disaster({ onset: '2026-09-01T00:00:00Z',
-    sightings: [{ from: '2026-09-03T00:00:00Z', to: '2026-09-03T06:00:00Z',
-      fromScan: scan, toScan: scan }] });
+    revisions: [{ at: '2026-09-03T06:00:00Z', field: 'deaths', from: 2, to: 7, scanId: scan }] });
 
   const own = grade(p, [sighted('scan-1')]);
   assert.notEqual(own.classification, 'HIT',
     'a forecast was borne out by the snapshot it was derived from');
-  assert.equal(own.gradeable, false);
   const later = grade(p, [sighted('scan-2')]);
   assert.equal(later.classification, 'HIT',
-    'a later scan still carrying the hazard is what this class claims');
+    'a new impact recorded by a later scan is what this class claims');
 });
 
 test('a withdrawn or reduced impact figure is not an additional impact', () => {
@@ -742,10 +755,10 @@ test('an aftershock outlook is not verified by the mainshock still being in the 
   assert.equal(aftershock.classification, 'HIT');
   assert.deepEqual(aftershock.observedEventIds, ['OBS-eq-after']);
 
-  /* And a continuation outlook, which claims the hazard itself continues, is
-     still graded on the record being carried - the two classes are not one. */
+  /* And since verify-1.4.0 a continuation outlook is held to the same rule:
+     the record still being carried is the alert it restated, not evidence. */
   const cont = Object.assign({}, outlook, { forecastClass: 'continuation-outlook' });
-  assert.equal(grade(cont, [mainshock({ lastSeenAt: '2026-09-06T00:00:00Z' })]).classification, 'HIT');
+  assert.notEqual(grade(cont, [mainshock({ lastSeenAt: '2026-09-06T00:00:00Z' })]).classification, 'HIT');
 });
 
 /* ---------------- what the ledger remembers is what can be graded */
@@ -766,16 +779,21 @@ test('a disaster carried through the window is not erased by the next run', () =
     lastSeenAt: '2026-09-09T12:00:00Z',                 // this morning's run
     sightings: [{ from: '2026-09-03T00:00:00Z', to: '2026-09-09T12:00:00Z' }]
   });
+  /* verify-1.4.0: being carried is not evidence for this class any more
+     (it is the alert it restated), but the runs are still kept, and read
+     by the helper for any class that asks for 'still-reported'. */
   const v = grade(cont, [carried]);
-  assert.equal(v.classification, 'HIT',
-    'a disaster carried by its provider throughout the window was graded as though nothing was known');
-  assert.match(v.classificationReason, /carrying it from/);
+  assert.notEqual(v.classification, 'HIT',
+    'a disaster still listed by its provider was credited as the outlook coming true');
+  const from = Date.parse('2026-09-04T00:00:00Z'), to = Date.parse('2026-09-07T00:00:00Z');
+  assert.match(V.continuedActivity(carried, from, to, 'still-reported').why, /carrying it from/,
+    'the runs a record was carried for were erased by the next run');
 
   // A run that began only after the window closed is still not evidence.
   const later = disaster({ onset: '2026-09-03T00:00:00Z',
     lastSeenAt: '2026-09-09T12:00:00Z',
     sightings: [{ from: '2026-09-08T00:00:00Z', to: '2026-09-09T12:00:00Z' }] });
-  assert.equal(grade(cont, [later]).ungradeableReason, 'CONTINUATION_EVIDENCE_UNAVAILABLE');
+  assert.equal(V.continuedActivity(later, from, to, 'still-reported'), null);
 });
 
 test('a routine refresh is not an additional impact', () => {
@@ -1096,10 +1114,11 @@ test('a change to what a verdict means changes the version it is stamped with', 
   /* 1.3.0 credits legacy rows from recordedAt and measures recall only from
      the first independent prediction. Verdicts under the old reading would
      otherwise carry the same stamp as the new ones. 1.3.1 changes only the
-     reason an uncovered window gives, and is stamped all the same. */
-  assert.equal(V.VERIFICATION_VERSION, 'verify-1.3.1');
+     reason an uncovered window gives, and is stamped all the same. 1.4.0
+     grades restated alerts on new impact only. */
+  assert.equal(V.VERIFICATION_VERSION, 'verify-1.4.0');
   const legacy = { id: 'x', type: 'Flood', targetStart: '2026-09-14T00:00:00Z', targetEnd: '2026-09-20T00:00:00Z',
     recordedAt: '2026-09-15T00:00:00Z', lat: 1, lon: 1 };
   assert.equal(V.verify(legacy, [], { now: Date.parse('2026-09-16T00:00:00Z'), hazardFamilyOf: H,
-    observedCoverage: { from: null, to: null } }).verificationVersion, 'verify-1.3.1');
+    observedCoverage: { from: null, to: null } }).verificationVersion, 'verify-1.4.0');
 });
