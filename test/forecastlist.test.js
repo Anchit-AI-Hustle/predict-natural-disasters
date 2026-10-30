@@ -50,10 +50,12 @@ test('the outlook list is a table with the columns it promises', async () => {
 });
 
 test('every row is one outlook, and every row opens it', async () => {
-  const expected = (await feed()).events.filter(e => e.forecast);
+  /* Open forecasts only (launch audit C14): an ended one was listed, so the
+     list said 114 where every count said 113. Ended ones are on /accuracy. */
+  const expected = (await feed()).events.filter(e => e.forecast && e.live !== false && !e.windowClosed);
   const r = await open();
   const rows = [...r.document.querySelectorAll('#cards tbody tr')];
-  assert.equal(rows.length, expected.length, 'the list does not hold one row per recorded outlook');
+  assert.equal(rows.length, expected.length, 'the list does not hold one row per open outlook');
   for (const tr of rows) {
     /* Clickable, as a row - and a real link too, because a row cannot be
        opened in a new tab, copied, or announced as a link. */
@@ -83,7 +85,7 @@ test('the paragraph that is true of every outlook is printed once', async () => 
   assert.equal(rowText.includes(phrase), false, 'the disclaimer is repeated on every row again');
   assert.ok(body.length > 0);
   const note = r.document.getElementById('forecastNote');
-  assert.ok(note && /not an official warning and does not replace one/i.test(note.textContent),
+  assert.ok(note && /None is an official warning or replaces one/i.test(note.textContent),
     'the page no longer states the limit that applies to all of them');
   r.close();
 });
@@ -203,9 +205,12 @@ test('the forecasts page lists forecasts apart from the alerts they came from', 
     assert.match(String(tr.dataset.href || ''), /^\/forecasts\//, 'an observed event is back in the forecast table');
   }
   const { events } = await feed();
-  const forecasts = events.filter(e => e.forecast).length;
-  assert.equal(d.querySelectorAll('#forecastGrid tbody tr').length, forecasts, 'a forecast is missing from the page');
-  const observed = events.filter(e => !e.forecast && ['Red', 'Orange', 'High'].includes(e.alert)).length;
+  const forecasts = events.filter(e => e.forecast && e.live !== false && !e.windowClosed).length;
+  assert.equal(d.querySelectorAll('#forecastGrid tbody tr').length, forecasts, 'an open forecast is missing from the page');
+  /* Live records only: the page reads the live feed, and two USGS volcano
+     records the fixture marks as no longer updated were counted here and
+     not there, which failed on main before this branch. */
+  const observed = events.filter(e => !e.forecast && e.live !== false && ['Red', 'Orange', 'High'].includes(e.alert)).length;
   assert.ok(observed > 0, 'fixture should carry high-priority observed alerts');
   assert.equal(d.querySelectorAll('#observedList a.obsrow').length, observed, 'the observed alerts were not listed');
   /* And the table is not inside a grid meant for cards: that is what halved it. */
@@ -217,7 +222,7 @@ test('the hazard filter offers the hazards that are there, and filters by them e
   /* It was a fixed list of six: "Drought", which had no outlook, and no way
      to pick a storm warning, a severe storm or an aftershock sequence. */
   const { events } = await feed();
-  const forecasts = events.filter(e => e.forecast);
+  const forecasts = events.filter(e => e.forecast && e.live !== false && !e.windowClosed);
   const types = [...new Set(forecasts.map(e => e.type))];
   const r = await open();
   const d = r.document;

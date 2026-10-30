@@ -41,6 +41,7 @@ var FOLDED_ON_PHONE=['Starts','Ends','Provenance','Source','Updated'];
 function headingOf(key){return HEADINGS[key]||key}
 function dataLabelOf(key){return FOLDED_ON_PHONE.indexOf(key)>=0?key:headingOf(key)}
 function provenanceOf(e){
+ if(window.PND&&PND.provenanceOf)return PND.provenanceOf(e);
  if(!e.forecast)return 'Official report';
  if(e.forecastKind==='frozen-benchmark')return 'Test case';
  if(e.forecastOf)return 'Our estimate';
@@ -84,7 +85,8 @@ function columnsFor(opts){
 function forecastRow(e,opts){
  var cols=columnsFor(opts);
  var want=function(c){return cols.indexOf(c)>=0};
- const geo=[e.region,e.country].filter(Boolean).join(' \u00b7 ')||'Global';
+ /* The place once: "Hanoi, Vietnam \u00b7 Vietnam" repeated the country. */
+ const geo=(window.PND&&PND.placeOf)?PND.placeOf(e,'Global'):([e.region,e.country].filter(Boolean).join(' \u00b7 ')||'Global');
  const win=e.targetStart||e.targetEnd?PND.windowText(e):'No dates recorded';
  const status=!e.forecast?'Reported event':(e.windowClosed?'Ended':'Active');
  var html={
