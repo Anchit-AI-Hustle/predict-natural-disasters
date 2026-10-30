@@ -65,12 +65,12 @@
     ['directories', 'Directories, and where this information comes from', '', 'grid']
   ];
 
-  function shell() {
-    return STYLE + PANELS.map(([id, heading, note, kind]) =>
+  function shell(only) {
+    return STYLE + PANELS.filter(([id]) => !only || only.indexOf(id) >= 0).map(([id, heading, note, kind]) =>
       '<section class="panel"><div class="ph"><h2>' + esc(heading) + '</h2>' +
       '<span class="intelmeta" id="' + id + 'Meta">' + esc(note || 'Loading…') + '</span></div>' +
       '<div id="' + id + 'Body" class="' + (kind === 'kv' ? 'intelkv' : kind === 'grid2' ? 'intelgrid2' : 'intelgrid') + '">' +
-      '<div class="card"><p class="muted">Loading…</p></div></div></section>'
+      '<div class="card loading"><p class="muted">Loading…</p></div></div></section>'
     ).join('');
   }
 
@@ -122,13 +122,54 @@
     setMeta('distress', (d.distressGroups || []).length + ' groups · ' + (d.immediateNeeds || []).length + ' needs');
   }
 
+  /*
+   * A headline without its outlet stuck on the end.
+   *
+   * Google News titles end " - Outlet", and its description repeats the
+   * headline with the outlet after it ("... Across The World News18"), so the
+   * card printed each headline twice with the source name glued on.
+   */
+  function stripSource(text, outlet) {
+    let s = String(text == null ? '' : text).replace(/(&nbsp;)+/gi, ' ').replace(/\s+/g, ' ').trim();
+    const o = String(outlet || '').trim();
+    if (!o) return s;
+    const low = s.toLowerCase(), ol = o.toLowerCase();
+    if (low.endsWith(ol)) s = s.slice(0, s.length - o.length).replace(/[\s|:,\u00b7-]+$/, '').trim();
+    return s;
+  }
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  /* A source that gives only a day is shown as that day. Its midnight UTC,
+     turned into a time in the reader's zone, read as "12:30 PM", a time
+     nobody published. */
+  function newsDate(v) {
+    const raw = String(v || '').trim();
+    if (!raw) return '';
+    const dayOnly = /^\d{4}-\d\d-\d\d$/.test(raw) ||
+      /\b00:00(:00)?\s*(GMT|UTC|Z|\+0000)\b/i.test(raw) || /T00:00(:00)?(\.0+)?(Z|\+00:?00)$/.test(raw);
+    const t = Date.parse(dayOnly && /^\d{4}-\d\d-\d\d$/.test(raw) ? raw + 'T00:00:00Z' : raw);
+    if (!Number.isFinite(t)) return raw;
+    if (!dayOnly) return fmt(raw);
+    const d = new Date(t);
+    return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  }
+  /* Within the last `days`, by the date the outlet gave. An undated item is
+     not known to be recent, so it is not shown where recency is the rule. */
+  function recentNews(items, days, now) {
+    const since = (now || Date.now()) - (days || 30) * 864e5;
+    return (items || []).filter(x => { const t = Date.parse((x && x.publishedAt) || ''); return Number.isFinite(t) && t >= since; });
+  }
+
   function newsCard(x) {
+    const title = stripSource(x.title, x.outlet);
+    let summary = stripSource(x.summary, x.outlet);
+    const norm = v => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!norm(summary) || norm(summary).startsWith(norm(title))) summary = '';
     return '<a class="card intelcard" target="_blank" rel="noopener" href="' + esc(x.link) + '">' +
-      '<span class="inteltag' + (x.established ? ' verified' : '') + '">' + esc(x.outlet || 'Source') + '</span>' +
+      '<span class="inteltag' + (x.established ? ' verified' : '') + '">' + esc(x.outlet || 'Source') + '</span> ' +
       (x.established ? '<span class="inteltag verified">Established newsroom</span>' : '') +
-      '<h3>' + esc(x.title) + '</h3>' +
-      '<p class="muted">' + esc((x.summary || '').slice(0, 200)) + '</p>' +
-      '<small class="muted">' + esc(x.publishedAt ? fmt(x.publishedAt) : 'Publication time not given') +
+      '<h3>' + esc(title) + '</h3>' +
+      (summary ? '<p class="muted">' + esc(summary.slice(0, 200)) + '</p>' : '') +
+      '<small class="muted">' + esc(x.publishedAt ? newsDate(x.publishedAt) : 'Publication time not given') +
       (x.via ? ' · via ' + esc(x.via) : '') + '</small><br><b>Read more ↗</b></a>';
   }
 
@@ -304,5 +345,85 @@
     }
   }
 
-  window.PNDEventEnrichment = { load, render, shell };
+  /*
+   * A place, not an event (/location-detail).
+   *
+   * The place page used to call load() with a made-up event titled
+   * "<place> natural disaster", and drew it: "When it was reported ... just
+   * now ... Type Earthquake", who may need help, immediate needs, news and
+   * videos, for a place where nothing had happened. A place gets its
+   * contacts only: emergency numbers, national agencies and support groups.
+   * News appears only beside a real reported event near the place, only
+   * about that event, and only from the last 30 days. Never videos.
+   *
+   * p: { name, country, countryCode, lat, lon }
+   * opts: { contacts: element id, news: element id, event: the real event or null }
+   */
+  const PLACE_PANELS = ['helplines', 'authorities', 'support'];
+  const NEWS_DAYS = 30;
+  let placeKey = '', newsKey = '';
+
+  function query(o) {
+    const params = new URLSearchParams();
+    Object.keys(o).forEach(k => { if (o[k] !== undefined && o[k] !== null && o[k] !== '') params.set(k, String(o[k])); });
+    return params.toString();
+  }
+
+  async function loadPlaceContacts(p, mount) {
+    mount.innerHTML = shell(PLACE_PANELS);
+    try {
+      const r = await fetch('/api/event-enrichment?' + query({
+        mode: 'place', country: p.country || '', cc: p.countryCode || '', region: p.name || '',
+        lat: Number.isFinite(+p.lat) && p.lat !== null && p.lat !== '' ? +p.lat : '',
+        lon: Number.isFinite(+p.lon) && p.lon !== null && p.lon !== '' ? +p.lon : ''
+      }), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      renderHelplines(d);
+      renderAuthorities(d);
+      renderSupport(d);
+    } catch (err) {
+      PLACE_PANELS.forEach(id => {
+        setBody(id, card('This information is not available right now',
+          '<p class="muted">Our help-information service did not respond. In an emergency, call your local emergency number.</p>'));
+        setMeta(id, 'Trying again on the next visit');
+      });
+    }
+  }
+
+  function renderPlaceNews(d, e, mount) {
+    const items = recentNews(d.news, NEWS_DAYS);
+    mount.innerHTML = STYLE + '<section class="panel"><div class="ph"><h2>News about this event</h2>' +
+      '<span class="intelmeta" id="placeNewsMeta"></span></div><div class="intelgrid" id="placeNewsBody"></div></section>';
+    const body = document.getElementById('placeNewsBody');
+    const meta = document.getElementById('placeNewsMeta');
+    if (meta) meta.textContent = items.length + ' report' + (items.length === 1 ? '' : 's') + ' from the last ' + NEWS_DAYS +
+      ' days about \u201c' + (e.title || 'this event') + '\u201d, from established newsrooms only';
+    if (body) body.innerHTML = items.length ? items.map(newsCard).join('')
+      : card('No news reports from the last ' + NEWS_DAYS + ' days',
+        '<p class="muted">We show news only about a reported event near this place, and only when it is recent.</p>');
+  }
+
+  async function loadPlace(p, opts) {
+    const o = opts || {};
+    const contacts = o.contacts && document.getElementById(o.contacts);
+    const news = o.news && document.getElementById(o.news);
+    const pk = [p && p.name, p && p.country, p && p.countryCode, p && p.lat, p && p.lon].join('|');
+    if (contacts && p && pk !== placeKey) { placeKey = pk; await loadPlaceContacts(p, contacts); }
+    if (!news) return;
+    const e = o.event && !o.event.forecast ? o.event : null;
+    if (!e) { newsKey = ''; news.innerHTML = ''; news.hidden = true; return; }
+    if (String(e.id) === newsKey) return;
+    newsKey = String(e.id);
+    news.hidden = false;
+    try {
+      const r = await fetch('/api/event-enrichment?' + query({
+        mode: 'news', title: e.title || '', type: e.type || '', country: e.country || '', region: e.region || '', updated: e.updated || ''
+      }), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      renderPlaceNews(await r.json(), e, news);
+    } catch (err) { newsKey = ''; news.innerHTML = ''; news.hidden = true; }
+  }
+
+  window.PNDEventEnrichment = { load, render, shell, loadPlace, newsDate, stripSource, recentNews };
 })();

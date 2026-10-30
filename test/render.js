@@ -37,6 +37,7 @@ const LEAFLET_STUB = `
   function chain(a, b){ var o = {
     addTo:function(t){ if(t && t.__take){ t.__take(o); if (t.__map) o.__map = t.__map; } return o; },
     bindPopup:function(h){ o.__popup = h; return o; },
+    bindTooltip:function(h){ o.__tooltip = h; return o; },
     openPopup:function(){return o}, setView:function(){return o},
     /* Real Leaflet removes each child from the map, which fires layerremove
        on it. Without that the globe never learns the page cleared its markers. */
