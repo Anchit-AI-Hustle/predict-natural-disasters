@@ -409,7 +409,7 @@
     "alert": "Orange",
     "source": "GDACS"
    },
-   "out": "<span class=\"risk risk-severe\" title=\"Severe on this site’s six-level risk scale, from the alert level “Orange” published by GDACS and an assessed severity of “Severe”. Where these differ the higher decides.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Severe</span>"
+   "out": "<span class=\"risk risk-severe\" title=\"Severe on this site’s six-level risk scale, from the alert level “Orange” published by GDACS and an assessed severity of “Severe”.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Severe</span>"
   },
   {
    "in": {
@@ -422,6 +422,464 @@
   {
    "in": {},
    "out": "<span class=\"risk risk-unknown\" title=\"No alert level was published for this record and no severity has been assessed for it.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Not rated</span>"
+  }
+ ],
+ "risk.keyFor": [
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "High",
+    "severity": "Severe",
+    "forecast": true
+   },
+   "out": "HIGH"
+  },
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "Moderate",
+    "severity": "Moderate",
+    "forecast": true
+   },
+   "out": "MODERATE"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Storm risk from Super Typhoon In-fa - 5-day forecast",
+    "alert": "Watch",
+    "severity": "Informational",
+    "forecast": true
+   },
+   "out": "EXTREME"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Typhoon Example",
+    "alert": "Green",
+    "source": "GDACS"
+   },
+   "out": "MODERATE"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Hurricane Example (Category 3)",
+    "alert": "Green"
+   },
+   "out": "SEVERE"
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.9,
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": "UNKNOWN"
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.5,
+    "pagerAlert": "green",
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": "LOW"
+  },
+  {
+   "in": {
+    "type": "Flood",
+    "alert": "Green",
+    "severity": "Informational",
+    "source": "GDACS"
+   },
+   "out": "LOW"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "alert": "Orange",
+    "alertBasis": "derived-from-intensity",
+    "severity": "Moderate",
+    "source": "GDACS"
+   },
+   "out": "MODERATE"
+  },
+  {
+   "in": {},
+   "out": "UNKNOWN"
+  }
+ ],
+ "risk.describe": [
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "High",
+    "severity": "Severe",
+    "forecast": true
+   },
+   "out": {
+    "key": "HIGH",
+    "label": "High",
+    "basis": null,
+    "text": "High"
+   }
+  },
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "Moderate",
+    "severity": "Moderate",
+    "forecast": true
+   },
+   "out": {
+    "key": "MODERATE",
+    "label": "Moderate",
+    "basis": null,
+    "text": "Moderate"
+   }
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Storm risk from Super Typhoon In-fa - 5-day forecast",
+    "alert": "Watch",
+    "severity": "Informational",
+    "forecast": true
+   },
+   "out": {
+    "key": "EXTREME",
+    "label": "Extreme",
+    "basis": null,
+    "text": "Extreme"
+   }
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Typhoon Example",
+    "alert": "Green",
+    "source": "GDACS"
+   },
+   "out": {
+    "key": "MODERATE",
+    "label": "Moderate",
+    "basis": null,
+    "text": "Moderate"
+   }
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Hurricane Example (Category 3)",
+    "alert": "Green"
+   },
+   "out": {
+    "key": "SEVERE",
+    "label": "Severe",
+    "basis": null,
+    "text": "Severe"
+   }
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.9,
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": {
+    "key": "UNKNOWN",
+    "label": "Not rated",
+    "basis": null,
+    "text": "Not rated"
+   }
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.5,
+    "pagerAlert": "green",
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": {
+    "key": "LOW",
+    "label": "Low",
+    "basis": "USGS PAGER green",
+    "text": "Low expected impact (USGS PAGER green)"
+   }
+  },
+  {
+   "in": {
+    "type": "Flood",
+    "alert": "Green",
+    "severity": "Informational",
+    "source": "GDACS"
+   },
+   "out": {
+    "key": "LOW",
+    "label": "Low",
+    "basis": "GDACS green",
+    "text": "Low expected impact (GDACS green)"
+   }
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "alert": "Orange",
+    "alertBasis": "derived-from-intensity",
+    "severity": "Moderate",
+    "source": "GDACS"
+   },
+   "out": {
+    "key": "MODERATE",
+    "label": "Moderate",
+    "basis": null,
+    "text": "Moderate"
+   }
+  },
+  {
+   "in": {},
+   "out": {
+    "key": "UNKNOWN",
+    "label": "Not rated",
+    "basis": null,
+    "text": "Not rated"
+   }
+  }
+ ],
+ "portal.riskTagHtml.levels": [
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "High",
+    "severity": "Severe",
+    "forecast": true
+   },
+   "out": "<span class=\"risk risk-high\" title=\"High on this site’s six-level risk scale, from our weather model: High where the place’s 99th percentile is forecast to be crossed, Moderate for its 95th.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>High</span>"
+  },
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "Moderate",
+    "severity": "Moderate",
+    "forecast": true
+   },
+   "out": "<span class=\"risk risk-moderate\" title=\"Moderate on this site’s six-level risk scale, from our weather model: High where the place’s 99th percentile is forecast to be crossed, Moderate for its 95th.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Moderate</span>"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Storm risk from Super Typhoon In-fa - 5-day forecast",
+    "alert": "Watch",
+    "severity": "Informational",
+    "forecast": true
+   },
+   "out": "<span class=\"risk risk-extreme\" title=\"Extreme on this site’s six-level risk scale, from the alert level “Watch” and an assessed severity of “Informational” and the storm’s category, which is a floor.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Extreme</span>"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Typhoon Example",
+    "alert": "Green",
+    "source": "GDACS"
+   },
+   "out": "<span class=\"risk risk-moderate\" title=\"Moderate on this site’s six-level risk scale, from the alert level “Green” published by GDACS and the storm’s category, which is a floor.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Moderate</span>"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Hurricane Example (Category 3)",
+    "alert": "Green"
+   },
+   "out": "<span class=\"risk risk-severe\" title=\"Severe on this site’s six-level risk scale, from the alert level “Green” and the storm’s category, which is a floor.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Severe</span>"
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.9,
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": "<span class=\"risk risk-unknown\" title=\"No impact assessment has been published for this earthquake yet, so it has no level. Its magnitude is a measurement, not a level.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Not rated</span>"
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.5,
+    "pagerAlert": "green",
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": "<span class=\"risk risk-low\" title=\"Low on this site’s six-level risk scale, from an assessed severity of “Informational”.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Low expected impact (USGS PAGER green)</span>"
+  },
+  {
+   "in": {
+    "type": "Flood",
+    "alert": "Green",
+    "severity": "Informational",
+    "source": "GDACS"
+   },
+   "out": "<span class=\"risk risk-low\" title=\"Low on this site’s six-level risk scale, from the alert level “Green” published by GDACS and an assessed severity of “Informational”.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Low expected impact (GDACS green)</span>"
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "alert": "Orange",
+    "alertBasis": "derived-from-intensity",
+    "severity": "Moderate",
+    "source": "GDACS"
+   },
+   "out": "<span class=\"risk risk-moderate\" title=\"Moderate on this site’s six-level risk scale, from the alert level “Orange” published by GDACS and an assessed severity of “Moderate”.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Moderate</span>"
+  },
+  {
+   "in": {},
+   "out": "<span class=\"risk risk-unknown\" title=\"No alert level was published for this record and no severity has been assessed for it.\"><i class=\"risk-shape\" aria-hidden=\"true\"></i>Not rated</span>"
+  }
+ ],
+ "hazards.cycloneCategoryRank": [
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "High",
+    "severity": "Severe",
+    "forecast": true
+   },
+   "out": 0
+  },
+  {
+   "in": {
+    "forecastKind": "model-advance",
+    "alert": "Moderate",
+    "severity": "Moderate",
+    "forecast": true
+   },
+   "out": 0
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Storm risk from Super Typhoon In-fa - 5-day forecast",
+    "alert": "Watch",
+    "severity": "Informational",
+    "forecast": true
+   },
+   "out": 5
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Typhoon Example",
+    "alert": "Green",
+    "source": "GDACS"
+   },
+   "out": 3
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "title": "Hurricane Example (Category 3)",
+    "alert": "Green"
+   },
+   "out": 4
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.9,
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": 0
+  },
+  {
+   "in": {
+    "type": "Earthquake",
+    "magnitude": 6.5,
+    "pagerAlert": "green",
+    "severity": "Informational",
+    "source": "USGS"
+   },
+   "out": 0
+  },
+  {
+   "in": {
+    "type": "Flood",
+    "alert": "Green",
+    "severity": "Informational",
+    "source": "GDACS"
+   },
+   "out": 0
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "alert": "Orange",
+    "alertBasis": "derived-from-intensity",
+    "severity": "Moderate",
+    "source": "GDACS"
+   },
+   "out": 0
+  },
+  {
+   "in": {},
+   "out": 0
+  },
+  {
+   "in": {
+    "type": "Tropical Cyclone",
+    "category": 4
+   },
+   "out": 5
+  },
+  {
+   "in": {
+    "type": "Flood",
+    "title": "Category 5 flood"
+   },
+   "out": 0
+  }
+ ],
+ "portal.provenanceOf": [
+  {
+   "in": {
+    "forecast": true,
+    "forecastKind": "model-advance"
+   },
+   "out": "Made in advance by our model"
+  },
+  {
+   "in": {
+    "forecast": true,
+    "forecastKind": "signal-derived-outlook",
+    "forecastOf": "x"
+   },
+   "out": "Restates an agency alert"
+  },
+  {
+   "in": {
+    "forecast": true,
+    "forecastKind": "aftershock-sequence",
+    "forecastOf": "q"
+   },
+   "out": "Aftershock forecast, after an earthquake"
+  },
+  {
+   "in": {
+    "forecast": true,
+    "forecastKind": "frozen-benchmark"
+   },
+   "out": "Test case, not made in advance"
+  },
+  {
+   "in": {
+    "forecast": false
+   },
+   "out": "Official report"
   }
  ],
  "portal.riskLevelOptions": [
@@ -8708,17 +9166,13 @@
    "out": {
     "kept": [
      "forecast-warn",
-     "fc-open",
-     "fc-ended",
-     "fc-quiet"
+     "fc-open"
     ],
     "scoped": [
      "forecast-warn",
-     "fc-open",
-     "fc-ended",
-     "fc-quiet"
+     "fc-open"
     ],
-    "countText": "4 items: 2 open, 2 ended"
+    "countText": "2 open items"
    }
   },
   {
