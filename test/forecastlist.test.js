@@ -85,7 +85,7 @@ test('the paragraph that is true of every outlook is printed once', async () => 
   assert.equal(rowText.includes(phrase), false, 'the disclaimer is repeated on every row again');
   assert.ok(body.length > 0);
   const note = r.document.getElementById('forecastNote');
-  assert.ok(note && /None is an official warning or replaces one/i.test(note.textContent),
+  assert.ok(note && /not an official warning and does not replace one/i.test(note.textContent),
     'the page no longer states the limit that applies to all of them');
   r.close();
 });

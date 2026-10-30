@@ -332,14 +332,16 @@ test('collection pages list records and link to detail pages', async () => {
 });
 
 test('forecast list shows every outlook, not just the benchmark', async () => {
-  const expected = (await events()).filter(e => e.forecast).length;
+  /* Every open outlook: an ended one is on the track record, not in a list
+     of current forecasts (launch audit C14). */
+  const expected = (await events()).filter(e => e.forecast && e.live !== false && !e.windowClosed).length;
   /* One row per outlook. The list is a table now - thirty cards of the same
      shape is not a list anyone compares - so the count is of rows. */
   const r = await renderPage('forecast-list.html',
     { waitFor: doc => doc.querySelectorAll('#cards tbody tr').length > 1 });
   assert.equal(r.document.querySelectorAll('#cards tbody tr').length, expected,
     'forecast list should show all ' + expected + ' forecast records');
-  assert.match(r.document.getElementById('statusLine').textContent, /\d+ forecasts/);
+  assert.match(r.document.getElementById('statusLine').textContent, /\d+ open forecasts/);
   r.close();
 });
 
@@ -576,9 +578,10 @@ test('the insights page reports the live feed, not hardcoded figures', async () 
   const doc = r.document;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
 
-  assert.equal(doc.getElementById('iEvents').textContent, String(evs.length),
+  /* Reports and forecasts apart (launch audit C21): the tile added the two. */
+  assert.equal(doc.getElementById('iEvents').textContent, String(live.length),
     'the event count does not match the feed');
-  assert.equal(doc.getElementById('iForecasts').textContent, String(forecasts.length),
+  assert.equal(doc.getElementById('iForecasts').textContent, String(forecasts.filter(e => !e.windowClosed).length),
     'the outlook count does not match the feed');
 
   // The top hazard class must be the one the feed actually reports most.
@@ -678,7 +681,7 @@ test('the forecast calendar is a calendar, not the same card grid renamed', asyn
   // The page promised a calendar and rendered collection.js's generic grid,
   // filtered to forecasts. A forecast is a window in time and the grid could
   // not show one: every card read "starts just now".
-  const outlooks = (await events()).filter(e => e.forecast);
+  const outlooks = (await events()).filter(e => e.forecast && e.live !== false && !e.windowClosed);
   assert.ok(outlooks.length > 3, 'fixture feed needs several outlooks');
 
   const r = await renderPage('forecast-calendar.html', {

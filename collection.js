@@ -33,7 +33,7 @@ function pageNote(){
   (PND.forecastKinds(scoped()).text?PND.forecastKinds(scoped()).text+' ':'')+
   'A forecast made in advance by our weather models comes from the coming week\u2019s weather compared with 30 years of records at that place. '+
   'The others restate an alert an official agency has already issued, or follow an earthquake. '+
-  'Any of them may be wrong. None is an official warning or replaces one.';
+  'Any of them may be wrong. Each is not an official warning and does not replace one.';
 }
 /* A forecast is a window in time, not a row in a list. The calendar view lays
    each outlook across the days it actually covers, so what is running now,
