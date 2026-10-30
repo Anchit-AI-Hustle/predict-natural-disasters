@@ -72,7 +72,7 @@ function needsGrading(ledger, previous, today) {
   const ids = new Set();
   for (const o of ledger) {
     const end = M.windowDays(o.targetStart, o.targetEnd).slice(-1)[0];
-    if (end && end < today && !done.has(o.id) && o.model && o.model.placeId) ids.add(o.model.placeId);
+    if (end && end < today && !done.has(o.id) && o.model && o.model.placeId) ids.add(M.placeIdOf(o.model.placeId));
   }
   return ids;
 }

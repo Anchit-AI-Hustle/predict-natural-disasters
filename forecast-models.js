@@ -692,6 +692,15 @@
    */
   function gradeModelRecord(ledger, runs, climatology, archive, opts) {
     var o = opts || {};
+    /* Old place ids read as the place they name. */
+    ledger = (ledger || []).map(function (x) {
+      var m = x && x.model;
+      return m && PLACE_ID_RENAMES[m.placeId] ? Object.assign({}, x, { model: Object.assign({}, m, { placeId: placeIdOf(m.placeId) }) }) : x;
+    });
+    runs = (runs || []).map(function (r) {
+      return r && (r.checked || []).some(function (id) { return PLACE_ID_RENAMES[id]; })
+        ? Object.assign({}, r, { checked: r.checked.map(placeIdOf) }) : r;
+    });
     var placeBy = {};
     ((climatology && climatology.places) || []).forEach(function (p) { placeBy[p.id] = p; });
     var known = new Set((ledger || []).map(function (x) { return x.id; }));
@@ -777,9 +786,13 @@
           Math.round((Date.parse(wd[wd.length - 1] + 'T00:00:00Z') - Date.parse(ymdOf(Date.parse(x.issuedAt)) + 'T00:00:00Z')) / 864e5)],
         alert: x.alert || null,
         chance: p === null || p === undefined ? null : round(1 - Math.pow(1 - p, wd.length), 3) };
-      if (g.verdict !== 'pending' && clim && ob) {
+      /* What was measured on each day, settled days only (null until a day
+         settles), so a page can show how far a window has got. */
+      if (clim && ob) {
+        var set = m.hazard === 'fire' ? ob.fireMeasured : ob.measured;
         row.measured = wd.map(function (d) {
-          var l = lineFor(clim, m.hazard, d), r = { day: d, value: ob.value(m.hazard, d), line: l.line, crossed: g.crossed.indexOf(d) >= 0 };
+          var l = lineFor(clim, m.hazard, d), settled = set.has(d);
+          var r = { day: d, value: settled ? ob.value(m.hazard, d) : null, line: l.line, crossed: settled ? ob[m.hazard].has(d) : null };
           if (m.hazard === 'rain') { r.threeDay = ob.threeDay(d); r.threeDayLine = l.threeDay; }
           return r;
         });
@@ -835,6 +848,18 @@
     };
   }
 
+  /* ------------------------------------------------------- place ids */
+
+  /** A place's id: its name transliterated, then its country code. */
+  function placeSlug(name, cc) {
+    return (String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '-' + String(cc || ''))
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  /* Ids made before accents were transliterated. They stay in the frozen
+     ledger and the run log, and mean the same place. */
+  var PLACE_ID_RENAMES = { 'bogot-co': 'bogota-co', 's-o-paulo-br': 'sao-paulo-br' };
+  function placeIdOf(id) { return PLACE_ID_RENAMES[id] || id; }
+
   /* ----------------------------------------- how a model forecast is named */
 
   /*
@@ -858,8 +883,13 @@
   function modelDisplay(o) {
     var m = (o && o.model) || {}, H = MODEL_HAZARDS[m.hazard];
     if (!H) return null;
+    var level = m.hazard === 'rain' ? 'this place\u2019s 1-in-100-day level of ' : 'this place\u2019s 1-in-20-day level of ';
     return { type: H.type, hazardLabel: H.word, family: H.family,
-      title: String(o.title || '').replace(OLD_WORDS, H.word) };
+      title: String(o.title || '').replace(OLD_WORDS, H.word),
+      /* "Usual worst" was a 95th percentile, crossed about 1 day in 20. The
+         fire line was quoted to two decimals beside an index to one. */
+      details: String(o.details || '').replace(/a usual worst of /g, level)
+        .replace(/(level of )(\d+\.\d{2,})/g, function (x, a, n) { return a + Number(n).toFixed(1); }) };
   }
 
   /*
@@ -915,6 +945,7 @@
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
     warmingTrend: warmingTrend, heatShift: heatShift, heatShiftText: heatShiftText, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
     observedEvents: observedEvents, gradePublished: gradePublished, windowDays: windowDays,
+    placeSlug: placeSlug, placeIdOf: placeIdOf, PLACE_ID_RENAMES: PLACE_ID_RENAMES,
     MODEL_HAZARDS: MODEL_HAZARDS, modelDisplay: modelDisplay, skillText: skillText,
     SETTLE_DAYS: SETTLE_DAYS, FWI_SPINUP_DAYS: FWI_SPINUP_DAYS, isSettled: isSettled, mergeMeasured: mergeMeasured,
     observedFromArchive: observedFromArchive, gradeModelRecord: gradeModelRecord, lineFor: lineFor,

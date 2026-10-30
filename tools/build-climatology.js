@@ -122,7 +122,10 @@ function climatology(p, h) {
   const fwiVals = fwi.map(v => v === null ? NaN : v);
   const missing = h.tmax.filter(v => !isFinite(v)).length;
   return Object.assign({}, p, {
-    id: (p.name + '-' + p.countryCode).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    /* Accents transliterated, not dropped: "Bogotá" was "bogot-co" and
+       "São Paulo" "s-o-paulo-br". forecast-models.js placeIdOf maps the old
+       ids, which stay in the frozen ledger. */
+    id: M.placeSlug(p.name, p.countryCode),
     days: h.days.length, missingDays: missing,
     /* trend: the record's own warming, so the line can be moved to the year
        it is used in (forecast-models.js, warmingTrend). */
