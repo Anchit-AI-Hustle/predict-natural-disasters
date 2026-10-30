@@ -446,7 +446,7 @@ never produces an alert.
 | case | result |
 | --- | --- |
 | green M4.6 quake at 13.6 km | `"Earthquake 14 km from your home"`, key `usgs-1\|A\|green`, rank 1.98638 |
-| Red M7.1 at 35.4 km | `"Earthquake 35 km from your home"`, url `/alerts/usgs-2` |
+| Red M7.1 at 35.4 km | `"Earthquake 35 km from your home"`, url `/disasters/usgs-2` |
 | Orange quake at 115 km | nil (more than 100 km) |
 | NWS polygon containing Phoenix | `"Flood warning covers your home"`, rank 3, body `"Flash Flood Warning · Red · NOAA / National Weather Service"` |
 | quake last updated 4 days ago | nil (not recent) |
@@ -663,7 +663,7 @@ return r || c || fallback
   Native: ICU via `TimeZone.abbreviation(for:)`/`DateFormatter` with `en_US_POSIX` "zzz" (Swift) or
   `DateTimeFormatter.ofPattern("zzz", Locale.US)` (Kotlin) give the same short names; check them against the vectors and
   turn any "GMT-03:00" form into "GMT-3".
-- `tzMenuLabel(tz, at)`: the time zone menu's text for the chosen zone. `IST · India` for Asia/Kolkata; otherwise
+- `tzMenuLabel(tz, at)`: the time zone menu's text for the chosen zone. `India (IST)` for Asia/Kolkata (features.md C36); otherwise
   `{tzLabel} · {city}` where city is the last `/` segment with `_` as space, or just `tzLabel` when there is no city,
   the city equals the label (UTC), or the zone starts `Etc/` or `SystemV/`. Other menu options stay IANA ids.
   **[vectors: portal.zoneLabel]** (`{in:{tz, at}, out:{label, fmtDate, fmtTime, menuLabel}}`)
@@ -684,8 +684,8 @@ a real moment, the value is formatted as a moment. **[vectors: portal.fmtWhen]**
 gives `"20 Oct 2026, 5:30 AM IST"`.
 
 ### 6.6 URLs and lookup
-- `eventUrl(e)`: forecast → `/forecasts/{id}`; `sourceType=="official"` with alert exactly `Red` or `Orange` →
-  `/alerts/{id}`; otherwise `/disasters/{id}`. The id is encoded with `encodeURIComponent` (a space becomes `%20`,
+- `eventUrl(e)`: forecast → `/forecasts/{id}`; otherwise `/disasters/{id}`, whatever the alert level (features.md
+  C34; `/alerts/{id}` and `/calamities/{id}` still open and name it canonical). The id is encoded with `encodeURIComponent` (a space becomes `%20`,
   `/` becomes `%2F`). On native, map these to screen routes. **[vectors: portal.eventUrl]**
 - `findEvent(events, id)`:
   1. exact id, then the percent-decoded id;

@@ -73,20 +73,21 @@ test('the risk filter on Alerts shows the alerts at that level, not none', async
      scale's level keys, so every level but "All" showed an empty list -
      while "Most serious first" put an Extreme typhoon at the top. */
   const r = await renderPage('alerts.html', { timeoutMs: 8000,
-    waitFor: d => d.querySelectorAll('#alerts article').length > 0 });
+    waitFor: d => d.querySelectorAll('#alerts a.al').length > 0 });
   const { document: d, window } = r;
   const PND = window.PND;
   const sel = d.getElementById('level');
   const levels = [...sel.options].map(o => o.value).filter(Boolean);
   assert.ok(levels.length >= 4, 'the filter offers ' + levels.length + ' levels');
-  const all = [...d.querySelectorAll('#alerts article')].length;
+  // Cards are links since launch audit B7.
+  const all = [...d.querySelectorAll('#alerts a.al')].length;
   let shownSomewhere = 0;
   for (const lv of levels) {
     sel.value = lv;
     sel.dispatchEvent(new window.Event('change', { bubbles: true }));
     sel.dispatchEvent(new window.Event('input', { bubbles: true }));
     await new Promise(res => setTimeout(res, 20));
-    const cards = [...d.querySelectorAll('#alerts article')];
+    const cards = [...d.querySelectorAll('#alerts a.al')];
     const badges = cards.map(c => (c.querySelector('.risk') || {}).textContent);
     if (cards.length) shownSomewhere++;
     const label = [...sel.options].find(o => o.value === lv).textContent.trim();
@@ -177,7 +178,9 @@ test('a count of events is a count of reports, the same on every page', async ()
     waitFor: d => /updated/.test(d.getElementById('statusLine').textContent) });
   const line = list.document.getElementById('statusLine').textContent;
   list.close();
-  assert.match(line, new RegExp('\\b' + reports + ' events? · ' + forecasts + ' forecasts?\\b'),
+  /* The frozen ND-001 benchmark is not listed on /events (launch audit B11). */
+  const listed = live.filter(e => e.forecast && e.forecastKind !== 'frozen-benchmark').length;
+  assert.match(line, new RegExp('\\b' + reports + ' events? · ' + listed + ' forecasts?\\b'),
     'the events list does not say how many are forecasts: ' + line);
 });
 

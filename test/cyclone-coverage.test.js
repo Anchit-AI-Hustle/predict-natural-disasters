@@ -145,7 +145,10 @@ const JTWC = (id, title, file, lastFixHoursAgo, at) => ({
 
 test('a storm the typhoon warning centre tracks is published as a tropical cyclone, in its basin', async () => {
   const { events: evs } = await feed({ feeds: { eonet: eonetWith([
-    JTWC('EONET_24785', 'Tropical Cyclone 01B', 'io0126', 50, [18.1, 83.7]),
+    /* Last fixed 20 hours ago: a storm quiet for more than a day is no longer
+       live and makes no outlook (launch audit B2), so the fix that tested a
+       50-hour-old position is inside that day now. */
+    JTWC('EONET_24785', 'Tropical Cyclone 01B', 'io0126', 20, [18.1, 83.7]),
     JTWC('EONET_24317', 'Typhoon Dujuan', 'wp2426', 10, [39, 150.2]),
     /* Not every storm name is a cyclone: a wildfire named for a place called
        Cyclone stays a wildfire, and an extratropical storm is not tropical. */
@@ -166,8 +169,8 @@ test('a storm the typhoon warning centre tracks is published as a tropical cyclo
   assert.ok(search.matches(by('EONET_24785'), 'bay of bengal'));
   assert.ok(search.matches(by('EONET_24785'), 'cyclone bengal'));
 
-  /* Last fixed 50 hours ago: a severe storm's two-day window has closed,
-     a cyclone's five-day window has not - so it is forecast. */
+  /* Last fixed 20 hours ago: still live, and a cyclone's five-day window
+     is open - so it is forecast. */
   const out = evs.find(e => e.forecast && e.forecastOf === 'eonet-EONET_24785');
   assert.ok(out, 'the Bay of Bengal cyclone has no outlook');
   assert.equal(out.type, 'Tropical Cyclone');

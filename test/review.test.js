@@ -311,7 +311,11 @@ test('a link is only built from a point that was verified', () => {
   /* The zone fallback now supplies a shape when the alert has none inline,
      so the call is no longer the bare f.geometry it started as. */
   assert.match(src, /const link = insidePoint\(f\.geometry \|\| zoneGeometry/);
-  assert.match(src, /link && Number\.isFinite\(link\.lat\)/);
+  /* Built by nwsAlertUrl since launch audit B25; the point is still only used
+     when it was verified, and the front page is the fallback. */
+  assert.match(src, /return nwsAlertUrl\(p, link\);/);
+  assert.match(src, /if \(inside && Number\.isFinite\(inside\.lat\) && Number\.isFinite\(inside\.lon\)\)/);
+  assert.match(src, /if \(!zone \|\| !p\.event\) return 'https:\/\/www\.weather\.gov\/';/);
 });
 
 test('an alert with no usable geometry still gets a link', () => {

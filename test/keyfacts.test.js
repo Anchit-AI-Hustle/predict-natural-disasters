@@ -132,7 +132,10 @@ test('the GDACS cyclone measurement is converted into the unit the rest of the f
   // decides the category before anything classifies it.
   assert.ok(Math.abs(tc.windKt - 120 / 1.852) < 1e-9, '120 Kph is 64.79 kt, got ' + tc.windKt);
   assert.equal(byKey(H.keyFacts(tc), 'windKt').value, '64.8 kt');
-  assert.equal(byKey(H.keyFacts(tc), 'category').value, 'Category 1');
+  /* RAI-26 is in the western Pacific (11.2N 125.0E), where a storm is classed
+     on JMA's scale (launch audit B2), where 64 kt is the start of the typhoon
+     class: 64.8 kt is a typhoon. */
+  assert.equal(byKey(H.keyFacts(tc), 'category').value, 'Typhoon');
 });
 
 test('a hazard GDACS publishes no measurement for gains no invented one', async () => {
@@ -607,11 +610,15 @@ function templateFor(prefix) {
 
 test('every record shows its hazard facts on the page its own link opens', async () => {
   const { events } = await feed();
-  const prefixes = routePrefixes();
+  /* Since launch audit B27 eventUrl builds one address per record
+     (/disasters/ or /forecasts/), and /alerts/:id stays served for the links
+     already shared, so it is checked as well. */
+  const prefixes = [...new Set(routePrefixes().concat('/alerts/'))];
   assert.ok(prefixes.length >= 3,
     'eventUrl routes to ' + prefixes.length + ' places; each needs the grid');
 
-  // The rule eventUrl applies, kept beside the assertion it drives.
+  // The rule eventUrl applies, kept beside the assertion it drives; an
+  // official Red or Orange record is the kind old /alerts/ links point at.
   const routeOf = e => e.forecast ? '/forecasts/'
     : (e.sourceType === 'official' && ['Red', 'Orange'].includes(e.alert)) ? '/alerts/'
       : '/disasters/';

@@ -294,13 +294,17 @@ test('region, location and hazard pages carry support and relief context', async
   }
 });
 
-test('historical archive detail resolves a record and adds context', async () => {
-  const r = await renderPage('historical-event-detail.html', { search: '?id=0', waitFor: enriched, timeoutMs: 9000 });
+/* Replaces "historical archive detail resolves a record and adds context":
+   the live context (news, needs, videos) on an archive entry is what launch
+   audit B1 removed, so the archive page resolves a record and adds none. */
+test('historical archive detail resolves a record and adds no live context', async () => {
+  const r = await renderPage('historical-event-detail.html', { search: '?id=0', waitFor: d => d.getElementById('summary').textContent !== '-', timeoutMs: 9000 });
   const doc = r.document;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   assert.doesNotMatch(doc.getElementById('title').textContent, /not found/i);
   assert.ok(doc.getElementById('summary').textContent.length > 20);
-  assert.ok(doc.getElementById('newsBody').textContent.length > 20);
+  assert.equal(doc.getElementById('newsBody'), null, 'an archive entry was given live news');
+  assert.ok(!r.apiCalls.some(u => u.includes('/api/event-enrichment')));
   r.close();
 });
 
