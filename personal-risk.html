@@ -115,7 +115,7 @@ findPlace.onclick=async()=>{const q=placeName.value.trim();if(!q){placeResult.te
    that would do nothing. Where background alerts are not available, what is
    offered instead is exactly what still works - an alert while this page is
    open - with the limit said beside it. */
-const OPEN_ONLY='Alerts work while this page is open: we tell you when a danger is reported at or near your saved places. Nothing is sent once you close it. For alerts on your phone, sign up with your national agency.';
+const OPEN_ONLY='While this page is open, we tell you when a danger is reported at or near your saved places. Nothing is sent once you close it. For alerts on your phone, sign up with your national or regional disaster agency.';
 /* Page alerts can be turned off again: browsers keep the permission, so the
    choice is kept here and portal.js reads it before it raises one. */
 const PAGE_OFF='pnd_page_alerts_off';const pageOff=()=>{try{return localStorage.getItem(PAGE_OFF)==='1'}catch(e){return false}};

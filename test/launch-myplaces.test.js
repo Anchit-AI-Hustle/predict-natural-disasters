@@ -76,7 +76,7 @@ test('A13: My places opens on the saved places, and its alerts text is a benefit
   assert.ok(savedAt < alertsAt, 'Saved places should come before Alerts');
   const t = d.getElementById('alertsStatus').textContent;
   assert.doesNotMatch(t, /not switched on for this site|nowhere to keep|nothing that checks/i, t);
-  assert.match(t, /Alerts work while this page is open/);
+  assert.match(t, /While this page is open, we tell you when a danger is reported/);
   r.close();
 });
 
