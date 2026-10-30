@@ -2188,7 +2188,7 @@ async function handler(req, res) {
   for (const e of out.events) {
     const p = placeLabel(e); if (p) e.place = p;
     const where = countriesOf(e);
-    e.countries = where.countries;
+    Object.assign(e, require('../country-names.js').place(where.countries)); // one name per country, seas apart (country-names.js)
     if (where.sea) e.sea = where.sea;
   }
 

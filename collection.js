@@ -1,4 +1,4 @@
-(()=>{const mode=document.body.dataset.view||'events';/* [page heading, one-line summary, what an empty list is "no ... of"] */const cfg={events:['Events happening now','Disasters reported by official agencies, and our own forecasts of what may happen next.','events'],'recent-events':['Recent events','The latest disasters reported by official agencies.','recent events'],'official-warnings':['Official warnings','Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events.','official warnings'],'hazard-types':['Events by type','Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought.','events'],'forecast-list':['Our forecasts','All our current forecasts of what may happen next, including test cases that were not made in advance.','forecasts'],'forecast-calendar':['Forecast calendar','Each current forecast, shown across the days it covers.','forecasts'],'historical-events':['Past and recent events','Recent past events from GDACS, plus the events happening now.','events'],'alerts-notifications':['Current alerts','Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events.','alerts'],'compare-locations':['Compare places','Search for a place to see its current events. Then search for another place to compare.','events'],resources:['Our sources','Every source we read, whether it answered this time, and what it means when a source reports nothing.','sources']}[mode]||['Events','Current events from official agencies.','events'];
+(()=>{const mode=document.body.dataset.view||'events';/* [page heading, one-line summary, what an empty list is "no ... of"] */const cfg={events:['Events happening now','Disasters reported by official agencies, and our own forecasts of what may happen next.','events'],'recent-events':['Recent events','The latest disasters reported by official agencies.','recent events'],'official-warnings':['Official warnings','Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events.','official warnings'],'hazard-types':['Disasters by type','Every type of hazard in the current reports, with its own page. Below them, every current event; our own forecasts are labelled as forecasts.','events'],directory:['Event directory','Search current events reported by official agencies. Our own forecasts are listed too, each labelled as a forecast.','events'],'forecast-list':['Our forecasts','All our current forecasts of what may happen next, including test cases that were not made in advance.','forecasts'],'forecast-calendar':['Forecast calendar','Each current forecast, shown across the days it covers.','forecasts'],'historical-events':['Past and recent events','Recent past events from GDACS, plus the events happening now.','events'],'alerts-notifications':['Current alerts','Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events.','alerts'],'compare-locations':['Compare places','Search for a place to see its current events. Then search for another place to compare.','events'],resources:['Our sources','Every source we read, whether it answered this time, and what it means when a source reports nothing.','sources']}[mode]||['Events','Current events from official agencies.','events'];
 const SORT_KEYS=mode==='resources'?['curated','name','nameDesc']:mode==='forecast-list'||mode==='forecast-calendar'?['newest','severity','windowEnd','oldest','country','type','title']:mode==='historical-events'?['newest','oldest','severity','country','type','title']:PND.EVENT_SORTS;
 nav.innerHTML=PND.nav(mode==='forecast-list'||mode==='forecast-calendar'?'Forecasts':mode==='official-warnings'||mode==='alerts-notifications'?'Alerts':'');pageTitle.textContent=cfg[0];pageSub.textContent=cfg[1];heading.textContent=cfg[0];let all=[];let lastMeta=null;
 /* The outlook views build their hazard filter from the outlooks themselves
@@ -84,6 +84,14 @@ function timeline(list){
  */
 const SCAN_STATE={SCANNED:['ok','Answered this time'],INCOMPLETE_SCAN:['warn','Answered in part'],
   DATA_UNAVAILABLE:['bad','Did not answer'],NOT_ATTEMPTED:['muted','Not checked this time']};
+/* The source's entry in trust.js, which carries its own website and the
+   names its records go by in the feed. */
+function sourceOf(p){const T=window.PNDTrust&&PNDTrust.SOURCES;return T&&(T.feed||[]).find(x=>x.key===p.provider)||null}
+/* How many of our open forecasts start from this source's reports. */
+function derivedFrom(p){const src=sourceOf(p);const names=(src&&src.feed||[p.label||p.provider]).map(n=>String(n).toLowerCase());
+  return PND.openForecasts(all).filter(e=>{const m=/derived from\s+(.+)$/i.exec(String(e.source||''));return !!m&&names.includes(m[1].trim().toLowerCase())}).length}
+/* The feed's reason in plain words. */
+function plainReason(r){return String(r||'').replace(/: the search failed or every page asked for came back full\.?/,': either the request failed, or there were more older records than we read, so some older ones may be missing.')}
 function providerCard(p){
   const st=SCAN_STATE[p.status]||['muted',p.status||'Status not recorded'];
   const reach=p.geographicCoverage||(p.scope&&p.scope.kind==='global'?'Global':'');
@@ -96,11 +104,18 @@ function providerCard(p){
      happened: a source of the second kind being scanned puts nobody in a
      position to predict anything, which is what decides whether a disaster
      nothing forecast is a forecasting failure or simply unforecast. */
+  /* Said from the feed, not assumed: "no forecast can be made from it"
+     stood beside 65 of our storm outlooks started from GDACS reports. A
+     source that reports only what has happened can still be where one of
+     our forecasts starts. */
+  const fc=derivedFrom(p);
+  const started=fc?' '+fc+' of our current forecasts '+(fc===1?'starts':'start')+' from its reports.':'';
   const input=p.inputKind==='forecast'
-    ?'It says what is expected, so a forecast can be made from it. '+(p.inputBasis||'')
+    ?'It says what is expected, so a forecast can be made from it. '+(p.inputBasis||'')+started
     :p.inputKind==='observation'
-      ?'It reports only what has already happened, so no forecast can be made from it. '+(p.inputBasis||'')
-      :'Not recorded, so we cannot say whether a forecast could be made from it.';
+      ?'It reports what has already happened, not what will. '+(p.inputBasis||'')+(started||' None of our current forecasts start from it.')
+      :'Not recorded, so we cannot say whether a forecast could be made from it.'+started;
+  const page=sourceOf(p);
   const counted=[Number.isFinite(p.recordsEvaluated)?p.recordsEvaluated+' reports read':null,
     Number.isFinite(p.recordsServed)?p.recordsServed+' shown on this site':null].filter(Boolean).join(' · ');
   return `<article class="event-card"><span class="source status-${st[0]}">${PND.esc(st[1])}</span>
@@ -110,9 +125,18 @@ function providerCard(p){
     <b>What it lists</b> ${PND.esc(p.coverageResolution||'Not stated')}<br>
     <b>If it reports nothing</b> ${PND.esc(absence.trim())}<br>
     <b>Can a forecast be made from it?</b> ${PND.esc(input.trim())}</p>
-    <small class="muted">${PND.esc(counted||'No count recorded this time')}${p.failureReason?' · '+PND.esc(p.failureReason):''}${p.dataFreshness?' · latest data from '+PND.esc(PND.fmtDate(p.dataFreshness)):''}</small>
-    ${p.endpoint?`<small class="muted" style="display:block;margin-top:4px"><a href="${PND.esc(p.endpoint)}" target="_blank" rel="noopener">${PND.esc(p.endpoint)}</a></small>`:''}</article>`;
+    <small class="muted">${PND.esc(counted||'No count recorded this time')}${p.failureReason?' · '+PND.esc(plainReason(p.failureReason)):''}${p.dataFreshness?' · latest data from '+PND.esc(PND.fmtDate(p.dataFreshness)):''}</small>
+    <small class="muted" style="display:block;margin-top:4px">${page?`<a href="${PND.esc(page.url)}" target="_blank" rel="noopener">${PND.esc(page.name)} website</a>`:''}${page&&p.endpoint?' · ':''}${p.endpoint?`<a href="${PND.esc(p.endpoint)}" target="_blank" rel="noopener" title="${PND.esc(p.endpoint)}">Raw data feed (${/rss|xml/i.test(p.endpoint)?'RSS':'JSON'}, for developers)</a>`:''}</small></article>`;
 }
+/* The hazard-types page opens on one tile per hazard, each linked to its own
+   page, with agency reports and our open forecasts counted apart. It had no
+   link to any hazard page, and counted 12 Extreme Heat "events" that were
+   all our forecasts while the Extreme Heat page said 0. */
+function hazardTiles(loaded){const box=document.getElementById('hazTiles');if(!box)return;const list=scoped();const by={};
+  /* Every hazard the model knows has a tile from the start, so the list below does not move when the counts arrive. */Object.keys((window.PNDHazards&&PNDHazards.HAZARDS)||{}).forEach(k=>{by[k]={obs:0,fc:0}});
+  list.forEach(e=>{const k=PND.hazardKey(e.type);const t=by[k]||(by[k]={obs:0,fc:0});if(e.forecast){if(!e.windowClosed&&e.live!==false)t.fc++}else if(e.live!==false)t.obs++});
+  const one=(n,w)=>n+' '+w+(n===1?'':'s');
+  box.innerHTML=Object.entries(by).sort((a,b)=>b[1].obs-a[1].obs||b[1].fc-a[1].fc||a[0].localeCompare(b[0])).map(([k,t])=>`<a class="haztile" href="${PND.hazardUrl(k)}"><b>${PND.esc(k)}</b><span>${loaded===false?'Loading…':one(t.obs,'current event')+(t.fc?' · '+one(t.fc,'open forecast'):'')}</span></a>`).join('')||'<p class="muted">No hazards in the current reports.</p>'}
 function draw(){if(mode==='resources'){
   const scan=(lastMeta&&lastMeta.scan)||null;
   const ps=(scan&&scan.providers)||[];
@@ -142,10 +166,10 @@ function draw(){if(mode==='resources'){
   /* "Answered" and "answered in full" are different counts, and printing one
      of them beside a status line reporting the other made the page disagree
      with itself. Both are stated. */
-  cards.innerHTML=`<div class="panel" style="grid-column:1/-1;padding:12px"><b>${answered} of ${ps.length} sources answered in full this time${partial?', and '+partial+' in part':''}.</b>
+  cards.innerHTML=`<div class="panel" style="grid-column:1/-1;padding:12px"><b>${answered+partial} of ${ps.length} sources working: ${answered} answered in full this time${partial?' and '+partial+' in part':''}.</b>
     ${blind.length?PND.esc('For '+blindText+', none of our sources gives a complete list of disasters that have happened. So we cannot say that no such disaster happened, only that none was reported.'):'For every hazard listed here, at least one source gives a complete list of disasters that have happened. So if that source reports nothing, that is real evidence.'}</div>`
     +rs.map(providerCard).join('');
-  return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',scoped().filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase()===t)&&PND.matchesRiskLevel(e,l)),SORT_KEYS);pageNote();scopeNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
+  return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',scoped().filter(e=>(!s||PND.matches(e,s))&&(!t||(forecastMode?String(e.type).toLowerCase()===t:PND.sameHazard(e.type,type.value)))&&PND.matchesRiskLevel(e,l)),SORT_KEYS);pageNote();scopeNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
 if(mode==='forecast-list'){cards.className='';
  cards.innerHTML=es.length?PNDForecastTable.render(es)
   :PND.emptyHtml(q.value,scoped(),all,cfg[2]);
@@ -158,7 +182,7 @@ cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="even
 /* A list that holds agency reports and our own forecasts says how many of each: "765 events" counted 56 forecasts as events, so the same moment read 765 here and 709 on Alerts. */function countText(shown,noun){const one=(n,w)=>n+' '+(n===1?w.replace(/s$/,''):w);/* Open forecasts counted as everywhere else (PND.openForecasts); one whose window ended is still listed, and said to be ended. */if(forecastMode){const open=PND.openForecasts(scoped()).length;return one(shown,noun)+': '+open+' open, '+(shown-open)+' ended'}const fc=scoped().filter(e=>e&&e.forecast).length;return fc?one(shown-fc,noun)+' · '+one(fc,'forecasts'):one(shown,noun)}async function load(){statusLine.textContent='Loading the latest data…';try{const d=await PND.getEvents({all:mode==='historical-events'});all=d.events;lastMeta=d.meta;const shown=scoped().length;
 /* The sources view is about the sources, so its status line counts those
    rather than the records they produced. */
-/* Every list builds its hazard filter from the hazards in it: the fixed six could not select Extreme Heat, aftershock sequences, storm warnings or ice. */if(document.getElementById('type'))PND.fillHazardSelect(document.getElementById('type'),scoped());
+/* Every list builds its hazard filter from the hazards in it: the fixed six could not select Extreme Heat, aftershock sequences, storm warnings or ice. */if(document.getElementById('type'))PND.fillHazardSelect(document.getElementById('type'),scoped(),!forecastMode);hazardTiles();
 statusLine.textContent=mode==='resources'
   ?`${PND.statusText(d.meta)} · sources checked ${PND.fmtDate((d.meta&&d.meta.scan&&d.meta.scan.scanTimestamp)||d.generatedAt)} · updated ${PND.age(d.generatedAt)}`
   :`${PND.statusText(d.meta)} · ${countText(shown,cfg[2])} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name - A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name - Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
@@ -170,4 +194,4 @@ if(el('q'))PNDSearch.initSearch(el('q'),draw);
 if(el('type'))el('type').onchange=draw;
 if(el('level'))el('level').onchange=draw;
 if(el('refresh'))el('refresh').onclick=load;
-PND.autoRefresh(load,60000)})();
+hazardTiles(false);PND.autoRefresh(load,60000)})();

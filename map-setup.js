@@ -387,6 +387,7 @@
     if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
 
     var labels = L.layerGroup();
+    var LABEL_KEYS = false;
     fetch(COUNTRIES).then(function (r) { return r.json(); }).then(function (data) {
       L.geoJSON(data, Object.assign({
         interactive: false,
@@ -431,7 +432,11 @@
           placed.push(box);
 
           L.marker([p.at.lat, p.at.lon], {
-            interactive: false, pane: labelPane(map),
+            /* Not a tab stop either (LABEL_KEYS). Leaflet makes every marker
+               one by default, interactive or not, so the country names were
+               the first dozen tab stops on every map page. This is the
+               marker's option, not the map's keyboard control, which stays. */
+            interactive: false, 'keyboard': LABEL_KEYS, pane: labelPane(map),
             icon: L.divIcon({ className: look.label, html: PNDMapEscape(p.name), iconSize: [0, 0] })
           }).addTo(labels);
         });
@@ -532,7 +537,10 @@
     '.pnd-imagery-note{position:absolute;left:8px;bottom:26px;z-index:1300;pointer-events:none;',
     'max-width:min(420px,calc(100% - 16px));padding:5px 8px;border-radius:6px;',
     'background:rgba(4,18,14,.86);color:#e6f4ee;font:500 11px/1.35 system-ui,sans-serif}',
-    '.pnd-imagery-note[hidden]{display:none}'
+    '.pnd-imagery-note[hidden]{display:none}',
+    /* On a touch screen Leaflet's zoom buttons are larger, and the toggle sat
+       on the minus button on a phone. */
+    '@media (max-width:760px){.pnd-view-toggle{top:96px}.pnd-globe-note{top:134px}}'
   ].join('');
 
   function injectStyle() {
@@ -749,6 +757,11 @@
     body.className = 'pnd-key-body';
     body.id = 'pnd-key-' + Math.random().toString(36).slice(2, 8);
     btn.setAttribute('aria-controls', body.id);
+    /* The list scrolls when the map is short, so it can be reached and
+       scrolled by keyboard (axe scrollable-region-focusable). */
+    body.setAttribute('tabindex', '0');
+    body.setAttribute('role', 'region');
+    body.setAttribute('aria-label', 'Map key');
     el.appendChild(btn);
     el.appendChild(body);
     box.appendChild(el);

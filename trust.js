@@ -54,27 +54,30 @@
     { region: 'Worldwide', agencies: [
       { name: 'GDACS', short: 'GDACS', full: 'Global Disaster Alert and Coordination System', url: 'https://www.gdacs.org/' }] }
   ];
-  var WMO = { full: 'national weather services listed by the WMO', url: 'https://wmo.int/about/governance/wmo-members' };
+  /* The WMO's own list of members' national weather services, each linked.
+     Its old governance page now redirects to a page with no list on it. */
+  var WMO = { full: 'national weather services listed by the WMO', url: 'https://worldweather.wmo.int/en/members.html' };
 
   /* Only what the code reads. `key` is the provider's key in the feed's
-     meta.sources, where it has one, so its status comes from the feed. */
+     meta.sources, where it has one, so its status comes from the feed, and
+     `feed` the source names its records carry, so a page can find them. */
   var SOURCES = {
     feed: [
-      { key: 'gdacs', name: 'GDACS', short: 'GDACS', url: 'https://www.gdacs.org/',
+      { key: 'gdacs', feed: ['GDACS'], name: 'GDACS', short: 'GDACS', url: 'https://www.gdacs.org/',
         adds: 'Alerts for earthquakes, tropical cyclones, floods, droughts, wildfires and volcanoes worldwide, with impact figures.' },
-      { key: 'usgs', name: 'USGS Earthquake Hazards Program', short: 'USGS', url: 'https://earthquake.usgs.gov/',
+      { key: 'usgs', feed: ['USGS'], name: 'USGS Earthquake Hazards Program', short: 'USGS', url: 'https://earthquake.usgs.gov/',
         adds: 'Every earthquake of magnitude 2.5 or more in the past 7 days, and the shocks the 7-day aftershock outlooks follow.' },
-      { key: 'emsc', name: 'EMSC', short: 'EMSC', url: 'https://www.emsc-csem.org/',
+      { key: 'emsc', feed: ['EMSC'], name: 'EMSC', short: 'EMSC', url: 'https://www.emsc-csem.org/',
         adds: 'An independent check on earthquakes of magnitude 4.5 or more.' },
-      { key: 'eonet', name: 'NASA EONET', short: 'NASA EONET', url: 'https://eonet.gsfc.nasa.gov/',
+      { key: 'eonet', feed: ['NASA EONET'], name: 'NASA EONET', short: 'NASA EONET', url: 'https://eonet.gsfc.nasa.gov/',
         adds: 'Wildfires, storms, volcanoes and other events seen from satellites.' },
-      { key: 'nhc', name: 'NOAA National Hurricane Center', short: 'NOAA NHC', url: 'https://www.nhc.noaa.gov/',
+      { key: 'nhc', feed: ['NOAA National Hurricane Center', 'National Hurricane Center'], name: 'NOAA National Hurricane Center', short: 'NOAA NHC', url: 'https://www.nhc.noaa.gov/',
         adds: 'Active tropical cyclones in the Atlantic and eastern and central Pacific only.' },
-      { key: 'nws', name: 'NOAA National Weather Service', short: 'NOAA NWS', url: 'https://www.weather.gov/',
+      { key: 'nws', feed: ['NOAA / National Weather Service', 'NOAA National Weather Service', 'National Weather Service'], name: 'NOAA National Weather Service', short: 'NOAA NWS', url: 'https://www.weather.gov/',
         adds: 'Severe and extreme weather warnings in the United States.' },
-      { key: 'reliefweb', name: 'ReliefWeb (UN OCHA)', short: 'ReliefWeb', url: 'https://reliefweb.int/',
+      { key: 'reliefweb', feed: ['ReliefWeb (UN OCHA)', 'ReliefWeb'], name: 'ReliefWeb (UN OCHA)', short: 'ReliefWeb', url: 'https://reliefweb.int/',
         adds: 'Humanitarian disaster declarations, by country.' },
-      { key: 'usgs_volcano', name: 'USGS Volcano Hazards Program', short: 'USGS Volcanoes', url: 'https://volcanoes.usgs.gov/',
+      { key: 'usgs_volcano', feed: ['USGS Volcano Hazards Program'], name: 'USGS Volcano Hazards Program', short: 'USGS Volcanoes', url: 'https://www.usgs.gov/programs/VHP',
         adds: 'US-monitored volcanoes at a raised alert level.' },
       { name: 'Open-Meteo Geocoding', short: 'Open-Meteo', url: 'https://open-meteo.com/en/docs/geocoding-api',
         adds: 'Places ReliefWeb’s country-level records, which carry no coordinates, at their country.' }
@@ -301,7 +304,9 @@
   /* ------------------------------------------------------------- the footer */
 
   function footerHtml() {
-    return '<div class="trust-foot"><p><b>This is an experimental model, not an official warning service.</b> ' +
+    /* Names already written out: the glossary expanded "USGS" again inside
+       "U.S. Geological Survey (earthquakes) (USGS)". */
+    return '<div class="trust-foot" data-keep-acronyms><p><b>This is an experimental model, not an official warning service.</b> ' +
       'For real alerts and what to do in an emergency, follow your national meteorological or disaster agency:</p><ul>' +
       OFFICIAL.map(function (r) {
         return '<li><span>' + esc(r.region) + ':</span> ' + r.agencies.map(function (a) {

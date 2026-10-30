@@ -56,7 +56,7 @@
       forecastable: true,
       horizonH: 120,
       duration: 'Days at sea; landfall impacts run roughly 12 to 72 hours at a given place.',
-      severityBasis: 'Saffir-Simpson category from sustained wind, plus expected storm surge and rainfall over populated coast.',
+      severityBasis: 'The regional agency’s own scale from sustained wind (Saffir-Simpson in the Atlantic and eastern and central Pacific; IMD, JMA and BoM categories elsewhere), plus expected storm surge and rainfall over populated coast.',
       leadTime: 'Three to five days. Storms can be forecast further ahead than most hazards, which is why official storm tracks cover five days.'
     },
     Flood: {
@@ -105,7 +105,7 @@
       onset: 'slow',
       forecastable: true,
       horizonH: 720,
-      duration: 'Months to years. Drought does not have a three-day window and must never be published with one.',
+      duration: 'Months to years, so it is never given a three-day window.',
       severityBasis: 'Extent and duration of the deficit, and the population dependent on rain-fed agriculture or affected water supply.',
       leadTime: 'Weeks to months. Drought builds slowly, so long-range forecasts give real warning.'
     },
@@ -167,7 +167,7 @@
       horizonH: 24,
       duration: 'Hours of wave trains; the first wave is often not the largest.',
       severityBasis: 'Expected run-up height against coastal population and evacuation time available.',
-      leadTime: 'Minutes to hours, depending on how far the wave has to travel. It is not forecast by any model.'
+      leadTime: 'Minutes to hours, depending on how far the wave has to travel. Once an earthquake is detected, warning centres such as PTWC, JMA and INCOIS model arrival times and wave heights; the earthquake itself cannot be forecast.'
     }
   };
 

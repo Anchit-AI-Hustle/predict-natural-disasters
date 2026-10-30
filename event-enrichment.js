@@ -65,8 +65,14 @@
     ['directories', 'Directories, and where this information comes from', '', 'grid']
   ];
 
-  function shell() {
-    return STYLE + PANELS.map(([id, heading, note, kind]) =>
+  /* A place or hazard page (e.aggregate) has no single event, so it gets no
+     "When and where it happened" card: built from no event, that card read
+     "Coordinates 0.0000, 0.0000" with map links to the Gulf of Guinea, and on
+     India's page described one earthquake as if it were the whole country.
+     The help, relief and news panels are about the place, and stay. */
+  function panelsFor(e) { return PANELS.filter(p => !(e && e.aggregate === true && p[0] === 'whenWhere')); }
+  function shell(e) {
+    return STYLE + panelsFor(e).map(([id, heading, note, kind]) =>
       '<section class="panel"><div class="ph"><h2>' + esc(heading) + '</h2>' +
       '<span class="intelmeta" id="' + id + 'Meta">' + esc(note || 'Loading…') + '</span></div>' +
       '<div id="' + id + 'Body" class="' + (kind === 'kv' ? 'intelkv' : kind === 'grid2' ? 'intelgrid2' : 'intelgrid') + '">' +
@@ -244,7 +250,7 @@
   }
 
   function render(d, e) {
-    renderWhenWhere(d, e);
+    if (e.aggregate !== true) renderWhenWhere(d, e);
     renderDistress(d);
     renderNews(d);
     renderReports(d);
@@ -273,7 +279,10 @@
       title: e.title || '', country: e.country || '', region: e.region || '',
       type: e.type || '', updated: e.updated || '', forecast: e.forecast ? 'true' : 'false'
     });
-    if (Number.isFinite(+e.lat) && Number.isFinite(+e.lon)) {
+    /* Only a position the record gave: +null is 0, and a missing one was
+       looked up as 0, 0. */
+    const given = v => v !== null && v !== undefined && v !== '' && Number.isFinite(+v);
+    if (e.aggregate !== true && given(e.lat) && given(e.lon)) {
       params.set('lat', String(+e.lat));
       params.set('lon', String(+e.lon));
     }
@@ -288,7 +297,7 @@
     if (!mount || !e) return;
     current = e;
     if (!mount.dataset.ready) {
-      mount.innerHTML = shell();
+      mount.innerHTML = shell(e);
       mount.dataset.ready = '1';
     }
     try {
