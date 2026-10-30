@@ -291,6 +291,9 @@
       case 'Orange': issued = 3; break;
       case 'High': issued = 3; break;
       case 'Moderate': issued = 2; break;
+      /* An NWS watch or advisory (api/events.js nwsAlertLevel): one below a
+         warning of the same severity. */
+      case 'Yellow': issued = 2; break;
       case 'Watch': issued = 1; break;
       default: break;
     }
@@ -442,6 +445,70 @@
     return 'Tropical depression';
   }
 
+  /*
+   * Which warning centre's scale a storm is classed on.
+   *
+   * Saffir-Simpson categories are the hurricane centres' scale, for the
+   * Atlantic and the eastern and central North Pacific. A North Indian Ocean
+   * storm is classed by IMD (RSMC New Delhi), a western North Pacific one by
+   * JMA (RSMC Tokyo), with JTWC's "super typhoon" above 130 kt. Calling
+   * Cyclone Arnab "Category 4" in the Bay of Bengal used a scale IMD does not
+   * use, beside an IMD disclaimer telling Indian readers to follow IMD.
+   */
+  function cycloneBasin(lat, lon) {
+    var la = Number(lat), lo = Number(lon);
+    if (!isFinite(la) || !isFinite(lo)) return null;
+    if (lo > 180) lo -= 360;
+    if (la < 0) return 'south';
+    if (lo >= 30 && lo < 100) return 'nio';
+    if (lo >= 100 || lo < -180) return 'wpac';
+    if (lo >= -180 && lo < -140) return 'cpac';
+    if (lo >= -140 && lo < -100) return 'epac';
+    /* The Central American isthmus, as api/events.js oceanName draws it. */
+    if (lo >= -100 && lo < -77) {
+      var coast = lo >= -83 ? 8.5 : lo >= -87 ? 11 : lo >= -92 ? 14 : 16.5;
+      return la < coast ? 'epac' : 'atlantic';
+    }
+    return 'atlantic';
+  }
+
+  /* The authority whose warnings decide, per basin, for a cyclone page's link. */
+  var CYCLONE_AUTHORITY = {
+    nio: { name: 'India Meteorological Department (IMD), RSMC New Delhi', short: 'IMD', url: 'https://mausam.imd.gov.in/' },
+    wpac: { name: 'Japan Meteorological Agency (JMA), RSMC Tokyo', short: 'JMA', url: 'https://www.jma.go.jp/bosai/map.html#contents=typhoon&lang=en' },
+    atlantic: { name: 'NOAA National Hurricane Center', short: 'NHC', url: 'https://www.nhc.noaa.gov/' },
+    epac: { name: 'NOAA National Hurricane Center', short: 'NHC', url: 'https://www.nhc.noaa.gov/' },
+    cpac: { name: 'NOAA Central Pacific Hurricane Center', short: 'CPHC', url: 'https://www.nhc.noaa.gov/?cpac' }
+  };
+  function cycloneAuthority(e) {
+    var b = e ? cycloneBasin(e.lat, e.lon) : null;
+    return (b && CYCLONE_AUTHORITY[b]) || null;
+  }
+
+  /** The class of a storm on the scale of the basin it is in, and that scale's name. */
+  function cycloneClass(kt, lat, lon) {
+    var k = Number(kt);
+    if (!isFinite(k) || k <= 0) return null;
+    var b = cycloneBasin(lat, lon);
+    if (b === 'nio') {
+      return { scale: 'IMD class', value:
+        k >= 120 ? 'Super Cyclonic Storm' : k >= 90 ? 'Extremely Severe Cyclonic Storm'
+          : k >= 64 ? 'Very Severe Cyclonic Storm' : k >= 48 ? 'Severe Cyclonic Storm'
+            : k >= 34 ? 'Cyclonic Storm' : k >= 28 ? 'Deep Depression' : k >= 17 ? 'Depression' : 'Low pressure area' };
+    }
+    if (b === 'wpac') {
+      return { scale: 'JMA class (JTWC above 130 kt)', value:
+        k >= 130 ? 'Super typhoon' : k >= 64 ? 'Typhoon' : k >= 48 ? 'Severe tropical storm'
+          : k >= 34 ? 'Tropical storm' : 'Tropical depression' };
+    }
+    if (b === 'atlantic' || b === 'epac' || b === 'cpac') {
+      return { scale: 'Saffir-Simpson category', value: cycloneCategory(k) };
+    }
+    /* The southern hemisphere's centres (BoM, Meteo-France La Reunion, Fiji)
+       each use their own scale; none is guessed at. */
+    return { scale: 'Class', value: k >= 34 ? 'Tropical cyclone' : 'Tropical depression' };
+  }
+
   /** Render one metric. Returns null only when the metric does not apply at all. */
   function factOf(e, key) {
     var label = LABELS[key] || key;
@@ -480,8 +547,8 @@
           value: has ? kt + ' kt' : null };
       }
       case 'category': {
-        var c = cycloneCategory(e.windKt);
-        return { key: key, label: label, reported: !!c, value: c };
+        var cc = cycloneClass(e.windKt, e.lat, e.lon);
+        return { key: key, label: cc ? cc.scale : label, reported: !!(cc && cc.value), value: cc ? cc.value : null };
       }
       case 'pressureMb': {
         var mb = Number(v);
@@ -1080,7 +1147,8 @@
     severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
     impactRank: impactRank, alertRank: alertRank,
     leadTimeHours: leadTimeHours, leadTimeText: leadTimeText,
-    keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,
+    keyFacts: keyFacts, cycloneCategory: cycloneCategory, cycloneClass: cycloneClass,
+    cycloneBasin: cycloneBasin, cycloneAuthority: cycloneAuthority, METRICS: METRICS,
     geometryContains: geometryContains, distanceKm: distanceKm,
     riskRow: riskRow, RISK_BANDS: RISK_BANDS, RISK_RADIUS_KM: RISK_RADIUS_KM,
     countryMatches: countryMatches, countryFromCode: countryFromCode,
