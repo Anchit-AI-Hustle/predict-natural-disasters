@@ -402,10 +402,40 @@ async function renderPage(page, opts) {
   };
 }
 
+
+/**
+ * A beforeParse hook that answers /api/events with a fixed feed, so a page can
+ * be rendered against exactly the records a test is about. `events` are
+ * filled out with the fields every record carries; `meta` is merged over a
+ * healthy one. Everything else is still served as renderPage serves it.
+ */
+function fixtureFeed(events, meta, extra) {
+  const now = new Date().toISOString();
+  const evs = (events || []).map((e, i) => Object.assign({
+    id: 'fx-' + i, title: 'Event ' + i, type: 'Flood', source: 'GDACS', sourceType: 'official',
+    alert: 'Green', lat: 10 + i * 0.01, lon: 20 + i * 0.01, updated: now, live: true, details: ''
+  }, e));
+  const sources = { gdacs: { ok: true }, usgs: { ok: true }, emsc: { ok: true }, eonet: { ok: true },
+    nhc: { ok: true }, nws: { ok: true }, reliefweb: { ok: true }, usgs_volcano: { ok: true } };
+  const body = { generatedAt: now, meta: Object.assign({ live: true, sources }, meta || {}), events: evs };
+  return function (window) {
+    const inner = window.fetch;
+    window.fetch = async (input, init) => {
+      const url = String(input && input.url ? input.url : input);
+      if (/\/api\/events(\?|$)/.test(url) && !/ledger=1/.test(url)) {
+        return { ok: true, status: 200, headers: { get: () => null }, clone() { return this; },
+          json: async () => JSON.parse(JSON.stringify(body)), text: async () => JSON.stringify(body) };
+      }
+      return inner(input, init);
+    };
+    if (typeof extra === 'function') extra(window);
+  };
+}
+
 /** First live official record from the mocked feed - the id a detail page opens with. */
 async function sampleEvents(mockOpts) {
   const r = await callApi(eventsHandler, '/api/events', mockOpts);
   return (await r.json()).events;
 }
 
-module.exports = { renderPage, sampleEvents, callApi, closeAllWindows, ORIGIN };
+module.exports = { renderPage, sampleEvents, callApi, closeAllWindows, fixtureFeed, ORIGIN };
