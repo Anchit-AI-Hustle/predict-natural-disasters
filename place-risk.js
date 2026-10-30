@@ -126,6 +126,10 @@
     var m = meta || {};
     var out = {
       place: place, rows: rows, level: null, lead: null,
+      /* The nearest-ranked reported event and the forecast that covers the
+         place, whichever of them leads: a page that shows the answer can say
+         both rather than only the one that set the level. */
+      observed: null, forecast: null,
       headline: 'Nothing reported nearby',
       why: '', checkedAt: m.generatedAt || null,
       searchedKm: (hazards() && hazards().RISK_RADIUS_KM) || 500
@@ -145,6 +149,19 @@
     var nearest = top && top.x;
     var outlook = rows.filter(function (x) { return x.r.band === 'C'; })[0];
 
+    /*
+     * What was reported and what we forecast, weighed against each other.
+     *
+     * The forecast branch used to win whenever no report reached Watch on its
+     * own, and said nothing else: Tokyo read "Watch · one of our forecasts
+     * covers it" while a confirmed M5.5 85 km away was listed under it. Now
+     * the stronger of the two decides, a report wins a tie (it happened; a
+     * forecast is our estimate), and whichever does not lead is still named.
+     */
+    var forecastLeads = !!outlook && !(top && rankOf(top.lvl) >= rankOf('WATCH'));
+    if (outlook) out.forecast = outlook;
+    if (top) out.observed = nearest;
+
     if (insideWarning) {
       out.lead = insideWarning;
       out.level = atLeast('HIGH', ownLevel(insideWarning.e));
@@ -158,19 +175,24 @@
       out.lead = nearest;
       out.level = top.lvl;
       out.why = 'An event was reported ' + Math.round(nearest.d) + ' km from your place. ' +
-        'That is the distance between two points. It does not mean the affected area reaches you.';
-    } else if (outlook) {
+        'That is the distance between two points. It does not mean the affected area reaches you.' +
+        (outlook ? ' One of our forecasts also covers your place.' : '');
+    } else if (forecastLeads) {
       out.lead = outlook;
       out.level = 'WATCH';
       out.why = 'One of our forecasts covers your place. It is our own estimate of what may happen. ' +
-        'It is not a report that something has happened, and it is not an official warning.';
+        'It is not a report that something has happened, and it is not an official warning.' +
+        (top ? ' A reported event, ' + String(nearest.e.title || nearest.e.type || 'an event').replace(/[.\s]+$/, '') +
+          ', is ' + Math.round(nearest.d) + ' km away. On its own it rates ' +
+          ((R && R.BY_KEY[top.lvl] && R.BY_KEY[top.lvl].label) || 'Low') + ' here.' : '');
     } else if (top) {
       out.lead = nearest;
       out.level = top.lvl;
       out.why = nearest.d <= MODERATE_KM
         ? 'A minor event was reported ' + Math.round(nearest.d) + ' km from your place.'
         : 'The most serious event near your place is ' + Math.round(nearest.d) + ' km away. ' +
-          'We look up to ' + out.searchedKm + ' km away, so it is shown, but it is far from this place.';
+          'We look up to ' + out.searchedKm + ' km away, so it is shown, but it is far from this place.' +
+          (outlook ? ' One of our forecasts also covers your place.' : '');
     }
 
     if (out.level && R) out.headline = R.BY_KEY[out.level].label;

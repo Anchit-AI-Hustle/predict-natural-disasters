@@ -74,7 +74,8 @@
     ).join('');
   }
 
-  const el = id => document.getElementById(id);
+  /* A page can be left while a request is out; nothing is drawn into it then. */
+  const el = id => (typeof document !== 'undefined' && document && document.getElementById) ? document.getElementById(id) : null;
   const setBody = (id, html) => { const n = el(id + 'Body'); if (n) n.innerHTML = html; };
   const setMeta = (id, text) => { const n = el(id + 'Meta'); if (n) n.textContent = text; };
 
@@ -395,8 +396,8 @@
     const items = recentNews(d.news, NEWS_DAYS);
     mount.innerHTML = STYLE + '<section class="panel"><div class="ph"><h2>News about this event</h2>' +
       '<span class="intelmeta" id="placeNewsMeta"></span></div><div class="intelgrid" id="placeNewsBody"></div></section>';
-    const body = document.getElementById('placeNewsBody');
-    const meta = document.getElementById('placeNewsMeta');
+    const body = el('placeNewsBody');
+    const meta = el('placeNewsMeta');
     if (meta) meta.textContent = items.length + ' report' + (items.length === 1 ? '' : 's') + ' from the last ' + NEWS_DAYS +
       ' days about \u201c' + (e.title || 'this event') + '\u201d, from established newsrooms only';
     if (body) body.innerHTML = items.length ? items.map(newsCard).join('')
@@ -406,8 +407,8 @@
 
   async function loadPlace(p, opts) {
     const o = opts || {};
-    const contacts = o.contacts && document.getElementById(o.contacts);
-    const news = o.news && document.getElementById(o.news);
+    const contacts = o.contacts && el(o.contacts);
+    const news = o.news && el(o.news);
     const pk = [p && p.name, p && p.country, p && p.countryCode, p && p.lat, p && p.lon].join('|');
     if (contacts && p && pk !== placeKey) { placeKey = pk; await loadPlaceContacts(p, contacts); }
     if (!news) return;
@@ -421,7 +422,8 @@
         mode: 'news', title: e.title || '', type: e.type || '', country: e.country || '', region: e.region || '', updated: e.updated || ''
       }), { cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      renderPlaceNews(await r.json(), e, news);
+      const d = await r.json();
+      if (el(o.news)) renderPlaceNews(d, e, news);
     } catch (err) { newsKey = ''; news.innerHTML = ''; news.hidden = true; }
   }
 

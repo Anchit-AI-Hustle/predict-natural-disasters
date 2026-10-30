@@ -539,7 +539,9 @@ const PND={
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   distanceKm(a,b,c,d){const r=Math.PI/180,R=6371,x=(c-a)*r,y=(d-b)*r,z=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(z))},
-  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;/* The same rules the background service applies (alert-rules.js), so the
+  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;
+    /* Turned off on My places: the browser keeps its permission, so the choice is kept here. */
+    try{if(localStorage.getItem('pnd_page_alerts_off')==='1')return}catch(e){}/* The same rules the background service applies (alert-rules.js), so the
      page open in a tab and the service behind it never disagree about what is
      worth a notification. Where the service is on for this device it has
      already sent these; raising them again here would say everything twice. */

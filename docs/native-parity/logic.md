@@ -285,15 +285,19 @@ ranked = rows where band A and claimDistance and d finite,
          mapped to (x, nearLevel(x.e, x.d)), sorted by rank(level) desc then d asc
 top = ranked.first; nearest = top?.x
 outlook = first row with band C
+forecastLeads = outlook && !(top && rank(top.level) >= rank(WATCH))   // changelog C28: a report wins a tie
+observed = nearest (or nil); forecast = outlook (or nil)                 // returned beside lead
+ALSO_FC  = " One of our forecasts also covers your place."              // appended when outlook exists
+ALSO_OBS = " A reported event, {title without trailing dots/spaces}, is {round(d)} km away. On its own it rates {LEVELS[top.level].label} here."
 
 if insideWarning:     lead=it; level=atLeast(HIGH, ownLevel(e));  why=WHY_INSIDE_WARNING
 elif insideIncident:  lead=it; level=atLeast(MODERATE, ownLevel(e)); why=WHY_INSIDE_INCIDENT
 elif top && top.x.d <= 150 && rank(top.level) > rank(LOW):
-                      lead=nearest; level=top.level; why="An event was reported {round(d)} km from your place. That is the distance between two points. It does not mean the affected area reaches you."
-elif outlook:         lead=outlook; level=WATCH; why=WHY_FORECAST
+                      lead=nearest; level=top.level; why="An event was reported {round(d)} km from your place. That is the distance between two points. It does not mean the affected area reaches you." + (outlook ? ALSO_FC : "")
+elif forecastLeads:   lead=outlook; level=WATCH; why=WHY_FORECAST + (top ? ALSO_OBS : "")
 elif top:             lead=nearest; level=top.level
                       why = d <= 150 ? "A minor event was reported {round(d)} km from your place."
-                                     : "The most serious event near your place is {round(d)} km away. We look up to 500 km away, so it is shown, but it is far from this place."
+                                     : "The most serious event near your place is {round(d)} km away. We look up to 500 km away, so it is shown, but it is far from this place." + (outlook ? ALSO_FC : "")
 headline = level ? LEVELS[level].label : "Nothing reported nearby"
 if level == nil:
     areaOnly = count of rows with band D
@@ -319,8 +323,9 @@ if level == nil:
 | Severe | SEVERE | SEVERE | SEVERE | SEVERE | WATCH | WATCH | WATCH |
 | Extreme | EXTREME | EXTREME | EXTREME | EXTREME | WATCH | WATCH | WATCH |
 
-Note that a LOW nearLevel at ≤150 km does not pass the third branch (`> LOW`). It falls through to `outlook`, and
-then to the final `top` branch, which reports LOW with "A minor event was reported…".
+Note that a LOW nearLevel at ≤150 km does not pass the third branch (`> LOW`). It falls through to the forecast
+(which then leads, and names the event with ALSO_OBS), and otherwise to the final `top` branch, which reports LOW
+with "A minor event was reported…". A report beyond 150 km that rates WATCH outranks a forecast at WATCH (C28).
 
 `actionsFor(A)`:
 ```
@@ -368,7 +373,9 @@ answer (Home card, My places chip, place page line) calls `assess` only when the
 upper-cased (`CHECKING…`, `LIVE DATA UNAVAILABLE`). When there is no level, `NOTHING REPORTED NEARBY`.
 Otherwise `HEADLINE.uppercased()` followed by one of:
 `" · inside an official warning area"` (lead band B), `" · inside a reported affected area"` (band A with
-containment true), `" · a forecast covers it"` (band C), or `" · event {round(d)} km away"` when d is finite.
+containment true), `" · our forecast covers it"` (band C), or `" · event {round(d)} km away"` when d is finite.
+Then (C28) `" · a reported event is {round(observed.d)} km away"` when the lead is band C and `observed` has a finite
+distance, or `" · our forecast also covers it"` when the lead is not band C and `forecast` is set.
 
 ### 3.5 Place search (`place-search.js`)
 
