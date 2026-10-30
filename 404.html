@@ -25,7 +25,7 @@
 .nf .onward[hidden]{display:none}
 @media(max-width:760px){.nf .paths{grid-template-columns:1fr}}</style><link rel="stylesheet" href="/trust.css"><script src="/trust.js"></script></head>
 <body><div id="nav"></div>
-<section class="hero"><div class="muted">PAGE NOT FOUND</div><h1 id="headline">Looking for this page…</h1>
+<section class="hero"><h1 id="headline">Looking for this page…</h1>
 <p id="sub">Checking the latest data for a matching event, warning or forecast.</p></section>
 <main class="wrap"><div class="nf">
   <section class="panel"><div class="ph"><h2>What happened</h2><span id="state" class="statusbar">Checking…</span></div>
@@ -114,7 +114,9 @@ async function resolve() {
     headline.textContent = 'Page not found';
     sub.textContent = 'There is no page at this address on our site.';
   }
-  state.textContent = 'Done';
+  /* Nothing left to report once the lookup has finished: a stray "Done"
+     beside "What happened" read as part of the answer. */
+  state.hidden = true;
 }
 resolve();
 </script><script src="/glossary.js"></script></body></html>

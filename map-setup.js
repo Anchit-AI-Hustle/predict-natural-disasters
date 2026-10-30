@@ -258,7 +258,7 @@
      its own if Esri's tiles never arrive. */
   function imageryText(source, latest) {
     if (source === 'mosaic') {
-      return 'Satellite: Esri\u2019s mosaic of recent photos. It is not a live picture of today. Turn on \u201cNASA today\u201d for the latest daily photo.';
+      return 'Satellite: Esri\u2019s mosaic of recent photos. It is not a live picture of today. Turn on NASA\u2019s latest daily photo from the map\u2019s view menu.';
     }
     if (source === 'daily') {
       return 'Satellite: NASA\u2019s photo of ' + latest.label + ', the latest complete day. Clouds are part of the picture.';
@@ -696,13 +696,16 @@
         choices['Political'] = plain;
         var extras = {};
         if (daily) {
-          extras['NASA today (' + latest.label + ')'] = daily;
+          /* The latest complete day NASA has, which is a day or two old: "today"
+             promised a picture it is not. */
+          extras['NASA (latest: ' + latest.label + ')'] = daily;
           if (dailyWanted()) daily.addTo(map);
         }
         /* Shown open where there is room, so the other views can be found
            without knowing that the stacked-squares icon hides them. */
         var size = typeof map.getSize === 'function' ? map.getSize() : null;
-        var roomy = !!(size && size.x >= 640);
+        /* Open only on a wide map: at 820 px it covered the map it chooses for. */
+        var roomy = !!(size && size.x >= 1000);
         L.control.layers(choices, daily ? extras : null, { position: 'topright', collapsed: !roomy }).addTo(map);
         if (typeof map.on === 'function') {
           map.on('baselayerchange', function (e) { if (e && e.name) rememberView(e.name); });
