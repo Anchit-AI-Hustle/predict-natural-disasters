@@ -185,7 +185,7 @@ test('B7: every card and related row is a link a keyboard can reach', async () =
   assert.equal(e.document.querySelectorAll('#related article').length, 0);
   e.close();
   // The map's country names are labels, not tab stops.
-  assert.match(read('map-setup.js'), /interactive: false, keyboard: false, pane: labelPane\(map\)/);
+  assert.match(read('map-setup.js'), /var name = L\.marker\([\s\S]{0,700}el\.setAttribute\('tabindex', '-1'\); el\.removeAttribute\('role'\); el\.setAttribute\('aria-hidden', 'true'\);/);
 });
 
 /* ------------------------------------------------------------------ B8 */
@@ -311,10 +311,10 @@ test('B9/B20: an unknown id is noindex and 404; any failure leaves the static pa
 
 test('B10: list pages reserve their space before the feed arrives', () => {
   for (const f of ['events.html', 'recent-events.html', 'historical-events.html', 'official-warnings.html', 'alerts-notifications.html']) {
-    assert.match(read(f), /<div id="cards" class="event-grid skeleton-host" aria-busy="true">(<div class="event-card skeleton" aria-hidden="true"><\/div>){6}<\/div>/, f);
+    assert.match(read(f), /<div id="cards" class="event-grid skeleton-host" aria-busy="true">(<div class="skeleton" aria-hidden="true"><\/div>){6}<\/div>/, f);
   }
-  assert.match(read('alerts.html'), /<div id="alerts" class="alertGrid">(<div class="al skeleton" aria-hidden="true"><\/div>){6}/);
-  assert.match(read('calamities.html'), /<div id="ongoing" class="ongoing skeleton-host">(<div class="cal skeleton" aria-hidden="true"><\/div>){6}/);
+  assert.match(read('alerts.html'), /<div id="alerts" class="alertGrid">(<div class="skeleton" aria-hidden="true"><\/div>){6}/);
+  assert.match(read('calamities.html'), /<div id="ongoing" class="ongoing skeleton-host">(<div class="skeleton" aria-hidden="true"><\/div>){6}/);
   assert.match(read('portal.css'), /\.trust-when\{min-height:2\.6em\}/);
 });
 

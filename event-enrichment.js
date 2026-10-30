@@ -259,6 +259,8 @@
   /* The who-needs-help lists are generic per hazard. Shown only where the
      record is grave enough (PND.lifeSafety); elsewhere they were boilerplate. */
   function grave(e) {
+    /* A forecast page lists what to prepare for: it has no damage to report. */
+    if (e && e.forecast) return true;
     return !!(window.PND && PND.lifeSafety ? PND.lifeSafety(e) : true);
   }
 

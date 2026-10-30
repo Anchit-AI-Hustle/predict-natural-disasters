@@ -490,6 +490,8 @@
     var k = Number(kt);
     if (!isFinite(k) || k <= 0) return null;
     var b = cycloneBasin(lat, lon);
+    /* No position, no basin: the category the wind alone gives, as before. */
+    if (!b) return { scale: 'Category', value: cycloneCategory(k) };
     if (b === 'nio') {
       return { scale: 'IMD class', value:
         k >= 120 ? 'Super Cyclonic Storm' : k >= 90 ? 'Extremely Severe Cyclonic Storm'

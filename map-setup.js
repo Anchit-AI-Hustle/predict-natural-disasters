@@ -430,10 +430,19 @@
           }
           placed.push(box);
 
-          L.marker([p.at.lat, p.at.lon], {
-            interactive: false, keyboard: false, pane: labelPane(map),
+          var name = L.marker([p.at.lat, p.at.lon], {
+            interactive: false, pane: labelPane(map),
             icon: L.divIcon({ className: look.label, html: PNDMapEscape(p.name), iconSize: [0, 0] })
-          }).addTo(labels);
+          });
+          /* A country's name is a label, not a control: Leaflet made each one
+             a tab stop, so the keyboard path on /alerts went through 17 country
+             names before it reached a single alert. Taken out of the tab order
+             and hidden from screen readers, as riskMarker does for markers. */
+          if (typeof name.on === 'function') name.on('add', function () {
+            var el = name.getElement && name.getElement();
+            if (el) { el.setAttribute('tabindex', '-1'); el.removeAttribute('role'); el.setAttribute('aria-hidden', 'true'); }
+          });
+          name.addTo(labels);
         });
       }
       /* Turned on now, or later by showNames() if the imagery above this
