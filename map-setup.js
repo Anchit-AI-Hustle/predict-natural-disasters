@@ -431,7 +431,7 @@
           placed.push(box);
 
           L.marker([p.at.lat, p.at.lon], {
-            interactive: false, pane: labelPane(map),
+            interactive: false, keyboard: false, pane: labelPane(map),
             icon: L.divIcon({ className: look.label, html: PNDMapEscape(p.name), iconSize: [0, 0] })
           }).addTo(labels);
         });

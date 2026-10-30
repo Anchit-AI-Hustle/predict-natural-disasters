@@ -342,6 +342,12 @@ async function renderPage(page, opts) {
         // feedDown is the endpoint itself being unreachable, which is not the
         // same as every upstream provider being down: that still returns 200.
         if (url.includes('/api/events')) {
+          /* A fixed feed (a snapshot of the live one, test/fixtures), served as
+             it is rather than rebuilt from the mocked upstreams. */
+          if (o.feed) {
+            const body = typeof o.feed === 'string' ? JSON.parse(fs.readFileSync(o.feed, 'utf8')) : o.feed;
+            return { ok: true, status: 200, headers: { get: () => null }, json: async () => body, text: async () => JSON.stringify(body) };
+          }
           if (o.feedDown) return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
           return callApi(eventsHandler, url, o.mock);
         }

@@ -1,7 +1,7 @@
 const PND={
   /* The visitor's own zone until they pick one: a reader in New York was
      shown every time in IST, beside a trust note in their own zone. */
-  timezone:localStorage.getItem('pnd_timezone')||(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'}catch(e){return 'Asia/Kolkata'}})(),
+  timezone:localStorage.getItem('pnd_timezone')||(()=>{try{const z=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata';/* Chromium reports India as the old id Asia/Calcutta. */return z==='Asia/Calcutta'?'Asia/Kolkata':z}catch(e){return 'Asia/Kolkata'}})(),
   /* Lists show what is live. A record its provider stopped updating (the
      feed marks it live:false) still opens on its own page, so a detail page
      asks for everything with {all:true}. */
@@ -85,7 +85,12 @@ const PND={
   /* The data-status word for a record. A record its provider stopped
      updating (live:false) was labelled "LIVE EVENT" and "Live" directly
      under the note saying it had not been updated for 48 days. */
-  liveWord(e){return !e?'-':e.cached?'Saved copy':e.forecast?'Our forecast':e.live===false?'Not updated recently':'Live'},
+  liveWord(e){return !e?'-':e.cached?'Saved copy':e.forecast?'Our forecast':e.live===false?'Not updated for '+this.quietFor(e):'Live'},
+  /* How long a record has been quiet, in hours under two days. */
+  quietFor(e){const h=Number(e&&e.quietHours),d=Number(e&&e.quietDays);
+    if(Number.isFinite(h)&&h<48)return h+' hour'+(h===1?'':'s');
+    if(Number.isFinite(d))return d>60?this.age(e.updated).replace(/ ago$/,''):d+' day'+(d===1?'':'s');
+    return 'some time';},
   /* Shown under a detail page's heading when the record is no longer live. */
   showQuiet(e,after,text){const t=text||this.quietNote(e);let n=document.getElementById('quietNote');
     if(!t){if(n)n.remove();return}
@@ -93,7 +98,7 @@ const PND={
     if(n)n.textContent=t;},
   /* Said on a record's own page when its provider has gone quiet. */
   quietNote(e){if(!e||e.live!==false)return '';const d=Number(e.quietDays);
-    return `Not updated by ${e.source||'its source'} for ${Number.isFinite(d)?d+' day'+(d===1?'':'s'):'some time'}. It may have ended; check the source for its current status.`;},
+    return `Not updated by ${e.source||'its source'} for ${Number.isFinite(d)?this.quietFor(e):'some time'}. It may have ended; check the source for its current status.`;},
   autoRefresh(fn,ms=60000){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await fn()}finally{busy=false}};run();return setInterval(run,Math.min(ms,60000))},
   esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
   pathParam(k){const p=location.pathname.split('/').filter(Boolean);const map={disasters:'id',calamities:'id',alerts:'id',forecasts:'id',history:'id',regions:'region',locations:'location',hazards:'type',sources:'source'};if(p.length>=2&&map[p[0]]===k){try{return decodeURIComponent(p.slice(1).join('/'))}catch(e){return p.slice(1).join('/')}}return ''},
@@ -105,20 +110,28 @@ const PND={
      since the site follows the device's zone, that put
      "America/Argentina/Buenos_Aires" after every time. The locale is fixed so
      the label does not change with the browser's language. */
-  TZ_ALIASES:{'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
+  TZ_ALIASES:{'Asia/Kolkata':'IST','Asia/Calcutta':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
   tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
     try{const d=at===undefined?new Date(Date.now()):new Date(at);const p=this._fmt('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(isNaN(d)?new Date(Date.now()):d).find(x=>x.type==='timeZoneName');if(p&&p.value)return p.value}catch(e){}
     return 'local time';},
   /* The time zone menu's own words for the chosen zone: its label and its
      city ("GMT-3 · Buenos Aires"). The other options stay IANA ids. */
-  tzMenuLabel(tz=this.timezone,at){if(tz==='Asia/Kolkata')return 'IST · India';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
+  tzMenuLabel(tz=this.timezone,at){if(tz==='Asia/Kolkata'||tz==='Asia/Calcutta')return 'India (IST)';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
   /* One formatter per zone and shape, made once. toLocaleString builds a new
      one on every call, and /accuracy formats thousands of dates: it was the
      largest single cost of that page's 6-second main-thread task. Output is
      identical, since toLocaleString is defined as exactly this. */
   _fmts:{},
   _fmt(locale,opts){const k=locale+JSON.stringify(opts);return this._fmts[k]||(this._fmts[k]=new Intl.DateTimeFormat(locale,opts))},
-  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
+  /* One month spelling everywhere: ICU writes September "Sept" in en-IN and
+     en-GB, while the feed's own sentences say "Sep", and both appeared on one
+     card. */
+  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bSept\b/,'Sep').replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
+  /* A day the source gave as a date (datePrecision 'day', GDACS floods,
+     droughts and wildfires stamped 00:00Z) is printed as that date, in UTC,
+     with no time: "5:30 AM IST" on 60 cards was a time nobody published. */
+  fmtDay(v){const d=new Date(v);if(!v||isNaN(d))return v?String(v):'-';return this._fmt('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(d).replace(/\bSept\b/,'Sep');},
+  fmtOf(e,field){const v=e&&e[field||'updated'];return e&&e.datePrecision==='day'?this.fmtDay(v):this.fmtDate(v)},
   /* A forecast window edge. Whole-day windows are stored as UTC midnight to
      23:59:59Z, or midnight to midnight with the end excluded, and fmtDate
      turned each edge into a time of day in the reader's zone: "19 Oct to
@@ -134,7 +147,10 @@ const PND={
     const day=m.last||role!=='end'?m.t:m.t-864e5;
     return this._fmt('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(new Date(day));},
   fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
-  age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
+  /* Past two months an age is said in months, past two years in years:
+     "(1500 d ago)" is a number to work out, not an age. */
+  age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));if(!Number.isFinite(m))return 'unknown';const d=Math.round(m/1440);
+    return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:d<=60?`${d} d ago`:d<730?`${Math.round(d/30.44)} months ago`:`${Math.floor(d/365.25)} years ago`;},
   /* The one risk scale, from risk.js. This used to be a second vocabulary
      mapping onto a second palette, which is how `.badge.watch` came to be
      blue on one page while the same level was yellow on the next. Two
@@ -302,9 +318,18 @@ const PND={
   },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},
-  slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
+  /* Accents are folded before anything is replaced, so "Tōhoku" is "tohoku"
+     and "Türkiye" "turkiye": the bare replacement made them "t-hoku" and
+     "t-rkiye", and the addresses a reader would type did not open. */
+  slug(v=''){return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
+  /* The slug the history pages were published under before accents were folded. */
+  legacySlug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
   enc(v=''){return encodeURIComponent(String(v))},
-  eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;},
+  /* One address per record. /alerts/ was chosen while a record was Red or
+     Orange, so a shared link's address changed with its level, and two
+     volcanoes at different levels lived under different paths. /alerts/:id and
+     /calamities/:id still open, and name /disasters/:id as canonical. */
+  eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;return '/disasters/'+id;},
   /* Resolve a record by id even when the id was re-encoded by a rewrite, changed case,
      or arrived slugified from an older link. Returns null when nothing matches. */
   findEvent(events,id){
@@ -313,7 +338,10 @@ const PND={
     const norm=v=>String(v==null?'':v).toLowerCase().replace(/[^a-z0-9]+/g,'');
     const wanted=[raw,dec];
     for(const w of wanted){const hit=events.find(e=>String(e.id)===w);if(hit)return hit}
-    const n=norm(dec);
+    /* An agency's copy the feed merged into another record (mergedFrom) opens
+       the record it is now part of, so an old link to a duplicate still works. */
+    for(const w of wanted){const hit=events.find(e=>Array.isArray(e.mergedFrom)&&e.mergedFrom.some(m=>m&&String(m.id)===w));if(hit)return hit}
+    const n=norm(dec);if(!n)return null;
     const byNorm=events.find(e=>norm(e.id)===n);if(byNorm)return byNorm;
     const byTitle=events.find(e=>norm(e.title)===n);if(byTitle)return byTitle;
     const bySuffix=events.find(e=>norm(e.id).endsWith(n)||n.endsWith(norm(e.id)));
@@ -417,7 +445,9 @@ const PND={
     oldest:{label:'Oldest first',cmp(a,b){return PND.timeOf(a)-PND.timeOf(b)}},
     deaths:{label:'Most deaths first',cmp(a,b){return PND.numOf(b.deaths)-PND.numOf(a.deaths)||PND.timeOf(b)-PND.timeOf(a)}},
     affected:{label:'Most people affected first',cmp(a,b){return PND.numOf(b.affected)-PND.numOf(a.affected)||PND.numOf(b.displaced)-PND.numOf(a.displaced)||PND.timeOf(b)-PND.timeOf(a)}},
-    country:{label:'Place (A to Z)',cmp(a,b){return PND.textOf(a,'place','country','region').localeCompare(PND.textOf(b,'place','country','region'))||PND.timeOf(b)-PND.timeOf(a)}},
+    /* By country, then by the place after "of": the whole place text sorted
+       "1 km WSW of Butulan" before "10 km ... Esperanza", on the distance. */
+    country:{label:'Place (A to Z)',cmp(a,b){return PND.placeKey(a).localeCompare(PND.placeKey(b))||PND.timeOf(b)-PND.timeOf(a)}},
     type:{label:'Type of hazard (A to Z)',cmp(a,b){return PND.textOf(a,'type').localeCompare(PND.textOf(b,'type'))||PND.rankOf(b)-PND.rankOf(a)}},
     source:{label:'Source (A to Z)',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
     title:{label:'Name (A to Z)',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
@@ -431,6 +461,47 @@ const PND={
     countDesc:{label:'Most events first',cmp(a,b){return PND.numOf(b.count)-PND.numOf(a.count)}},
     countAsc:{label:'Fewest events first',cmp(a,b){return PND.numOf(a.count)-PND.numOf(b.count)}}
   },
+  placeKey(e){const c=(e&&Array.isArray(e.countries)&&e.countries[0])||(e&&e.sea)||'';
+    const p=String((e&&(e.place||e.country||e.region))||'').replace(/^.*?\bof\s+/i,'').trim();
+    return (c+'|'+p).toLowerCase();},
+  /* Sorts that need a figure no listed record has are hidden: "Most deaths
+     first" gave the same order as "Newest first" when no record had one. */
+  FIGURE_SORTS:{deaths:['deaths'],affected:['affected','displaced']},
+  syncSortOptions(id,list){const el=document.getElementById(id);if(!el||!Array.isArray(list))return;
+    let changed=false;
+    for(const o of el.options){const f=this.FIGURE_SORTS[o.value];if(!f)continue;
+      const has=list.some(e=>e&&f.some(k=>Number(e[k])>0));if(o.hidden!==!has){o.hidden=!has;o.disabled=!has;changed=true}}
+    if(el.selectedOptions[0]&&el.selectedOptions[0].hidden){el.value=[...el.options].find(o=>!o.hidden).value}
+    return changed;},
+  /* A source that did not answer, said to the public in words. The raw
+     upstream error ("no <item> elements at https://...") stays in the console
+     for whoever maintains the site. */
+  SOURCE_NAMES:{reliefweb:'ReliefWeb',usgs:'USGS',nhc:'The National Hurricane Center',emsc:'EMSC',nws:'The National Weather Service',usgs_volcano:'USGS Volcanoes',eonet:'NASA EONET',gdacs:'GDACS'},
+  sourceDownText(k,v){const n=this.SOURCE_NAMES[k]||String(k||'This source').replace(/_/g,' ');
+    if(v&&v.error&&typeof console!=='undefined'&&!this._loggedDown){this._loggedDown={}}
+    if(v&&v.error&&this._loggedDown&&!this._loggedDown[k]){this._loggedDown[k]=1;try{console.info('[sources] '+k+': '+v.error)}catch(e){}}
+    return n+' is not answering right now';},
+  /* --- Share, canonical and not-found, for every detail page. --- */
+  SITE:'https://predict-natural-disasters.anchit-tandon.com',
+  /* A "Copy link" button. The address copied is the record's canonical one,
+     and a polite live region says it was copied, so a screen reader hears it. */
+  copyLinkHtml(){return '<button type="button" class="btn copylink" data-copy-link aria-describedby="copyToast">Copy link</button><span id="copyToast" class="toast" role="status" aria-live="polite"></span>'},
+  wireCopyLink(root,url){const b=(root||document).querySelector('[data-copy-link]');if(!b)return;b.dataset.url=url||location.href;
+    if(b.dataset.wired)return;b.dataset.wired='1';
+    b.addEventListener('click',async()=>{const u=b.dataset.url||location.href,t=document.getElementById('copyToast');let ok=false;
+      try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(u);ok=true}}catch(e){}
+      if(!ok){try{const a=document.createElement('textarea');a.value=u;a.setAttribute('readonly','');a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();ok=document.execCommand&&document.execCommand('copy');a.remove()}catch(e){}}
+      if(t){t.textContent=ok?'Link copied':'Could not copy. The address is '+u;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show')},4000)}});},
+  setCanonical(path){const href=/^https?:/.test(path)?path:this.SITE+path;let l=document.querySelector('link[rel="canonical"]');
+    if(!l){l=document.createElement('link');l.rel='canonical';document.head.appendChild(l)}l.href=href;
+    const og=document.querySelector('meta[property="og:url"]');if(og)og.setAttribute('content',href);return href},
+  /* A not-found page is not to be indexed: it answered 200 with five "-" boxes. */
+  noindex(){let m=document.querySelector('meta[name="robots"]');if(!m){m=document.createElement('meta');m.name='robots';document.head.appendChild(m)}m.content='noindex';},
+  notFoundHtml(what,back){return `<p>${this.esc(what)}</p><p><a class="btn" href="${this.esc(back[0])}">${this.esc(back[1])}</a> <a class="btn" href="/events">Search recent events</a></p>`},
+  /* --- Filters and tabs in the address, so a view can be shared and kept. --- */
+  urlState(){const q=new URLSearchParams(location.search);const o={};q.forEach((v,k)=>{o[k]=v});return o},
+  writeUrlState(obj){try{const q=new URLSearchParams(location.search);for(const [k,v] of Object.entries(obj||{})){if(v===undefined||v===null||v==='')q.delete(k);else q.set(k,v)}
+    const s=q.toString();history.replaceState(history.state,'',location.pathname+(s?'?'+s:'')+location.hash)}catch(e){}},
   /** Default option set for a list of live hazard records. */
   EVENT_SORTS:['newest','severity','oldest','deaths','affected','country','type','source','title'],
   sortStoreKey(id){return 'pnd_sort_'+location.pathname+'_'+id},
@@ -461,7 +532,7 @@ const PND={
     return def?list.slice().sort(def.cmp):list.slice();
   },
   /** Sort by the current value of a page's sort control in one step. */
-  sortBy(id,list,keys){return this.applySort(list,this.sortValue(id,keys))},
+  sortBy(id,list,keys){this.syncSortOptions(id,list);return this.applySort(list,this.sortValue(id,keys))},
   calamityUrl(e){return '/calamities/'+this.enc(e&&e.id||'');},
   historicalUrl(e){return '/history/'+this.enc(this.slug(e&&e.name||e&&e.title||''));},
   regionUrl(name){return '/regions/'+this.enc(name||'World');},
@@ -496,8 +567,22 @@ const PND={
      inventing a warning nobody issued. */
   provenance(e){const s=e&&e.evidenceState;
     if(s==='forecast'||(!s&&e&&e.forecast))return e.forecastKind==='frozen-benchmark'?'TEST FORECAST':'OUR FORECAST';
-    if(s==='official-warning')return 'OFFICIAL WARNING';
+    if(s==='official-warning')return this.officialWord(e).toUpperCase();
     return 'REPORTED EVENT';},
+  /* What kind of official statement a record is, said as the agency said it:
+     only a warning is a warning. An NWS Freeze Watch, or a USGS volcano at
+     ADVISORY (elevated unrest), was labelled OFFICIAL WARNING. A record with
+     no officialProduct (an older payload) keeps the old word. */
+  officialWord(e){const p=e&&e.officialProduct;
+    return p==='watch'?'Official watch':p==='advisory'?'Official advisory':p==='statement'||p==='other'?'Official statement':p==='normal'?'Official status':'Official warning';},
+  /* Whether a record is grave enough for the help and needs sections: an
+     agency's own warning, a rating of High or above, or reported deaths or
+     displacement. On anything else those lists are generic boilerplate - an
+     M4.5 141 km offshore listed "search and rescue" as an immediate need. */
+  lifeSafety(e){if(!e||e.forecast)return false;const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(e.evidenceState==='official-warning'&&(!e.officialProduct||e.officialProduct==='warning'))return true;
+    if(R&&R.rankOf(e.severity||e.alert)>=R.BY_KEY.HIGH.rank)return true;
+    return Number(e.deaths)>0||Number(e.displaced)>0;},
   savedLocations(){try{return JSON.parse(localStorage.getItem('pnd_saved_locations')||'[]')}catch(e){return[]}},
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
@@ -546,8 +631,13 @@ const PND={
   /* Everything that left the top bar, kept one tap away on every page. */
   FOOT:[['Check a place','/'],['Live events','/events'],['Official warnings','/official-warnings'],['Disasters now and in the past','/calamities'],['Regions','/regions'],['Forecast calendar','/forecast-calendar'],['How it works','/methodology'],['Our sources','/resources'],['Insights','/insights'],['About','/about']],
   footer(){return `<footer class="sitefoot" aria-label="More of this site"><nav>${this.FOOT.map(([n,u])=>`<a href="${u}">${n}</a>`).join('')}</nav><p>Up-to-date information from public sources. This is not an official warning service. In an emergency, follow your local authorities.</p></footer>`;},
+  /* The source's own level beside its name where it issued one ("GDACS:
+     Green"), so this site's rating next to it ("Extreme") is not read as
+     GDACS's: Super Typhoon In-fa was "Extreme · GDACS" while GDACS said Green. */
   sourceBadge(e){const full=(e&&e.source)||'Source not stated';
-    return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(full)}">${this.esc(this.shortSource(full))}</span>`;},
+    const own=e&&e.alertBasis==='issued'&&/GDACS/.test(full)&&['Red','Orange','Green'].includes(e.alert)?': '+e.alert:'';
+    const title=own?full+' issued a '+e.alert.toLowerCase()+' alert level. The coloured badge is this site\u2019s own rating.':full;
+    return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(title)}">${this.esc(this.shortSource(full)+own)}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
      a date range: a joined pair of dates reads as one continuous event, and a second
      occurrence of the same hazard is a separate record with its own start. */

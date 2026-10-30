@@ -1,6 +1,12 @@
-(()=>{const mode=document.body.dataset.view||'events';/* [page heading, one-line summary, what an empty list is "no ... of"] */const cfg={events:['Events happening now','Disasters reported by official agencies, and our own forecasts of what may happen next.','events'],'recent-events':['Recent events','The latest disasters reported by official agencies.','recent events'],'official-warnings':['Official warnings','Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events.','official warnings'],'hazard-types':['Events by type','Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought.','events'],'forecast-list':['Our forecasts','All our current forecasts of what may happen next, including test cases that were not made in advance.','forecasts'],'forecast-calendar':['Forecast calendar','Each current forecast, shown across the days it covers.','forecasts'],'historical-events':['Past and recent events','Recent past events from GDACS, plus the events happening now.','events'],'alerts-notifications':['Current alerts','Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events.','alerts'],'compare-locations':['Compare places','Search for a place to see its current events. Then search for another place to compare.','events'],resources:['Our sources','Every source we read, whether it answered this time, and what it means when a source reports nothing.','sources']}[mode]||['Events','Current events from official agencies.','events'];
+(()=>{const mode=document.body.dataset.view||'events';/* [page heading, one-line summary, what an empty list is "no ... of"] */const cfg={events:['Events happening now','Disasters reported by official agencies, and our own forecasts of what may happen next.','events'],'recent-events':['Recent events','The latest disasters reported by official agencies.','recent events'],'official-warnings':['Official warnings','Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events.','official warnings'],'hazard-types':['Events by type','Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought.','events'],'forecast-list':['Our forecasts','All our current forecasts of what may happen next, including test cases that were not made in advance.','forecasts'],'forecast-calendar':['Forecast calendar','Each current forecast, shown across the days it covers.','forecasts'],'historical-events':['Recently ended events','Events our sources have stopped updating, most of which have ended. Major disasters from history are under Past disasters on the Calamities page.','ended events'],'alerts-notifications':['Alerts in force','Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events.','alerts'],'compare-locations':['Compare places','Search for a place to see its current events. Then search for another place to compare.','events'],resources:['Our sources','Every source we read, whether it answered this time, and what it means when a source reports nothing.','sources']}[mode]||['Events','Current events from official agencies.','events'];
 const SORT_KEYS=mode==='resources'?['curated','name','nameDesc']:mode==='forecast-list'||mode==='forecast-calendar'?['newest','severity','windowEnd','oldest','country','type','title']:mode==='historical-events'?['newest','oldest','severity','country','type','title']:PND.EVENT_SORTS;
 nav.innerHTML=PND.nav(mode==='forecast-list'||mode==='forecast-calendar'?'Forecasts':mode==='official-warnings'||mode==='alerts-notifications'?'Alerts':'');pageTitle.textContent=cfg[0];pageSub.textContent=cfg[1];heading.textContent=cfg[0];let all=[];let lastMeta=null;
+const PAGE=40;let limit=PAGE;
+/* Filters, search and sort in the address (?q=&type=&level=&sort=), read on
+   load, so a filtered view can be shared and survives a reload. */
+const urlIn=PND.urlState();const groupOff=urlIn.group==='0';
+function saveState(){const g=id=>{const x=document.getElementById(id);return x?x.value:''};PND.writeUrlState({q:g('q'),type:g('type'),level:g('level'),sort:document.getElementById('sortBy')&&document.getElementById('sortBy').selectedIndex>0?g('sortBy'):''})}
+function restoreState(){const set=(id,v)=>{const x=document.getElementById(id);if(x&&v!==undefined&&v!==''){if(x.tagName==='SELECT'&&![...x.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;x.appendChild(o)}x.value=v}};set('q',urlIn.q);set('level',urlIn.level);set('type',urlIn.type);set('sortBy',urlIn.sort)}
 /* The outlook views build their hazard filter from the outlooks themselves
    and match it exactly; the fixed lists on the other views still match by
    stem, which is what their option wording was written for. */
@@ -13,7 +19,7 @@ function scoped(){const k=all.filter(keep);return regionScope&&regionScope.toLow
 function scopeNote(){if(!regionScope||regionScope.toLowerCase()==='world'||mode==='resources')return;let n=document.getElementById('regionScope');
  if(!n){n=document.createElement('p');n.id='regionScope';n.className='muted';n.setAttribute('role','note');cards.parentNode.insertBefore(n,cards)}
  n.innerHTML='Showing only '+PND.esc(regionScope)+'. <a href="'+location.pathname+'">Show everywhere →</a>';}
-/* An official warning is what the feed classifies as one (PND.isOfficialWarning), the same definition the home tile counts. "Official and red or orange, or any USGS record" listed 338 here against 17 on the tile, 322 of them earthquakes that had already happened. */function keep(e){if(mode==='official-warnings'||mode==='alerts-notifications')return PND.isOfficialWarning(e);if(mode==='forecast-list'||mode==='forecast-calendar')return e.forecast===true;if(mode==='recent-events')return e.sourceType==='official';return true}
+/* An official warning is what the feed classifies as one (PND.isOfficialWarning), the same definition the home tile counts. "Official and red or orange, or any USGS record" listed 338 here against 17 on the tile, 322 of them earthquakes that had already happened. */function keep(e){if(mode==='official-warnings'||mode==='alerts-notifications')return PND.isOfficialWarning(e);if(mode==='forecast-list'||mode==='forecast-calendar')return e.forecast===true;/* The frozen ND-001 benchmark is a test case, listed with the forecasts it is graded beside and on the track record, not among events happening now. */if(e.forecastClass==='retrospective-benchmark'||e.forecastKind==='frozen-benchmark')return false;/* Ended events: records their own provider stopped updating. */if(mode==='historical-events')return e.live===false&&!e.forecast;if(mode==='recent-events')return e.sourceType==='official';return true}
 /* The same disclaimer sentence rides on 24 of the 30 outlooks, so repeating it
    on every card spends a third of each one saying what is true of all of them.
    It is stated once for the page instead, and kept in full on the detail page.
@@ -113,7 +119,7 @@ function providerCard(p){
     <small class="muted">${PND.esc(counted||'No count recorded this time')}${p.failureReason?' · '+PND.esc(p.failureReason):''}${p.dataFreshness?' · latest data from '+PND.esc(PND.fmtDate(p.dataFreshness)):''}</small>
     ${p.endpoint?`<small class="muted" style="display:block;margin-top:4px"><a href="${PND.esc(p.endpoint)}" target="_blank" rel="noopener">${PND.esc(p.endpoint)}</a></small>`:''}</article>`;
 }
-function draw(){if(mode==='resources'){
+function draw(more){if(mode==='resources'){
   const scan=(lastMeta&&lastMeta.scan)||null;
   const ps=(scan&&scan.providers)||[];
   if(!ps.length){cards.innerHTML='<div class="empty">We could not get the list of sources read this time, so this page cannot show them. This does not mean no sources were read.</div>';return}
@@ -145,29 +151,56 @@ function draw(){if(mode==='resources'){
   cards.innerHTML=`<div class="panel" style="grid-column:1/-1;padding:12px"><b>${answered} of ${ps.length} sources answered in full this time${partial?', and '+partial+' in part':''}.</b>
     ${blind.length?PND.esc('For '+blindText+', none of our sources gives a complete list of disasters that have happened. So we cannot say that no such disaster happened, only that none was reported.'):'For every hazard listed here, at least one source gives a complete list of disasters that have happened. So if that source reports nothing, that is real evidence.'}</div>`
     +rs.map(providerCard).join('');
-  return}const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',scoped().filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase()===t)&&PND.matchesRiskLevel(e,l)),SORT_KEYS);pageNote();scopeNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
+  return}if(!more)limit=PAGE;saveState();const s=q.value.toLowerCase(),t=type.value.toLowerCase(),l=level.value;const es=PND.sortBy('sortBy',scoped().filter(e=>(!s||PND.matches(e,s))&&(!t||String(e.type).toLowerCase()===t)&&PND.matchesRiskLevel(e,l)),SORT_KEYS);pageNote();scopeNote();if(mode==='forecast-calendar'){cards.className='';cards.innerHTML=timeline(es);return}
 if(mode==='forecast-list'){cards.className='';
  cards.innerHTML=es.length?PNDForecastTable.render(es)
   :PND.emptyHtml(q.value,scoped(),all,cfg[2]);
  return}
-cards.className='event-grid';cards.innerHTML=es.length?es.map(e=>`<a class="event-card" href="${PND.eventUrl(e)}">${PND.riskTag(e)} ${PND.sourceBadge(e)} ${e.forecast?`<span class="prov">${PND.esc(e.forecastKind==='frozen-benchmark'?'Test case, not made in advance':'Our forecast, not official')}</span>`:''}${e.windowClosed?'<span class="prov">Forecast period ended</span>':''}<h3>${PND.esc(PND.titleOf(e))}</h3><p>${PND.esc(e.type)} · ${PND.esc(PND.placeOf(e,'Place not given'))}${(()=>{/* One line of figures per card. The key-facts line and the impact line
+cards.className='event-grid';cards.removeAttribute('aria-busy');
+/* Shown PAGE at a time, as on Alerts: /events drew 837 cards and
+   /historical-events 1,540 in one go. */
+const groups=clusterFires(es);const shown=groups.slice(0,limit);
+cards.innerHTML=groups.length?shown.map(g=>g.fires?fireCard(g):eventCard(g)).join('')+pagerHtml(groups.length):PND.emptyHtml(q.value,scoped(),all,cfg[2]);
+const sm=document.getElementById('showMore');if(sm)sm.onclick=()=>{const at=limit;limit+=PAGE;draw(true);const n=cards.querySelectorAll('.event-card')[at];if(n&&n.focus)n.focus()}}
+function eventCard(e){return `<a class="event-card" href="${PND.eventUrl(e)}">${PND.riskTag(e)} ${PND.sourceBadge(e)} ${e.forecast?`<span class="prov">${PND.esc(e.forecastKind==='frozen-benchmark'?'Test case, not made in advance':'Our forecast, not official')}</span> `:''}${e.windowClosed?'<span class="prov">Forecast period ended</span>':''}<h3>${PND.esc(PND.titleOf(e))}</h3><p>${PND.esc(e.type)} · ${PND.esc(PND.placeOf(e,'Place not given'))}${(()=>{/* One line of figures per card. The key-facts line and the impact line
    stated the same deaths, displaced and affected twice, one under the other,
    and a storm's prose then repeated its wind and pressure a third time. The
    prose is the fallback for a record with no figures; the full text is on the
-   record's own page. */const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':'<br>'+PND.esc(gist(PND.impactText(e)||e.details||''));})()}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}Source updated ${PND.fmtDate(e.updated)} · ${PND.age(e.updated)}</small></a>`).join(''):PND.emptyHtml(q.value,scoped(),all,cfg[2])}
+   record's own page. */const k=PND.keyFactsLine(e,3);return k?'<br><b>'+k+'</b>':'<br>'+PND.esc(gist(PND.impactText(e)||e.details||''));})()}</p><small class="muted">${e.forecast&&e.targetEnd?`${PND.windowText(e)} · `:''}${e.ongoingSince?`Ongoing since ${PND.fmtDay(e.ongoingSince)} · `:''}Source updated ${PND.fmtOf(e)} · ${PND.age(e.updated)}</small></a>`}
+/* GDACS lists every wildfire it scores, so one country in one week arrived as
+   89 cards titled "Forest fires in Australia". Three or more GDACS wildfires
+   in one country and ISO week are one card that opens them. ?group=0 lists
+   them one by one. */
+function isoWeek(t){const d=new Date(t);if(isNaN(d))return '';const u=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));const day=u.getUTCDay()||7;u.setUTCDate(u.getUTCDate()+4-day);const y=new Date(Date.UTC(u.getUTCFullYear(),0,1));return u.getUTCFullYear()+'-W'+Math.ceil(((u-y)/864e5+1)/7)}
+function clusterFires(list){if(groupOff||mode==='forecast-list'||mode==='forecast-calendar')return list;const key=e=>e&&e.type==='Wildfire'&&/GDACS/.test(e.source||'')&&!e.forecast?(PND.placeOf(e,'')+'|'+isoWeek(e.updated)):'';
+  const n={};list.forEach(e=>{const k=key(e);if(k)n[k]=(n[k]||0)+1});const out=[],at={};
+  for(const e of list){const k=key(e);if(!k||n[k]<3){out.push(e);continue}if(at[k]===undefined){at[k]=out.length;out.push({fires:[],place:PND.placeOf(e,''),week:isoWeek(e.updated)})}out[at[k]].fires.push(e)}
+  return out}
+function fireCard(g){const top=g.fires.slice().sort((a,b)=>PND.rankOf(b)-PND.rankOf(a))[0];const latest=g.fires.reduce((a,b)=>Date.parse(b.updated)>Date.parse(a.updated)?b:a);
+  const href=location.pathname+'?'+new URLSearchParams({type:'Wildfire',q:g.place,group:'0'}).toString();
+  return `<a class="event-card" href="${PND.esc(href)}">${PND.riskTag(top)} ${PND.sourceBadge(top)}<h3>${g.fires.length} wildfires in ${PND.esc(g.place)}</h3><p>Wildfire · ${PND.esc(g.place)}<br>GDACS scored ${g.fires.length} separate fires here this week. Open the list to see each one.</p><small class="muted">Latest source update ${PND.fmtOf(latest)} · ${PND.age(latest.updated)}</small></a>`}
+function pagerHtml(total){return total>limit?`<div class="card showmore" style="grid-column:1/-1"><p class="muted">Showing ${limit} of ${total}.</p><button type="button" class="btn" id="showMore">Show ${Math.min(PAGE,total-limit)} more</button></div>`:total>PAGE?`<p class="muted" style="grid-column:1/-1">Showing all ${total}.</p>`:''}
 /* A list that holds agency reports and our own forecasts says how many of each: "765 events" counted 56 forecasts as events, so the same moment read 765 here and 709 on Alerts. */function countText(shown,noun){const one=(n,w)=>n+' '+(n===1?w.replace(/s$/,''):w);/* Open forecasts counted as everywhere else (PND.openForecasts); one whose window ended is still listed, and said to be ended. */if(forecastMode){const open=PND.openForecasts(scoped()).length;return one(shown,noun)+': '+open+' open, '+(shown-open)+' ended'}const fc=scoped().filter(e=>e&&e.forecast).length;return fc?one(shown-fc,noun)+' · '+one(fc,'forecasts'):one(shown,noun)}async function load(){statusLine.textContent='Loading the latest data…';try{const d=await PND.getEvents({all:mode==='historical-events'});all=d.events;lastMeta=d.meta;const shown=scoped().length;
 /* The sources view is about the sources, so its status line counts those
    rather than the records they produced. */
-/* Every list builds its hazard filter from the hazards in it: the fixed six could not select Extreme Heat, aftershock sequences, storm warnings or ice. */if(document.getElementById('type'))PND.fillHazardSelect(document.getElementById('type'),scoped());
+/* Every list builds its hazard filter from the hazards in it: the fixed six could not select Extreme Heat, aftershock sequences, storm warnings or ice. */if(document.getElementById('type')){const tv=document.getElementById('type').value||urlIn.type||'';PND.fillHazardSelect(document.getElementById('type'),scoped());if(tv)restoreStateOne('type',tv)}
+if(mode==='alerts-notifications')heading.textContent='In force now ('+shown+')';
 statusLine.textContent=mode==='resources'
   ?`${PND.statusText(d.meta)} · sources checked ${PND.fmtDate((d.meta&&d.meta.scan&&d.meta.scan.scanTimestamp)||d.generatedAt)} · updated ${PND.age(d.generatedAt)}`
-  :`${PND.statusText(d.meta)} · ${countText(shown,cfg[2])} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name - A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name - Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,draw);
+  :`${PND.statusText(d.meta)} · ${countText(shown,cfg[2])} · updated ${PND.age(d.generatedAt)}`;draw()}catch(e){statusLine.textContent='Live data unavailable. Trying again automatically.'}}/* What each list is for, said where a reader might look for something it does not hold. */
+function pageExtras(){const note=(id,html)=>{if(document.getElementById(id))return;const n=document.createElement('p');n.id=id;n.className='muted pagenote';n.setAttribute('data-keep-acronyms','');n.innerHTML=html;cards.parentNode.insertBefore(n,cards)};
+  if(mode==='official-warnings'||mode==='alerts-notifications')note('gdacsNote','GDACS red and orange levels, such as those on tropical cyclones, are GDACS\u2019s estimates of impact, not warnings, so they are not listed here. They are on <a href="/alerts">Alerts &amp; events</a>. For a cyclone, follow its warning centre: <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener">IMD</a> for the North Indian Ocean.');
+  if(mode==='alerts-notifications')note('getAlerts','<a class="btn" href="/personal-risk#alerts">Get alerts for my places &#8594;</a> Choose your places and turn on notifications on My places.');
+  if(mode==='historical-events')note('historyNote','Looking for disasters from history, such as the 2004 Indian Ocean tsunami? See <a href="/calamities?tab=history">Past disasters</a>.');}
+PND.SORT_DEFS.curated={label:'Suggested order',cmp:()=>0};PND.SORT_DEFS.name=PND.SORT_DEFS.name||{label:'Name - A to Z',cmp:(a,b)=>0};PND.SORT_DEFS.nameDesc={label:'Name - Z to A',cmp:(a,b)=>0};PND.initSort('sortBy',SORT_KEYS,()=>draw());restoreState();
+function restoreStateOne(id,v){const x=document.getElementById(id);if(!x)return;if(![...x.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;x.appendChild(o)}x.value=v}
+pageExtras();
 /* Looked up rather than assumed: the sources view has no search box and no
    hazard or level filter, because on that page they filtered nothing and a
    control that cannot be operated is not a control. */
 const el=id=>document.getElementById(id);
-if(el('q'))PNDSearch.initSearch(el('q'),draw);
-if(el('type'))el('type').onchange=draw;
-if(el('level'))el('level').onchange=draw;
+if(el('q'))PNDSearch.initSearch(el('q'),()=>draw());
+if(el('type'))el('type').onchange=()=>draw();
+if(el('level'))el('level').onchange=()=>draw();
 if(el('refresh'))el('refresh').onclick=load;
 PND.autoRefresh(load,60000)})();

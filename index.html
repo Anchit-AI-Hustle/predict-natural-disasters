@@ -96,7 +96,7 @@ a:focus-visible{color:#b7f5ff;outline:2px solid #6fe3ff;outline-offset:2px;borde
 function GO(url){if(url)window.location.assign(url)}
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
 function enc(v=''){return encodeURIComponent(String(v))}
-function eventUrl(e){const id=enc(e.id||'');if(e.forecast)return'/forecasts/'+id;if(e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return'/alerts/'+id;return'/disasters/'+id}
+function eventUrl(e){const id=enc(e.id||'');if(e.forecast)return'/forecasts/'+id;return'/disasters/'+id}
 /* Kept in step with PND.riskClass in portal.js; a test asserts the two agree.
    index.html renders its list before portal.js has to have loaded. */
 /* No local risk vocabulary at all any more: the level is resolved once by
