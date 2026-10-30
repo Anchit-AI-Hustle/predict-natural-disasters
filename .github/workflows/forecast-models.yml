@@ -30,6 +30,7 @@ on:
       - 'forecast-models.js'
       - 'tools/build-climatology.js'
       - 'tools/run-models.js'
+      - 'tools/model-grades.js'
       - 'tools/backtest-models.js'
       - '.github/workflows/forecast-models.yml'
 
@@ -64,7 +65,8 @@ jobs:
           cp data/model-ledger.json /tmp/model-ledger.json
           cp data/model-verdicts.json /tmp/model-verdicts.json 2>/dev/null || true
           cp data/model-runs.json /tmp/model-runs.json
-          node tools/run-models.js data/climatology.json /tmp/model-outlooks.json /tmp/model-runs.json /tmp/model-ledger.json /tmp/model-verdicts.json
+          cp data/model-measured.json /tmp/model-measured.json
+          node tools/run-models.js data/climatology.json /tmp/model-outlooks.json /tmp/model-runs.json /tmp/model-ledger.json /tmp/model-verdicts.json /tmp/model-measured.json
 
       - name: Write the scores to the job summary
         run: |
@@ -131,7 +133,7 @@ jobs:
       - name: Commit the forecasts, the ledger and the grades
         run: |
           set -euo pipefail
-          git add data/model-outlooks.json data/model-runs.json data/model-ledger.json data/model-verdicts.json
+          git add data/model-outlooks.json data/model-runs.json data/model-ledger.json data/model-verdicts.json data/model-measured.json
           if git diff --cached --quiet; then echo "unchanged"; exit 0; fi
           git config user.name "forecast-models"
           git config user.email "noreply@anthropic.com"

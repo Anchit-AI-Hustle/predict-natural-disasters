@@ -30,6 +30,11 @@ const MODEL_RUN_MAX_AGE_MS = 36 * 3600e3;
 let MODEL_OUTLOOKS;
 try { MODEL_OUTLOOKS = require('../data/model-outlooks.json'); }
 catch (e) { MODEL_OUTLOOKS = null; }
+/* The models' hazard names. A run made before they were renamed carries the
+   old "Extreme heat" and "Heavy rain and flooding" titles; they are shown
+   under the names that say what is measured (forecast-models.js modelDisplay). */
+let MODELS = null;
+try { MODELS = require('../forecast-models.js'); } catch (e) { MODELS = null; }
 
 /* A bound against a runaway upstream, not a quota. At 24 it was the latter:
    measured on the live feed of 26 September 2026, 40 active official signals
@@ -2154,7 +2159,8 @@ async function handler(req, res) {
       if (!mo || !mo.targetEnd) continue;
       const endMs = Date.parse(mo.targetEnd);
       if (Number.isFinite(endMs) && endMs > now.getTime()) {
-        outlooks.push(Object.assign({}, mo, {
+        const shown = MODELS && MODELS.modelDisplay ? MODELS.modelDisplay(mo) : null;
+        outlooks.push(Object.assign({}, mo, shown ? { type: shown.type, title: shown.title, hazardLabel: shown.hazardLabel } : {}, {
           updated: mo.updated || mo.issuedAt || new Date(now).toISOString(),
           precision: mo.precision || 'regional',
           forecastScope: mo.forecastScope || 'regional',

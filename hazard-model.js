@@ -187,6 +187,12 @@
     var t = String(type || '');
     if (HAZARDS[t]) return HAZARDS[t];
     var k = t.toLowerCase();
+    /* The weather models' own hazards (forecast-models.js MODEL_HAZARDS) are
+       weather lines, not disasters, and are named so; they belong to the
+       family of the disaster they bear on. */
+    if (/^unusually hot days$/.test(k)) return HAZARDS['Extreme Heat'];
+    if (/^unusually heavy rain$/.test(k)) return HAZARDS.Flood;
+    if (/^high fire-weather index$/.test(k)) return HAZARDS.Wildfire;
     // Ordered so a compound type lands on the entry that describes it best.
     if (/aftershock/.test(k)) return HAZARDS['Earthquake aftershock sequence'];
     if (/earthquake|seismic/.test(k)) return HAZARDS.Earthquake;
