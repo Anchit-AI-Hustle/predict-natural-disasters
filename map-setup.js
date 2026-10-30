@@ -461,8 +461,8 @@
 
   /*
    * Styling ships with the code that builds these controls, rather than a
-   * stylesheet, because index.html and dashboard.html carry their own CSS and
-   * load neither shared sheet -- a rule kept there misses exactly those two.
+   * stylesheet, because index.html carries its own CSS and loads neither
+   * shared sheet -- a rule kept there misses exactly that page.
    */
   var STYLE_ID = 'pnd-map-style';
   var CONTROL_CSS = [
@@ -766,13 +766,20 @@
     btn.addEventListener('click', function () { open = body.hidden; setOpen(open); place(); });
 
     var order = R.LEVELS.slice().reverse().concat([R.UNKNOWN]);
+    /* The levels count reported events only. A mark the page drew for one
+       of our own forecasts (riskMarker's pndForecast) is counted on a line
+       of its own, so the key's "High 17" is the same 17 as the page's own
+       count of reported events at that level. */
     function count() {
-      var n = {}, total = 0;
+      var n = {}, total = 0, forecasts = 0;
       map.eachLayer(function (l) {
         var k = l && l.options && l.options.pndLevel;
-        if (k) { n[k] = (n[k] || 0) + 1; total++; }
+        if (!k) return;
+        total++;
+        if (l.options.pndForecast) forecasts++;
+        else n[k] = (n[k] || 0) + 1;
       });
-      return { by: n, total: total };
+      return { by: n, total: total, forecasts: forecasts };
     }
     function render() {
       var c = count();
@@ -783,7 +790,11 @@
           '<span class="risk-shape"></span></span><span class="pnd-key-name">' + PNDMapEscape(lv.label) +
           '</span><span class="pnd-key-n">' + c.by[lv.key] + '</span></li>';
       }).join('');
-      body.innerHTML = '<p class="pnd-key-lead"><b>Each mark is one reported event</b>, shaped and coloured by its risk level.</p>' +
+      if (c.forecasts) rows += '<li class="pnd-key-fc"><span class="pnd-key-mark" aria-hidden="true"></span>' +
+        '<span class="pnd-key-name">Our forecasts</span><span class="pnd-key-n">' + c.forecasts + '</span></li>';
+      body.innerHTML = (c.forecasts
+        ? '<p class="pnd-key-lead"><b>Each mark is one reported event or one of our forecasts</b>, shaped and coloured by its risk level. The levels count reported events.</p>'
+        : '<p class="pnd-key-lead"><b>Each mark is one reported event</b>, shaped and coloured by its risk level.</p>') +
         '<ul>' + rows + '</ul><p class="pnd-key-hint">Select a mark for details.</p>';
       /* Open by default only where it fits and has something to explain;
          after that, whatever the reader last chose. */

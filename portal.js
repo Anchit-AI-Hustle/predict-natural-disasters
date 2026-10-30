@@ -12,7 +12,10 @@ const PND={
        click is marked before the page's own handler runs (see init). */
     const fresh=!!(opts&&opts.fresh)||PND._freshNext;PND._freshNext=false;
     const r=await fetch(fresh?'/api/events?ts='+Date.now():'/api/events',fresh?{cache:'no-store'}:{});if(!r.ok)throw new Error('Live feed unavailable');
-    const d=await r.json();if(opts&&opts.all)return d;
+    const d=await r.json();
+    /* The risk filters offer the levels this feed actually holds. */
+    try{if(PND.pruneRiskFilters)PND.pruneRiskFilters((Array.isArray(d.events)?d.events:[]).filter(e=>e&&e.live!==false))}catch(e){}
+    if(opts&&opts.all)return d;
     const ev=Array.isArray(d.events)?d.events:[];
     return Object.assign({},d,{events:ev.filter(e=>e&&e.live!==false),notLive:ev.filter(e=>e&&e.live===false)});
   },
@@ -171,12 +174,43 @@ const PND={
    */
   /* The record's level on this site's scale, as a word - the same answer the
      badge gives, for the places that print text rather than a badge. */
+  /* The one level a record resolves to, as a key on the six-level scale
+     (or UNKNOWN). Every chip, map mark, map key, filter and count resolves a
+     record through this, so no two of them can disagree about it: the
+     homepage map coloured its marks by the raw alert word while the chips
+     beside it read the severity first, and its key said "High 17" beside a
+     tile reading "2 serious". */
+  riskKey(e){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(!R)return 'UNKNOWN';
+    const sv=R.levelOf(e&&e.severity),a=R.levelOf(e&&e.alert);
+    return sv!=='UNKNOWN'?sv:(a!=='UNKNOWN'?a:'UNKNOWN');
+  },
   riskLabel(e){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return 'Not rated';
-    const sv=R.levelOf(e&&e.severity),a=R.levelOf(e&&e.alert);
-    const k=sv!=='UNKNOWN'?sv:(a!=='UNKNOWN'?a:null);
-    return k&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+    const k=this.riskKey(e);
+    return k!=='UNKNOWN'&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+  },
+  /* The level in words that say where it came from, where an agency set it.
+     "Low" beside an M6.9 earthquake reads as an error; what it means is that
+     USGS PAGER (or GDACS) expects little damage, and the reader is told so. */
+  IMPACT_WORDS:{LOW:'Low expected impact',WATCH:'Some impact expected',MODERATE:'Moderate expected impact',HIGH:'High expected impact'},
+  riskWords(e){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    const label=this.riskLabel(e);
+    if(!R||!e)return label;
+    const k=this.riskKey(e),words=this.IMPACT_WORDS[k];
+    const colour=w=>/^(green|yellow|orange|red)$/i.test(String(w||''))?String(w).toLowerCase():'';
+    const src=String(e.alertSource||e.source||'');
+    const quake=/earthquake/i.test(e.type||'')&&!/aftershock/i.test(e.type||'');
+    if(words&&quake&&/^USGS\b/.test(src)&&colour(e.pagerAlert)&&R.levelOf(e.pagerAlert)===k)
+      return words+' (USGS PAGER '+colour(e.pagerAlert)+')';
+    if(k==='LOW'&&quake&&/^USGS\b/.test(src)&&!e.pagerAlert&&!e.forecast)
+      return 'Low (no USGS PAGER impact alert issued)';
+    if(words&&/^GDACS\b/.test(src)&&colour(e.alert)&&R.levelOf(e.alert)===k&&!e.forecast)
+      return words+' (GDACS '+colour(e.alert)+')';
+    return label;
   },
   riskTag(e,opts){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
@@ -184,6 +218,7 @@ const PND={
     const o=opts||{};
     const rawAlert=e&&e.alert,rawSev=e&&e.severity;
     const a=R.levelOf(rawAlert),sv=R.levelOf(rawSev);
+    /* The one resolution, riskKey; what follows only explains it. */
     /* Not the higher of the two: severityOf already takes the worse of what
        was observed and what the authority assessed, so the severity subsumes
        the alert. Taking the maximum across both counted the alert twice, on
@@ -258,12 +293,17 @@ const PND={
    * "Moderate" finds a GDACS Orange as well as a record already called
    * Moderate.
    */
-  riskLevelOptions(selected){
+  /* Given the records it filters, only the levels they hold are offered:
+     "High" and "Not rated" were offered over a list where nothing was either,
+     and both led to "No events to show". The level chosen stays offered. */
+  riskLevelOptions(selected,records){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return '';
-    return R.LEVELS.slice().reverse().map(l=>
+    const have=Array.isArray(records)?new Set(records.map(e=>this.riskKey(e))):null;
+    const keep=k=>!have||have.has(k)||selected===k;
+    return R.LEVELS.slice().reverse().filter(l=>keep(l.key)).map(l=>
       `<option value="${l.key}"${selected===l.key?' selected':''}>${l.label}</option>`).join('')+
-      `<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`;
+      (keep('UNKNOWN')?`<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`:'');
   },
   /* The hazard filter, built from the records it filters.
    *
@@ -295,10 +335,7 @@ const PND={
     if(!R)return true;
     /* The same resolution the badge uses, or the filter and the badge
        disagree about the same record. */
-    const a=R.levelOf(e&&e.alert),sv=R.levelOf(e&&e.severity);
-    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
-    if(!known.length)return key==='UNKNOWN';
-    return known[0]===key;
+    return this.riskKey(e)===key;
   },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},
@@ -655,14 +692,31 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
            rated" and showed nothing at all. */
         const was=sel.value;
         const box=document.createElement('select');
-        box.innerHTML=PND.riskLevelOptions();
+        box.innerHTML=PND.riskLevelOptions(undefined,PND._riskRecords);
         while(box.firstChild)sel.insertBefore(box.firstChild,node);
         node.remove();
+        sel.dataset.riskFilter='1';
         sel.value=was;
         if(sel.selectedIndex<0)sel.selectedIndex=0;
       }
     });
   }
+  /* Once the records are known, each risk filter keeps only the levels they
+     hold, plus whichever one the reader has chosen. */
+  PND.pruneRiskFilters=function(records){
+    PND._riskRecords=records;
+    if(typeof document==='undefined')return;
+    const keys=new Set(((window.PNDRisk&&window.PNDRisk.LEVELS)||[]).map(l=>l.key).concat(['UNKNOWN']));
+    document.querySelectorAll('select[data-risk-filter]').forEach(sel=>{
+      const was=sel.value;
+      Array.from(sel.options).filter(o=>keys.has(o.value)).forEach(o=>o.remove());
+      const box=document.createElement('select');
+      box.innerHTML=PND.riskLevelOptions(was,records);
+      while(box.firstChild)sel.appendChild(box.firstChild);
+      sel.value=was;
+      if(sel.selectedIndex<0)sel.selectedIndex=0;
+    });
+  };
   /* A skip link, and every part of the page inside a named landmark. Each
      page's hero and the enrichment section sat outside <main>, unnamed, and
      no page had a way past the header and its links. */
