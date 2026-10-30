@@ -50,7 +50,7 @@
       { name: 'NDMA', full: 'National Disaster Management Authority', url: 'https://ndma.gov.in/' }] },
     { region: 'United States', agencies: [
       { name: 'NWS', full: 'NOAA National Weather Service', url: 'https://www.weather.gov/' },
-      { name: 'USGS', full: 'U.S. Geological Survey (earthquakes)', url: 'https://earthquake.usgs.gov/' }] },
+      { name: 'USGS', full: 'United States Geological Survey', url: 'https://earthquake.usgs.gov/' }] },
     { region: 'Worldwide', agencies: [
       { name: 'GDACS', short: 'GDACS', full: 'Global Disaster Alert and Coordination System', url: 'https://www.gdacs.org/' }] }
   ];

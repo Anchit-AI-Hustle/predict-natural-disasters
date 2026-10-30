@@ -91,6 +91,11 @@ jobs:
       - name: Record significant observed disasters
         run: node tools/record-observed.js /tmp/events.json data/observed-disasters.json data/outlook-ledger.json
 
+      # What /accuracy shows first, graded from the ledgers just written, so
+      # the page need not download and grade 8 MB of them on a phone.
+      - name: Write the track record summary
+        run: node tools/build-accuracy-summary.js
+
       - name: Commit the ledger when it changed
         run: |
           set -euo pipefail
@@ -103,7 +108,7 @@ jobs:
           obs=$(node -e "console.log((require('./data/observed-disasters.json').events||[]).length)")
           git config user.name "disaster-refresh"
           git config user.email "noreply@anthropic.com"
-          git add data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json data/observed-disasters.json
+          git add data/outlook-ledger.json data/forecast-changes.json data/scan-ledger.json data/observed-disasters.json data/accuracy-summary.json data/forecast-verdicts.json
           # Every run deploys, including the quiet ones.
           #
           # These used to be tagged "[ledger]" so vercel.json's ignoreCommand

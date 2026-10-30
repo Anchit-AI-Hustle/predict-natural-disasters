@@ -141,6 +141,19 @@ async function build() {
   vec('portal.riskLabel', e => P.riskLabel(e), recs);
   vec('portal.matchesRiskLevel', (e, k) => P.matchesRiskLevel(e, k), [[{ severity: 'Severe', alert: 'Orange' }, 'SEVERE'], [{ severity: 'Severe', alert: 'Orange' }, 'MODERATE'], [{ alert: 'Orange' }, 'MODERATE'], [{}, 'UNKNOWN'], [{}, 'LOW'], [{ alert: 'Green' }, ''], [{ severity: 'Informational', alert: 'Red' }, 'LOW']]);
   vec('portal.riskTagHtml', e => P.riskTag(e), [{ severity: 'Severe', alert: 'Orange', source: 'GDACS' }, { alert: 'Red', alertSource: 'JTWC', source: 'NOAA National Hurricane Center' }, {}]);
+  /* The one level function (launch audit C9 and A6): model forecasts, storm
+     category floors, strong earthquakes with no assessment, and whose
+     impact estimate a level is. */
+  const levelRecs = [{ forecastKind: 'model-advance', alert: 'High', severity: 'Severe', forecast: true }, { forecastKind: 'model-advance', alert: 'Moderate', severity: 'Moderate', forecast: true },
+    { type: 'Tropical Cyclone', title: 'Storm risk from Super Typhoon In-fa - 5-day forecast', alert: 'Watch', severity: 'Informational', forecast: true },
+    { type: 'Tropical Cyclone', title: 'Typhoon Example', alert: 'Green', source: 'GDACS' }, { type: 'Tropical Cyclone', title: 'Hurricane Example (Category 3)', alert: 'Green' },
+    { type: 'Earthquake', magnitude: 6.9, severity: 'Informational', source: 'USGS' }, { type: 'Earthquake', magnitude: 6.5, pagerAlert: 'green', severity: 'Informational', source: 'USGS' },
+    { type: 'Flood', alert: 'Green', severity: 'Informational', source: 'GDACS' }, { type: 'Tropical Cyclone', alert: 'Orange', alertBasis: 'derived-from-intensity', severity: 'Moderate', source: 'GDACS' }, {}];
+  vec('risk.keyFor', e => R.keyFor(e), levelRecs);
+  vec('risk.describe', e => R.describe(e), levelRecs);
+  vec('portal.riskTagHtml.levels', e => P.riskTag(e), levelRecs);
+  vec('hazards.cycloneCategoryRank', e => H.cycloneCategoryRank(e), levelRecs.concat([{ type: 'Tropical Cyclone', category: 4 }, { type: 'Flood', title: 'Category 5 flood' }]));
+  vec('portal.provenanceOf', e => P.provenanceOf(e), [{ forecast: true, forecastKind: 'model-advance' }, { forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: 'x' }, { forecast: true, forecastKind: 'aftershock-sequence', forecastOf: 'q' }, { forecast: true, forecastKind: 'frozen-benchmark' }, { forecast: false }]);
   vec('portal.riskLevelOptions', () => R.LEVELS.slice().reverse().map(l => ({ value: l.key, label: l.label })).concat([{ value: 'UNKNOWN', label: 'Not rated' }]), [[]]);
 
   // ---------- hazard-model

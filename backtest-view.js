@@ -12,9 +12,9 @@
 'use strict';
 
 const HAZARDS = [
-  ['heat', 'Extreme heat', 'a daily high at or above the place’s 95th percentile for the date'],
-  ['rain', 'Heavy rain', 'rain at or above the place’s 99th percentile for the month, and at least 10 mm'],
-  ['fire', 'Wildfire weather', 'a Fire Weather Index in the “very high” class and at or above the place’s 95th percentile']
+  ['heat', 'Unusually hot days', 'a daily high at or above the place’s 95th percentile for the date'],
+  ['rain', 'Unusually heavy rain', 'rain at or above the place’s 99th percentile for the month, and at least 10 mm'],
+  ['fire', 'High fire-weather index', 'a Fire Weather Index in the “very high” class and at or above the place’s 95th percentile']
 ];
 const LEADS = [3, 5];
 

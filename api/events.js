@@ -52,6 +52,11 @@ const MODEL_RUN_MAX_AGE_MS = 36 * 3600e3;
 let MODEL_OUTLOOKS;
 try { MODEL_OUTLOOKS = require('../data/model-outlooks.json'); }
 catch (e) { MODEL_OUTLOOKS = null; }
+/* The models' hazard names. A run made before they were renamed carries the
+   old "Extreme heat" and "Heavy rain and flooding" titles; they are shown
+   under the names that say what is measured (forecast-models.js modelDisplay). */
+let MODELS = null;
+try { MODELS = require('../forecast-models.js'); } catch (e) { MODELS = null; }
 
 /* A bound against a runaway upstream, not a quota. At 24 it was the latter:
    measured on the live feed of 26 September 2026, 40 active official signals
@@ -2204,8 +2209,15 @@ async function buildFeed(cron) {
       updated: new Date(anchorMs).toISOString(), issuedAt: new Date(anchorMs).toISOString(),
       targetStart: new Date(anchorMs).toISOString(),
       targetEnd: new Date(windowEndMs).toISOString(),
-      details: 'Our own ' + windowText(horizonFor(e.type)) + ' forecast, made from a current report by ' + e.source +
-        '. The period matches how long this kind of hazard usually lasts. What may happen: ' +
+      /* A restatement, said as one. These copy an agency's current alert (an
+         NWS warning, a GDACS alert, a cyclone advisory) and keep it open for
+         as long as the hazard usually lasts. They were counted and described
+         as "our own forecast"; they are not a forecast made in advance, and
+         since verify-1.4.0 they are graded only on new impact reported inside
+         the window and reported apart from the advance forecasts. */
+      restatesAlert: true,
+      details: 'A restatement of a current ' + e.source + ' report, kept open as a ' + windowText(horizonFor(e.type)) +
+        ' outlook because that is how long this kind of hazard usually lasts. It is not a forecast made in advance and not a test of our skill. What may happen: ' +
         mechanism(e.type) + '. ' + FORECAST_DISCLAIMER,
       /* An outlook is no more precise than the area it is issued for, and
          the title above names that area: the signal's country where it has
@@ -2224,13 +2236,12 @@ async function buildFeed(cron) {
       forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: e.id,
       /* Said as what the level rests on. A storm's colour is this site's
          reading of its wind speed, not an alert anyone issued. */
-      confidence: e.alertBasis === 'derived-from-intensity'
-        ? (e.alert === 'Red' ? 'Higher - a major storm (category 3 or stronger)'
-          : e.alert === 'Orange' ? 'Moderate - a hurricane-strength storm'
-            : 'Watch - a weaker storm')
-        : (e.alert === 'Red' ? 'Higher - the agency issued its highest (red) alert'
-          : e.alert === 'Orange' ? 'Moderate - the agency issued an orange alert'
-            : 'Watch - the agency issued a lower-level alert'),
+      /* Not a confidence: nothing measured how often these come true. The
+         words used to be a risk level ("Watch - a weaker storm") in a field
+         called confidence, a third scale on the same page as the badge. */
+      confidence: 'Not measured. This restates the agency\u2019s ' +
+        (e.alertBasis === 'derived-from-intensity' ? 'report of the storm\u2019s strength' : (e.alert ? e.alert.toLowerCase() + ' alert' : 'report')) +
+        '; we have no record of how often outlooks like it come true.',
       evidence: 'Based on the ' + e.source + ' report “' + e.title + '”' +
         (e.alert ? ' (' + e.alert.toLowerCase() + ' level)' : '') + ', last updated ' + utcText(e.updated) + '.',
       sourceUrl: e.sourceUrl || '',
@@ -2333,7 +2344,8 @@ async function buildFeed(cron) {
       if (!mo || !mo.targetEnd) continue;
       const endMs = Date.parse(mo.targetEnd);
       if (Number.isFinite(endMs) && endMs > now.getTime()) {
-        outlooks.push(Object.assign({}, mo, {
+        const shown = MODELS && MODELS.modelDisplay ? MODELS.modelDisplay(mo) : null;
+        outlooks.push(Object.assign({}, mo, shown ? { type: shown.type, title: shown.title, hazardLabel: shown.hazardLabel } : {}, {
           updated: mo.updated || mo.issuedAt || new Date(now).toISOString(),
           precision: mo.precision || 'regional',
           forecastScope: mo.forecastScope || 'regional',

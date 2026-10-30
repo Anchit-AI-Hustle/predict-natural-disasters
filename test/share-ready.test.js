@@ -90,7 +90,9 @@ test('the risk filter on Alerts shows the alerts at that level, not none', async
     const badges = cards.map(c => (c.querySelector('.risk') || {}).textContent);
     if (cards.length) shownSomewhere++;
     const label = [...sel.options].find(o => o.value === lv).textContent.trim();
-    for (const b of badges) assert.equal(b.trim(), label, 'filtered to ' + label + ' but a card reads ' + b);
+    /* A level that is an agency's impact estimate names the agency after
+       the level (launch audit A6): "Moderate expected impact (GDACS orange)". */
+    for (const b of badges) assert.ok(b.trim() === label || b.trim().startsWith(label + ' expected impact ('), 'filtered to ' + label + ' but a card reads ' + b);
     assert.ok(cards.length <= all);
   }
   assert.ok(shownSomewhere >= 1, 'no level shows a single alert');

@@ -149,7 +149,7 @@ test('the shipped ND-001 record keeps the corridor it froze', () => {
 });
 
 test('what the comparison calls "predicted" is what was recorded', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000,
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000,
     waitFor: d => (d.getElementById('mTotal') || {}).textContent !== '-' });
   const doc = window.document;
   const card = [...doc.querySelectorAll('#cmpList .cmp')]

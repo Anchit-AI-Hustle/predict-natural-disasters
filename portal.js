@@ -34,9 +34,16 @@ const PND={
   /* A forecast's name as a reader should see it. Forecasts recorded before
      September 2026 were titled "3-day Flood risk outlook - Nepal", and the
      record keeps them as written; this only changes how that name is shown. */
-  titleOf(e){const t=String((e&&e.title)||'');let m=/^(\d+)-(day|hour) (.+?) risk outlook - (.+)$/.exec(t);
+  titleOf(e){
+    /* Dashes from an upstream title read as one plain hyphen: a feed title
+       put an em dash on a page whose own text never uses one. */
+    let t=String((e&&e.title)||'').replace(/\s*[\u2012-\u2015]\s*/g,' - ');
+    /* A weather model's forecast is named for what it measures, whenever it
+       was published (forecast-models.js MODEL_HAZARDS). */
+    if(e&&e.forecastKind==='model-advance')t=t.replace(/^Extreme heat(?= forecast)/,'Unusually hot days').replace(/^Heavy rain and flooding(?= forecast)/,'Unusually heavy rain').replace(/^Wildfire weather(?= forecast)/,'High fire-weather index');
+    let m=/^(\d+)-(day|hour) (.+?) risk outlook - (.+)$/.exec(t);
     if(m)return m[3]+' risk in '+m[4]+' - '+m[1]+'-'+m[2]+' forecast';
-    m=/^Aftershock-sequence outlook - (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^\d/.test(m[1])?'':'near ')+m[1]+' - 7-day forecast';
+    m=/^Aftershock-sequence outlook - (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^(?:\d|(?:north|south|east|west|near|off)\b)/i.test(m[1])?'':'near ')+m[1]+' - 7-day forecast';
     return t;},
   /* How many countries a list names. A drought's country field lists every
      country it covers, and counting that string as one country - and a
@@ -51,6 +58,31 @@ const PND={
   observed(list){return (list||[]).filter(e=>e&&e.live!==false&&!e.forecast)},
   /* Our forecasts whose window has not ended. One that ended is graded, not open. */
   openForecasts(list){return (list||[]).filter(e=>e&&e.live!==false&&e.forecast&&!e.windowClosed)},
+  /* What a forecast is, said the same way on every page. "Based on a current
+     report" sat on our weather models' forecasts, which are based on no
+     report; NWS warnings copied and kept open for days were "our forecasts". */
+  provenanceOf(e){
+    if(!e||!e.forecast)return 'Official report';
+    if(e.forecastKind==='model-advance')return 'Made in advance by our model';
+    if(e.forecastKind==='frozen-benchmark')return 'Test case, not made in advance';
+    if(e.forecastKind==='aftershock-sequence')return 'Aftershock forecast, after an earthquake';
+    if(e.restatesAlert||e.forecastKind==='signal-derived-outlook'||e.forecastOf)return 'Restates an agency alert';
+    return 'Our own estimate';
+  },
+  /* How many of each, for a line under a count of forecasts. */
+  forecastKinds(list){
+    const n={model:0,restated:0,aftershock:0,test:0,other:0};
+    (list||[]).forEach(e=>{const p=this.provenanceOf(e);
+      if(/^Made in advance/.test(p))n.model++;else if(/^Restates/.test(p))n.restated++;
+      else if(/^Aftershock/.test(p))n.aftershock++;else if(/^Test case/.test(p))n.test++;else n.other++});
+    const parts=[];
+    if(n.model)parts.push(n.model+' made in advance by our weather models');
+    if(n.restated)parts.push(n.restated+' restating an agency alert');
+    if(n.aftershock)parts.push(n.aftershock+' aftershock forecast'+(n.aftershock===1?'':'s'));
+    if(n.test)parts.push(n.test+' test case'+(n.test===1?'':'s'));
+    if(n.other)parts.push(n.other+' other');
+    return Object.assign(n,{text:parts.length?'Of these: '+parts.join(', ')+'.':''});
+  },
   /* A report an agency rated red, orange or high. Never one of our forecasts. */
   isHighAlert(e){return !!e&&!e.forecast&&['Red','Orange','High'].includes(e.alert)},
   /* A warning an agency issued and that is in force, as the feed classifies it
@@ -178,9 +210,8 @@ const PND={
   riskLabel(e){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return 'Not rated';
-    const sv=R.levelOf(e&&e.severity),a=R.levelOf(e&&e.alert);
-    const k=sv!=='UNKNOWN'?sv:(a!=='UNKNOWN'?a:null);
-    return k&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+    const k=R.keyFor?R.keyFor(e||{}):'UNKNOWN';
+    return k!=='UNKNOWN'&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
   },
   riskTag(e,opts){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
@@ -188,20 +219,17 @@ const PND={
     const o=opts||{};
     const rawAlert=e&&e.alert,rawSev=e&&e.severity;
     const a=R.levelOf(rawAlert),sv=R.levelOf(rawSev);
-    /* Not the higher of the two: severityOf already takes the worse of what
-       was observed and what the authority assessed, so the severity subsumes
-       the alert. Taking the maximum across both counted the alert twice, on
-       two scales that name the same rank differently - a forecast carrying
-       alert "High" was published as "Severe" because the severity table calls
-       rank 4 Severe. The severity is the record's answer where it has one. */
-    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
-    if(!known.length){
+    /* The level is risk.js keyFor, the one answer the filter, the calendar
+       and the map read too. */
+    const d=R.describe?R.describe(e||{}):{key:(sv!=='UNKNOWN'?sv:a),text:null,basis:null};
+    const top=d.key;
+    if(top==='UNKNOWN'){
       /* Never a made-up level. These lists used to print "Live" or "Watch"
          where a record carried no level at all, which invents one. */
+      const mag=Number(e&&e.magnitude);
       return R.badgeForLevel('UNKNOWN',{text:'Not rated',className:o.className,
-        title:'No alert level was published for this record and no severity has been assessed for it.'});
+        title:Number.isFinite(mag)&&mag>=6?'No impact assessment has been published for this earthquake yet, so it has no level. Its magnitude is a measurement, not a level.':'No alert level was published for this record and no severity has been assessed for it.'});
     }
-    const top=known.reduce((x,y)=>R.BY_KEY[x].rank>=R.BY_KEY[y].rank?x:y);
     const from=[];
     /* A merged storm can carry a level another agency gave; it names that
        agency, not the one whose report leads the record. */
@@ -209,9 +237,12 @@ const PND={
     if(a!=='UNKNOWN')from.push('the alert level \u201c'+rawAlert+'\u201d'+
       (alertBy?' published by '+this.shortSource(alertBy):''));
     if(sv!=='UNKNOWN')from.push('an assessed severity of \u201c'+rawSev+'\u201d');
+    const H=(typeof window!=='undefined'&&window.PNDHazards)||null;
+    if(H&&H.cycloneCategoryRank&&R.SEVERITY_KEY[H.cycloneCategoryRank(e)]===top&&top!==(sv!=='UNKNOWN'?sv:a))from.push('the storm\u2019s category, which is a floor');
+    if(e&&e.forecastKind==='model-advance')from.splice(0,from.length,'our weather model: High where the place\u2019s 99th percentile is forecast to be crossed, Moderate for its 95th');
     const title=R.BY_KEY[top].label+' on this site\u2019s six-level risk scale, from '+
-      from.join(' and ')+(a!=='UNKNOWN'&&sv!=='UNKNOWN'&&a!==sv?'. Where these differ the higher decides.':'.');
-    return R.badgeForLevel(top,{className:o.className,title});
+      (from.join(' and ')||'its record')+'.';
+    return R.badgeForLevel(top,{className:o.className,title,text:d.text||undefined});
   },
   /*
    * A source name short enough to sit in a row of pills.
@@ -262,6 +293,17 @@ const PND={
    * "Moderate" finds a GDACS Orange as well as a record already called
    * Moderate.
    */
+  /* A level nothing in the list sits at is not offered: the forecast list
+     offered Extreme, Severe and High, and each found nothing. The chosen one
+     stays, so a filter never switches itself off. Each says how many. */
+  pruneRiskOptions(sel,records){
+    if(!sel)return;
+    [...sel.options].forEach(o=>{if(!o.value)return;
+      const n=(records||[]).filter(e=>this.matchesRiskLevel(e,o.value)).length;
+      if(!o.dataset.label)o.dataset.label=o.textContent;
+      o.textContent=o.dataset.label+' ('+n+')';
+      o.hidden=n===0&&sel.value!==o.value;o.disabled=n===0&&sel.value!==o.value;});
+  },
   riskLevelOptions(selected){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return '';
@@ -299,10 +341,7 @@ const PND={
     if(!R)return true;
     /* The same resolution the badge uses, or the filter and the badge
        disagree about the same record. */
-    const a=R.levelOf(e&&e.alert),sv=R.levelOf(e&&e.severity);
-    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
-    if(!known.length)return key==='UNKNOWN';
-    return known[0]===key;
+    return (R.keyFor?R.keyFor(e||{}):'UNKNOWN')===key;
   },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},

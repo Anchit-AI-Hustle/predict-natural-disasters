@@ -72,7 +72,7 @@ test('the track record shows the real backtest: both horizons, sample sizes and 
   const all = rows.map(tr => tr.textContent).join('\n');
   assert.match(all, /3 days/); assert.match(all, /5 days/);
   const t = REAL.results['heat@3'];
-  const heat3 = rows.find(tr => /Extreme heat/.test(tr.textContent) && /3 days/.test(tr.textContent)).textContent;
+  const heat3 = rows.find(tr => /Unusually hot days/.test(tr.textContent) && /3 days/.test(tr.textContent)).textContent;
   assert.ok(heat3.includes(t.days.toLocaleString('en-GB')), 'sample size missing: ' + heat3);
   assert.ok(heat3.includes(pct(t.hits / (t.hits + t.misses))), 'hit rate missing: ' + heat3);
   assert.ok(heat3.includes(pct((t.hits + t.falseAlarms) / t.days)), 'chance baseline missing: ' + heat3);
@@ -218,7 +218,7 @@ test('published model forecasts are graded by hazard, misses and pending include
   const d = r.document;
   assert.equal(d.getElementById('pubStatus').dataset.state, 'ready');
   const rows = [...d.querySelectorAll('#pubRows tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.trim()));
-  const heat = rows.find(c => /heat/i.test(c[0]));
+  const heat = rows.find(c => /hot days/i.test(c[0]));
   /* Published, correct, false alarms, missed days, waiting. */
   assert.deepEqual(heat.slice(1), ['3', '1', '1', '2', '1'], 'heat row: ' + heat.join(' | '));
   const rain = rows.find(c => /rain/i.test(c[0]));

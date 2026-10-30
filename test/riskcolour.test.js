@@ -277,7 +277,10 @@ test('a badge never shows a provider\u2019s colour word as its label', async () 
     for (const el of r.document.querySelectorAll('.risk')) {
       const text = (el.textContent || '').trim();
       if (COLOUR_WORDS.test(text)) bad.push(page + ': badge reads "' + text + '"');
-      else if (!LEVELS.includes(text)) bad.push(page + ': badge reads "' + text + '", not a level on the scale');
+      /* Where the level is an agency's impact estimate the badge says whose
+         (launch audit A6): "Low expected impact (USGS PAGER green)". The
+         level still leads, and the colour is named as the agency's. */
+      else if (!LEVELS.includes(text) && !LEVELS.some(l => new RegExp('^' + l + ' expected impact \\((?:USGS PAGER|GDACS) (?:green|yellow|orange|red)\\)$').test(text))) bad.push(page + ': badge reads "' + text + '", not a level on the scale');
       const title = el.getAttribute('title') || '';
       if (!/risk scale|No alert level was published/.test(title)) {
         bad.push(page + ': badge "' + text + '" does not say what it was derived from');

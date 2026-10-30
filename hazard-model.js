@@ -187,6 +187,12 @@
     var t = String(type || '');
     if (HAZARDS[t]) return HAZARDS[t];
     var k = t.toLowerCase();
+    /* The weather models' own hazards (forecast-models.js MODEL_HAZARDS) are
+       weather lines, not disasters, and are named so; they belong to the
+       family of the disaster they bear on. */
+    if (/^unusually hot days$/.test(k)) return HAZARDS['Extreme Heat'];
+    if (/^unusually heavy rain$/.test(k)) return HAZARDS.Flood;
+    if (/^high fire-weather index$/.test(k)) return HAZARDS.Wildfire;
     // Ordered so a compound type lands on the entry that describes it best.
     if (/aftershock/.test(k)) return HAZARDS['Earthquake aftershock sequence'];
     if (/earthquake|seismic/.test(k)) return HAZARDS.Earthquake;
@@ -286,6 +292,16 @@
      * or Watch.
      */
     var issued = 0;
+    /* A weather model's forecast is not derived from anyone's alert, so it
+       is not set one step below one. Its "High" means the place's
+       99th percentile was forecast to be crossed and is ranked as high;
+       its "Moderate", the 95th, as moderate. They were published as
+       Moderate and Watch. */
+    if (e.forecastKind === 'model-advance') {
+      var mk = String(e.alert || '');
+      if (mk === 'High') return Math.max(assessed, wind, 4);
+      if (mk === 'Moderate') return Math.max(assessed, wind, 3);
+    }
     switch (String(e.alert || '')) {
       case 'Red': issued = 4; break;
       case 'Orange': issued = 3; break;
@@ -310,8 +326,35 @@
    * The severity to publish: the worse of what was observed and what the
    * issuing authority assessed. Never below Informational.
    */
+  /*
+   * A named storm is never shown below its agency category.
+   *
+   * GDACS colours a cyclone by the population its winds reach, so a super
+   * typhoon over open sea is Green, and an outlook derived from it was then
+   * set a step lower still: "Low · Storm risk from Super Typhoon In-fa". The
+   * category the agency gave the storm is a floor, on the same steps as the
+   * wind speed: a tropical storm Minor (Watch), a typhoon, hurricane or
+   * category 1 to 2 Moderate, category 3 Severe, category 4 to 5 or a super
+   * typhoon Extreme.
+   */
+  function cycloneCategoryRank(e) {
+    if (!e) return 0;
+    var t = String(e.type || '') + ' ' + String(e.title || '') + ' ' + String(e.name || '') + ' ' + String(e.region || '');
+    if (!/cyclone|hurricane|typhoon|tropical storm/i.test(t)) return 0;
+    var cat = Number(e.category);
+    var m = /\bcategory\s*([1-5])\b/i.exec(t);
+    if (!(cat >= 1 && cat <= 5) && m) cat = +m[1];
+    var r = 0;
+    if (/\bsuper\s+typhoon\b/i.test(t)) r = 5;
+    else if (cat >= 4) r = 5;
+    else if (cat === 3) r = 4;
+    else if (cat >= 1 || /\b(?:typhoon|hurricane)\b/i.test(t)) r = 3;
+    else if (/\btropical storm\b/i.test(t)) r = 2;
+    return r;
+  }
+
   function severityOf(e) {
-    var r = Math.max(impactRank(e || {}), alertRank(e || {}), 1);
+    var r = Math.max(impactRank(e || {}), alertRank(e || {}), cycloneCategoryRank(e || {}), 1);
     return BY_RANK[r];
   }
   function severityRank(e) { return RANK[severityOf(e)]; }
@@ -1077,7 +1120,7 @@
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
-    severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
+    severityOf: severityOf, severityRank: severityRank, severityRanks: RANK, cycloneCategoryRank: cycloneCategoryRank,
     impactRank: impactRank, alertRank: alertRank,
     leadTimeHours: leadTimeHours, leadTimeText: leadTimeText,
     keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,

@@ -512,11 +512,11 @@ test('a forecast cannot be verified by the snapshot it was derived from', () => 
      later scan ever showing anything. */
   const V = require(path.join(ROOT, 'verification-model.js'));
   const now = Date.now();
-  const snapshot = (scanId, at) => {
+  const snapshot = (scanId, at, deaths) => {
     const cyclone = { id: 'gdacs-tc-1', type: 'Tropical Cyclone', title: 'Tropical Cyclone RAI-26',
       source: 'GDACS', sourceUrl: 'https://gdacs.example/tc1', country: 'Philippines',
       region: 'Eastern Visayas', lat: 11.2, lon: 125.0, alert: 'Orange', severity: 'SEVERE',
-      deaths: 4, startedAt: new Date(now - 30 * 36e5).toISOString(), updated: at,
+      deaths: deaths || 4, startedAt: new Date(now - 30 * 36e5).toISOString(), updated: at,
       locationPrecision: 'incident', evidenceState: 'observed' };
     const outlook = { id: 'OUT-tc-1', type: 'Tropical Cyclone',
       title: '2-day Tropical Cyclone outlook - Eastern Visayas', source: 'Derived',
@@ -568,17 +568,21 @@ test('a forecast cannot be verified by the snapshot it was derived from', () => 
   const alone = grade();
   assert.notEqual(alone.classification, 'HIT',
     'an outlook was verified by the very snapshot it was derived from');
-  assert.equal(alone.gradeable, false);
-  assert.match(alone.classificationReason, /whether it continued|neither way/i);
+  /* With sources whose silence counts and no new impact after the snapshot,
+     it is a false alarm (verify-1.4.0); before, it could not be graded. */
+  assert.equal(alone.classification, 'MISS_FALSE_POSITIVE');
+  assert.match(alone.classificationReason, /no new damage or impact/i);
 
-  /* The control, and the thing that must still work: a later scan carries the
-     same cyclone, which is genuine evidence that it went on. */
-  const second = write(snapshot('scan-2', new Date(now + 2 * 36e5).toISOString()), 'run2');
+  /* The control, and the thing that must still work: a later scan reports a
+     new impact of the same cyclone, which is what a continuation outlook is
+     graded on since verify-1.4.0 (the cyclone merely still being listed is
+     the alert it restated, and no longer counts). */
+  const second = write(snapshot('scan-2', new Date(now + 2 * 36e5).toISOString(), 9), 'run2');
   run('record-observed.js', second, observed);
   const after = grade();
   assert.equal(after.classification, 'HIT',
-    'a later scan still carrying the hazard is what a continuation outlook claims');
-  assert.match(after.classificationReason, /still being reported/i);
+    'a new impact reported by a later scan is what a continuation outlook claims');
+  assert.match(after.classificationReason, /deaths rose to 9/i);
   fs.rmSync(dir, { recursive: true, force: true });
 });
 

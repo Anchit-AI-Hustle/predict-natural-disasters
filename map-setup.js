@@ -1175,6 +1175,14 @@
     /* Without the scale there is no honest marker to draw: a plain one that
        states no level is better than one that states the wrong level. */
     if (!R) return L.marker(latlng, opts || {});
+    /* Given the record itself, the marker takes the level the badge shows
+       (risk.js keyFor). Given only the alert word, it took that colour, and a
+       super typhoon GDACS coloured Green was Extreme on its card and Low on
+       the map. */
+    if (value && typeof value === 'object' && R.keyFor) {
+      var k = R.keyFor(value);
+      value = k === 'UNKNOWN' ? '' : R.BY_KEY[k].label;
+    }
     var icon = R.markerIcon(value, label);
     var o = opts || {};
     /* The mark keeps the size its level gives it (12 to 21px); the area that
