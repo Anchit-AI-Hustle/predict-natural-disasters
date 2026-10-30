@@ -203,7 +203,9 @@ test('the About page states no coverage figure it cannot show', () => {
   assert.ok(!/>195</.test(s), 'the feed names far fewer countries than 195');
   assert.match(s, /id="aCountries"/, 'the country figure should come from the feed');
   assert.match(s, /id="aHazards"/, 'the hazard-class figure should come from the feed');
-  assert.match(s, /api\/events\?summary=1/, 'it should read the published counts');
+  /* Counted from the feed as every other page counts them (launch audit D8):
+     the feed's summary said 206 countries while /regions said 136. */
+  assert.match(s, /PND\.countryCount\(PND\.observed\(/, 'it should count countries as every page does');
 });
 
 test('no page promises a fixed day window the feed can exceed', () => {

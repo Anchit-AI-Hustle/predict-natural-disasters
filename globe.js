@@ -494,7 +494,7 @@
     'float hash(vec2 p){vec3 p3=fract(vec3(p.xyx)*0.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}\n';
   var PRESETS = [
     { key: 'normal', label: 'Normal', shader: null },
-    { key: 'nvg', label: 'NVG', animated: true, shader:
+    { key: 'nvg', label: 'Night vision', animated: true, shader:
       'void main(){vec2 uv=v_textureCoordinates;vec2 dims=colorTextureDimensions;' +
       'vec2 c=uv*2.0-1.0;c.x*=dims.x/dims.y;float r=length(c);' +
       'float tube=pow(1.0-smoothstep(0.78,1.18,r),0.7)*(1.0-r*r*0.18);' +
@@ -503,7 +503,7 @@
       'l=clamp(l+(hash(uv*dims+fract(time*0.37)*311.0)-0.5)*0.12,0.0,1.0);' +
       'float scan=0.93+0.07*sin(uv.y*dims.y*3.14159);' +
       'out_FragColor=vec4(vec3(0.24,1.0,0.38)*l*scan*tube,1.0);}' },
-    { key: 'flir', label: 'FLIR', animated: true, shader:
+    { key: 'flir', label: 'Grey glow', animated: true, shader:
       'void main(){vec2 uv=v_textureCoordinates;vec2 dims=colorTextureDimensions;vec2 t=1.0/dims;' +
       'vec3 b=vec3(0.0);float w=0.0;' +
       'for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){float k=(x==0&&y==0)?4.0:1.0;' +
@@ -512,7 +512,7 @@
       'temp=clamp(temp+(hash(uv*dims*0.5+floor(time*24.0))-0.5)*0.05,0.0,1.0);' +
       'vec2 c=uv-0.5;float vig=1.0-dot(c,c)*0.9;' +
       'out_FragColor=vec4(vec3(temp)*vig,1.0);}' },
-    { key: 'crt', label: 'CRT', animated: true, shader:
+    { key: 'crt', label: 'Old screen', animated: true, shader:
       'vec2 barrel(vec2 uv,float k){vec2 c=uv*2.0-1.0;float r2=dot(c,c);c*=1.0+r2*k;return c*0.5+0.5;}' +
       'void main(){vec2 dims=colorTextureDimensions;vec2 uv=barrel(v_textureCoordinates,0.08);' +
       'if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0){out_FragColor=vec4(0.0,0.0,0.0,1.0);return;}' +
@@ -521,7 +521,7 @@
       'col=floor(col*24.0+0.5)/24.0;' +
       'float scan=0.82+0.18*sin(uv.y*dims.y*3.14159);float mask=0.92+0.08*sin(uv.x*dims.x*2.094);' +
       'out_FragColor=vec4(col*scan*mask*(0.97+0.03*sin(time*60.0))*1.12,1.0);}' },
-    { key: 'noir', label: 'Noir', shader:
+    { key: 'noir', label: 'Black and white', shader:
       'void main(){vec2 uv=v_textureCoordinates;vec4 color=texture(colorTexture,uv);' +
       'float luma=dot(color.rgb,vec3(0.299,0.587,0.114));vec3 c=clamp((vec3(luma)-0.5)*2.2+0.5,0.0,1.0);' +
       'c+=(fract(sin(dot(uv*colorTextureDimensions,vec2(12.9898,78.233)))*43758.5453)-0.5)*0.04;' +
@@ -755,9 +755,10 @@
         if (!c || !isFinite(c.latitude)) return;
         var lat = c.latitude * 180 / Math.PI, lon = c.longitude * 180 / Math.PI;
         pos.textContent = dms(lat, 'N', 'S') + ' ' + dms(lon, 'E', 'W');
-        var g = mgrs(lat, lon);
-        grid.textContent = g ? 'MGRS ' + g : '';
-        alt.textContent = 'ALT ' + Math.round(c.height / 1000).toLocaleString('en-GB') + ' KM';
+                /* Plain words on a safety site: a military grid reference and "ALT"
+           read like a game's heads-up display and told a reader nothing. */
+        grid.textContent = '';
+        alt.textContent = 'Height ' + Math.round(c.height / 1000).toLocaleString('en-GB') + ' km';
         var R = 6371, horizon = Math.acos(R / (R + Math.max(0, c.height) / 1000));
         var r = Math.PI / 180, n = 0;
         for (var i = 0; i < state.pts.length; i++) {

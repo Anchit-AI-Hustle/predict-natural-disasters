@@ -95,7 +95,7 @@ const S={
      nothing in it. Say which one it is, and say it from the data rather than
      from a guess. */
   /* The same count as PND.countryCount, for the pages that load only this file. */
-  countryCount(list){const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
+  countryCount(list){const N=(typeof window!=='undefined'&&window.PNDCountries)||(typeof require==='function'?require('./country-names.js'):null);if(N)return N.countryCount(list);const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
   emptyHtml(query,pool,all,noun){
     const q=String(query==null?'':query).trim();
     const what=noun||'events';

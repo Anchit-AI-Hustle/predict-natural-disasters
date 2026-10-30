@@ -1,7 +1,13 @@
 const PND={
   /* The visitor's own zone until they pick one: a reader in New York was
      shown every time in IST, beside a trust note in their own zone. */
-  timezone:localStorage.getItem('pnd_timezone')||(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'}catch(e){return 'Asia/Kolkata'}})(),
+  /* Chromium still reports India's zone as Asia/Calcutta, and some systems
+     Asia/Katmandu or Asia/Saigon: the old names of the same zones. Read
+     as written, India saw "GMT+5:30 · Calcutta" on every time and in the
+     menu beside "IST · India". The zone is read under its current name. */
+  ZONE_LEGACY:{'Asia/Calcutta':'Asia/Kolkata','Asia/Katmandu':'Asia/Kathmandu','Asia/Saigon':'Asia/Ho_Chi_Minh','Asia/Rangoon':'Asia/Yangon','Asia/Dacca':'Asia/Dhaka','Asia/Thimbu':'Asia/Thimphu','Asia/Ulan_Bator':'Asia/Ulaanbaatar','Asia/Macao':'Asia/Macau','Asia/Chongqing':'Asia/Shanghai','Asia/Chungking':'Asia/Shanghai','Asia/Harbin':'Asia/Shanghai','Asia/Ujung_Pandang':'Asia/Makassar','Asia/Ashkhabad':'Asia/Ashgabat','Asia/Istanbul':'Europe/Istanbul','Europe/Kiev':'Europe/Kyiv','America/Buenos_Aires':'America/Argentina/Buenos_Aires','Pacific/Truk':'Pacific/Chuuk','Pacific/Ponape':'Pacific/Pohnpei','Atlantic/Faeroe':'Atlantic/Faroe','US/Eastern':'America/New_York','US/Pacific':'America/Los_Angeles','US/Central':'America/Chicago','US/Mountain':'America/Denver'},
+  zoneName(tz){return (PND&&PND.ZONE_LEGACY&&PND.ZONE_LEGACY[tz])||tz},
+  timezone:null,
   /* Lists show what is live. A record its provider stopped updating (the
      feed marks it live:false) still opens on its own page, so a detail page
      asks for everything with {all:true}. */
@@ -49,7 +55,10 @@ const PND={
      country it covers, and counting that string as one country - and a
      storm's "Western Pacific Ocean" as another - is how the homepage came to
      report 195 countries. */
-  countryCount(list){const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
+  /* One name per country (country-names.js), so "Mexico", "México" and "MX"
+     are one country and a ridge in the ocean is none: /about said 206
+     countries while /regions said 136 for the same feed. */
+  countryCount(list){const N=(typeof window!=='undefined'&&window.PNDCountries)||null;if(N)return N.countryCount(list);const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
   /* One answer for each quantity the site states on more than one page.
      Each page counted for itself, so at one moment the same feed read 92 open
      forecasts on the home page and 93 on /forecasts, 687 events here and 780
@@ -110,8 +119,14 @@ const PND={
     if(C&&C.continentNamed(q))return C.onContinent(e,q);
     /* The feed names a record's countries in `countries` as well, and fills it
        from the map outline where a provider gave none. */
+    /* A country exactly, by its one name; anything else as a whole word in
+       the record's place fields (country-names.js). A substring made Niger's
+       page list Nigeria's fires and India's an earthquake on the Western
+       Indian-Antarctic Ridge, and searched each record's description too. */
+    const N=(typeof window!=='undefined'&&window.PNDCountries)||null;
+    if(N)return N.inPlace(e,q);
     const t=String(q||'').toLowerCase().trim();
-    return this.matchesPlace(e,t)||(Array.isArray(e&&e.countries)&&e.countries.some(c=>String(c).toLowerCase().includes(t)));},
+    return this.matchesPlace(e,t)||(Array.isArray(e&&e.countries)&&e.countries.some(c=>String(c).toLowerCase()===t));},
   /* A failed load is not a quiet world. Zeros and a stuck "Loading…" both
      read as nothing happening, so every figure says it is unavailable and
      every list says why it is empty. */
@@ -141,13 +156,13 @@ const PND={
      since the site follows the device's zone, that put
      "America/Argentina/Buenos_Aires" after every time. The locale is fixed so
      the label does not change with the browser's language. */
-  TZ_ALIASES:{'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
-  tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
+  TZ_ALIASES:{'Asia/Kolkata':'IST','Asia/Calcutta':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
+  tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];tz=this.zoneName(tz);if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
     try{const d=at===undefined?new Date(Date.now()):new Date(at);const p=this._fmt('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(isNaN(d)?new Date(Date.now()):d).find(x=>x.type==='timeZoneName');if(p&&p.value)return p.value}catch(e){}
     return 'local time';},
   /* The time zone menu's own words for the chosen zone: its label and its
      city ("GMT-3 · Buenos Aires"). The other options stay IANA ids. */
-  tzMenuLabel(tz=this.timezone,at){if(tz==='Asia/Kolkata')return 'IST · India';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
+  tzMenuLabel(tz=this.timezone,at){tz=this.zoneName(tz);if(tz==='Asia/Kolkata')return 'IST · India';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
   /* One formatter per zone and shape, made once. toLocaleString builds a new
      one on every call, and /accuracy formats thousands of dates: it was the
      largest single cost of that page's 6-second main-thread task. Output is
@@ -319,19 +334,21 @@ const PND={
    * list. Each hazard present is offered with how many records it has, most
    * first; one selected earlier and now absent stays selectable with a 0,
    * rather than the filter quietly switching itself back to everything. */
-  hazardOptions(records,selected){
+  /* byHazard groups the types under the hazard they name (hazardKey), for a
+     list filtered with sameHazard, so an option's count is what it finds. */
+  hazardOptions(records,selected,byHazard){
     const counts={};
-    (records||[]).forEach(e=>{const t=e&&e.type;if(t)counts[t]=(counts[t]||0)+1});
+    (records||[]).forEach(e=>{const t=e&&e.type&&(byHazard?this.hazardKey(e.type):e.type);if(t)counts[t]=(counts[t]||0)+1});
     if(selected&&!(selected in counts))counts[selected]=0;
     const esc=v=>this.esc(v);
     return `<option value="">All hazards (${(records||[]).length})</option>`+
       Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
         .map(([t,n])=>`<option value="${esc(t)}"${selected===t?' selected':''}>${esc(t)} (${n})</option>`).join('');
   },
-  fillHazardSelect(sel,records){
+  fillHazardSelect(sel,records,byHazard){
     if(!sel)return;
     const was=sel.value;
-    sel.innerHTML=this.hazardOptions(records,was);
+    sel.innerHTML=this.hazardOptions(records,was,byHazard);
     sel.value=was;
   },
   /** Does this record sit at the level the filter asks for? */
@@ -519,7 +536,7 @@ const PND={
   collectionUrl(kind){return this.collectionRoutes[kind]||'/events';},
   inferCollection(text=''){const t=String(text).toLowerCase();if(/map/.test(t))return 'map';if(/calamit/.test(t))return 'calamities';if(/forecast|prediction|outlook/.test(t))return 'forecasts';if(/warning|alert/.test(t))return 'alerts';if(/region|country|location/.test(t))return 'regions';if(/histor/.test(t))return 'historical';if(/hazard|disaster type/.test(t))return 'hazards';if(/source/.test(t))return 'sources';if(/verif/.test(t))return 'verification';if(/calendar/.test(t))return 'calendar';if(/compare/.test(t))return 'compare';if(/notification/.test(t))return 'notifications';return 'events';},
   routeFromDataset(el){if(!el||!el.dataset)return '';const d=el.dataset;if(d.href)return this.canonicalDetailUrl(d.href);if(d.eventId)return '/disasters/'+this.enc(d.eventId);if(d.calamityId)return '/calamities/'+this.enc(d.calamityId);if(d.forecastId)return '/forecasts/'+this.enc(d.forecastId);if(d.alertId)return '/alerts/'+this.enc(d.alertId);if(d.historicalId)return '/history/'+this.enc(d.historicalId);if(d.region)return this.regionUrl(d.region);if(d.location)return this.locationUrl(d.location);if(d.hazard)return this.hazardUrl(d.hazard,d.region||'');if(d.source)return this.sourceDetailUrl(d.source);if(d.kind&&d.id)return this.detailUrl(d.kind,{id:d.id,name:d.name||d.id,type:d.type||d.id,source:d.source||d.id});return '';},
-  setTimezone(tz){this.timezone=tz||'Asia/Kolkata';localStorage.setItem('pnd_timezone',this.timezone);location.reload();},
+  setTimezone(tz){this.timezone=this.zoneName(tz||'Asia/Kolkata');localStorage.setItem('pnd_timezone',this.timezone);location.reload();},
   /* The options are built into the markup nav() returns rather than injected
      into it afterwards. Filling the picker from a timer meant the header could
      be in the page with an empty dropdown in it for as long as the timer took
@@ -527,7 +544,7 @@ const PND={
      promise-driven data load can complete in one turn, so that "moment" lasted
      over a second and anything looking at the page in it saw a dropdown with
      nothing to pick. */
-  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'||z===this.timezone?this.tzMenuLabel(z):z)}</option>`).join('');},
+  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].map(z=>this.zoneName(z)).filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'||z===this.timezone?this.tzMenuLabel(z):z)}</option>`).join('');},
   /* Still here for a header put into the page some other way; a no-op once the
      markup already carries its own options. */
   initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s||s.options.length)return;s.innerHTML=this.timezoneOptions();},
@@ -642,6 +659,7 @@ const PND={
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region|Pseudo|European Union|Eurozone|United Nations|Outlying Oceania|^world$/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };
+PND.timezone=PND.zoneName((()=>{try{const v=localStorage.getItem('pnd_timezone');if(v)return v}catch(e){}try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'}catch(e){return 'Asia/Kolkata'}})());
 window.PND=PND;
 const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms,...args)=>__pndSetInterval(fn,Math.min(Number(ms)||60000,60000),...args);
 

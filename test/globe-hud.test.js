@@ -50,7 +50,10 @@ test('the globe carries the HUD: a UTC clock, where the camera is, and the looks
   assert.ok(hud, 'the globe has no HUD');
   assert.match(hud.querySelector('.pnd-hud-clock').textContent, /^LIVE \d{4}-\d\d-\d\d \d\d:\d\d:\d\dZ$/);
   const looks = [...hud.querySelectorAll('.pnd-hud-bar [data-look]')].map(b => b.textContent);
-  assert.deepEqual(looks, ['Normal', 'NVG', 'FLIR', 'CRT', 'Noir', 'NASA today']);
+  /* Plain names for the looks (launch audit D20): NVG, FLIR and CRT read as
+     military jargon on a safety site. */
+  assert.deepEqual(looks, ['Normal', 'Night vision', 'Grey glow', 'Old screen', 'Black and white', 'NASA today']);
+  assert.doesNotMatch(hud.textContent, /MGRS|\bNVG\b|FLIR|\bALT\b/);
   assert.equal(hud.querySelector('[data-look="normal"]').getAttribute('aria-pressed'), 'true');
   /* Nothing on it that is not a fact: no invented classification marking. */
   assert.doesNotMatch(hud.textContent, /SECRET|NOFORN|CLASSIFIED/i);
