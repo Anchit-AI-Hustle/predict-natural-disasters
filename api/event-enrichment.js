@@ -6,10 +6,10 @@ const { queryOf } = require('./_lib/http.js');
  * video reports, official situation reports, verified helplines, national
  * authorities and real donation links.
  *
- * CommonJS on purpose (see api/verified-support.js for why).
+ * CommonJS on purpose (see api/_lib/verified-support.js for why).
  */
 
-const { supportFor, GLOBAL_RELIEF, GLOBAL_DIRECTORIES } = require('./verified-support.js');
+const { supportFor, GLOBAL_RELIEF, GLOBAL_DIRECTORIES } = require('./_lib/verified-support.js');
 
 const REFRESH_SECONDS = 300; // matches the 5-minute refresh cycle
 
@@ -609,7 +609,7 @@ async function handler(req, res) {
          by the same scheduled job as the ledger, which GitHub runs every few
          hours, not every few minutes; what is genuinely per-request is the
          event feed. Saying which is which beats claiming a rate for both. */
-      refreshTarget: 'Events are at most 90 seconds old when a page opens. News and help information is refreshed by a scheduled job',
+      refreshTarget: 'Events are rebuilt once the shared copy is a minute old, and each page shows when its copy was made. News and help information is refreshed by a scheduled job',
       scope: 'Every event in the live feed, worldwide',
       newsProviders: ['Google News', 'Bing News', 'ReliefWeb (UN OCHA)'],
       videoProviders: ['YouTube'],

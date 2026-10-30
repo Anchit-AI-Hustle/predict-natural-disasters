@@ -100,17 +100,23 @@ test('the risk filter on Alerts shows the alerts at that level, not none', async
 
 /* ------------------------------------------------ what a page shows first */
 
-test('the feed is shared at the edge for 30 seconds, never kept in a browser', async () => {
+/* The edge window was 30 s fresh plus 60 s stale, and these asserted that
+   value. Launch audit E2 changed it on purpose: 60 s fresh, an hour stale
+   while revalidating, a day stale on error (test/launch-hardening.test.js). */
+test('the feed is shared at the edge for 60 seconds, never kept in a browser', async () => {
   const eventsHandler = require(path.join(ROOT, 'api', 'events.js'));
   const res = await callApi(eventsHandler, '/api/events');
   assert.match(res.headers.get('cache-control'), /no-store/, 'a browser may keep the feed');
-  assert.equal(res.headers.get('vercel-cdn-cache-control'), 'max-age=30, stale-while-revalidate=60');
+  assert.equal(res.headers.get('vercel-cdn-cache-control'), 'max-age=60, stale-while-revalidate=3600, stale-if-error=86400');
   const d = await res.json();
-  assert.match(d.meta.refreshTarget, /30 seconds/);
-  assert.match(d.meta.refreshTarget, /90 seconds/, 'the oldest copy a page can get is not stated');
+  assert.match(d.meta.refreshTarget, /60 seconds/);
+  assert.match(d.meta.refreshTarget, /show when it was made/, 'a page is not told that an older copy may be served');
 });
 
-test('pages read the shared copy, and Refresh goes past it', async () => {
+/* Refresh used to add ?ts= and so go past the edge copy; launch audit E3
+   made it re-read that copy instead, so a click no longer costs a fan-out
+   to every provider. */
+test('pages read the shared copy, and so does Refresh', async () => {
   const r = await renderPage('alerts.html', { timeoutMs: 8000,
     waitFor: d => d.querySelectorAll('#alerts article').length > 0 });
   const first = r.apiCalls.filter(u => u.includes('/api/events'));
@@ -121,7 +127,7 @@ test('pages read the shared copy, and Refresh goes past it', async () => {
   await new Promise(res => setTimeout(res, 100));
   const after = r.apiCalls.slice(before).filter(u => u.includes('/api/events'));
   assert.ok(after.length >= 1, 'Refresh fetched nothing');
-  assert.match(after[0], /[?&]ts=\d+/, 'Refresh was served the shared copy');
+  assert.equal(after[0], '/api/events', 'Refresh asked past the shared copy');
   r.close();
 });
 
@@ -258,7 +264,7 @@ test('no relief or authority link is one that answered 404', () => {
     'https://www.redcross.or.ke/donate',
     'https://www.redcross.sg/donate.html'
   ];
-  const src = read('api/verified-support.js');
+  const src = read('api/_lib/verified-support.js');
   const still = DEAD.filter(u => src.includes("'" + u + "'"));
   assert.deepEqual(still, [], 'still linked: ' + still.join(', '));
 });

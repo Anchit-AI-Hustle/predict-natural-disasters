@@ -34,7 +34,7 @@ function eventUrl(e){const id=enc(e&&e.id||'');if(e&&e.forecast)return '/forecas
 function fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' IST';}
 /* This page's own copy of the risk vocabulary is gone: it renders from
    PND.riskTag now, which resolves the level once, in risk.js. */
-async function getEvents(){const r=await fetch('/api/events?ts='+Date.now(),{cache:'no-store',headers:{'cache-control':'no-cache'}});if(!r.ok)throw new Error('feed');return r.json();}
+async function getEvents(){const r=await fetch('/api/events',{cache:'no-cache'});if(!r.ok)throw new Error('feed');return r.json();}
 </script>
 </head>
 <body>

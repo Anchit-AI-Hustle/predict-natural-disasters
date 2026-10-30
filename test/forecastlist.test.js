@@ -205,7 +205,10 @@ test('the forecasts page lists forecasts apart from the alerts they came from', 
   const { events } = await feed();
   const forecasts = events.filter(e => e.forecast).length;
   assert.equal(d.querySelectorAll('#forecastGrid tbody tr').length, forecasts, 'a forecast is missing from the page');
-  const observed = events.filter(e => !e.forecast && ['Red', 'Orange', 'High'].includes(e.alert)).length;
+  /* Live ones only, as the page lists them (PND.getEvents). Counting every
+     record made this fail from 30 Oct 2026, when the fixture's two volcano
+     notices of 13-14 Sep aged out of being live, with no change to the page. */
+  const observed = events.filter(e => !e.forecast && e.live !== false && ['Red', 'Orange', 'High'].includes(e.alert)).length;
   assert.ok(observed > 0, 'fixture should carry high-priority observed alerts');
   assert.equal(d.querySelectorAll('#observedList a.obsrow').length, observed, 'the observed alerts were not listed');
   /* And the table is not inside a grid meant for cards: that is what halved it. */

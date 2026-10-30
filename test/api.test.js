@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const { makeFetch, mockRes } = require('./mock-upstreams.js');
 const eventsHandler = require(path.join(__dirname, '..', 'api', 'events.js'));
 const enrichHandler = require(path.join(__dirname, '..', 'api', 'event-enrichment.js'));
-const support = require(path.join(__dirname, '..', 'api', 'verified-support.js'));
+const support = require(path.join(__dirname, '..', 'api', '_lib', 'verified-support.js'));
 
 const realFetch = global.fetch;
 function withFetch(mock, fn) {

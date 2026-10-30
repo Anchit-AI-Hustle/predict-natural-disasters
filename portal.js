@@ -6,12 +6,16 @@ const PND={
      feed marks it live:false) still opens on its own page, so a detail page
      asks for everything with {all:true}. */
   async getEvents(opts){
-    /* The feed is one shared copy at the edge, rebuilt once it is 30 seconds
+    /* The feed is one shared copy at the edge, rebuilt once it is 60 seconds
        old (api/events.js), so a page opens on it at once instead of waiting
-       3 to 6 seconds for every provider. A Refresh button asks past it: the
-       click is marked before the page's own handler runs (see init). */
+       for every provider. A Refresh button re-reads that copy: the click is
+       marked before the page's own handler runs (see init), and it asks with
+       cache:'no-cache', which revalidates past the browser but not past the
+       edge. It used to add ?ts=, a new address every click, so each one went
+       to every provider: a hundred visitors clicking Refresh was thousands
+       of upstream requests a minute. */
     const fresh=!!(opts&&opts.fresh)||PND._freshNext;PND._freshNext=false;
-    const r=await fetch(fresh?'/api/events?ts='+Date.now():'/api/events',fresh?{cache:'no-store'}:{});if(!r.ok)throw new Error('Live feed unavailable');
+    const r=await fetch('/api/events',fresh?{cache:'no-cache'}:{});if(!r.ok)throw new Error('Live feed unavailable');
     const d=await r.json();if(opts&&opts.all)return d;
     const ev=Array.isArray(d.events)?d.events:[];
     return Object.assign({},d,{events:ev.filter(e=>e&&e.live!==false),notLive:ev.filter(e=>e&&e.live===false)});

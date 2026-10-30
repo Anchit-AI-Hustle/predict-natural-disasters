@@ -10,11 +10,33 @@ const { queryOf } = require('./_lib/http.js');
  * record, which is what happened when outlook generation depended on GDACS
  * alone.
  *
- * CommonJS on purpose (see api/verified-support.js for why).
+ * CommonJS on purpose (see api/_lib/verified-support.js for why).
  */
 
 const UA = 'PredictNaturalDisasters/2.0 (+https://predict-natural-disasters.anchit-tandon.com)';
-const FETCH_TIMEOUT_MS = 6500;   // keep total wall-clock inside the function limit
+/* One upstream request, and the whole build, each get a fixed time.
+ *
+ * The response used to leave only when the slowest provider chain finished:
+ * 6.5 s per request, GDACS paged three deep one page at a time, and the
+ * weather service's five fallback queries walked in turn, so one provider
+ * that hung kept every visitor on "Loading..." for up to 32 s (measured with
+ * the weather service held). A request now gets 3 s, and the build 4.5 s:
+ * what has answered by then is served, and each provider that has not is
+ * reported as not answering in time, so "N of 8 working" stays true. */
+const FETCH_TIMEOUT_MS = 3000;
+const BUILD_BUDGET_MS = 4500;
+/* The copy this instance last built is served again for this long. A
+   request the edge sends on, ?ts= among them, then costs nothing upstream,
+   and a burst arriving together shares one build. */
+const MEMO_TTL_MS = 20000;
+/* A build where a provider was late is kept for less time, so that provider
+   gets another chance sooner. */
+const MEMO_TTL_PARTIAL_MS = 10000;
+/* ?cron= asks for a fresh build, which anyone can send; it is honoured only
+   when this instance's last fresh build is older than this. */
+const CRON_MIN_INTERVAL_MS = 30000;
+/* The providers every build asks, by the key each reports under. */
+const PROVIDER_KEYS = ['gdacs', 'usgs', 'eonet', 'nhc', 'nws', 'reliefweb', 'usgs_volcano', 'emsc'];
 let HAZARD_MODEL = null;
 try { HAZARD_MODEL = require('../hazard-model.js'); } catch (e) { HAZARD_MODEL = null; }
 
@@ -68,10 +90,16 @@ const num = v => {
   return Number.isFinite(n) ? n : null;
 };
 
-async function timedFetch(url, opts) {
+/* opts.signal, when given, aborts the request early too: the build's own
+   signal, raised when its budget runs out. */
+async function fetchUpstream(url, opts) {
   const o = opts || {};
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), o.timeout || FETCH_TIMEOUT_MS);
+  const ms = o.timeout || FETCH_TIMEOUT_MS;
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, ms);
+  const stop = () => controller.abort();
+  if (o.signal) { if (o.signal.aborted) stop(); else o.signal.addEventListener('abort', stop); }
   try {
     const r = await fetch(url, {
       cache: 'no-store',
@@ -84,8 +112,13 @@ async function timedFetch(url, opts) {
       throw new Error('HTTP ' + r.status + (detail ? ' - ' + detail : ''));
     }
     return o.text ? await r.text() : await r.json();
+  } catch (e) {
+    /* Said as what happened, not as the AbortError's "operation was aborted". */
+    if (timedOut) throw new Error('did not answer in time: no answer within ' + (Math.round(ms / 100) / 10) + ' s');
+    throw e;
   } finally {
     clearTimeout(timer);
+    if (o.signal) o.signal.removeEventListener('abort', stop);
   }
 }
 
@@ -1033,6 +1066,31 @@ function gdacsTime(v) {
   return Number.isFinite(t) ? new Date(t).toISOString() : null;
 }
 
+/* Which provider a served record came from, decided once from the source
+   label so the freshness and record counts below cannot drift from the
+   events themselves. Volcano is tested before the general USGS pattern,
+   since its label contains both. */
+const PROVIDER_OF_SOURCE = [
+  [/USGS Volcano/i, 'usgs_volcano'],
+  [/GDACS/i, 'gdacs'],
+  [/USGS/i, 'usgs'],
+  [/EMSC/i, 'emsc'],
+  [/EONET/i, 'eonet'],
+  [/Hurricane Center/i, 'nhc'],
+  [/Weather Service/i, 'nws'],
+  [/ReliefWeb/i, 'reliefweb']
+];
+
+function providerOf(source) {
+  const s = String(source || '');
+  /* A derived outlook names the signal it came from inside its own source
+     string. It is this engine's own record, not the provider's, and counting
+     it as one would inflate what the provider was seen to deliver. */
+  if (/^Predict Natural Disasters/i.test(s)) return null;
+  for (const [re, key] of PROVIDER_OF_SOURCE) if (re.test(s)) return key;
+  return null;
+}
+
 /** ?summary=1 asks for the meta block alone. */
 function wantsLedger(req) {
   const v = queryOf(req).ledger;
@@ -1048,19 +1106,78 @@ function isCron(req) {
   return !!queryOf(req).cron;
 }
 
+/* The copy this instance last built, and the build under way, if any. Each
+   is kept with the fetch it was made through: the runtime's fetch never
+   changes, and a test that swaps in a different set of upstreams gets a
+   build of its own rather than another test's copy.
+   A scheduled (?cron=) build leaves out the model outlooks (see buildFeed),
+   so it is a different feed and is kept apart from the visitors' one. */
+let MEMO = { cron: null, page: null };
+let INFLIGHT = { cron: null, page: null };
+
+function feedFor(req) {
+  const via = global.fetch;
+  const cron = isCron(req);
+  const kind = cron ? 'cron' : 'page';
+  const running = INFLIGHT[kind];
+  if (running && running.via === via) return running.promise;
+  const memo = MEMO[kind] && MEMO[kind].via === via ? MEMO[kind] : null;
+  if (memo) {
+    const age = Date.now() - memo.builtAt;
+    /* ?ts= is not a reason to rebuild: it is served what this instance has.
+       ?cron= is, unless a scheduled build finished moments ago, so the
+       hourly job still records a fresh feed and nobody else can use it to
+       make every request a fan-out to eight providers. */
+    if (cron ? age < CRON_MIN_INTERVAL_MS : age < memo.ttl) return Promise.resolve(memo.out);
+  }
+  const builtAt = Date.now();
+  const promise = buildFeed(cron).then(out => {
+    const partial = Array.isArray(out.meta.lateSources) && out.meta.lateSources.length > 0;
+    MEMO[kind] = { out, builtAt, via, ttl: partial ? MEMO_TTL_PARTIAL_MS : MEMO_TTL_MS };
+    return out;
+  }).finally(() => { if (INFLIGHT[kind] && INFLIGHT[kind].promise === promise) INFLIGHT[kind] = null; });
+  INFLIGHT[kind] = { promise, via };
+  return promise;
+}
+
 async function handler(req, res) {
+  /* The browser keeps nothing, so a reload or a Refresh click always asks
+     the edge, and the edge decides how old a copy may be. */
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   /* One shared copy at Vercel's edge, never in a browser. Rebuilding the feed
-     from every provider took 3 to 6 seconds, measured on the live site, and
-     every visitor paid it: a detail page read "Loading event…" for that long
-     and the homepage's forecast table for 13 seconds. A copy is rebuilt once
-     it is 30 seconds old, and the stale one is served for up to a minute more
-     while that happens, so no copy is older than 90 seconds. Pages print when
-     their copy was made. The scheduled jobs ask with ?cron=<time> and the
-     Refresh buttons with ?ts=<time>, so neither is ever served a copy. */
-  res.setHeader('Vercel-CDN-Cache-Control', 'max-age=30, stale-while-revalidate=60');
+     from every provider takes 3 to 4.5 seconds, and at max-age=30 with a
+     minute of stale-while-revalidate an edge region went cold after 90
+     seconds of quiet, so the first visitor after any lull paid the whole
+     build. Now a copy is fresh for 60 seconds; after that the last copy is
+     served while a new one is built in the background, for up to an hour,
+     and for up to a day if the function fails. Vercel's proxy reads this
+     header and strips it from the response (vercel.com/docs/caching/
+     cache-control-headers). Pages print when their copy was made. */
+  res.setHeader('Vercel-CDN-Cache-Control', 'max-age=60, stale-while-revalidate=3600, stale-if-error=86400');
 
+  const out = await feedFor(req);
+
+  // The counts without the records, so the deployed feed can be checked
+  // without transferring every event to do it.
+  if (wantsLedger(req)) {
+    res.status(200).json({
+      generatedAt: out.generatedAt,
+      meta: { ledger: out.meta.ledger },
+      ledger: Array.isArray(OUTLOOK_LEDGER) ? OUTLOOK_LEDGER : []
+    });
+    return;
+  }
+
+  if (wantsSummary(req)) {
+    res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
+    return;
+  }
+
+  res.status(200).json(out);
+}
+
+async function buildFeed(cron) {
   const now = new Date();
   const from = new Date(now.getTime() - 120 * 864e5);
 
@@ -1074,24 +1191,48 @@ async function handler(req, res) {
       coverage: 'Global terrestrial and coastal coverage; all countries and territories are supported by the UI, subject to upstream reporting.',
       forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
       /* The feed itself is recomputed from the upstream sources whenever the
-         shared copy is more than 30 seconds old (see the handler's headers). What runs
+         shared copy is more than 60 seconds old (see the handler's headers). What runs
          on a schedule is the written record - the ledger and the change log -
          and that is described by refreshRecorded, measured rather than
          declared. This field used to state a five-minute rate, which was the cron's
          request and about a fortieth of what GitHub actually granted it. */
-      refreshTarget: 'recomputed when the last copy is more than 30 seconds old; no copy served is older than 90 seconds'
+      refreshTarget: 'recomputed when the shared copy is more than 60 seconds old; while a new copy is being built, ' +
+        'or if the providers cannot be reached, the last one is served and pages show when it was made'
     },
     events: []
   };
 
+  /* The budget for this build. Once it is spent the response is assembled
+     from what has arrived: `closed`, set when the build returns, makes a job
+     that answers later a no-op,
+     and `stopAll` aborts the requests still open, so nothing a late provider
+     does can reach a response already on its way, and no new upstream
+     request starts after it. */
+  const deadline = Date.now() + BUILD_BUDGET_MS;
+  const stopAll = new AbortController();
+  let closed = false;
+  const lateError = () => new Error('did not answer in time: no answer within ' + (BUILD_BUDGET_MS / 1000) + ' s');
+  /* Every upstream request in this build: its own timeout, never past the
+     build's deadline, so a provider's retries and follow-up requests fit
+     inside the budget instead of stacking up behind it. */
+  const timedFetch = (url, opts) => {
+    const left = deadline - Date.now();
+    if (closed || left <= 0) return Promise.reject(lateError());
+    const o = Object.assign({}, opts || {});
+    o.timeout = Math.min(o.timeout || FETCH_TIMEOUT_MS, left);
+    o.signal = stopAll.signal;
+    return fetchUpstream(url, o);
+  };
+
   const push = e => {
-    if (!e) return;
+    if (!e || closed) return;
     const lat = num(e.lat), lon = num(e.lon);
     if (lat === null || lon === null || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
     out.events.push(Object.assign({}, e, { lat, lon, type: e.type || 'Natural Hazard' }));
   };
 
   const mark = (key, ok, extra) => {
+    if (closed) return;
     out.meta.sources[key] = Object.assign({ ok: !!ok, checkedAt: now.toISOString() }, extra || {});
   };
 
@@ -1214,11 +1355,21 @@ async function handler(req, res) {
       '&fromDate=' + iso(from) + '&toDate=' + iso(now) + '&alertlevel=Green;Orange;Red' +
       (page > 1 ? '&pagenumber=' + page : '');
     const byHazard = {}, incomplete = [], failed = {};
+    /* Every page of every hazard is asked for at once, and the answers are
+       then read in page order with the same rules as before. One page after
+       another was 3 x the slowest page per hazard (GDACS answers a page in
+       1.5 to 1.7 s, measured), which on its own took most of the budget. */
     const history = GDACS_EVENT_TYPES.map(async t => {
+      const answers = await Promise.all(Array.from({ length: GDACS_MAX_PAGES }, (_, i) =>
+        timedFetch(searchUrl(t, i + 1)).then(body => ({ body }), error => ({ error }))));
       const mine = new Set();
       for (let page = 1; page <= GDACS_MAX_PAGES; page++) {
         let r;
-        try { r = parseGdacsJson(await timedFetch(searchUrl(t, page))); } catch (e) {
+        const got = answers[page - 1];
+        try {
+          if (got.error) throw got.error;
+          r = parseGdacsJson(got.body);
+        } catch (e) {
           if (page === 1) failed[t] = String(e.message || e);
           else incomplete.push(t);
           break;
@@ -1244,7 +1395,7 @@ async function handler(req, res) {
          as incomplete as a history cut short - unless the active list
          answered, in which case its running events are still carried. */
       Object.keys(failed).forEach(t => incomplete.push(t));
-      out.meta.gdacs = true;
+      if (!closed) out.meta.gdacs = true;
       mark('gdacs', true, {
         records: gdacsSeen.size,
         endpoint: searched ? 'search' : 'events4app',
@@ -1257,7 +1408,8 @@ async function handler(req, res) {
     }
     try {
       const r = parseGdacsRss(await timedFetch('https://www.gdacs.org/xml/rss.xml', { text: true, headers: { accept: 'application/rss+xml, application/xml' } }));
-      out.meta.gdacs = true; mark('gdacs', true, { records: r.added, endpoint: 'rss' });
+      if (!closed) out.meta.gdacs = true;
+      mark('gdacs', true, { records: r.added, endpoint: 'rss' });
     } catch (e) {
       mark('gdacs', false, { error: String(e.message || e) });
     }
@@ -1295,7 +1447,8 @@ async function handler(req, res) {
         });
         n++;
       }
-      out.meta.usgs = true; mark('usgs', true, { records: n, window: '7 days, M2.5+' });
+      if (!closed) out.meta.usgs = true;
+      mark('usgs', true, { records: n, window: '7 days, M2.5+' });
     } catch (e) { mark('usgs', false, { error: String(e.message || e) }); }
   })());
 
@@ -1340,7 +1493,8 @@ async function handler(req, res) {
         });
         n++;
       }
-      out.meta.eonet = true; mark('eonet', true, { records: n });
+      if (!closed) out.meta.eonet = true;
+      mark('eonet', true, { records: n });
     } catch (e) { mark('eonet', false, { error: String(e.message || e) }); }
   })());
 
@@ -1562,6 +1716,10 @@ async function handler(req, res) {
         return;
       } catch (e) {
         lastError = String(e.message || e);
+        /* The ladder is for a query the API rejects, which it says at once
+           with a 4xx. A timeout or a 5xx says the service is not answering,
+           and four more filters against it would only spend the budget. */
+        if (!/^HTTP 4\d\d/.test(lastError)) break;
       }
     }
     mark('nws', false, { error: lastError });
@@ -1874,7 +2032,28 @@ async function handler(req, res) {
     } catch (e) { mark('emsc', false, { error: String(e.message || e) }); }
   })());
 
-  await Promise.allSettled(jobs);
+  let budgetTimer = null;
+  await Promise.race([
+    Promise.allSettled(jobs),
+    new Promise(resolve => { budgetTimer = setTimeout(resolve, Math.max(0, deadline - Date.now())); })
+  ]);
+  clearTimeout(budgetTimer);
+  /* A provider that has not reported by now is reported as late, which the
+     scan below records as DATA_UNAVAILABLE with this reason, and anything it
+     had pushed so far is left out with it: half a provider's answer is not
+     served as though it had answered. */
+  const lateSources = PROVIDER_KEYS.filter(k => !out.meta.sources[k]);
+  for (const k of lateSources) mark(k, false, { error: lateError().message, late: true });
+  if (lateSources.length) {
+    out.events = out.events.filter(e => !lateSources.includes(providerOf(e.source)));
+    out.meta.lateSources = lateSources;
+  }
+  /* The requests still open are abandoned. Their jobs only learn of it in a
+     later turn of the event loop, and nothing from here to the end of this
+     function awaits, so the build finishes - its own fallback records and
+     outlooks included - before any of them runs again, and by then they
+     find `closed` set (just before the return below). */
+  stopAll.abort();
 
   const okSources = Object.values(out.meta.sources).filter(s => s && s.ok);
   out.meta.sourceCount = okSources.length;
@@ -2149,7 +2328,7 @@ async function handler(req, res) {
     note: modelFresh ? 'Forecasts from the experimental weather models, run ' + new Date(modelRunAt).toISOString() + '.'
       : 'The experimental weather models have not run in the last 36 hours, so none of their forecasts is shown.'
   } : null;
-  if (!isCron(req) && modelFresh && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
+  if (!cron && modelFresh && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
     for (const mo of MODEL_OUTLOOKS.outlooks) {
       if (!mo || !mo.targetEnd) continue;
       const endMs = Date.parse(mo.targetEnd);
@@ -2577,31 +2756,6 @@ async function handler(req, res) {
     }
   };
 
-  /* Which provider a served record came from, decided once from the source
-     label so the freshness and record counts below cannot drift from the
-     events themselves. Volcano is tested before the general USGS pattern,
-     since its label contains both. */
-  const PROVIDER_OF_SOURCE = [
-    [/USGS Volcano/i, 'usgs_volcano'],
-    [/GDACS/i, 'gdacs'],
-    [/USGS/i, 'usgs'],
-    [/EMSC/i, 'emsc'],
-    [/EONET/i, 'eonet'],
-    [/Hurricane Center/i, 'nhc'],
-    [/Weather Service/i, 'nws'],
-    [/ReliefWeb/i, 'reliefweb']
-  ];
-
-  function providerOf(source) {
-    const s = String(source || '');
-    /* A derived outlook names the signal it came from inside its own source
-       string. It is this engine's own record, not the provider's, and counting
-       it as one would inflate what the provider was seen to deliver. */
-    if (/^Predict Natural Disasters/i.test(s)) return null;
-    for (const [re, key] of PROVIDER_OF_SOURCE) if (re.test(s)) return key;
-    return null;
-  }
-
   /* A run that fell back to a thinner feed, or dropped records it could not
      place, scanned less than the provider covers, and says so rather than
      reporting a clean sweep. */
@@ -2745,7 +2899,7 @@ async function handler(req, res) {
       FORECAST_CHANGES.observedCadenceHours || {},
       { note: 'The written record is what runs on a schedule. The feed above ' +
         'is recomputed from the upstream sources whenever the last copy is more than ' +
-        '30 seconds old, and no copy served is older than 90 seconds.' });
+        '60 seconds old, and pages show when the copy they read was made.' });
   } else {
     out.meta.forecastChanges = null;
   }
@@ -2809,27 +2963,15 @@ async function handler(req, res) {
   out.meta.officialWarningCount =
     out.events.filter(e => e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')).length;
 
-  // The counts without the records, so the deployed feed can be checked
-  // without transferring every event to do it.
-  if (wantsLedger(req)) {
-    res.status(200).json({
-      generatedAt: out.generatedAt,
-      meta: { ledger: out.meta.ledger },
-      ledger: Array.isArray(OUTLOOK_LEDGER) ? OUTLOOK_LEDGER : []
-    });
-    return;
-  }
-
-  if (wantsSummary(req)) {
-    res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
-    return;
-  }
-
-  res.status(200).json(out);
+  /* No await anywhere after the budget race: see stopAll.abort() above. */
+  closed = true;
+  return out;
 }
 
 module.exports = handler;
 module.exports.default = handler;
+/* Forget this instance's copy, for a test that times a build of its own. */
+module.exports._resetMemo = () => { MEMO = { cron: null, page: null }; INFLIGHT = { cron: null, page: null }; };
 module.exports.normalizeType = normalizeType;
 module.exports.centroid = centroid;
 module.exports.insidePoint = insidePoint;

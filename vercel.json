@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/",
@@ -259,6 +260,9 @@
   "functions": {
     "api/alerts-run.js": {
       "maxDuration": 60
+    },
+    "api/events.js": {
+      "maxDuration": 15
     }
   }
 }

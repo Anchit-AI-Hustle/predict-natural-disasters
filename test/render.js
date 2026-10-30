@@ -321,6 +321,8 @@ async function renderPage(page, opts) {
   virtualConsole.on('error', (...a) => errors.push(new Error(a.map(String).join(' '))));
 
   const apiCalls = [];
+  /* The options each of those requests was made with, by position. */
+  const apiInits = [];
   const dom = new JSDOM(html, {
     url: o.url ? ORIGIN + o.url : ORIGIN + '/' + page + (o.search || ''),
     runScripts: 'dangerously',
@@ -334,9 +336,10 @@ async function renderPage(page, opts) {
           try { window.localStorage.setItem(k, v); } catch (e) { /* no storage */ }
         }
       }
-      window.fetch = async (input) => {
+      window.fetch = async (input, init) => {
         const url = String(input && input.url ? input.url : input);
         apiCalls.push(url);
+        apiInits.push(init || {});
         if (url.includes('/api/event-enrichment')) return callApi(enrichHandler, url, o.mock);
         if (/\/api\/alerts(?:\?|$)/.test(url)) return callApi(alertsHandler, url, o.mock);
         // feedDown is the endpoint itself being unreachable, which is not the
@@ -395,7 +398,7 @@ async function renderPage(page, opts) {
 
   OPEN_WINDOWS.add(window);
   return {
-    window, document: window.document, errors, apiCalls,
+    window, document: window.document, errors, apiCalls, apiInits,
     text: () => window.document.body.textContent.replace(/\s+/g, ' ').trim(),
     html: () => window.document.body.innerHTML,
     close: () => { OPEN_WINDOWS.delete(window); try { window.close(); } catch (e) { /* already gone */ } }
