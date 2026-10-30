@@ -186,7 +186,9 @@ test('an event card carries the headline figures for its own hazard', async () =
 /* --------------------------- the panel that claimed to forecast earthquakes */
 
 test('the homepage hazard panel counts what it actually counts', () => {
-  for (const page of ['index.html', 'home.html', 'home-v2.html', 'home-v3.html']) {
+  /* The old layouts (home, home-v2, home-v3) are deleted and redirected;
+     share-ready.test.js holds that. */
+  for (const page of ['index.html']) {
     const s = read(page);
     assert.ok(!/Forecasts by Hazard Type/.test(s),
       page + ' heads a count of every tracked record as a count of forecasts');

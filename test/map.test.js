@@ -338,9 +338,10 @@ test('the label layer sits in its own pane, above the map and below the markers'
 });
 
 test('the view switcher is styled wherever it appears', () => {
-  // index.html and dashboard.html carry their own CSS and load neither shared
-  // stylesheet, so a rule kept in those sheets left the switcher white on
-  // exactly those two pages. It ships with the code that builds the control.
+  // index.html carries its own CSS and loads neither shared stylesheet, so a
+  // rule kept in those sheets left the switcher white on exactly that page
+  // (and on the old dashboard, since deleted). It ships with the code that
+  // builds the control.
   const src = read('map-setup.js');
   assert.match(src, /\.leaflet-control-layers\{[^}]*background:#/,
     'the switcher keeps Leaflet\'s white default on a dark page');

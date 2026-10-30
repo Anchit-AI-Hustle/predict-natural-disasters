@@ -1157,8 +1157,9 @@ Implemented in `PND.timezone`, `PND.timezoneOptions` and `PND.setTimezone` (`por
 
 ## 18. Screens on the website not required for parity
 
-- `dashboard.html`, `directory.html`, `home.html`, `home-v2.html` and `home-v3.html` are legacy. `/home*` redirect
-  to `/`. dashboard and directory are not linked from navigation.
+- `directory.html` is legacy and not linked from navigation. The old `dashboard.html`, `home.html`, `home-v2.html`
+  and `home-v3.html` are deleted: `/home*` (with or without a trailing slash or `.html`) redirects to `/`, and
+  `/dashboard` to `/live-map`.
 - `404.html` behaviour is covered by deep-link resolution (section 0.1).
 - The 3D Cesium globe (`globe.js`) is optional.
 - SEO markup, canonical links and `sitemap.xml` are not applicable.
