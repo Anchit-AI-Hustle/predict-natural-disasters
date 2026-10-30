@@ -243,9 +243,35 @@
     setMeta('directories', 'How often this updates: ' + ((d.coverage && d.coverage.refreshTarget) || 'each time the page loads'));
   }
 
+  /*
+   * Live emergency advice belongs to live events only.
+   *
+   * A page from the history archive (e.historical) is never enriched: the
+   * Thera eruption of c. 1600 BCE was shown "Updated 30 Oct 2026", "Stay
+   * outside the exclusion zone declared by the volcano observatory", a 2018
+   * travel feature as news and twelve live YouTube search results, among them
+   * fake "Breaking: Santorini Volcano Erupts" streams. The guard is here, not
+   * only on that page, so no other page can enrich an archive entry.
+   */
+  function isArchive(e) {
+    return !!(e && (e.historical || /historical disaster archive/i.test(String(e.source || ''))));
+  }
+  /* The who-needs-help lists are generic per hazard. Shown only where the
+     record is grave enough (PND.lifeSafety); elsewhere they were boilerplate. */
+  function grave(e) {
+    return !!(window.PND && PND.lifeSafety ? PND.lifeSafety(e) : true);
+  }
+
   function render(d, e) {
+    if (isArchive(e)) return;
     renderWhenWhere(d, e);
-    renderDistress(d);
+    if (grave(e)) renderDistress(d);
+    else {
+      setBody('distress', card('No damage reported by the source',
+        '<p class="muted">' + esc((e && e.source) || 'The source') + ' reports no deaths, displacement or damage for this event, and it is not an official warning, so we list no needs. ' +
+        'General preparedness for this hazard is in the agency links below.</p>'));
+      setMeta('distress', 'Shown when an agency warns, or reports harm');
+    }
     renderNews(d);
     renderReports(d);
     renderVideos(d);
@@ -285,7 +311,7 @@
 
   async function load(e) {
     const mount = document.getElementById('eventEnrichment');
-    if (!mount || !e) return;
+    if (!mount || !e || isArchive(e)) return;
     current = e;
     if (!mount.dataset.ready) {
       mount.innerHTML = shell();
@@ -304,5 +330,5 @@
     }
   }
 
-  window.PNDEventEnrichment = { load, render, shell };
+  window.PNDEventEnrichment = { load, render, shell, isArchive };
 })();
