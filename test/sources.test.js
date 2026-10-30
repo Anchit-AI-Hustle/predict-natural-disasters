@@ -83,7 +83,9 @@ test('each source says what it covers and what its silence establishes', async (
 test('the page reports which sources answered, from this scan', async () => {
   const up = await open();
   const answeredWhenUp = (up.document.querySelector('#cards .panel') || {}).textContent || '';
-  assert.match(answeredWhenUp, /\d+ of \d+ sources answered in full this time/);
+  /* One count of working sources, the status line's, split into in full and
+     in part (launch audit D17). */
+  assert.match(answeredWhenUp, /\d+ of \d+ sources working: \d+ answered in full this time/);
   /* "Answered" and "answered in full" are different counts; the page prints a
      status line reporting the first, so the panel must not report the second
      under the same word. */

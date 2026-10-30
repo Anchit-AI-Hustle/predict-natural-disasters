@@ -369,6 +369,12 @@ test('no element id is shadowed by a built-in Window property', async () => {
   for (let o = probe.window; o; o = Object.getPrototypeOf(o)) {
     for (const k of Object.getOwnPropertyNames(o)) reserved.add(k);
   }
+  /* The probe page's own element ids show up on its window as named
+     properties; they are not built-ins. (About now carries the shared
+     header, whose <div id="nav"> made every page's nav look shadowed.) */
+  for (const el of probe.document.querySelectorAll('[id]')) {
+    if (!(el.id in Object.getPrototypeOf(probe.window))) reserved.delete(el.id);
+  }
   probe.close();
 
   const PROPS = 'textContent|innerHTML|value|style|href|src|checked|onclick|onchange|oninput|classList|dataset|disabled|selectedIndex|options';

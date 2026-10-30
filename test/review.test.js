@@ -75,7 +75,10 @@ test('a filter whose button opens a region matches only geography', () => {
   /* The box is labelled for places and its neighbour navigates to whatever was
      typed, so free-text matching made the preview and the navigation describe
      different things. */
-  assert.match(s, /regionUrl\(q\.value/, 'regions.html no longer opens the typed value');
+  /* One Go button (launch audit D32): a country, continent or the world opens
+     its own page, anything else goes to the place search. */
+  assert.match(s, /function goTarget\(v\)/, 'regions.html no longer decides where the typed value goes');
+  assert.match(s, /PND\.regionUrl\(t\.region\)/, 'regions.html no longer opens the typed place');
   assert.match(s, /PND\.matchesPlace\(/, 'regions.html filters with the free-text matcher');
   assert.doesNotMatch(s.replace(/\/\*[\s\S]*?\*\//g, ''), /PND\.matches\(/);
 });

@@ -164,7 +164,10 @@ test('a count of events is a count of reports, the same on every page', async ()
     waitFor: d => /^\d+$/.test(d.getElementById('kEvents').textContent) });
   assert.equal(regions.document.getElementById('kEvents').textContent, String(reports), 'Regions counts forecasts as events');
   /* And each place's card counts the same records as the headline above it. */
-  const placesOf = e => (Array.isArray(e.countries) && e.countries.length ? e.countries : (e.sea ? [e.sea] : [String(e.country || '').trim()])).filter(Boolean);
+  /* Places as /regions groups them: one name per country, and records at sea
+     together (country-names.js, launch audit D3). */
+  const N = require('../country-names.js');
+  const placesOf = e => { const p = N.of(e); return p.countries.length ? p.countries : [N.AT_SEA]; };
   const perPlace = {};
   for (const e of live.filter(x => !x.forecast)) for (const n of placesOf(e)) perPlace[n] = (perPlace[n] || 0) + 1;
   const cards = [...regions.document.querySelectorAll('#regionGrid .reg')].map(c => [c.querySelector('h3').textContent, Number(c.querySelector('p b').textContent)]);
