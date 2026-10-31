@@ -304,8 +304,9 @@
   /* ------------------------------------------------------------- the footer */
 
   function footerHtml() {
-    /* Names already written out: the glossary expanded "USGS" again inside
-       "U.S. Geological Survey (earthquakes) (USGS)". */
+    /* Names already written out (data-keep-acronyms): the glossary expanded
+       "USGS" a second time right after the agency's full name, so the footer
+       named the same agency twice in a row (launch audit A22). */
     return '<div class="trust-foot" data-keep-acronyms><p><b>This is an experimental model, not an official warning service.</b> ' +
       'For real alerts and what to do in an emergency, follow your national meteorological or disaster agency:</p><ul>' +
       OFFICIAL.map(function (r) {

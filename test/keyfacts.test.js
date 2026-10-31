@@ -186,7 +186,9 @@ test('an event card carries the headline figures for its own hazard', async () =
 /* --------------------------- the panel that claimed to forecast earthquakes */
 
 test('the homepage hazard panel counts what it actually counts', () => {
-  for (const page of ['index.html', 'home.html', 'home-v2.html', 'home-v3.html']) {
+  /* The old layouts (home, home-v2, home-v3) are deleted and redirected;
+     share-ready.test.js holds that. */
+  for (const page of ['index.html']) {
     const s = read(page);
     assert.ok(!/Forecasts by Hazard Type/.test(s),
       page + ' heads a count of every tracked record as a count of forecasts');
@@ -205,7 +207,8 @@ test('a hazard nobody forecasts the onset of is labelled observed only', async (
   const cls = quake ? quake.className : '';
   r.close();
   assert.ok(quake, 'the hazard strip should list earthquakes');
-  assert.match(text, /observed only/,
+  /* In plain words now (launch audit A32): "observed only" was jargon. */
+  assert.match(text, /reports only, no forecast/,
     'the site counted earthquakes under a forecast heading while forecasting none');
   assert.match(cls, /hazard-observed/);
   assert.equal(H.HAZARDS.Earthquake.forecastable, false);

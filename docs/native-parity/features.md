@@ -66,6 +66,8 @@ page HTML), `4c11103` (accessibility, layout and performance), `a94cd45` (dead R
 | C34 | **Not found and no id.** `/forecasts/<unknown>` adds `<meta name=robots content=noindex>`; `/forecast-detail` with no id shows "Choose a forecast" (was ND-001). `/verification-detail` handles ND-001 only: model and known outlook ids go to `/forecasts/<id>`, an unknown id shows "Forecast not found" with noindex. | `forecast-detail.html`; `verification-detail.html` | C20; §14 | none |
 | C35 | **Copy.** Restated outlooks say they restate the agency report and carry no confidence word (`api/events.js`); the trust note names USGS as "United States Geological Survey (USGS)"; `PND.titleOf` turns any en or em dash in an upstream title into " - " and names model forecasts by their new hazard; places are `PND.placeOf` (no "Hanoi, Vietnam · Vietnam"); place ids are transliterated (`placeIdOf` maps `bogot-co` and `s-o-paulo-br`). | `api/events.js`; `trust.js`; `portal.js`; `forecast-models.js` | §0 copy | `portal.titleOf` if present |
 | C36 | **One name per country; places matched exactly.** Was: country names were counted and grouped as the providers spelled them (Mexico, México and MX were three places; "Japan region" and "Reykjanes Ridge" were places), and `inPlace` matched a substring (Niger took in Nigeria, "braz" found Brazil, a region box typed "Flood" found a record whose title said flood). Now `country-names.js` gives each country one name (`canonical`), moves ocean features into `sea` (`place`), counts countries by those names (`countryCount`, which `portal.countryCount` and `search.countryCount` call), and `inPlace` matches a country exactly against the record's countries and anything else as a whole word in `country`, `affectedCountries`, `region`, `location`, `place` and `sea`, never the title or details; an empty place matches everything. The feed fills `countries` through the same module. Legacy zone ids (`Asia/Calcutta`, `Asia/Katmandu`, `Asia/Saigon` and others) are read as their current ids (`portal.zoneName`), so India shows IST. | `country-names.js`: `canonical`, `place`, `countryCount`, `inPlace`; `portal.js`: `PND.countryCount`, `PND.inPlace`, `PND.zoneName`; `search.js`: `countryCount`; `region-detail.html`: `matches()`; `api/events.js`: `countries` | C1 "any other place name is matched by `matchesPlace` or a substring of `countries[]`"; §8.2 match rule | `portal.inPlace` ("braz" no longer finds Brazil), `regionDetail.matches` ("Flood" finds nothing) |
+| C37 | **The place answer weighs what was reported against what we forecast, and names both.** Was: our forecast covering a place led whenever no reported event reached Watch on its own, and the answer then said nothing else: Tokyo read "Watch · a forecast covers it" over a confirmed M5.5 85 km away. Now, after the inside-a-warning and inside-an-incident cases, the forecast leads only when no reported event within 500 km rates Watch or above on its own (`nearLevel`); a report wins a tie. `assess()` returns `observed` (the top-ranked reported event row) and `forecast` (the covering forecast row) beside `lead`. When the forecast leads and a report exists, `why` gains *" A reported event, {title}, is {km} km away. On its own it rates {Level} here."*; when a report leads and a forecast covers the place, *" One of our forecasts also covers your place."* My places' summary chip reads `{LEVEL} · our forecast covers it · a reported event is {km} km away`, or `{LEVEL} · event {km} km away · our forecast also covers it`. | `place-risk.js`: `assess`; `personal-risk.html`: `summarise()` | §1.2 why text; §5.2 summary chip | `placeRisk.assess` |
+| C38 | **Home: numbers that add up, a place in the address, a stated track record.** Was: the Live events subline counted `severity` Extreme+Severe as "serious" and Informational as "minor", leaving the rest out, beside map marks coloured by the raw alert word; the hazard filter counted raw types with forecasts mixed in, so it disagreed with the strip; "See details" opened the lead event or My places; a searched place was not in the address; the track record showed only the ND-001 test case; "Latest forecasts" were ordered by update time. Now: the subline is the count per `PND.riskKey` level (`PND.riskKey` is an alias of `PNDRisk.keyFor`, C31; all parts, adding up to the total); marks are passed the record and take the same level, and our forecasts are flagged for the map key; the filter counts reports per hazard key ("All hazards" has no count; forecast-only hazards say "(forecasts only)"); What's happening adds `PND.riskWords(lead)` (the agency wording of `PNDRisk.describe`); "See details" opens `/location-detail` for the place; a searched place goes in the address (`?place=&lat=&lon=&cc=&country=&level=`) and is answered from it on arrival and on Back; the track record states the graded counts in /accuracy's words from `accuracy-summary.json`; forecasts are latest start first. Copy: "Official warnings and watches", "See live events", "reports only, no forecast", sentence-case "View all →", no quote tile. | `index.html`: `render()`, `fillHazards()`, `answer()`, `placeFromUrl()`, `remember()`, `detailsHref()`, `trackFacts()`; `portal.js`: `riskKey`, `riskWords` | §1.2 What's happening and See details; §1.3 Live events subline, quote tile; §1.4; §1.6 map, hazard filter, strip, Latest forecasts, track record | `home.render` |
 
 ---
 
@@ -94,7 +96,7 @@ the code. A native build that breaks one of them is not at parity, even if every
 7. **Earthquake prediction limits.** Never imply that an earthquake (its time or place) was or can be predicted.
    Earthquakes are reported after they happen. The only seismic forecasts are 7-day *aftershock* outlooks after
    an M5.5+ mainshock, and these state *"It does not predict a new, separate earthquake"* and *"We do not claim to
-   have predicted the main earthquake."* The home hazard strip marks Earthquake as "observed only"
+   have predicted the main earthquake."* The home hazard strip marks Earthquake as "reports only, no forecast" (C38; was "observed only")
    (`hazardOf(t).forecastable === false`).
 8. **Missing is not zero.** A count that no source reports shows "Not reported" (or "Not reported by the source").
    A reported `0` shows `0`. Never use `+v > 0` to test whether a figure is present. Test for null, undefined and
@@ -303,7 +305,8 @@ has loaded** (changelog C26). Before that, `feedState(loaded, failed)` picks the
 - Eyebrow "CURRENT RISK". If `A.level` is set, show a **badge** using the level label (for example "Severe"). If it
   is null, show the neutral chip **"Nothing reported nearby"**. Never show a LOW badge for nothing. Then the place
   name as the heading.
-- **What's happening**: lead record title in bold, then `{type} · {placeOf} · reported {age(updated)}`. If there is
+- **What's happening**: lead record title in bold, then `{type} · {placeOf} · {PND.riskWords(lead)} · reported
+  {age(updated)}` (C38: the record's own level, in the agency's terms where an agency set it). If there is
   no lead: *"None of our sources reports anything at this place right now."*
 - **Why we're showing this**: `A.why`.
 - **What should I do?**: bullet list of `actions.steps`, then `actions.authority` in amber text (`#ffd9a8`):
@@ -320,15 +323,22 @@ has loaded** (changelog C26). Before that, `feedState(loaded, failed)` picks the
     - Service off and enabled now: *"Saved, and alerts are on. … You can manage alerts on the My places page."*, or show the failure reason.
     - Open-only fallback after permission is granted: *"Saved. You will get an alert about it only while this site is open in a tab. Nothing is sent once you close it."*
     - Denied: *"Notifications were not allowed, so nothing will be sent."*
-  - **See details**. Opens `eventUrl(lead)`, or My places when there is no lead.
+  - **See details**. Opens the place page for this place, `/location-detail?location={name}&lat={lat}&lon={lon}`
+    plus `level`, `country` and `cc` where known (C38; it used to open the lead event, or My places).
+- A searched place (kind "Searched") is put in the address with `history.pushState`:
+  `/?place={name}&lat={lat}&lon={lon}` plus `cc`, `country`, `level` where known. Arriving with those parameters
+  answers that place first (before the reader's own saved place) and fills the search box; Back to an address with
+  no place clears the answer (C38). A current location or a saved place is never put in the address.
 
 ### 1.3 "Around the world now" KPI tiles
 Counts come from **live, non-forecast** records unless noted. Every tile follows the map's hazard filter
 (section 1.6). **[vectors: home.render]** pins every tile for 8 filter and sort combinations.
-- **Live events** = number of non-forecast records (after the map's hazard filter). Subline: `"{Extreme+Severe}
-  serious · {Informational} minor"` (counting the `severity` field) when there are reports and either count is
-  non-zero, otherwise "From all our sources", or "Matching the hazard you chose" when a hazard filter is set. Tap opens Events.
-- **Official warnings** = `PND.officialWarnings(list)`: warnings **in force**, not forecasts, `evidenceState ===
+- **Live events** = number of non-forecast records (after the map's hazard filter). Subline (C38): the count of
+  those records at each level, highest first, as `"{n} {level label lower-cased}"` joined with " · " (for example
+  "1 extreme · 3 severe · 3 moderate · 1 watch", with "not rated" last), where each record's level is
+  `PND.riskKey(e)`, the same level its map mark and the map key use. The parts add up to the total. With no reports:
+  "From all our sources", or "Matching the hazard you chose" when a hazard filter is set. Tap opens Events.
+- **Official warnings and watches** (C38: was "Official warnings") = `PND.officialWarnings(list)`: warnings **in force**, not forecasts, `evidenceState ===
   'official-warning'` (or, with no `evidenceState`, `sourceType==='official'` with an `expiresAt`) (logic.md §6.11,
   changelog C3). Subline **"Issued by agencies, in force now"**, with the accessibility hint / tooltip
   `PND.WARNING_MEANING`: *"Warnings and watches issued by agencies and in force now. Reports of disasters that already
@@ -336,10 +346,10 @@ Counts come from **live, non-forecast** records unless noted. Every tile follows
 - **Open forecasts** = records with `forecast && !windowClosed` (the same as `PND.openForecasts`). Subline: the count per level, highest first, for
   example "3 High · 5 Moderate · 2 Watch" (`matchesRiskLevel`), or "Recorded for grading". Tap opens the forecast list.
 - **Countries** = `PND.countryCount(reports)` (split comma-separated country strings, logic.md §6). Subline "Named in live reports". Tap opens Regions.
-- Quote tile: *"Prepared communities save lives." / "Data for a safer, more resilient world."*
+- There is no quote tile any more (C38).
 
 ### 1.4 Utility cards ("Keep watch over the places that matter to you")
-Four buttons: ⌖ My places, ! What should I do now? (opens Events), ◉ Forecasts, ✓ Track record. Each has the
+Four buttons: ⌖ My places, ! See live events (opens Events; C38, was "What should I do now?"), ◉ Forecasts, ✓ Track record. Each has the
 one-line description from `index.html`.
 
 ### 1.5 Sidebar "Explore" (desktop) / native: a horizontal chip row
@@ -350,15 +360,20 @@ changelog C1). They must never open an empty "No current events here" page while
 
 ### 1.6 Map + "Live events"
 Implemented in `index.html` (`render()`, `selectEvent()`, the `mapSearch` handler). **[vectors: home.render]**
-- Map of all live records (forecasts included) that pass the hazard filter, as risk markers (design.md §3.3).
+- Map of all live records (forecasts included) that pass the hazard filter, as risk markers (design.md §3.3), each
+  coloured by the record's one level (`PNDMap.riskMarker` is passed the record `e` and resolves it with
+  `PNDRisk.keyFor(e)`, C31/C38; it was the raw alert word) and flagged `pndForecast` for our
+  forecasts, so the map key counts reported events per level and lists "Our forecasts" on a line of its own.
   Top toolbar:
   - **Location search** ("Search location"). Enter with an empty box does nothing. Otherwise the trimmed, lower-cased
     query is matched with `PND.matches`; the first live record that matches is selected with fly-to and its popup
     opened. **When nothing matches**: clear the selection (marker ring and list highlight), close any popup, and show
     the card with eyebrow **"Search"**, title **"No live event matches "{q}""**, meta *"Try a country, a city or a type
     of hazard."* and the "See details →" button hidden (changelog C12).
-  - **Hazard filter**: "All hazards (N)" (value `""`) then one option per type present in the live records with its
-    count, from `PND.fillHazardSelect(sel, events)` (section 0.3). It is refilled on each load, keeping the choice. A
+  - **Hazard filter** (C38): "All hazards" (value `""`, no count) then one option per hazard key
+    (`PND.hazardKey(type)`) present in the live records, value = the key, labelled `"{key} ({n})"` where n is the
+    number of **reports** of it (the strip's own count), or `"{key} (forecasts only)"` for a hazard that only our
+    forecasts carry; ordered by n descending then name. It is refilled on each load, keeping the choice. A
     record passes when `PND.hazardKey(e.type)` equals `PND.hazardKey(choice)` ignoring case (so "Extreme Cold" never
     shows Extreme Heat, and "Volcano" includes "Volcanic Eruption") (changelog C2, C8). The filter applies to the map,
     the tiles (section 1.3), the "Live events" card, the three tables and the strip.
@@ -380,19 +395,26 @@ Implemented in `index.html` (`render()`, `selectEvent()`, the `mapSearch` handle
   `PND.hazardKey(type)`, ordered by count descending then name A to Z, one chip per hazard present (none at 0). Icons:
   Earthquake ⌁, Wildfire 🔥, Flood ●, Drought ⌛, Tropical Cyclone ◉, Severe Storm ◈, Volcano ▲, Landslide △, Tornado ✦,
   Extreme Cold ❄, Extreme Heat ☀, Tsunami ≈, any other hazard ◆. Each chip shows `"{icon} {hazard}"` and
-  **"{n} reported"**; a hazard whose `hazardOf(key).forecastable === false` (Earthquake) adds **" · observed only"** and
-  the tooltip *"Observed only - no agency forecasts the onset of this hazard"*. Tap opens Hazard detail
+  **"{n} reported"**; a hazard whose `hazardOf(key).forecastable === false` (Earthquake) adds **" · reports only, no
+  forecast"** (C38: was "observed only") and the tooltip *"Reports only: no agency forecasts the onset of this hazard,
+  and neither do we"*. Tap opens Hazard detail
   (`/hazards/{key}`).
 - **Latest forecasts** table (Starts / Location / Hazard / Risk): open forecasts (`forecast && !windowClosed`),
-  **newest first** (home `when`), first 6. Starts = `fmtWhen(targetStart||updated)`. Empty: *"No open forecasts right now."*
+  **latest start first** (`parse(targetStart || updated)`, C38), first 6. Starts = `fmtWhen(targetStart||updated)`. Empty: *"No open forecasts right now."*
 - **Latest events** table (Time / Location / Event / Source): the **5 newest reports** (not affected by the card's
   sort). Time = `fmtDate(updated)`, Location = `placeOf(e,'-')`, Event = `type || 'Event'`.
-- **Official Warnings** table (Agency / Location / Warning / Ends): `PND.officialWarnings(list)` sorted **most serious
+- **Official warnings and watches** table (Agency / Location / Warning / Ends): `PND.officialWarnings(list)` sorted **most serious
   first** (home `severity` comparator), first 5 (changelog C3). Agency = `source || 'Official'`, Ends =
   `fmtDate(expiresAt||expectedEnd)` or "Not stated". Empty: *"No official warning is in force in our sources right now."*
-- **Track record teaser**: the ND-001 card ("Covered 13 to 16 Sep 2026. Written after that period began, so it is a
-  test case, not an advance forecast.", verdict pill **PARTLY CORRECT**), "What we check" (Timing · Place · Cause ·
-  Severity · Official reports) and "How we check forecasts".
+- **Track record teaser** (C38): "Our automatic forecasts", read from `/data/accuracy-summary.json` `answer`
+  (the figures and words /accuracy opens with, C29/C30: one verdict per forecast, model forecasts graded from settled
+  measurements): `answer.lead` (*"Our weather models have published {issued} forecasts in advance since {date}. {graded}
+  can be graded so far: {correct} came true and {falseAlarms} were false alarms."*), then `answer.points[0]` (the
+  waiting count and settled-through date) and the point on missed days (*"{n} days crossed a model's line at a place it
+  was watching, with no forecast for it."*) when present; then "1 hand-written test case: ND-001 · …" ("… so it is a
+  test case, not an advance forecast, and it is not counted above.", verdict pill **PARTLY CORRECT**) and "How we
+  check forecasts" (NASA POWER measurements; correct if the line was crossed on a day of the window, else a false
+  alarm). If the file does not load: *"The record could not be loaded here. It is on the Track record page."*
 - Footer line: *"Our forecasts help you stay aware and prepared. They do not replace official government warnings."*
 - Header top search (desktop): Enter opens `/events?q=`.
 
@@ -609,7 +631,9 @@ Implemented in `personal-risk.html`, `place-risk.js`, `alert-rules.js`, `alerts-
   - feed not loaded yet: `CHECKING…`; first load failed: `LIVE DATA UNAVAILABLE` (changelog C26)
   - no level: `NOTHING REPORTED NEARBY`
   - otherwise `HEADLINE` upper-cased, then ` · inside an official warning area` (lead band B), or ` · inside a
-    reported affected area` (band A with containment), or ` · a forecast covers it` (band C), or ` · event {d} km away`.
+    reported affected area` (band A with containment), or ` · our forecast covers it` (band C), or ` · event {d} km
+    away`; then ` · a reported event is {d} km away` (lead band C, a reported event exists) or ` · our forecast also
+    covers it` (lead not band C, a forecast covers the place) (changelog C37).
 - Empty: *"No saved places yet. Search for a place above and save it."*
 - Any change to the places re-syncs background alerts (section 16).
 
@@ -1166,8 +1190,9 @@ Implemented in `PND.timezone`, `PND.timezoneOptions` and `PND.setTimezone` (`por
 
 ## 18. Screens on the website not required for parity
 
-- `dashboard.html`, `directory.html`, `home.html`, `home-v2.html` and `home-v3.html` are legacy. `/home*` redirect
-  to `/`. dashboard and directory are not linked from navigation.
+- `directory.html` is legacy and not linked from navigation. The old `dashboard.html`, `home.html`, `home-v2.html`
+  and `home-v3.html` are deleted: `/home*` (with or without a trailing slash or `.html`) redirects to `/`, and
+  `/dashboard` to `/live-map`.
 - `404.html` behaviour is covered by deep-link resolution (section 0.1).
 - The 3D Cesium globe (`globe.js`) is optional.
 - SEO markup, canonical links and `sitemap.xml` are not applicable.

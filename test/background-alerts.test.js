@@ -518,13 +518,18 @@ test('the worker shows what was pushed, and opens only this site', async () => {
 
 const hasText = re => d => re.test((d.getElementById('alertsStatus') || {}).textContent || '');
 
-test('where the service is off, the page says so and offers only what works', async () => {
-  const r = await renderPage('personal-risk.html', { waitFor: hasText(/not switched on/) });
+test('where the service is off, the page offers only what works, and says it as a benefit', async () => {
+  /* It used to say "Background alerts are not switched on for this site yet.
+     It has nowhere to keep your alert settings ...", which read as a note
+     about an unfinished backend (launch audit A13). What it says now is what
+     still works for the reader, and where to get alerts that reach a phone. */
+  const r = await renderPage('personal-risk.html', { waitFor: hasText(/While this page is open, we tell you/) });
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   const status = r.document.getElementById('alertsStatus').textContent;
-  assert.match(status, /not switched on/);
-  assert.match(status, /While this page is open/);
-  assert.match(status, /national or regional disaster agency/);
+  assert.doesNotMatch(status, /not switched on|nowhere to keep/);
+  assert.match(status, /While this page is open, we tell you when a danger is reported/);
+  assert.match(status, /Nothing is sent once you close it/);
+  assert.match(status, /sign up with your national or regional disaster agency/);
   assert.equal(r.document.getElementById('alertsToggle').textContent, 'Alert me while this page is open');
   r.close();
 });

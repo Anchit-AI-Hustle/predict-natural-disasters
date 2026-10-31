@@ -61,8 +61,8 @@ const worstSurface = colour => Object.entries(SURFACES)
 /* --------------------------------------------------- the rules that ship */
 
 const SHEETS = ['portal.css', 'app-pages.css'];
-// index.html and dashboard.html load neither stylesheet, so they carry their own.
-const SELF_CONTAINED = ['index.html', 'dashboard.html'];
+// index.html loads neither stylesheet, so it carries its own.
+const SELF_CONTAINED = ['index.html'];
 const ALL = [...SHEETS, ...SELF_CONTAINED];
 
 /** The style rules that ship for a page: its stylesheet, or its inline <style>. */
@@ -178,12 +178,12 @@ test('every anchor class in the codebase is styled, so none inherits the default
 /* Leaflet renders its own controls and popups inside the map, on surfaces this
    palette does not own. `.leaflet-container a` is (0,1,1), the same specificity
    as a bare `a:visited` / `a:hover`, so whichever stylesheet loads last wins -
-   and on index.html and dashboard.html the inline styles load after Leaflet.
+   and on index.html the inline styles load after Leaflet.
    The attribution pill is near-white and the popups are painted dark by this
    app, so the two need opposite treatment. */
 const LEAFLET_ATTRIBUTION_BG = '#ffffff';       // rgba(255,255,255,.8) over the map
 const LEAFLET_BLUE = '#0078a8';                 // Leaflet's own link colour
-const POPUP_BG = { 'index.html': '#09241c', 'dashboard.html': '#0b1814', shared: '#09241c' };
+const POPUP_BG = { 'index.html': '#09241c', shared: '#09241c' };
 
 test('Leaflet control links keep a colour that reads on its light chrome', () => {
   const bad = [];

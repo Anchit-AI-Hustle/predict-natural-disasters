@@ -197,12 +197,38 @@ test('a count of events is a count of reports, the same on every page', async ()
 test('the old home layouts send a visitor to the homepage', () => {
   const cfg = JSON.parse(read('vercel.json'));
   for (const page of ['home', 'home-v2', 'home-v3']) {
-    for (const src of ['/' + page, '/' + page + '.html']) {
+    /* With a trailing slash too: /home/ served the old layout with a 200,
+       because only /home and /home.html were redirected. */
+    for (const asked of ['/' + page, '/' + page + '/', '/' + page + '.html']) {
+      /* trailingSlash:false (launch hardening E21) sends /home/ to /home first,
+         and a route source may not end in a slash, so /home/ lands through
+         the /home redirect. */
+      const src = cfg.trailingSlash === false ? asked.replace(/\/$/, '') : asked;
       const r = (cfg.redirects || []).find(x => x.source === src);
-      assert.ok(r, src + ' is still served');
+      assert.ok(r, asked + ' is still served');
       assert.equal(r.destination, '/');
       assert.equal(r.permanent, true, src + ' is not a permanent move');
     }
+  }
+});
+
+test('the old layouts are gone from the deployment, not only redirected', () => {
+  /* A file that is still deployed is still served at any address the redirects
+     miss. They are deleted, so the redirects are the only thing left. */
+  for (const f of ['home.html', 'home-v2.html', 'home-v3.html', 'dashboard.html']) {
+    assert.ok(!fs.existsSync(path.join(ROOT, f)), f + ' is still in the repository');
+  }
+});
+
+test('the old dashboard sends a visitor to the live map', () => {
+  const cfg = JSON.parse(read('vercel.json'));
+  for (const asked of ['/dashboard', '/dashboard/', '/dashboard.html']) {
+    /* /dashboard/ reaches /dashboard through trailingSlash:false (E21). */
+    const src = cfg.trailingSlash === false ? asked.replace(/\/$/, '') : asked;
+    const r = (cfg.redirects || []).find(x => x.source === src);
+    assert.ok(r, asked + ' is not redirected');
+    assert.equal(r.destination, '/live-map');
+    assert.equal(r.permanent, true, src + ' is not a permanent move');
   }
 });
 

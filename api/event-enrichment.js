@@ -9,7 +9,7 @@ const { queryOf } = require('./_lib/http.js');
  * CommonJS on purpose (see api/_lib/verified-support.js for why).
  */
 
-const { supportFor, GLOBAL_RELIEF, GLOBAL_DIRECTORIES } = require('./_lib/verified-support.js');
+const { supportFor, COUNTRY_SUPPORT, GLOBAL_RELIEF, GLOBAL_DIRECTORIES } = require('./_lib/verified-support.js');
 
 const REFRESH_SECONDS = 300; // matches the 5-minute refresh cycle
 
@@ -482,8 +482,13 @@ async function handler(req, res) {
   const lat = coord(q.lat);
   const lon = coord(q.lon);
   const isForecast = String(q.forecast || '') === 'true' || String(q.forecast || '') === '1';
+  /* What the page wants. A place page (/location-detail) is not an event:
+     'place' asks for the contacts only, and 'news' for one real event's news
+     only. Neither searches what it will not show, so neither waits on it. */
+  const mode = ({ place: 'place', news: 'news' })[str(q.mode, 16)] || '';
+  const coordsGiven = Number.isFinite(lat) && Number.isFinite(lon);
 
-  if (!title && !country && !type) {
+  if (!title && !country && !type && !(mode === 'place' && (coordsGiven || region))) {
     return res.status(400).json({ error: 'Missing event context', hint: 'Pass at least one of title, country or type.' });
   }
 
@@ -491,12 +496,13 @@ async function handler(req, res) {
   const newsQuery = base + ' (disaster OR emergency OR flood OR earthquake OR cyclone OR storm OR wildfire OR landslide OR volcano OR relief)';
   const videoQuery = base + ' disaster news report';
 
+  const none = v => Promise.resolve(v);
   const [googleItems, bingItems, rwResult, videoResult, place] = await Promise.all([
-    googleNews(newsQuery),
-    bingNews(base + ' disaster'),
-    reliefwebReports(title || type, country),
-    youtubeVideos(videoQuery),
-    resolvePlace(lat, lon)
+    mode === 'place' ? none([]) : googleNews(newsQuery),
+    mode === 'place' ? none([]) : bingNews(base + ' disaster'),
+    mode ? none({ items: [], note: 'Not searched for this page' }) : reliefwebReports(title || type, country),
+    mode ? none({ videos: [], status: { note: 'Not searched for this page' } }) : youtubeVideos(videoQuery),
+    mode === 'news' ? none(null) : resolvePlace(lat, lon)
   ]);
   const videos = videoResult.videos;
   const rwItems = rwResult.items;
@@ -518,7 +524,22 @@ async function handler(req, res) {
 
   const situationReports = rwItems.slice().sort(byNewest).slice(0, 12).map(x => Object.assign({}, x, { established: true }));
 
-  const support = supportFor(country, region);
+  /* A place opened by its coordinates may arrive with no country, or with a
+     city as its region: "Mumbai" names no country, so India's numbers were
+     never found. The country the reverse lookup found is the fallback. */
+  let support = supportFor(country, region);
+  /* By exact two-letter code only: the name matcher reads prefixes, and "CH"
+     would land on China rather than Switzerland. */
+  const byCode = code => {
+    const c = String(code || '').trim().toUpperCase();
+    const k = /^[A-Z]{2}$/.test(c) ? Object.keys(COUNTRY_SUPPORT).find(x => COUNTRY_SUPPORT[x].iso2 === c) : '';
+    return k ? supportFor(k) : null;
+  };
+  for (const next of [() => byCode(q.cc), () => place && supportFor(place.country), () => place && byCode(place.countryCode)]) {
+    if (support.matched) break;
+    const found = next();
+    if (found && found.matched) support = found;
+  }
   const play = hazardPlaybook(type);
 
   const affectedRegions = dedupe([
@@ -580,7 +601,8 @@ async function handler(req, res) {
     },
     authorities: support.authorities,
     supportGroups: support.nationalRelief,
-    reliefGroups: isForecast ? [] : (support.globalRelief || GLOBAL_RELIEF),
+    /* A place page is about no disaster, so it carries no appeal to give to. */
+    reliefGroups: isForecast || mode ? [] : (support.globalRelief || GLOBAL_RELIEF),
     directories: support.directories || GLOBAL_DIRECTORIES,
     donationPolicy: isForecast
       ? 'This is our own forecast, not a confirmed disaster. We do not show donation links until real harm is confirmed by others.'

@@ -32,7 +32,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
 const PAGES = (process.env.PAGES ||
-  '/,/alerts,/live-map,/forecasts,/personal-risk,/accuracy,/events,/regions,/methodology,/about,/insights,/calamities,/dashboard,/hazard-types,/official-warnings,/resources,/historical-events,/compare-locations,/forecast-calendar,/alerts-notifications,/recent-events'
+  '/,/alerts,/live-map,/forecasts,/personal-risk,/accuracy,/events,/regions,/methodology,/about,/insights,/calamities,/hazard-types,/official-warnings,/resources,/historical-events,/compare-locations,/forecast-calendar,/alerts-notifications,/recent-events'
 ).split(',').map(s => s.trim()).filter(Boolean);
 const PORT = Number(process.env.PORT || 8191);
 

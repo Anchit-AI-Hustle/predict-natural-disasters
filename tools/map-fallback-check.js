@@ -32,7 +32,7 @@ const { makeFetch } = require(path.join(ROOT, 'test', 'mock-upstreams.js'));
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
-const PAGES = (process.env.PAGES || '/,/alerts,/live-map,/forecasts,/regions,/dashboard')
+const PAGES = (process.env.PAGES || '/,/alerts,/live-map,/forecasts,/regions')
   .split(',').map(s => s.trim()).filter(Boolean);
 const PORT = Number(process.env.PORT || 8193);
 

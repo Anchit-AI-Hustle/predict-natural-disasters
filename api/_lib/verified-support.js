@@ -465,6 +465,18 @@ const COUNTRY_SUPPORT = {
     ],
     relief: [{ name: 'Cruz Roja Ecuatoriana', url: 'https://www.cruzroja.org.ec/' }]
   },
+  /* Central and South American countries whose single national number is
+     911, each run by the state (checked October 2026). Agencies are listed
+     only where their own site is certain; otherwise the page links the IFRC
+     directory and the national authority search instead. */
+  costa_rica: { name: 'Costa Rica', iso2: 'CR', emergency: [n('Emergency services', '911')], authorities: [{ name: 'Comisión Nacional de Emergencias (CNE)', url: 'https://www.cne.go.cr/' }, { name: 'Instituto Meteorológico Nacional', url: 'https://www.imn.ac.cr/' }], relief: [] },
+  panama: { name: 'Panama', iso2: 'PA', emergency: [n('Emergency services', '911')], authorities: [{ name: 'SINAPROC - civil protection', url: 'https://www.sinaproc.gob.pa/' }], relief: [] },
+  el_salvador: { name: 'El Salvador', iso2: 'SV', emergency: [n('Emergency services', '911')], authorities: [{ name: 'Dirección General de Protección Civil', url: 'https://www.proteccioncivil.gob.sv/' }], relief: [] },
+  honduras: { name: 'Honduras', iso2: 'HN', emergency: [n('Emergency services', '911')], authorities: [{ name: 'COPECO - contingency planning', url: 'https://copeco.gob.hn/' }], relief: [] },
+  uruguay: { name: 'Uruguay', iso2: 'UY', emergency: [n('Emergency services', '911')], authorities: [{ name: 'INUMET - meteorology', url: 'https://www.inumet.gub.uy/' }], relief: [] },
+  paraguay: { name: 'Paraguay', iso2: 'PY', emergency: [n('Emergency services', '911')], authorities: [], relief: [] },
+  venezuela: { name: 'Venezuela', iso2: 'VE', emergency: [n('Emergency services (VEN 911)', '911')], authorities: [], relief: [] },
+  hong_kong: { name: 'Hong Kong', iso2: 'HK', emergency: [n('Police, fire and ambulance', '999')], authorities: [{ name: 'Hong Kong Observatory', url: 'https://www.hko.gov.hk/' }], relief: [] },
   united_kingdom: {
     name: 'United Kingdom',
     iso2: 'GB',
@@ -591,6 +603,8 @@ const COUNTRY_SUPPORT = {
 
 /** Aliases and ISO codes that upstream feeds use instead of a plain country name. */
 const COUNTRY_ALIASES = {
+  /* A US territory: the same 911, FEMA and National Weather Service. */
+  puerto_rico: 'united_states', pr: 'united_states', pri: 'united_states',
   usa: 'united_states', us: 'united_states', u_s_a: 'united_states', u_s: 'united_states',
   america: 'united_states', united_states_of_america: 'united_states', usa_: 'united_states',
   uk: 'united_kingdom', gb: 'united_kingdom', great_britain: 'united_kingdom', england: 'united_kingdom',

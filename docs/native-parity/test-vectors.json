@@ -3640,7 +3640,7 @@
    "out": {
     "level": "WATCH",
     "headline": "Watch",
-    "why": "An event was reported 14 km from your place. That is the distance between two points. It does not mean the affected area reaches you.",
+    "why": "An event was reported 14 km from your place. That is the distance between two points. It does not mean the affected area reaches you. One of our forecasts also covers your place.",
     "leadId": "usgs-1",
     "leadBand": "A",
     "searchedKm": 500,
@@ -10195,27 +10195,23 @@
   "hazardFilterOptions": [
    {
     "value": "",
-    "label": "All hazards (11)"
+    "label": "All hazards"
    },
    {
     "value": "Flood",
-    "label": "Flood (3)"
-   },
-   {
-    "value": "Extreme Heat",
-    "label": "Extreme Heat (2)"
+    "label": "Flood (2)"
    },
    {
     "value": "Earthquake",
     "label": "Earthquake (1)"
    },
    {
-    "value": "Earthquake aftershock sequence",
-    "label": "Earthquake aftershock sequence (1)"
-   },
-   {
     "value": "Extreme Cold",
     "label": "Extreme Cold (1)"
+   },
+   {
+    "value": "Extreme Heat",
+    "label": "Extreme Heat (1)"
    },
    {
     "value": "Severe Storm",
@@ -10228,6 +10224,10 @@
    {
     "value": "Wildfire",
     "label": "Wildfire (1)"
+   },
+   {
+    "value": "Earthquake aftershock sequence",
+    "label": "Earthquake aftershock sequence (forecasts only)"
    }
   ],
   "sortOptions": [
@@ -10279,7 +10279,7 @@
     },
     "out": {
      "kEvents": "8",
-     "kEventsNote": "4 serious · 0 minor",
+     "kEventsNote": "1 extreme · 3 severe · 3 moderate · 1 watch",
      "kWarnings": "4",
      "kForecasts": "2",
      "kForecastsNote": "1 Severe · 1 Watch",
@@ -10371,7 +10371,7 @@
       },
       {
        "hazard": "Earthquake",
-       "text": "1 reported · observed only",
+       "text": "1 reported · reports only, no forecast",
        "link": "/hazards/Earthquake"
       },
       {
@@ -10409,7 +10409,7 @@
     },
     "out": {
      "kEvents": "8",
-     "kEventsNote": "4 serious · 0 minor",
+     "kEventsNote": "1 extreme · 3 severe · 3 moderate · 1 watch",
      "kWarnings": "4",
      "kForecasts": "2",
      "kForecastsNote": "1 Severe · 1 Watch",
@@ -10501,7 +10501,7 @@
       },
       {
        "hazard": "Earthquake",
-       "text": "1 reported · observed only",
+       "text": "1 reported · reports only, no forecast",
        "link": "/hazards/Earthquake"
       },
       {
@@ -10539,7 +10539,7 @@
     },
     "out": {
      "kEvents": "8",
-     "kEventsNote": "4 serious · 0 minor",
+     "kEventsNote": "1 extreme · 3 severe · 3 moderate · 1 watch",
      "kWarnings": "4",
      "kForecasts": "2",
      "kForecastsNote": "1 Severe · 1 Watch",
@@ -10631,7 +10631,7 @@
       },
       {
        "hazard": "Earthquake",
-       "text": "1 reported · observed only",
+       "text": "1 reported · reports only, no forecast",
        "link": "/hazards/Earthquake"
       },
       {
@@ -10669,7 +10669,7 @@
     },
     "out": {
      "kEvents": "8",
-     "kEventsNote": "4 serious · 0 minor",
+     "kEventsNote": "1 extreme · 3 severe · 3 moderate · 1 watch",
      "kWarnings": "4",
      "kForecasts": "2",
      "kForecastsNote": "1 Severe · 1 Watch",
@@ -10761,7 +10761,7 @@
       },
       {
        "hazard": "Earthquake",
-       "text": "1 reported · observed only",
+       "text": "1 reported · reports only, no forecast",
        "link": "/hazards/Earthquake"
       },
       {
@@ -10799,7 +10799,7 @@
     },
     "out": {
      "kEvents": "1",
-     "kEventsNote": "Matching the hazard you chose",
+     "kEventsNote": "1 moderate",
      "kWarnings": "1",
      "kForecasts": "0",
      "kForecastsNote": "Recorded for grading",
@@ -10844,7 +10844,7 @@
     },
     "out": {
      "kEvents": "1",
-     "kEventsNote": "1 serious · 0 minor",
+     "kEventsNote": "1 severe",
      "kWarnings": "1",
      "kForecasts": "1",
      "kForecastsNote": "1 Severe",
@@ -10892,7 +10892,7 @@
     },
     "out": {
      "kEvents": "2",
-     "kEventsNote": "2 serious · 0 minor",
+     "kEventsNote": "1 extreme · 1 severe",
      "kWarnings": "1",
      "kForecasts": "0",
      "kForecastsNote": "Recorded for grading",
@@ -10944,7 +10944,7 @@
     },
     "out": {
      "kEvents": "1",
-     "kEventsNote": "Matching the hazard you chose",
+     "kEventsNote": "1 moderate",
      "kWarnings": "0",
      "kForecasts": "0",
      "kForecastsNote": "Recorded for grading",
@@ -10973,7 +10973,7 @@
      "hazardStrip": [
       {
        "hazard": "Earthquake",
-       "text": "1 reported · observed only",
+       "text": "1 reported · reports only, no forecast",
        "link": "/hazards/Earthquake"
       }
      ]
@@ -11105,7 +11105,7 @@
      "eyebrow": "Current risk",
      "badge": "Severe",
      "heading": "Delhi home",
-     "happening": "Magnitude 5.6 - 12 km north of Delhi, India Earthquake · Delhi, India · reported 1 hr ago",
+     "happening": "Magnitude 5.6 - 12 km north of Delhi, India Earthquake · Delhi, India · Severe · reported 1 hr ago",
      "unavailableCard": false,
      "why": "An event was reported 10 km from your place. That is the distance between two points. It does not mean the affected area reaches you.",
      "steps": [
@@ -11141,7 +11141,7 @@
      "eyebrow": "Current risk",
      "badge": "Severe",
      "heading": "Delhi home",
-     "happening": "Magnitude 5.6 - 12 km north of Delhi, India Earthquake · Delhi, India · reported 1 hr ago",
+     "happening": "Magnitude 5.6 - 12 km north of Delhi, India Earthquake · Delhi, India · Severe · reported 1 hr ago",
      "unavailableCard": false,
      "why": "An event was reported 10 km from your place. That is the distance between two points. It does not mean the affected area reaches you.",
      "steps": [

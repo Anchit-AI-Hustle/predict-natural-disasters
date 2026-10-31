@@ -162,7 +162,7 @@ test('P7: every page says the live data is unavailable when the feed fails', asy
     ['region-detail.html', '?region=Japan', 'kEvents'],
     ['hazard-detail.html', '?type=Flood', 'kEvents'],
     ['forecasts.html', '', 'changes'],
-    ['dashboard.html', '', 'ka'],
+    ['live-map.html', '', 'statusLine'],
     ['alerts.html', '', 'alerts']
   ]) {
     const r = await renderPage(page, { search, feedDown: true, timeoutMs: 3000 });
@@ -338,10 +338,18 @@ test('P17: the dead ReliefWeb RSS address is gone from the feed and the sources 
 
 /* ----------------------------------------------------------------- P18 */
 
-test('P18: the track record and the old home layouts cannot widen a phone screen', () => {
+test('P18: the track record cannot widen a phone screen, and the old home layouts are redirected', () => {
   // Measured in Chromium at 390px; jsdom lays nothing out, so the rules that fixed it are held here.
   assert.match(read('accuracy.html'), /\.split>\*\{min-width:0\}\.status-title,\.sub\{overflow-wrap:anywhere\}/);
-  for (const f of ['home.html', 'home-v2.html', 'home-v3.html']) {
-    assert.match(read(f), /@media\(max-width:1150px\)\{\.homegrid\{grid-template-columns:minmax\(0,1fr\)\}/, f);
+  /* The old layouts are deleted, so what holds now is that every address they
+     had lands on the homepage. */
+  const cfg = JSON.parse(read('vercel.json')), redirects = cfg.redirects || [];
+  for (const f of ['home', 'home-v2', 'home-v3']) {
+    for (const asked of ['/' + f, '/' + f + '/', '/' + f + '.html']) {
+      /* With trailingSlash:false, /home/ is sent to /home before any route. */
+      const src = cfg.trailingSlash === false ? asked.replace(/\/$/, '') : asked;
+      const r = redirects.find(x => x.source === src);
+      assert.ok(r && r.destination === '/', asked + ' is not redirected to /');
+    }
   }
 });

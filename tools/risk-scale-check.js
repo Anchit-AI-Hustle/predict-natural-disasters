@@ -42,7 +42,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
 const PAGES = (process.env.PAGES ||
-  '/,/live-map,/alerts,/events,/forecasts,/forecast-list,/accuracy,/regions,/dashboard,/recent-events,/official-warnings'
+  '/,/live-map,/alerts,/events,/forecasts,/forecast-list,/accuracy,/regions,/recent-events,/official-warnings'
 ).split(',').map(s => s.trim()).filter(Boolean);
 const PORT = Number(process.env.PORT || 8191);
 

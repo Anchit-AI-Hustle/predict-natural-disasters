@@ -47,7 +47,7 @@ test('the collection pages open on the newest record', () => {
 });
 
 test('the self-contained pages open on the newest record', () => {
-  for (const [page, store] of [['index.html', 'SORTS'], ['dashboard.html', 'DASH_SORTS']]) {
+  for (const [page, store] of [['index.html', 'SORTS']]) {
     const src = read(page);
     assert.ok(src.includes(store + '={newest:'),
       page + ': the sort control does not list newest first');

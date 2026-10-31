@@ -22,7 +22,10 @@ const PND={
        of upstream requests a minute. */
     const fresh=!!(opts&&opts.fresh)||PND._freshNext;PND._freshNext=false;
     const r=await fetch('/api/events',fresh?{cache:'no-cache'}:{});if(!r.ok)throw new Error('Live feed unavailable');
-    const d=await r.json();if(opts&&opts.all)return d;
+    const d=await r.json();
+    /* The risk filters offer the levels this feed actually holds. */
+    try{if(PND.pruneRiskFilters)PND.pruneRiskFilters((Array.isArray(d.events)?d.events:[]).filter(e=>e&&e.live!==false))}catch(e){}
+    if(opts&&opts.all)return d;
     const ev=Array.isArray(d.events)?d.events:[];
     return Object.assign({},d,{events:ev.filter(e=>e&&e.live!==false),notLive:ev.filter(e=>e&&e.live===false)});
   },
@@ -222,11 +225,37 @@ const PND={
    */
   /* The record's level on this site's scale, as a word - the same answer the
      badge gives, for the places that print text rather than a badge. */
+  /* The one level a record resolves to, as a key on the six-level scale
+     (or UNKNOWN). Every chip, map mark, map key, filter and count resolves a
+     record through this, so no two of them can disagree about it: the
+     homepage map coloured its marks by the raw alert word while the chips
+     beside it read the severity first, and its key said "High 17" beside a
+     tile reading "2 serious". */
+  riskKey(e){
+    /* A thin alias: the answer is risk.js keyFor, the one level function. */
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    return R&&R.keyFor?R.keyFor(e||{}):'UNKNOWN';
+  },
   riskLabel(e){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return 'Not rated';
-    const k=R.keyFor?R.keyFor(e||{}):'UNKNOWN';
+    const k=this.riskKey(e);
     return k!=='UNKNOWN'&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+  },
+  /* The level in words that say where it came from, where an agency set it.
+     "Low" beside an M6.9 earthquake reads as an error; what it means is that
+     USGS PAGER (or GDACS) expects little damage, and the reader is told so.
+     The words are risk.js describe, the same text the badge carries. */
+  riskWords(e){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    const label=this.riskLabel(e);
+    if(!R||!e||!R.describe)return label;
+    const d=R.describe(e);
+    if(d.basis)return d.text;
+    const quake=/earthquake/i.test(e.type||'')&&!/aftershock/i.test(e.type||'');
+    if(d.key==='LOW'&&quake&&/^USGS\b/.test(String(e.alertSource||e.source||''))&&!e.pagerAlert&&!e.forecast)
+      return 'Low (no USGS PAGER impact alert issued)';
+    return label;
   },
   riskTag(e,opts){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
@@ -319,12 +348,17 @@ const PND={
       o.textContent=o.dataset.label+' ('+n+')';
       o.hidden=n===0&&sel.value!==o.value;o.disabled=n===0&&sel.value!==o.value;});
   },
-  riskLevelOptions(selected){
+  /* Given the records it filters, only the levels they hold are offered:
+     "High" and "Not rated" were offered over a list where nothing was either,
+     and both led to "No events to show". The level chosen stays offered. */
+  riskLevelOptions(selected,records){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return '';
-    return R.LEVELS.slice().reverse().map(l=>
+    const have=Array.isArray(records)?new Set(records.map(e=>this.riskKey(e))):null;
+    const keep=k=>!have||have.has(k)||selected===k;
+    return R.LEVELS.slice().reverse().filter(l=>keep(l.key)).map(l=>
       `<option value="${l.key}"${selected===l.key?' selected':''}>${l.label}</option>`).join('')+
-      `<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`;
+      (keep('UNKNOWN')?`<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`:'');
   },
   /* The hazard filter, built from the records it filters.
    *
@@ -358,7 +392,7 @@ const PND={
     if(!R)return true;
     /* The same resolution the badge uses, or the filter and the badge
        disagree about the same record. */
-    return (R.keyFor?R.keyFor(e||{}):'UNKNOWN')===key;
+    return this.riskKey(e)===key;
   },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},
@@ -562,7 +596,9 @@ const PND={
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   distanceKm(a,b,c,d){const r=Math.PI/180,R=6371,x=(c-a)*r,y=(d-b)*r,z=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(z))},
-  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;/* The same rules the background service applies (alert-rules.js), so the
+  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;
+    /* Turned off on My places: the browser keeps its permission, so the choice is kept here. */
+    try{if(localStorage.getItem('pnd_page_alerts_off')==='1')return}catch(e){}/* The same rules the background service applies (alert-rules.js), so the
      page open in a tab and the service behind it never disagree about what is
      worth a notification. Where the service is on for this device it has
      already sent these; raising them again here would say everything twice. */
@@ -698,7 +734,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
     if(document.querySelector('script[data-pnd-enrichment]')){
       document.querySelector('script[data-pnd-enrichment]').addEventListener('load',run);return}
     const s=document.createElement('script');
-    s.src='/event-enrichment.js?v=8';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
+    s.src='/event-enrichment.js?v=11';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
     document.body.appendChild(s);
   }
   /* Fill every risk filter from the one scale.
@@ -716,14 +752,31 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
            rated" and showed nothing at all. */
         const was=sel.value;
         const box=document.createElement('select');
-        box.innerHTML=PND.riskLevelOptions();
+        box.innerHTML=PND.riskLevelOptions(undefined,PND._riskRecords);
         while(box.firstChild)sel.insertBefore(box.firstChild,node);
         node.remove();
+        sel.dataset.riskFilter='1';
         sel.value=was;
         if(sel.selectedIndex<0)sel.selectedIndex=0;
       }
     });
   }
+  /* Once the records are known, each risk filter keeps only the levels they
+     hold, plus whichever one the reader has chosen. */
+  PND.pruneRiskFilters=function(records){
+    PND._riskRecords=records;
+    if(typeof document==='undefined')return;
+    const keys=new Set(((window.PNDRisk&&window.PNDRisk.LEVELS)||[]).map(l=>l.key).concat(['UNKNOWN']));
+    document.querySelectorAll('select[data-risk-filter]').forEach(sel=>{
+      const was=sel.value;
+      Array.from(sel.options).filter(o=>keys.has(o.value)).forEach(o=>o.remove());
+      const box=document.createElement('select');
+      box.innerHTML=PND.riskLevelOptions(was,records);
+      while(box.firstChild)sel.appendChild(box.firstChild);
+      sel.value=was;
+      if(sel.selectedIndex<0)sel.selectedIndex=0;
+    });
+  };
   /* A skip link, and every part of the page inside a named landmark. Each
      page's hero and the enrichment section sat outside <main>, unnamed, and
      no page had a way past the header and its links. */

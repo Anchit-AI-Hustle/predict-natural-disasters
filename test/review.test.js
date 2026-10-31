@@ -52,20 +52,23 @@ test('no page calls a matcher through a namespace it never loaded', () => {
   assert.deepEqual(broken, [], 'these pages throw a ReferenceError on use');
 });
 
-test('home-v3 filters its list without throwing', async () => {
-  const { window } = await renderPage('home-v3.html', { timeoutMs: 15000 });
+/* This was home-v3's search box. That page is deleted (and redirected), so the
+   same matcher path is held on the live map, whose list it filters. */
+test('the live map filters its list without throwing', async () => {
+  const r = await renderPage('live-map.html', { timeoutMs: 15000,
+    waitFor: d => d.querySelectorAll('#cards .event-card').length > 0 });
+  const { window } = r;
   const doc = window.document;
-  const box = doc.getElementById('search');
-  assert.ok(box, 'home-v3 still has a search box');
-  const before = doc.querySelectorAll('#liveList a, #liveList article').length;
+  const box = doc.getElementById('q');
+  assert.ok(box, 'the live map still has a search box');
+  const before = doc.querySelectorAll('#cards .event-card').length;
   box.value = 'earthquake';
   box.dispatchEvent(new window.Event('input', { bubbles: true }));
-  await new Promise(r => setTimeout(r, 120));
-  const errs = [];
-  window.addEventListener('error', e => errs.push(e));
-  assert.equal(errs.length, 0);
-  void before;
-  window.close();
+  await new Promise(res => setTimeout(res, 400));
+  const after = doc.querySelectorAll('#cards .event-card').length;
+  assert.ok(after > 0 && after <= before, 'filtering left ' + after + ' of ' + before);
+  assert.deepEqual(r.errors.map(String), []);
+  r.close();
 });
 
 /* ---------- a geography box must stay geographic ---------- */
