@@ -1,9 +1,9 @@
 {
  "note": "Forecasts made in advance by tools/run-models.js from data/climatology.json. Replaced on every run; the ledger keeps every one ever issued.",
- "generatedAt": "2026-10-30T11:01:10.048Z",
+ "generatedAt": "2026-10-31T10:35:55.895Z",
  "period": "1996-2025",
  "places": 108,
- "checked": 93,
+ "checked": 94,
  "skipped": [
   {
    "id": "mumbai-in",
@@ -15,27 +15,23 @@
   },
   {
    "id": "nagpur-in",
-   "why": "the forecast service and the 30-year record differ here by 3.7 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.6 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "lahore-pk",
-   "why": "the forecast service and the 30-year record differ here by -5.0 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by -4.9 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "kabul-af",
    "why": "only 21 recent days that both datasets cover; at least 15 are needed to correct the forecast"
   },
   {
+   "id": "manila-ph",
+   "why": "the forecast service and the 30-year record differ here by 4.2 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+  },
+  {
    "id": "jakarta-id",
    "why": "the forecast service and the 30-year record differ here by 3.4 °C on average over the last 21 days, more than a correction can be trusted to bridge"
-  },
-  {
-   "id": "manila-ph",
-   "why": "the forecast service and the 30-year record differ here by 4.0 °C on average over the last 21 days, more than a correction can be trusted to bridge"
-  },
-  {
-   "id": "accra-gh",
-   "why": "the forecast service and the 30-year record differ here by 3.1 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "johannesburg-za",
@@ -43,23 +39,23 @@
   },
   {
    "id": "lisbon-pt",
-   "why": "the forecast service and the 30-year record differ here by 3.6 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.7 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "denver-us",
-   "why": "the forecast service and the 30-year record differ here by 3.6 °C on average over the last 21 days, more than a correction can be trusted to bridge"
-  },
-  {
-   "id": "port-au-prince-ht",
-   "why": "the forecast service and the 30-year record differ here by 3.4 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.7 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "monterrey-mx",
-   "why": "the forecast service and the 30-year record differ here by 3.6 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by 3.5 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+  },
+  {
+   "id": "port-au-prince-ht",
+   "why": "the forecast service and the 30-year record differ here by 3.3 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "vancouver-island-ca",
-   "why": "the forecast service and the 30-year record differ here by -3.5 °C on average over the last 21 days, more than a correction can be trusted to bridge"
+   "why": "the forecast service and the 30-year record differ here by -3.6 °C on average over the last 21 days, more than a correction can be trusted to bridge"
   },
   {
    "id": "santiago-cl",
@@ -68,41 +64,144 @@
  ],
  "outlooks": [
   {
-   "id": "model-heat-chittagong-bd-2026-10-31",
+   "id": "model-rain-bhubaneswar-in-2026-11-02",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Bhubaneswar, 2 Nov",
+   "country": "India",
+   "admin1": "Odisha",
+   "region": "Bhubaneswar, Odisha, India",
+   "lat": 20.2724,
+   "lon": 85.8339,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-02T00:00:00Z",
+   "targetEnd": "2026-11-02T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.31 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 10% of the same month in 1996-2025 when last measured (28 Oct). 2 Nov: 20.6 mm (21.3 mm over three days) against a usual worst of 18.59 mm in a day and 43.05 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Bhubaneswar, Odisha, India, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-02",
+      "value": 20.6,
+      "threeDay": 21.3,
+      "p99": 18.59,
+      "p99x3": 43.05
+     }
+    ],
+    "peak": 20.6,
+    "severe": false,
+    "placeId": "bhubaneswar-in",
+    "geonameId": 1275817,
+    "bias": {
+     "tmax": 1.2,
+     "dew": -0.05,
+     "rainRatio": 1.31,
+     "windRatio": 1.09,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.1,
+     "value": 0.79,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-rain-bhubaneswar-in-2026-11-05",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Bhubaneswar, 5 Nov",
+   "country": "India",
+   "admin1": "Odisha",
+   "region": "Bhubaneswar, Odisha, India",
+   "lat": 20.2724,
+   "lon": 85.8339,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-05T00:00:00Z",
+   "targetEnd": "2026-11-05T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.31 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 10% of the same month in 1996-2025 when last measured (28 Oct). 5 Nov: 19.3 mm (33 mm over three days) against a usual worst of 18.59 mm in a day and 43.05 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Bhubaneswar, Odisha, India, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-05",
+      "value": 19.3,
+      "threeDay": 33,
+      "p99": 18.59,
+      "p99x3": 43.05
+     }
+    ],
+    "peak": 19.3,
+    "severe": false,
+    "placeId": "bhubaneswar-in",
+    "geonameId": 1275817,
+    "bias": {
+     "tmax": 1.2,
+     "dew": -0.05,
+     "rainRatio": 1.31,
+     "windRatio": 1.09,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.1,
+     "value": 0.79,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-heat-chittagong-bd-2026-11-01",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Chittagong, 31 Oct to 6 Nov",
+   "title": "Extreme heat forecast for Chittagong, 1 Nov to 7 Nov",
    "country": "Bangladesh",
    "admin1": "Chittagong",
    "region": "Chittagong, Bangladesh",
    "lat": 22.3384,
    "lon": 91.8317,
    "alert": "High",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-10-31T00:00:00Z",
-   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-07T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved down 0.2 °C for the cooling this place's record shows since its middle year. 31 Oct: 33.2 °C against a usual worst of 31.1 °C. 1 Nov: 32.5 °C against a usual worst of 31 °C. 2 Nov: 32.6 °C against a usual worst of 30.9 °C. 3 Nov: 32.3 °C against a usual worst of 30.9 °C. 4 Nov: 31.4 °C against a usual worst of 30.8 °C. 5 Nov: 31.5 °C against a usual worst of 30.7 °C. 6 Nov: 32.1 °C against a usual worst of 30.6 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Chittagong, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved down 0.2 °C for the cooling this place's record shows since its middle year. 1 Nov: 32.5 °C against a usual worst of 31 °C. 2 Nov: 32 °C against a usual worst of 30.9 °C. 3 Nov: 32.1 °C against a usual worst of 30.9 °C. 4 Nov: 32.3 °C against a usual worst of 30.8 °C. 5 Nov: 31.5 °C against a usual worst of 30.7 °C. 6 Nov: 31.9 °C against a usual worst of 30.6 °C. 7 Nov: 32.1 °C against a usual worst of 30.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Chittagong, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
-     {
-      "day": "2026-10-31",
-      "value": 33.2,
-      "p95": 31.1,
-      "p99": 31.9,
-      "shift": -0.2
-     },
      {
       "day": "2026-11-01",
       "value": 32.5,
@@ -112,21 +211,21 @@
      },
      {
       "day": "2026-11-02",
-      "value": 32.6,
+      "value": 32,
       "p95": 30.9,
       "p99": 31.7,
       "shift": -0.2
      },
      {
       "day": "2026-11-03",
-      "value": 32.3,
+      "value": 32.1,
       "p95": 30.9,
       "p99": 31.7,
       "shift": -0.2
      },
      {
       "day": "2026-11-04",
-      "value": 31.4,
+      "value": 32.3,
       "p95": 30.8,
       "p99": 31.6,
       "shift": -0.2
@@ -140,45 +239,52 @@
      },
      {
       "day": "2026-11-06",
-      "value": 32.1,
+      "value": 31.9,
       "p95": 30.6,
       "p99": 31.4,
       "shift": -0.2
+     },
+     {
+      "day": "2026-11-07",
+      "value": 32.1,
+      "p95": 30.5,
+      "p99": 31.3,
+      "shift": -0.2
      }
     ],
-    "peak": 33.2,
+    "peak": 32.5,
     "severe": true,
     "placeId": "chittagong-bd",
     "geonameId": 1205733,
     "bias": {
-     "tmax": 0.56,
-     "dew": 0.39,
-     "rainRatio": 1.81,
+     "tmax": 0.63,
+     "dew": 0.34,
+     "rainRatio": 1.65,
      "windRatio": 1.28,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
-     "value": 0.68,
-     "day": "2026-10-27"
+     "value": 0.71,
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-heat-riyadh-sa-2026-10-31",
+   "id": "model-heat-riyadh-sa-2026-11-01",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Riyadh, 31 Oct to 2 Nov",
+   "title": "Extreme heat forecast for Riyadh, 1 Nov to 2 Nov",
    "country": "Saudi Arabia",
    "admin1": "Riyadh Region",
    "region": "Riyadh, Riyadh Region, Saudi Arabia",
    "lat": 24.6877,
    "lon": 46.7219,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-10-31T00:00:00Z",
+   "alert": "High",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
    "targetEnd": "2026-11-02T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
@@ -186,23 +292,16 @@
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.5 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row. That line is moved up 0.2 °C for the warming this place's record shows since its middle year. 31 Oct: 36.2 °C against a usual worst of 35.5 °C. 1 Nov: 35.8 °C against a usual worst of 35.3 °C. 2 Nov: 35.7 °C against a usual worst of 35.1 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Riyadh, Riyadh Region, Saudi Arabia, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved up 0.2 °C for the warming this place's record shows since its middle year. 1 Nov: 36.3 °C against a usual worst of 35.3 °C. 2 Nov: 35.7 °C against a usual worst of 35.1 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Riyadh, Riyadh Region, Saudi Arabia, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
-      "day": "2026-10-31",
-      "value": 36.2,
-      "p95": 35.5,
-      "p99": 36.4,
-      "shift": 0.23
-     },
-     {
       "day": "2026-11-01",
-      "value": 35.8,
+      "value": 36.3,
       "p95": 35.3,
       "p99": 36.2,
       "shift": 0.23
@@ -215,13 +314,13 @@
       "shift": 0.23
      }
     ],
-    "peak": 36.2,
-    "severe": false,
+    "peak": 36.3,
+    "severe": true,
     "placeId": "riyadh-sa",
     "geonameId": 108410,
     "bias": {
-     "tmax": -0.46,
-     "dew": 1.11,
+     "tmax": -0.42,
+     "dew": 1.03,
      "rainRatio": 1,
      "windRatio": 1.69,
      "overlapDays": 21
@@ -229,7 +328,124 @@
     "soil": {
      "percentile": 0,
      "value": 0.01,
-     "day": "2026-10-27"
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-heat-dubai-ae-2026-11-01",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Dubai, 1 Nov to 2 Nov",
+   "country": "United Arab Emirates",
+   "admin1": "Dubai",
+   "region": "Dubai, United Arab Emirates",
+   "lat": 25.0773,
+   "lon": 55.3093,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-02T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.5 °C for the warming this place's record shows since its middle year. 1 Nov: 35.7 °C against a usual worst of 35.1 °C. 2 Nov: 35.1 °C against a usual worst of 34.9 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Dubai, United Arab Emirates, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-11-01",
+      "value": 35.7,
+      "p95": 35.1,
+      "p99": 36,
+      "shift": 0.51
+     },
+     {
+      "day": "2026-11-02",
+      "value": 35.1,
+      "p95": 34.9,
+      "p99": 35.9,
+      "shift": 0.51
+     }
+    ],
+    "peak": 35.7,
+    "severe": false,
+    "placeId": "dubai-ae",
+    "geonameId": 292223,
+    "bias": {
+     "tmax": 1.45,
+     "dew": -0.53,
+     "rainRatio": 1,
+     "windRatio": 1.23,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.9,
+     "value": 0.19,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-rain-baghdad-iq-2026-11-06",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Baghdad, 6 Nov",
+   "country": "Iraq",
+   "admin1": "Baghdad",
+   "region": "Baghdad, Iraq",
+   "lat": 33.3406,
+   "lon": 44.4009,
+   "alert": "High",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-06T00:00:00Z",
+   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 80% of the same month in 1996-2025 when last measured (28 Oct), so more of the rain is likely to run off. 6 Nov: 16.2 mm (16.2 mm over three days) against a usual worst of 16.09 mm in a day and 31.6 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Baghdad, Iraq, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-06",
+      "value": 16.2,
+      "threeDay": 16.2,
+      "p99": 16.09,
+      "p99x3": 31.6
+     }
+    ],
+    "peak": 16.2,
+    "severe": true,
+    "placeId": "baghdad-iq",
+    "geonameId": 98182,
+    "bias": {
+     "tmax": -1.65,
+     "dew": 3.55,
+     "rainRatio": 1,
+     "windRatio": 2,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.8,
+     "value": 0.17,
+     "day": "2026-10-28"
     }
    }
   },
@@ -245,8 +461,8 @@
    "lat": 21.0245,
    "lon": 105.8412,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
    "targetStart": "2026-11-05T00:00:00Z",
    "targetEnd": "2026-11-05T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
@@ -255,8 +471,8 @@
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.99 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 60% of the same month in 1996-2025 when last measured (27 Oct). 5 Nov: 28 mm (30.2 mm over three days) against a usual worst of 25.89 mm in a day and 71.93 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Hanoi, Vietnam, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 50% of the same month in 1996-2025 when last measured (28 Oct). 5 Nov: 42 mm (44.2 mm over three days) against a usual worst of 25.89 mm in a day and 71.93 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Hanoi, Vietnam, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
@@ -264,27 +480,199 @@
     "days": [
      {
       "day": "2026-11-05",
-      "value": 28,
-      "threeDay": 30.2,
+      "value": 42,
+      "threeDay": 44.2,
       "p99": 25.89,
       "p99x3": 71.93
      }
     ],
-    "peak": 28,
+    "peak": 42,
     "severe": false,
     "placeId": "hanoi-vn",
     "geonameId": 1581130,
     "bias": {
-     "tmax": 1.16,
-     "dew": -0.12,
-     "rainRatio": 1.99,
-     "windRatio": 1.05,
+     "tmax": 1.23,
+     "dew": -0.13,
+     "rainRatio": 2,
+     "windRatio": 1.04,
      "overlapDays": 21
     },
     "soil": {
-     "percentile": 0.6,
-     "value": 0.81,
-     "day": "2026-10-27"
+     "percentile": 0.5,
+     "value": 0.8,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-rain-guangzhou-cn-2026-11-05",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Guangzhou, 5 Nov",
+   "country": "China",
+   "admin1": "Guangdong",
+   "region": "Guangzhou, Guangdong, China",
+   "lat": 23.1167,
+   "lon": 113.25,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-05T00:00:00Z",
+   "targetEnd": "2026-11-05T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 10% of the same month in 1996-2025 when last measured (28 Oct). 5 Nov: 21.2 mm (31.5 mm over three days) against a usual worst of 19.19 mm in a day and 44.36 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Guangzhou, Guangdong, China, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-05",
+      "value": 21.2,
+      "threeDay": 31.5,
+      "p99": 19.19,
+      "p99x3": 44.36
+     }
+    ],
+    "peak": 21.2,
+    "severe": false,
+    "placeId": "guangzhou-cn",
+    "geonameId": 1809858,
+    "bias": {
+     "tmax": 1.63,
+     "dew": -1.81,
+     "rainRatio": 1,
+     "windRatio": 1.24,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.1,
+     "value": 0.56,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-rain-wuhan-cn-2026-11-03",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Wuhan, 3 Nov",
+   "country": "China",
+   "admin1": "Hubei",
+   "region": "Wuhan, Hubei, China",
+   "lat": 30.5833,
+   "lon": 114.2667,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-03T00:00:00Z",
+   "targetEnd": "2026-11-03T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.06 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 20% of the same month in 1996-2025 when last measured (28 Oct). 3 Nov: 24.2 mm (34.9 mm over three days) against a usual worst of 23.71 mm in a day and 48.4 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Wuhan, Hubei, China, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-03",
+      "value": 24.2,
+      "threeDay": 34.9,
+      "p99": 23.71,
+      "p99x3": 48.4
+     }
+    ],
+    "peak": 24.2,
+    "severe": false,
+    "placeId": "wuhan-cn",
+    "geonameId": 1791247,
+    "bias": {
+     "tmax": -0.87,
+     "dew": 0.63,
+     "rainRatio": 1.06,
+     "windRatio": 1.51,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.2,
+     "value": 0.5,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-heat-addis-ababa-et-2026-11-05",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Addis Ababa, 5 Nov to 6 Nov",
+   "country": "Ethiopia",
+   "admin1": "Addis Ababa",
+   "region": "Addis Ababa, Ethiopia",
+   "lat": 9.025,
+   "lon": 38.7469,
+   "alert": "Moderate",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-05T00:00:00Z",
+   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 41% of the days this model flagged did cross the line (11% would by chance), and it flagged 54% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.5 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.1 °C for the warming this place's record shows since its middle year. 5 Nov: 26.1 °C against a usual worst of 25.4 °C. 6 Nov: 25.9 °C against a usual worst of 25.4 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Addis Ababa, Ethiopia, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
+      "day": "2026-11-05",
+      "value": 26.1,
+      "p95": 25.4,
+      "p99": 26.8,
+      "shift": 0.13
+     },
+     {
+      "day": "2026-11-06",
+      "value": 25.9,
+      "p95": 25.4,
+      "p99": 26.8,
+      "shift": 0.13
+     }
+    ],
+    "peak": 26.1,
+    "severe": false,
+    "placeId": "addis-ababa-et",
+    "geonameId": 344979,
+    "bias": {
+     "tmax": -2.46,
+     "dew": 0.21,
+     "rainRatio": 0.79,
+     "windRatio": 1.42,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.48,
+     "day": "2026-10-28"
     }
    }
   },
@@ -300,8 +688,8 @@
    "lat": 15.5518,
    "lon": 32.5324,
    "alert": "High",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
    "targetStart": "2026-11-03T00:00:00Z",
    "targetEnd": "2026-11-04T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
@@ -310,8 +698,8 @@
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -1.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved down 0.4 °C for the cooling this place's record shows since its middle year. 3 Nov: 41.1 °C against a usual worst of 39.9 °C. 4 Nov: 40.2 °C against a usual worst of 39.8 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Khartoum, Khartoum State, Sudan, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -1.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved down 0.4 °C for the cooling this place's record shows since its middle year. 3 Nov: 40.7 °C against a usual worst of 39.9 °C. 4 Nov: 39.9 °C against a usual worst of 39.8 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Khartoum, Khartoum State, Sudan, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
@@ -319,131 +707,260 @@
     "days": [
      {
       "day": "2026-11-03",
-      "value": 41.1,
+      "value": 40.7,
       "p95": 39.9,
       "p99": 40.4,
       "shift": -0.4
      },
      {
       "day": "2026-11-04",
-      "value": 40.2,
+      "value": 39.9,
       "p95": 39.8,
       "p99": 40.3,
       "shift": -0.4
      }
     ],
-    "peak": 41.1,
+    "peak": 40.7,
     "severe": true,
     "placeId": "khartoum-sd",
     "geonameId": 379252,
     "bias": {
-     "tmax": -1.16,
-     "dew": 1.54,
+     "tmax": -1.25,
+     "dew": 1.73,
      "rainRatio": 1,
-     "windRatio": 1.69,
+     "windRatio": 1.72,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
      "value": 0.11,
-     "day": "2026-10-27"
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-heat-niamey-ne-2026-10-31",
+   "id": "model-heat-lagos-ng-2026-11-01",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Niamey, 31 Oct to 6 Nov",
-   "country": "Niger",
-   "admin1": "Niamey",
-   "region": "Niamey, Niger",
-   "lat": 13.5137,
-   "lon": 2.1098,
+   "title": "Extreme heat forecast for Lagos, 1 Nov to 3 Nov",
+   "country": "Nigeria",
+   "admin1": "Lagos",
+   "region": "Lagos, Nigeria",
+   "lat": 6.4541,
+   "lon": 3.3947,
    "alert": "High",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-10-31T00:00:00Z",
-   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-03T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.9 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved down 0.2 °C for the cooling this place's record shows since its middle year. 31 Oct: 39.3 °C against a usual worst of 38.8 °C. 1 Nov: 40.1 °C against a usual worst of 38.7 °C. 2 Nov: 40.8 °C against a usual worst of 38.7 °C. 3 Nov: 41.1 °C against a usual worst of 38.7 °C. 4 Nov: 41 °C against a usual worst of 38.6 °C. 5 Nov: 41.2 °C against a usual worst of 38.6 °C. 6 Nov: 40.7 °C against a usual worst of 38.6 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Niamey, Niger, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.3 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row, and its 99th on at least one. That line is moved up 0.2 °C for the warming this place's record shows since its middle year. 1 Nov: 30.9 °C against a usual worst of 30.1 °C. 2 Nov: 30.2 °C against a usual worst of 30.2 °C. 3 Nov: 30.4 °C against a usual worst of 30.2 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Lagos, Nigeria, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
-      "day": "2026-10-31",
-      "value": 39.3,
-      "p95": 38.8,
-      "p99": 39.4,
-      "shift": -0.19
+      "day": "2026-11-01",
+      "value": 30.9,
+      "p95": 30.1,
+      "p99": 30.6,
+      "shift": 0.16
      },
      {
+      "day": "2026-11-02",
+      "value": 30.2,
+      "p95": 30.2,
+      "p99": 30.6,
+      "shift": 0.16
+     },
+     {
+      "day": "2026-11-03",
+      "value": 30.4,
+      "p95": 30.2,
+      "p99": 30.6,
+      "shift": 0.16
+     }
+    ],
+    "peak": 30.9,
+    "severe": true,
+    "placeId": "lagos-ng",
+    "geonameId": 2332459,
+    "bias": {
+     "tmax": 0.32,
+     "dew": -0.05,
+     "rainRatio": 0.88,
+     "windRatio": 0.95,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.49,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-11-01",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Niamey, 1 Nov to 7 Nov",
+   "country": "Niger",
+   "admin1": "Niamey",
+   "region": "Niamey, Niger",
+   "lat": 13.5137,
+   "lon": 2.1098,
+   "alert": "High",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-07T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.9 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved down 0.2 °C for the cooling this place's record shows since its middle year. 1 Nov: 40.3 °C against a usual worst of 38.7 °C. 2 Nov: 41.1 °C against a usual worst of 38.7 °C. 3 Nov: 40.9 °C against a usual worst of 38.7 °C. 4 Nov: 40.8 °C against a usual worst of 38.6 °C. 5 Nov: 41.1 °C against a usual worst of 38.6 °C. 6 Nov: 40.6 °C against a usual worst of 38.6 °C. 7 Nov: 40.3 °C against a usual worst of 38.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Niamey, Niger, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "heat",
+    "days": [
+     {
       "day": "2026-11-01",
-      "value": 40.1,
+      "value": 40.3,
       "p95": 38.7,
       "p99": 39.3,
       "shift": -0.19
      },
      {
       "day": "2026-11-02",
-      "value": 40.8,
-      "p95": 38.7,
-      "p99": 39.3,
-      "shift": -0.19
-     },
-     {
-      "day": "2026-11-03",
       "value": 41.1,
       "p95": 38.7,
       "p99": 39.3,
       "shift": -0.19
      },
      {
+      "day": "2026-11-03",
+      "value": 40.9,
+      "p95": 38.7,
+      "p99": 39.3,
+      "shift": -0.19
+     },
+     {
       "day": "2026-11-04",
-      "value": 41,
+      "value": 40.8,
       "p95": 38.6,
       "p99": 39.2,
       "shift": -0.19
      },
      {
       "day": "2026-11-05",
-      "value": 41.2,
+      "value": 41.1,
       "p95": 38.6,
       "p99": 39.2,
       "shift": -0.19
      },
      {
       "day": "2026-11-06",
-      "value": 40.7,
+      "value": 40.6,
       "p95": 38.6,
+      "p99": 39.1,
+      "shift": -0.19
+     },
+     {
+      "day": "2026-11-07",
+      "value": 40.3,
+      "p95": 38.5,
       "p99": 39.1,
       "shift": -0.19
      }
     ],
-    "peak": 41.2,
+    "peak": 41.1,
     "severe": true,
     "placeId": "niamey-ne",
     "geonameId": 2440485,
     "bias": {
-     "tmax": -0.93,
-     "dew": 2.58,
+     "tmax": -0.9,
+     "dew": 2.57,
      "rainRatio": 1,
      "windRatio": 1.25,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
-     "value": 0.12,
-     "day": "2026-10-27"
+     "value": 0.11,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-fire-maputo-mz-2026-11-05",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Wildfire",
+   "title": "Wildfire weather forecast for Maputo, 5 Nov to 6 Nov",
+   "country": "Mozambique",
+   "admin1": "Cidade de Maputo",
+   "region": "Maputo, Cidade de Maputo, Mozambique",
+   "lat": -25.9655,
+   "lon": 32.5832,
+   "alert": "High",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-05T00:00:00Z",
+   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 66% of the days this model flagged did cross the line (2% would by chance), and it flagged 39% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. The Fire Weather Index, computed from the last 60 days of measured weather and the corrected forecast, reaches the \"very high\" class and this place's 95th percentile for the month on 2 days in a row. Fire also needs fuel and a spark, which no weather index can see. 5 Nov: index 44.8 (extreme) against a usual worst of 44.61. 6 Nov: index 56.2 (very extreme) against a usual worst of 44.61.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Maputo, Cidade de Maputo, Mozambique, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the Fire Weather Index NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "fire",
+    "days": [
+     {
+      "day": "2026-11-05",
+      "value": 44.8,
+      "p95": 44.61,
+      "level": "extreme"
+     },
+     {
+      "day": "2026-11-06",
+      "value": 56.2,
+      "p95": 44.61,
+      "level": "very extreme"
+     }
+    ],
+    "peak": 56.2,
+    "severe": true,
+    "placeId": "maputo-mz",
+    "geonameId": 1040652,
+    "bias": {
+     "tmax": -1.49,
+     "dew": 1.43,
+     "rainRatio": 1,
+     "windRatio": 1.29,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0,
+     "value": 0.2,
+     "day": "2026-10-28"
     }
    }
   },
@@ -459,8 +976,8 @@
    "lat": -33.9258,
    "lon": 18.4232,
    "alert": "High",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
    "targetStart": "2026-11-03T00:00:00Z",
    "targetEnd": "2026-11-04T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
@@ -469,8 +986,8 @@
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved down 0.4 °C for the cooling this place's record shows since its middle year. 3 Nov: 23.2 °C against a usual worst of 21.5 °C. 4 Nov: 26.5 °C against a usual worst of 21.5 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Cape Town, Western Cape, South Africa, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.8 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved down 0.4 °C for the cooling this place's record shows since its middle year. 3 Nov: 22.9 °C against a usual worst of 21.5 °C. 4 Nov: 24.7 °C against a usual worst of 21.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Cape Town, Western Cape, South Africa, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
@@ -478,149 +995,34 @@
     "days": [
      {
       "day": "2026-11-03",
-      "value": 23.2,
+      "value": 22.9,
       "p95": 21.5,
       "p99": 23,
       "shift": -0.41
      },
      {
       "day": "2026-11-04",
-      "value": 26.5,
+      "value": 24.7,
       "p95": 21.5,
       "p99": 23,
       "shift": -0.42
      }
     ],
-    "peak": 26.5,
+    "peak": 24.7,
     "severe": true,
     "placeId": "cape-town-za",
     "geonameId": 3369157,
     "bias": {
-     "tmax": 2.6,
-     "dew": -0.97,
+     "tmax": 2.77,
+     "dew": -0.98,
      "rainRatio": 0.5,
      "windRatio": 1.56,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0,
-     "value": 0.73,
-     "day": "2026-10-27"
-    }
-   }
-  },
-  {
-   "id": "model-fire-madrid-es-2026-11-02",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Wildfire",
-   "title": "Wildfire weather forecast for Madrid, 2 Nov to 3 Nov",
-   "country": "Spain",
-   "admin1": "Madrid",
-   "region": "Madrid, Spain",
-   "lat": 40.4165,
-   "lon": -3.7026,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-11-02T00:00:00Z",
-   "targetEnd": "2026-11-03T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 59% of the days this model flagged did cross the line (2% would by chance), and it flagged 38% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. The Fire Weather Index, computed from the last 60 days of measured weather and the corrected forecast, reaches the \"very high\" class and this place's 95th percentile for the month on 2 days in a row. Fire also needs fuel and a spark, which no weather index can see. 2 Nov: index 25.3 (very high) against a usual worst of 25.15. 3 Nov: index 35 (very high) against a usual worst of 25.15.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Madrid, Spain, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the Fire Weather Index NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "fire",
-    "days": [
-     {
-      "day": "2026-11-02",
-      "value": 25.3,
-      "p95": 25.15,
-      "level": "very high"
-     },
-     {
-      "day": "2026-11-03",
-      "value": 35,
-      "p95": 25.15,
-      "level": "very high"
-     }
-    ],
-    "peak": 35,
-    "severe": false,
-    "placeId": "madrid-es",
-    "geonameId": 3117735,
-    "bias": {
-     "tmax": 0.15,
-     "dew": 2.75,
-     "rainRatio": 0.84,
-     "windRatio": 1.65,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.1,
-     "value": 0.24,
-     "day": "2026-10-27"
-    }
-   }
-  },
-  {
-   "id": "model-rain-los-angeles-us-2026-10-31",
-   "source": "Predict Natural Disasters · forecast model",
-   "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Los Angeles, 31 Oct",
-   "country": "United States",
-   "admin1": "California",
-   "region": "Los Angeles, California, United States",
-   "lat": 34.0522,
-   "lon": -118.2437,
-   "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-10-31T00:00:00Z",
-   "targetEnd": "2026-10-31T23:59:59Z",
-   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
-   "forecast": true,
-   "forecastKind": "model-advance",
-   "forecastScope": "regional",
-   "precision": "regional",
-   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 70% of the same month in 1996-2025 when last measured (27 Oct). 31 Oct: 21.6 mm (25.4 mm over three days) against a usual worst of 14.65 mm in a day and 31.56 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Los Angeles, California, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
-   "sourceUrl": "/accuracy",
-   "model": {
-    "hazard": "rain",
-    "days": [
-     {
-      "day": "2026-10-31",
-      "value": 21.6,
-      "threeDay": 25.4,
-      "p99": 14.65,
-      "p99x3": 31.56
-     }
-    ],
-    "peak": 21.6,
-    "severe": false,
-    "placeId": "los-angeles-us",
-    "geonameId": 5368361,
-    "bias": {
-     "tmax": 2.46,
-     "dew": 0.76,
-     "rainRatio": 2,
-     "windRatio": 1.02,
-     "overlapDays": 21
-    },
-    "soil": {
-     "percentile": 0.7,
-     "value": 0.27,
-     "day": "2026-10-27"
+     "value": 0.72,
+     "day": "2026-10-28"
     }
    }
   },
@@ -629,25 +1031,25 @@
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Bucharest, 2 Nov to 5 Nov",
+   "title": "Heavy rain and flooding forecast for Bucharest, 2 Nov to 3 Nov",
    "country": "Romania",
    "admin1": "Bucharest",
    "region": "Bucharest, Romania",
    "lat": 44.4323,
    "lon": 26.1063,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
    "targetStart": "2026-11-02T00:00:00Z",
-   "targetEnd": "2026-11-05T23:59:59Z",
+   "targetEnd": "2026-11-03T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 0.84 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 30% of the same month in 1996-2025 when last measured (27 Oct). 2 Nov: 30 mm (40.1 mm over three days) against a usual worst of 18.63 mm in a day and 36.67 mm over three days. 3 Nov: 26.3 mm (58.7 mm over three days) against a usual worst of 18.63 mm in a day and 36.67 mm over three days. 4 Nov: 10.8 mm (67.2 mm over three days) against a usual worst of 18.63 mm in a day and 36.67 mm over three days. 5 Nov: 0.5 mm (37.7 mm over three days) against a usual worst of 18.63 mm in a day and 36.67 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Bucharest, Romania, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 0.83 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 50% of the same month in 1996-2025 when last measured (28 Oct). 2 Nov: 27.9 mm (40.3 mm over three days) against a usual worst of 18.63 mm in a day and 36.67 mm over three days. 3 Nov: 5.7 mm (36.7 mm over three days) against a usual worst of 18.63 mm in a day and 36.67 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Bucharest, Romania, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
@@ -655,108 +1057,103 @@
     "days": [
      {
       "day": "2026-11-02",
-      "value": 30,
-      "threeDay": 40.1,
+      "value": 27.9,
+      "threeDay": 40.3,
       "p99": 18.63,
       "p99x3": 36.67
      },
      {
       "day": "2026-11-03",
-      "value": 26.3,
-      "threeDay": 58.7,
-      "p99": 18.63,
-      "p99x3": 36.67
-     },
-     {
-      "day": "2026-11-04",
-      "value": 10.8,
-      "threeDay": 67.2,
-      "p99": 18.63,
-      "p99x3": 36.67
-     },
-     {
-      "day": "2026-11-05",
-      "value": 0.5,
-      "threeDay": 37.7,
+      "value": 5.7,
+      "threeDay": 36.7,
       "p99": 18.63,
       "p99x3": 36.67
      }
     ],
-    "peak": 30,
+    "peak": 27.9,
     "severe": false,
     "placeId": "bucharest-ro",
     "geonameId": 683506,
     "bias": {
-     "tmax": -1.54,
-     "dew": 2.08,
-     "rainRatio": 0.84,
-     "windRatio": 1.75,
+     "tmax": -1.53,
+     "dew": 2.02,
+     "rainRatio": 0.83,
+     "windRatio": 1.78,
      "overlapDays": 21
     },
     "soil": {
-     "percentile": 0.3,
-     "value": 0.46,
-     "day": "2026-10-27"
+     "percentile": 0.5,
+     "value": 0.49,
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-fire-houston-us-2026-11-05",
+   "id": "model-rain-los-angeles-us-2026-11-01",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
-   "type": "Wildfire",
-   "title": "Wildfire weather forecast for Houston, 5 Nov to 6 Nov",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Los Angeles, 1 Nov to 3 Nov",
    "country": "United States",
-   "admin1": "Texas",
-   "region": "Houston, Texas, United States",
-   "lat": 29.7633,
-   "lon": -95.3633,
+   "admin1": "California",
+   "region": "Los Angeles, California, United States",
+   "lat": 34.0522,
+   "lon": -118.2437,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-11-05T00:00:00Z",
-   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-03T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 66% of the days this model flagged did cross the line (2% would by chance), and it flagged 39% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. The Fire Weather Index, computed from the last 60 days of measured weather and the corrected forecast, reaches the \"very high\" class and this place's 95th percentile for the month on 2 days in a row. Fire also needs fuel and a spark, which no weather index can see. 5 Nov: index 27.8 (very high) against a usual worst of 25.57. 6 Nov: index 28.8 (very high) against a usual worst of 25.57.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Houston, Texas, United States, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the Fire Weather Index NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 70% of the same month in 1996-2025 when last measured (28 Oct). 1 Nov: 62.8 mm (70.8 mm over three days) against a usual worst of 24.08 mm in a day and 47.17 mm over three days. 2 Nov: 0 mm (62.8 mm over three days) against a usual worst of 24.08 mm in a day and 47.17 mm over three days. 3 Nov: 0 mm (62.8 mm over three days) against a usual worst of 24.08 mm in a day and 47.17 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Los Angeles, California, United States, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
-    "hazard": "fire",
+    "hazard": "rain",
     "days": [
      {
-      "day": "2026-11-05",
-      "value": 27.8,
-      "p95": 25.57,
-      "level": "very high"
+      "day": "2026-11-01",
+      "value": 62.8,
+      "threeDay": 70.8,
+      "p99": 24.08,
+      "p99x3": 47.17
      },
      {
-      "day": "2026-11-06",
-      "value": 28.8,
-      "p95": 25.57,
-      "level": "very high"
+      "day": "2026-11-02",
+      "value": 0,
+      "threeDay": 62.8,
+      "p99": 24.08,
+      "p99x3": 47.17
+     },
+     {
+      "day": "2026-11-03",
+      "value": 0,
+      "threeDay": 62.8,
+      "p99": 24.08,
+      "p99x3": 47.17
      }
     ],
-    "peak": 28.8,
+    "peak": 62.8,
     "severe": false,
-    "placeId": "houston-us",
-    "geonameId": 4699066,
+    "placeId": "los-angeles-us",
+    "geonameId": 5368361,
     "bias": {
-     "tmax": -1.79,
-     "dew": 0.45,
-     "rainRatio": 1,
-     "windRatio": 1.24,
+     "tmax": 2.58,
+     "dew": 0.78,
+     "rainRatio": 2,
+     "windRatio": 1.01,
      "overlapDays": 21
     },
     "soil": {
-     "percentile": 0,
-     "value": 0.34,
-     "day": "2026-10-27"
+     "percentile": 0.7,
+     "value": 0.26,
+     "day": "2026-10-28"
     }
    }
   },
@@ -772,8 +1169,8 @@
    "lat": 33.4484,
    "lon": -112.074,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
    "targetStart": "2026-11-01T00:00:00Z",
    "targetEnd": "2026-11-03T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
@@ -782,8 +1179,8 @@
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 70% of the same month in 1996-2025 when last measured (27 Oct). 1 Nov: 91.7 mm (92.5 mm over three days) against a usual worst of 12.16 mm in a day and 26.99 mm over three days. 2 Nov: 12.2 mm (104.7 mm over three days) against a usual worst of 12.16 mm in a day and 26.99 mm over three days. 3 Nov: 0 mm (103.9 mm over three days) against a usual worst of 12.16 mm in a day and 26.99 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Phoenix, Arizona, United States, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 70% of the same month in 1996-2025 when last measured (28 Oct). 1 Nov: 82.8 mm (94.4 mm over three days) against a usual worst of 12.16 mm in a day and 26.99 mm over three days. 2 Nov: 2.8 mm (92.8 mm over three days) against a usual worst of 12.16 mm in a day and 26.99 mm over three days. 3 Nov: 0 mm (85.6 mm over three days) against a usual worst of 12.16 mm in a day and 26.99 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Phoenix, Arizona, United States, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
@@ -791,102 +1188,102 @@
     "days": [
      {
       "day": "2026-11-01",
-      "value": 91.7,
-      "threeDay": 92.5,
+      "value": 82.8,
+      "threeDay": 94.4,
       "p99": 12.16,
       "p99x3": 26.99
      },
      {
       "day": "2026-11-02",
-      "value": 12.2,
-      "threeDay": 104.7,
+      "value": 2.8,
+      "threeDay": 92.8,
       "p99": 12.16,
       "p99x3": 26.99
      },
      {
       "day": "2026-11-03",
       "value": 0,
-      "threeDay": 103.9,
+      "threeDay": 85.6,
       "p99": 12.16,
       "p99x3": 26.99
      }
     ],
-    "peak": 91.7,
+    "peak": 82.8,
     "severe": false,
     "placeId": "phoenix-us",
     "geonameId": 5308655,
     "bias": {
-     "tmax": 2.03,
-     "dew": -0.62,
+     "tmax": 2.05,
+     "dew": -0.67,
      "rainRatio": 2,
-     "windRatio": 1.15,
+     "windRatio": 1.17,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0.7,
-     "value": 0.34,
-     "day": "2026-10-27"
+     "value": 0.32,
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-rain-toronto-ca-2026-11-05",
+   "id": "model-heat-toronto-ca-2026-11-02",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
-   "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Toronto, 5 Nov to 7 Nov",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Toronto, 2 Nov to 4 Nov",
    "country": "Canada",
    "admin1": "Ontario",
    "region": "Toronto, Ontario, Canada",
    "lat": 43.7064,
    "lon": -79.3986,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-11-05T00:00:00Z",
-   "targetEnd": "2026-11-07T23:59:59Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-02T00:00:00Z",
+   "targetEnd": "2026-11-04T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
-   "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (27 Oct). 5 Nov: 16.6 mm (16.6 mm over three days) against a usual worst of 16.49 mm in a day and 31.64 mm over three days. 6 Nov: 16.4 mm (33 mm over three days) against a usual worst of 16.49 mm in a day and 31.64 mm over three days. 7 Nov: 0 mm (33 mm over three days) against a usual worst of 16.49 mm in a day and 31.64 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Toronto, Ontario, Canada, 1996-2025. Bias measured over 21 shared days.",
-   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.9 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row. That line is moved up 1.3 °C for the warming this place's record shows since its middle year. 2 Nov: 18.7 °C against a usual worst of 18.4 °C. 3 Nov: 19.8 °C against a usual worst of 18.2 °C. 4 Nov: 19.9 °C against a usual worst of 18 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Toronto, Ontario, Canada, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
-    "hazard": "rain",
+    "hazard": "heat",
     "days": [
      {
-      "day": "2026-11-05",
-      "value": 16.6,
-      "threeDay": 16.6,
-      "p99": 16.49,
-      "p99x3": 31.64
+      "day": "2026-11-02",
+      "value": 18.7,
+      "p95": 18.4,
+      "p99": 20.5,
+      "shift": 1.26
      },
      {
-      "day": "2026-11-06",
-      "value": 16.4,
-      "threeDay": 33,
-      "p99": 16.49,
-      "p99x3": 31.64
+      "day": "2026-11-03",
+      "value": 19.8,
+      "p95": 18.2,
+      "p99": 20.3,
+      "shift": 1.26
      },
      {
-      "day": "2026-11-07",
-      "value": 0,
-      "threeDay": 33,
-      "p99": 16.49,
-      "p99x3": 31.64
+      "day": "2026-11-04",
+      "value": 19.9,
+      "p95": 18,
+      "p99": 20.1,
+      "shift": 1.26
      }
     ],
-    "peak": 16.6,
+    "peak": 19.9,
     "severe": false,
     "placeId": "toronto-ca",
     "geonameId": 6167865,
     "bias": {
-     "tmax": 0.97,
-     "dew": -2.48,
+     "tmax": 0.9,
+     "dew": -2.46,
      "rainRatio": 1,
      "windRatio": 1.71,
      "overlapDays": 21
@@ -894,115 +1291,232 @@
     "soil": {
      "percentile": 0,
      "value": 0.36,
-     "day": "2026-10-27"
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-rain-atlanta-us-2026-11-05",
+   "id": "model-rain-atlanta-us-2026-11-06",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Flood",
-   "title": "Heavy rain and flooding forecast for Atlanta, 5 Nov to 6 Nov",
+   "title": "Heavy rain and flooding forecast for Atlanta, 6 Nov to 8 Nov",
    "country": "United States",
    "admin1": "Georgia",
    "region": "Atlanta, Georgia, United States",
    "lat": 33.749,
    "lon": -84.388,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-11-05T00:00:00Z",
-   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-06T00:00:00Z",
+   "targetEnd": "2026-11-08T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 5 days ahead, on days from 17 Jul to 17 Oct: 23% of the days this model flagged did cross the line (2% would by chance), and it flagged 18% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 30% of the same month in 1996-2025 when last measured (27 Oct). 5 Nov: 52 mm (73.4 mm over three days) against a usual worst of 39.5 mm in a day and 69.94 mm over three days. 6 Nov: 0.2 mm (73.2 mm over three days) against a usual worst of 39.5 mm in a day and 69.94 mm over three days.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Atlanta, Georgia, United States, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 20% of the same month in 1996-2025 when last measured (28 Oct). 6 Nov: 83 mm (84.2 mm over three days) against a usual worst of 39.5 mm in a day and 69.94 mm over three days. 7 Nov: 1.2 mm (84.6 mm over three days) against a usual worst of 39.5 mm in a day and 69.94 mm over three days. 8 Nov: 0 mm (84.2 mm over three days) against a usual worst of 39.5 mm in a day and 69.94 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Atlanta, Georgia, United States, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "rain",
     "days": [
      {
-      "day": "2026-11-05",
-      "value": 52,
-      "threeDay": 73.4,
+      "day": "2026-11-06",
+      "value": 83,
+      "threeDay": 84.2,
       "p99": 39.5,
       "p99x3": 69.94
      },
      {
-      "day": "2026-11-06",
-      "value": 0.2,
-      "threeDay": 73.2,
+      "day": "2026-11-07",
+      "value": 1.2,
+      "threeDay": 84.6,
+      "p99": 39.5,
+      "p99x3": 69.94
+     },
+     {
+      "day": "2026-11-08",
+      "value": 0,
+      "threeDay": 84.2,
       "p99": 39.5,
       "p99x3": 69.94
      }
     ],
-    "peak": 52,
+    "peak": 83,
     "severe": false,
     "placeId": "atlanta-us",
     "geonameId": 4180439,
     "bias": {
-     "tmax": 0.48,
-     "dew": 0.07,
+     "tmax": 0.42,
+     "dew": 0.02,
      "rainRatio": 2,
      "windRatio": 0.84,
      "overlapDays": 21
     },
     "soil": {
-     "percentile": 0.3,
-     "value": 0.51,
-     "day": "2026-10-27"
+     "percentile": 0.2,
+     "value": 0.5,
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-heat-mexico-city-mx-2026-10-31",
+   "id": "model-rain-miami-us-2026-11-01",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
-   "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Mexico City, 31 Oct to 6 Nov",
-   "country": "Mexico",
-   "admin1": "Mexico City",
-   "region": "Mexico City, Mexico",
-   "lat": 19.4285,
-   "lon": -99.1277,
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Miami, 1 Nov",
+   "country": "United States",
+   "admin1": "Florida",
+   "region": "Miami, Florida, United States",
+   "lat": 25.7743,
+   "lon": -80.1937,
    "alert": "High",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-10-31T00:00:00Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-01T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.77 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 90% of the same month in 1996-2025 when last measured (28 Oct), so more of the rain is likely to run off. 1 Nov: 12 mm (86 mm over three days) against a usual worst of 25.67 mm in a day and 71.5 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Miami, Florida, United States, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-01",
+      "value": 12,
+      "threeDay": 86,
+      "p99": 25.67,
+      "p99x3": 71.5
+     }
+    ],
+    "peak": 12,
+    "severe": true,
+    "placeId": "miami-us",
+    "geonameId": 4164138,
+    "bias": {
+     "tmax": 0.45,
+     "dew": -1.12,
+     "rainRatio": 1.77,
+     "windRatio": 1.39,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.9,
+     "value": 0.77,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-rain-miami-us-2026-11-04",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Flood",
+   "title": "Heavy rain and flooding forecast for Miami, 4 Nov to 6 Nov",
+   "country": "United States",
+   "admin1": "Florida",
+   "region": "Miami, Florida, United States",
+   "lat": 25.7743,
+   "lon": -80.1937,
+   "alert": "High",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-04T00:00:00Z",
    "targetEnd": "2026-11-06T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
+   "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 30% of the days this model flagged did cross the line (2% would by chance), and it flagged 28% of the days that crossed it.",
+   "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.77 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 90% of the same month in 1996-2025 when last measured (28 Oct), so more of the rain is likely to run off. 4 Nov: 49.9 mm (78.5 mm over three days) against a usual worst of 25.67 mm in a day and 71.5 mm over three days. 5 Nov: 23.5 mm (81.9 mm over three days) against a usual worst of 25.67 mm in a day and 71.5 mm over three days. 6 Nov: 7.1 mm (80.5 mm over three days) against a usual worst of 25.67 mm in a day and 71.5 mm over three days.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Miami, Florida, United States, 1996-2025. Bias measured over 21 shared days.",
+   "verificationRule": "Checked against the rainfall NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
+   "sourceUrl": "/accuracy",
+   "model": {
+    "hazard": "rain",
+    "days": [
+     {
+      "day": "2026-11-04",
+      "value": 49.9,
+      "threeDay": 78.5,
+      "p99": 25.67,
+      "p99x3": 71.5
+     },
+     {
+      "day": "2026-11-05",
+      "value": 23.5,
+      "threeDay": 81.9,
+      "p99": 25.67,
+      "p99x3": 71.5
+     },
+     {
+      "day": "2026-11-06",
+      "value": 7.1,
+      "threeDay": 80.5,
+      "p99": 25.67,
+      "p99x3": 71.5
+     }
+    ],
+    "peak": 49.9,
+    "severe": true,
+    "placeId": "miami-us",
+    "geonameId": 4164138,
+    "bias": {
+     "tmax": 0.45,
+     "dew": -1.12,
+     "rainRatio": 1.77,
+     "windRatio": 1.39,
+     "overlapDays": 21
+    },
+    "soil": {
+     "percentile": 0.9,
+     "value": 0.77,
+     "day": "2026-10-28"
+    }
+   }
+  },
+  {
+   "id": "model-heat-mexico-city-mx-2026-11-02",
+   "source": "Predict Natural Disasters · forecast model",
+   "sourceType": "forecast",
+   "type": "Extreme Heat",
+   "title": "Extreme heat forecast for Mexico City, 2 Nov to 4 Nov",
+   "country": "Mexico",
+   "admin1": "Mexico City",
+   "region": "Mexico City, Mexico",
+   "lat": 19.4285,
+   "lon": -99.1277,
+   "alert": "High",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-02T00:00:00Z",
+   "targetEnd": "2026-11-04T23:59:59Z",
+   "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+   "forecast": true,
+   "forecastKind": "model-advance",
+   "forecastScope": "regional",
+   "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.8 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved up 0.6 °C for the warming this place's record shows since its middle year. 31 Oct: 24.7 °C against a usual worst of 23.6 °C. 1 Nov: 24.4 °C against a usual worst of 23.6 °C. 2 Nov: 23.9 °C against a usual worst of 23.6 °C. 3 Nov: 25 °C against a usual worst of 23.6 °C. 4 Nov: 23.6 °C against a usual worst of 23.5 °C. 5 Nov: 24 °C against a usual worst of 23.5 °C. 6 Nov: 24.3 °C against a usual worst of 23.5 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Mexico City, Mexico, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 2.8 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 3 days in a row, and its 99th on at least one. That line is moved up 0.6 °C for the warming this place's record shows since its middle year. 2 Nov: 23.9 °C against a usual worst of 23.6 °C. 3 Nov: 25 °C against a usual worst of 23.6 °C. 4 Nov: 24 °C against a usual worst of 23.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Mexico City, Mexico, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
-     {
-      "day": "2026-10-31",
-      "value": 24.7,
-      "p95": 23.6,
-      "p99": 24.9,
-      "shift": 0.6
-     },
-     {
-      "day": "2026-11-01",
-      "value": 24.4,
-      "p95": 23.6,
-      "p99": 24.8,
-      "shift": 0.6
-     },
      {
       "day": "2026-11-02",
       "value": 23.9,
@@ -1019,21 +1533,7 @@
      },
      {
       "day": "2026-11-04",
-      "value": 23.6,
-      "p95": 23.5,
-      "p99": 24.7,
-      "shift": 0.6
-     },
-     {
-      "day": "2026-11-05",
       "value": 24,
-      "p95": 23.5,
-      "p99": 24.7,
-      "shift": 0.6
-     },
-     {
-      "day": "2026-11-06",
-      "value": 24.3,
       "p95": 23.5,
       "p99": 24.7,
       "shift": 0.6
@@ -1044,16 +1544,16 @@
     "placeId": "mexico-city-mx",
     "geonameId": 3530597,
     "bias": {
-     "tmax": 2.8,
-     "dew": 0.98,
-     "rainRatio": 1.29,
-     "windRatio": 1.25,
+     "tmax": 2.85,
+     "dew": 0.91,
+     "rainRatio": 1.42,
+     "windRatio": 1.24,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0.8,
-     "value": 0.72,
-     "day": "2026-10-27"
+     "value": 0.73,
+     "day": "2026-10-28"
     }
    }
   },
@@ -1062,25 +1562,25 @@
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Guatemala City, 3 Nov to 4 Nov",
+   "title": "Extreme heat forecast for Guatemala City, 3 Nov to 7 Nov",
    "country": "Guatemala",
    "admin1": "Guatemala",
    "region": "Guatemala City, Guatemala, Guatemala",
    "lat": 14.6407,
    "lon": -90.5133,
    "alert": "Moderate",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
    "targetStart": "2026-11-03T00:00:00Z",
-   "targetEnd": "2026-11-04T23:59:59Z",
+   "targetEnd": "2026-11-07T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.3 °C for the warming this place's record shows since its middle year. 3 Nov: 27.6 °C against a usual worst of 27.4 °C. 4 Nov: 27.8 °C against a usual worst of 27.4 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Guatemala City, Guatemala, Guatemala, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.3 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 5 days in a row. That line is moved up 0.3 °C for the warming this place's record shows since its middle year. 3 Nov: 28.6 °C against a usual worst of 27.4 °C. 4 Nov: 28.4 °C against a usual worst of 27.4 °C. 5 Nov: 28.4 °C against a usual worst of 27.4 °C. 6 Nov: 28.8 °C against a usual worst of 27.4 °C. 7 Nov: 28.4 °C against a usual worst of 27.5 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Guatemala City, Guatemala, Guatemala, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
@@ -1088,26 +1588,47 @@
     "days": [
      {
       "day": "2026-11-03",
-      "value": 27.6,
+      "value": 28.6,
       "p95": 27.4,
       "p99": 28.9,
       "shift": 0.34
      },
      {
       "day": "2026-11-04",
-      "value": 27.8,
+      "value": 28.4,
       "p95": 27.4,
       "p99": 28.9,
       "shift": 0.34
+     },
+     {
+      "day": "2026-11-05",
+      "value": 28.4,
+      "p95": 27.4,
+      "p99": 28.9,
+      "shift": 0.34
+     },
+     {
+      "day": "2026-11-06",
+      "value": 28.8,
+      "p95": 27.4,
+      "p99": 28.9,
+      "shift": 0.34
+     },
+     {
+      "day": "2026-11-07",
+      "value": 28.4,
+      "p95": 27.5,
+      "p99": 29,
+      "shift": 0.34
      }
     ],
-    "peak": 27.8,
+    "peak": 28.8,
     "severe": false,
     "placeId": "guatemala-city-gt",
     "geonameId": 3598132,
     "bias": {
-     "tmax": -2.21,
-     "dew": -2.62,
+     "tmax": -2.31,
+     "dew": -2.72,
      "rainRatio": 2,
      "windRatio": 0.7,
      "overlapDays": 21
@@ -1115,70 +1636,63 @@
     "soil": {
      "percentile": 0.1,
      "value": 0.75,
-     "day": "2026-10-27"
+     "day": "2026-10-28"
     }
    }
   },
   {
-   "id": "model-heat-lima-pe-2026-10-31",
+   "id": "model-heat-lima-pe-2026-11-01",
    "source": "Predict Natural Disasters · forecast model",
    "sourceType": "forecast",
    "type": "Extreme Heat",
-   "title": "Extreme heat forecast for Lima, 31 Oct to 6 Nov",
+   "title": "Extreme heat forecast for Lima, 1 Nov to 7 Nov",
    "country": "Peru",
    "admin1": "Lima Province",
    "region": "Lima, Lima Province, Peru",
    "lat": -12.0432,
    "lon": -77.0282,
    "alert": "High",
-   "issuedAt": "2026-10-30T11:01:10.048Z",
-   "updated": "2026-10-30T11:01:10.048Z",
-   "targetStart": "2026-10-31T00:00:00Z",
-   "targetEnd": "2026-11-06T23:59:59Z",
+   "issuedAt": "2026-10-31T10:35:55.895Z",
+   "updated": "2026-10-31T10:35:55.895Z",
+   "targetStart": "2026-11-01T00:00:00Z",
+   "targetEnd": "2026-11-07T23:59:59Z",
    "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
    "forecast": true,
    "forecastKind": "model-advance",
    "forecastScope": "regional",
    "precision": "regional",
    "confidence": "Tested on forecasts made 3 days ahead, on days from 17 Jul to 17 Oct: 45% of the days this model flagged did cross the line (11% would by chance), and it flagged 59% of the days that crossed it.",
-   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.5 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved up 0.4 °C for the warming this place's record shows since its middle year. 31 Oct: 25.5 °C against a usual worst of 23.9 °C. 1 Nov: 26 °C against a usual worst of 23.9 °C. 2 Nov: 25.3 °C against a usual worst of 23.9 °C. 3 Nov: 25.1 °C against a usual worst of 24 °C. 4 Nov: 24.7 °C against a usual worst of 24 °C. 5 Nov: 24.5 °C against a usual worst of 24 °C. 6 Nov: 25.4 °C against a usual worst of 24 °C.",
-   "evidence": "Open-Meteo forecast issued for 2026-10-30, compared with NASA POWER daily records for Lima, Lima Province, Peru, 1996-2025. Bias measured over 21 shared days.",
+   "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.6 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved up 0.4 °C for the warming this place's record shows since its middle year. 1 Nov: 25.7 °C against a usual worst of 23.9 °C. 2 Nov: 25.8 °C against a usual worst of 23.9 °C. 3 Nov: 24.7 °C against a usual worst of 24 °C. 4 Nov: 24.4 °C against a usual worst of 24 °C. 5 Nov: 24.5 °C against a usual worst of 24 °C. 6 Nov: 24.7 °C against a usual worst of 24 °C. 7 Nov: 25.2 °C against a usual worst of 24 °C.",
+   "evidence": "Open-Meteo forecast issued for 2026-10-31, compared with NASA POWER daily records for Lima, Lima Province, Peru, 1996-2025. Bias measured over 21 shared days.",
    "verificationRule": "Checked against the daily maximum temperature NASA POWER records for these days once they are available: correct if the line was crossed on at least one day of the window, a false alarm if it was not.",
    "sourceUrl": "/accuracy",
    "model": {
     "hazard": "heat",
     "days": [
      {
-      "day": "2026-10-31",
-      "value": 25.5,
-      "p95": 23.9,
-      "p99": 24.6,
-      "shift": 0.38
-     },
-     {
       "day": "2026-11-01",
-      "value": 26,
+      "value": 25.7,
       "p95": 23.9,
       "p99": 24.6,
       "shift": 0.38
      },
      {
       "day": "2026-11-02",
-      "value": 25.3,
+      "value": 25.8,
       "p95": 23.9,
       "p99": 24.6,
       "shift": 0.38
      },
      {
       "day": "2026-11-03",
-      "value": 25.1,
+      "value": 24.7,
       "p95": 24,
       "p99": 24.6,
       "shift": 0.38
      },
      {
       "day": "2026-11-04",
-      "value": 24.7,
+      "value": 24.4,
       "p95": 24,
       "p99": 24.6,
       "shift": 0.38
@@ -1192,27 +1706,34 @@
      },
      {
       "day": "2026-11-06",
-      "value": 25.4,
+      "value": 24.7,
       "p95": 24,
       "p99": 24.6,
       "shift": 0.38
+     },
+     {
+      "day": "2026-11-07",
+      "value": 25.2,
+      "p95": 24,
+      "p99": 24.7,
+      "shift": 0.38
      }
     ],
-    "peak": 26,
+    "peak": 25.8,
     "severe": true,
     "placeId": "lima-pe",
     "geonameId": 3936456,
     "bias": {
-     "tmax": 0.54,
-     "dew": 4.13,
+     "tmax": 0.62,
+     "dew": 4.07,
      "rainRatio": 1,
-     "windRatio": 0.93,
+     "windRatio": 0.92,
      "overlapDays": 21
     },
     "soil": {
      "percentile": 0.9,
      "value": 0.18,
-     "day": "2026-10-27"
+     "day": "2026-10-28"
     }
    }
   }
