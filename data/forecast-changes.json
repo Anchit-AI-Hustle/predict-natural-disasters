@@ -56149,46 +56149,170 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-11-01T18:55:41.903Z",
+      "sinceHours": 5.56,
+      "active": 70,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-4daadc264b2355e8c240ceae51403cb5fd7b537c-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Cochise, Arizona and 3 nearby areas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-01T18:53:00.000Z",
+          "targetEnd": "2026-11-04T18:53:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-58aab900e4d8a97c54c289399bb934ae397ea2f6-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in South Central Mountains, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-01T18:40:00.000Z",
+          "targetEnd": "2026-11-03T18:40:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-746f36e393caff2ac0803a98b18e0dc4090a5153-029-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-01T12:09:00.000Z",
+          "targetEnd": "2026-11-03T12:09:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-TC-1001346",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Cyclone Murasu - 5-day forecast",
+          "country": "India",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-11-01T12:00:00.000Z",
+          "targetEnd": "2026-11-06T12:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-06T06:00:00.000Z",
+          "toEnd": "2026-11-06T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001343",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Super Typhoon In-fa - 5-day forecast",
+          "country": "Japan, Marshall Islands",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-01T12:00:00.000Z",
+          "targetEnd": "2026-11-06T12:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-06T06:00:00.000Z",
+          "toEnd": "2026-11-06T12:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033335",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar - 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-01T00:00:00.000Z",
+          "targetEnd": "2026-11-04T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-03T00:00:00.000Z",
+          "toEnd": "2026-11-04T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-b9ddca3aac34b07d461a418de0d7a00d7bda22a7-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Colbert, Alabama and 3 nearby areas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-01T13:03:00.000Z",
+          "targetEnd": "2026-11-04T13:03:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-e45ff0e63fde53a7f559aa5491a902e1d4cb8faa-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in waters from Pensacola FL to Pascagoula MS from 20 to 60 nautical miles, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-01T13:00:00.000Z",
+          "targetEnd": "2026-11-03T13:00:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-746f36e393caff2ac0803a98b18e0dc4090a5153-027-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Adak to Kiska Pacific Side, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-01T12:09:00.000Z",
+          "targetEnd": "2026-11-03T12:09:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
     "OUT-gdacs-TC-1001346": {
       "id": "OUT-gdacs-TC-1001346",
       "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Cyclone 4 - 5-day forecast",
+      "title": "Storm risk from Tropical Cyclone Murasu - 5-day forecast",
       "country": "India",
       "alert": "High",
       "rank": 3,
-      "targetStart": "2026-11-01T06:00:00.000Z",
-      "targetEnd": "2026-11-06T06:00:00.000Z",
+      "targetStart": "2026-11-01T12:00:00.000Z",
+      "targetEnd": "2026-11-06T12:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-0-b9ddca3aac34b07d461a418de0d7a00d7bda22a7-001-1": {
-      "id": "OUT-0-b9ddca3aac34b07d461a418de0d7a00d7bda22a7-001-1",
+    "OUT-0-4daadc264b2355e8c240ceae51403cb5fd7b537c-001-1": {
+      "id": "OUT-0-4daadc264b2355e8c240ceae51403cb5fd7b537c-001-1",
       "type": "Flood",
-      "title": "Flood risk in Colbert, Alabama and 3 nearby areas, United States - 3-day forecast",
+      "title": "Flood risk in Cochise, Arizona and 3 nearby areas, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-01T13:03:00.000Z",
-      "targetEnd": "2026-11-04T13:03:00.000Z",
+      "targetStart": "2026-11-01T18:53:00.000Z",
+      "targetEnd": "2026-11-04T18:53:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-e45ff0e63fde53a7f559aa5491a902e1d4cb8faa-001-1": {
-      "id": "OUT-0-e45ff0e63fde53a7f559aa5491a902e1d4cb8faa-001-1",
+    "OUT-0-58aab900e4d8a97c54c289399bb934ae397ea2f6-001-1": {
+      "id": "OUT-0-58aab900e4d8a97c54c289399bb934ae397ea2f6-001-1",
       "type": "Severe Storm",
-      "title": "Severe Storm risk in waters from Pensacola FL to Pascagoula MS from 20 to 60 nautical miles, United States - 2-day forecast",
+      "title": "Severe Storm risk in South Central Mountains, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-01T13:00:00.000Z",
-      "targetEnd": "2026-11-03T13:00:00.000Z",
+      "targetStart": "2026-11-01T18:40:00.000Z",
+      "targetEnd": "2026-11-03T18:40:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-746f36e393caff2ac0803a98b18e0dc4090a5153-027-1": {
-      "id": "OUT-0-746f36e393caff2ac0803a98b18e0dc4090a5153-027-1",
+    "OUT-0-746f36e393caff2ac0803a98b18e0dc4090a5153-029-1": {
+      "id": "OUT-0-746f36e393caff2ac0803a98b18e0dc4090a5153-029-1",
       "type": "Storm Warning",
-      "title": "Storm Warning risk in Adak to Kiska Pacific Side, United States - 2-day forecast",
+      "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
@@ -56401,8 +56525,8 @@
       "country": "Japan, Marshall Islands",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-11-01T06:00:00.000Z",
-      "targetEnd": "2026-11-06T06:00:00.000Z",
+      "targetStart": "2026-11-01T12:00:00.000Z",
+      "targetEnd": "2026-11-06T12:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-WF-1033327": {
@@ -56421,6 +56545,17 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Botswana - 3-day forecast",
       "country": "Botswana",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-01T00:00:00.000Z",
+      "targetEnd": "2026-11-04T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1033335": {
+      "id": "OUT-gdacs-WF-1033335",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Madagascar - 3-day forecast",
+      "country": "Madagascar",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-01T00:00:00.000Z",
@@ -56570,22 +56705,22 @@
       "targetEnd": "2026-11-04T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-FL-1104265": {
-      "id": "OUT-gdacs-FL-1104265",
+    "OUT-gdacs-FL-1104254": {
+      "id": "OUT-gdacs-FL-1104254",
       "type": "Flood",
-      "title": "Flood risk in Bhutan - 3-day forecast",
-      "country": "Bhutan",
+      "title": "Flood risk in Türkiye - 3-day forecast",
+      "country": "Türkiye",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-31T01:00:00.000Z",
       "targetEnd": "2026-11-03T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-FL-1104254": {
-      "id": "OUT-gdacs-FL-1104254",
+    "OUT-gdacs-FL-1104265": {
+      "id": "OUT-gdacs-FL-1104265",
       "type": "Flood",
-      "title": "Flood risk in Türkiye - 3-day forecast",
-      "country": "Türkiye",
+      "title": "Flood risk in Bhutan - 3-day forecast",
+      "country": "Bhutan",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-31T01:00:00.000Z",
@@ -56625,17 +56760,6 @@
       "targetEnd": "2026-11-03T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1033353": {
-      "id": "OUT-gdacs-WF-1033353",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Mozambique and Zimbabwe - 3-day forecast",
-      "country": "Mozambique, Zimbabwe",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-10-31T00:00:00.000Z",
-      "targetEnd": "2026-11-03T00:00:00.000Z",
-      "provider": "gdacs"
-    },
     "OUT-gdacs-WF-1033367": {
       "id": "OUT-gdacs-WF-1033367",
       "type": "Wildfire",
@@ -56647,22 +56771,22 @@
       "targetEnd": "2026-11-03T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1033374": {
-      "id": "OUT-gdacs-WF-1033374",
+    "OUT-gdacs-WF-1033353": {
+      "id": "OUT-gdacs-WF-1033353",
       "type": "Wildfire",
-      "title": "Wildfire risk in Tanzania - 3-day forecast",
-      "country": "Tanzania",
+      "title": "Wildfire risk in Mozambique and Zimbabwe - 3-day forecast",
+      "country": "Mozambique, Zimbabwe",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-31T00:00:00.000Z",
       "targetEnd": "2026-11-03T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1033335": {
-      "id": "OUT-gdacs-WF-1033335",
+    "OUT-gdacs-WF-1033374": {
+      "id": "OUT-gdacs-WF-1033374",
       "type": "Wildfire",
-      "title": "Wildfire risk in Madagascar - 3-day forecast",
-      "country": "Madagascar",
+      "title": "Wildfire risk in Tanzania - 3-day forecast",
+      "country": "Tanzania",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-10-31T00:00:00.000Z",
@@ -56923,9 +57047,9 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-01T13:22:17.076Z",
+  "updatedAt": "2026-11-01T18:55:41.903Z",
   "observedCadenceHours": {
-    "runs": 150,
+    "runs": 151,
     "median": 4.84,
     "min": 1.54,
     "max": 189.21
