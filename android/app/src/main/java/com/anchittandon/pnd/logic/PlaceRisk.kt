@@ -21,6 +21,9 @@ object PlaceRisk {
         val why: String,
         val checkedAt: String?,
         val searchedKm: Int = 500,
+        /** The top-ranked reported event and the forecast covering the place, whichever leads (changelog C37). */
+        val observed: Row? = null,
+        val forecast: Row? = null,
     )
 
     data class Actions(val steps: List<String>, val authority: String, val official: Boolean)
@@ -69,6 +72,8 @@ object PlaceRisk {
         val top = ranked.firstOrNull()
         val nearest = top?.first
         val outlook = rows.firstOrNull { it.r.band == "C" }
+        // The forecast leads only when no reported event rates Watch or above on its own; a report wins a tie.
+        val forecastLeads = outlook != null && !(top != null && top.second.rank >= Level.WATCH.rank)
         var lead: Row? = null
         var level: Level? = null
         var why = ""
@@ -83,16 +88,20 @@ object PlaceRisk {
         } else if (top != null && top.first.d <= MODERATE_KM && top.second.rank > Level.LOW.rank) {
             lead = nearest
             level = top.second
-            why = "An event was reported ${jsRoundL(nearest!!.d)} km from your place. That is the distance between two points. It does not mean the affected area reaches you."
-        } else if (outlook != null) {
+            why = "An event was reported ${jsRoundL(nearest!!.d)} km from your place. That is the distance between two points. It does not mean the affected area reaches you." +
+                (if (outlook != null) " One of our forecasts also covers your place." else "")
+        } else if (forecastLeads) {
             lead = outlook
             level = Level.WATCH
-            why = "One of our forecasts covers your place. It is our own estimate of what may happen. It is not a report that something has happened, and it is not an official warning."
+            why = "One of our forecasts covers your place. It is our own estimate of what may happen. It is not a report that something has happened, and it is not an official warning." +
+                (if (top != null) " A reported event, " + (nearest!!.e.str("title")?.takeIf { it.isNotEmpty() } ?: nearest.e.str("type")?.takeIf { it.isNotEmpty() } ?: "an event")
+                    .replace(Regex("[.\\s]+$"), "") + ", is ${jsRoundL(nearest.d)} km away. On its own it rates ${top.second.label} here." else "")
         } else if (top != null) {
             lead = nearest
             level = top.second
             why = if (nearest!!.d <= MODERATE_KM) "A minor event was reported ${jsRoundL(nearest.d)} km from your place."
-            else "The most serious event near your place is ${jsRoundL(nearest.d)} km away. We look up to $searched km away, so it is shown, but it is far from this place."
+            else "The most serious event near your place is ${jsRoundL(nearest.d)} km away. We look up to $searched km away, so it is shown, but it is far from this place." +
+                (if (outlook != null) " One of our forecasts also covers your place." else "")
         }
         var headline = "Nothing reported nearby"
         if (level != null) headline = level.label
@@ -104,7 +113,7 @@ object PlaceRisk {
                 else "No event with an exact location has been reported within $searched km. ") +
                 "This does not mean the place is safe. Your national and local disaster agencies have the official information."
         }
-        return Assessment(place, rows, level, lead, headline, why, generatedAt, searched)
+        return Assessment(place, rows, level, lead, headline, why, generatedAt, searched, nearest, outlook)
     }
 
     fun actionsFor(a: Assessment): Actions {
@@ -136,12 +145,19 @@ object PlaceRisk {
         if (a.level == null) return "NOTHING REPORTED NEARBY"
         val head = a.headline.uppercase()
         val l = a.lead ?: return head
-        return head + when {
+        val why = when {
             l.r.band == "B" -> " · inside an official warning area"
             l.r.band == "A" && l.r.containment == true -> " · inside a reported affected area"
-            l.r.band == "C" -> " · a forecast covers it"
+            l.r.band == "C" -> " · our forecast covers it"
             l.d.isFinite() -> " · event ${jsRoundL(l.d)} km away"
             else -> ""
         }
+        // Whichever of the report and our forecast did not set the level is still named (changelog C37).
+        val also = when {
+            l.r.band == "C" && a.observed != null && a.observed.d.isFinite() -> " · a reported event is ${jsRoundL(a.observed.d)} km away"
+            l.r.band != "C" && a.forecast != null -> " · our forecast also covers it"
+            else -> ""
+        }
+        return head + why + also
     }
 }

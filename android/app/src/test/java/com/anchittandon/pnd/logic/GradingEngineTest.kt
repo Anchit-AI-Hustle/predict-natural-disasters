@@ -66,7 +66,10 @@ class GradingEngineTest {
         assertNull(screen.error)
         assertTrue(screen.gradingAvailable)
         assertEquals("Forecasts recorded", screen.keyFigures[0].first)
-        assertEquals((fx["outlook"] as JsonArray).size.toString(), screen.keyFigures[0].second)
+        // C29: one verdict per forecast, so the total counts each forecast id once, not every recorded version.
+        val ids = (fx["outlook"] as JsonArray).map { it.jsonObject["id"].toString() }
+        assertEquals(ids.toSet().size.toString(), screen.keyFigures[0].second)
+        assertTrue(ids.toSet().size < ids.size)
         assertTrue(screen.answerLead.isNotEmpty())
         assertTrue(screen.records.size >= (fx["outlook"] as JsonArray).size)
     }

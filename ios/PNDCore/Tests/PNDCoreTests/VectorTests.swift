@@ -44,7 +44,7 @@ final class VectorTests: XCTestCase {
             let e = rec(i)
             let title = RiskScale.badgeTitle(of: e)
             XCTAssertTrue(html.contains("title=\"" + title + "\""), m + " title: " + title)
-            XCTAssertTrue(html.contains(">" + RiskScale.level(of: e).label + "</span>"), m)
+            XCTAssertTrue(html.contains(">" + RiskScale.tagText(of: e) + "</span>"), m)
             XCTAssertTrue(html.contains("risk-" + RiskScale.level(of: e).rawValue.lowercased()), m)
         }
     }
@@ -353,7 +353,7 @@ final class VectorTests: XCTestCase {
         // reason. There is none: every group has a native port and a test.
         let webOnly: [String: String] = [:]
         let all = Set((Fixtures.vectors.objectValue ?? [:]).keys)
-        let tested = covered.union(ParityVectorTests.groups).union(webOnly.keys)
+        let tested = covered.union(ParityVectorTests.groups).union(LaunchParityTests.groups).union(webOnly.keys)
         XCTAssertEqual(all.subtracting(tested), [], "vector groups without a test")
         XCTAssertEqual(tested.subtracting(all), [], "tests for vector groups that no longer exist")
     }

@@ -90,6 +90,8 @@ data class Ledgers(
     val scan: JsonObject?,
     val backtest: JsonObject? = null,
     val modelVerdicts: JsonObject? = null,
+    /** `data/accuracy-summary.json`: its `answer` is the headline the site opens with (changelog C29). */
+    val summary: JsonObject? = null,
 )
 
 /** Everything the Track record screen prints, built from accuracy.html load(). */
@@ -277,8 +279,10 @@ object TrackRecord {
             )
         }
         val g = graded!!
-        val states = records.map { it.state }
-        val t = Verdicts.tally(records.map { it.r }, now, states)
+        // One verdict per forecast (changelog C29): each id counted once, by its first recorded version.
+        val firstKeys = g.arr("firstKeys").strings().toSet()
+        val counted = records.filter { x -> !(x.r.truthy("targetStart") || x.r.truthy("targetEnd") || x.r.truthy("forecastKind")) || Hazards.claimKey(x.r) in firstKeys }
+        val t = Verdicts.tally(counted.map { it.r }, now, counted.map { it.state })
         val disagree = records.count { it.ledgerState != null }
         val unreproduced = records.count { it.unrepro }
         val honesty = recordedText +
@@ -417,8 +421,10 @@ object TrackRecord {
                     (crit?.keys?.map { k -> k.replace(Regex("([A-Z])"), " $1").lowercase(Locale.ROOT) to (if (crit.truthy(k)) "met" else "not met") } ?: emptyList()))
         }
         return TrackRecordScreen(
-            error = null, answerLead = answerLead, answerPoints = pts,
-            keyFigures = listOf("Forecasts recorded" to rows.size.toString(), "Still running" to t.open.toString(), "Ended, not checked yet" to t.awaiting.toString(),
+            // The site opens with the summary's answer (accuracy-model.js answer) where it has one (changelog C29).
+            error = null, answerLead = l.summary.obj("answer")?.str("lead")?.takeIf { it.isNotEmpty() } ?: answerLead,
+            answerPoints = l.summary.obj("answer")?.takeIf { it.str("lead")?.isNotEmpty() == true }?.arr("points").strings().ifEmpty { pts },
+            keyFigures = listOf("Forecasts recorded" to distinct.toString(), "Still running" to t.open.toString(), "Ended, not checked yet" to t.awaiting.toString(),
                 "Ended, cannot be checked" to t.ungradeable.toString(), "Checked so far" to t.graded.toString(), "Correct" to t.verified.toString(),
                 "Partly correct" to t.partial.toString(), "Wrong (false alarm)" to t.falseAlarm.toString(), "Missed events" to t.missed.toString(),
                 "No proof made in time" to t.notPrediction.toString()),

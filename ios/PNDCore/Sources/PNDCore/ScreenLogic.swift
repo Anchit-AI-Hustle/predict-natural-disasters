@@ -26,8 +26,8 @@ public enum Screens {
         public let count: Int
         public let observedOnly: Bool
         public var icon: String { Home.icons[type] ?? "\u{25C6}" }
-        /// "{n} reported", plus " · observed only" for a hazard no agency forecasts.
-        public var text: String { "\(count) reported" + (observedOnly ? " \u{00B7} observed only" : "") }
+        /// "{n} reported", plus " · reports only, no forecast" for a hazard no agency forecasts (changelog C38).
+        public var text: String { "\(count) reported" + (observedOnly ? " \u{00B7} reports only, no forecast" : "") }
         public var link: String { "/hazards/" + JS.encodeURIComponent(type) }
     }
 
@@ -86,7 +86,8 @@ public enum Screens {
         return (region, { e in
             if region == "World" { return true }
             if !continent.isEmpty { return Continents.onContinent(e, continent) }
-            return [e.country, e.region, e.title, e.details].joined(separator: " ").lowercased().contains(region.lowercased())
+            // A country exactly, anything else a whole word in the place fields, never the title (changelog C36).
+            return Format.inPlace(e, region)
         })
     }
 

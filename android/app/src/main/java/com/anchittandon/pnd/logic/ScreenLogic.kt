@@ -25,10 +25,15 @@ import java.util.Locale
 object Collections {
     fun forecastMode(view: String) = view == "forecast-list" || view == "forecast-calendar"
 
-    fun keep(view: String, e: JsonObject): Boolean = when (view) {
-        "official-warnings", "alerts-notifications" -> Portal.isOfficialWarning(e)
-        "forecast-list", "forecast-calendar" -> e.bool("forecast") == true
-        "recent-events" -> e.str("sourceType") == "official"
+    fun keep(view: String, e: JsonObject): Boolean = when {
+        view == "official-warnings" || view == "alerts-notifications" -> Portal.isOfficialWarning(e)
+        // Open forecasts only (changelog C33): an ended one is graded on the track record.
+        forecastMode(view) -> e.bool("forecast") == true && Portal.openForecasts(listOf(e)) { it }.size == 1
+        // The frozen ND-001 benchmark is a test case, not an event happening now (changelog C45).
+        e.str("forecastClass") == "retrospective-benchmark" || e.str("forecastKind") == "frozen-benchmark" -> false
+        // Recently ended events: records their own provider stopped updating.
+        view == "historical-events" -> e.bool("live") == false && !e.truthy("forecast")
+        view == "recent-events" -> e.str("sourceType") == "official"
         else -> true
     }
 
@@ -46,10 +51,7 @@ object Collections {
     /** The status line's count: of the scoped list, forecasts said apart. */
     fun <T> countText(scoped: List<T>, view: String, noun: String, json: (T) -> JsonObject): String {
         val shown = scoped.size
-        if (forecastMode(view)) {
-            val open = Portal.openForecasts(scoped, json).size
-            return one(shown, noun) + ": $open open, ${shown - open} ended"
-        }
+        if (forecastMode(view)) return one(shown, "open $noun")
         val fc = scoped.count { json(it).truthy("forecast") }
         return if (fc > 0) one(shown - fc, noun) + " · " + one(fc, "forecasts") else one(shown, noun)
     }
@@ -69,8 +71,8 @@ object RegionMatch {
         if (region == "World") return true
         val c = Continents.continentNamed(region)
         if (c.isNotEmpty()) return Continents.onContinent(e, c)
-        val s = listOf("country", "region", "title", "details").joinToString(" ") { k -> e.el(k)?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.content else it.toString() } ?: "" }
-        return s.lowercase(Locale.ROOT).contains(region.lowercase(Locale.ROOT))
+        // A country exactly, anything else a whole word in the place fields, never the title (changelog C36).
+        return Portal.inPlace(e, region)
     }
 
     /** Reports with no continent, said on a continent's page. */
@@ -111,7 +113,16 @@ object HazardPage {
 
 /** The status words on event, alert and calamity detail (features.md §7.1 to §7.3, changelog C5). */
 object DetailWords {
-    fun eventEyebrow(e: JsonObject): String = if (e.truthy("forecast")) "OUR FORECAST, NOT OFFICIAL" else if (e.bool("live") == false) "EVENT NO LONGER UPDATED" else "LIVE EVENT"
+    /** Official labels follow the evidence (changelog C39): only an agency's warning in force is an official one. */
+    fun eventEyebrow(e: JsonObject): String = when {
+        e.truthy("forecast") -> "OUR FORECAST, NOT OFFICIAL"
+        e.bool("live") == false -> "EVENT NO LONGER UPDATED"
+        Portal.isOfficialWarning(e) -> Format.officialWord(e).uppercase(Locale.ROOT)
+        else -> "REPORTED EVENT"
+    }
+
+    /** Alert detail's eyebrow: the same, else "REPORT FROM AN OFFICIAL AGENCY". */
+    fun alertEyebrow(e: JsonObject): String = eventEyebrow(e).let { if (it == "REPORTED EVENT") "REPORT FROM AN OFFICIAL AGENCY" else it }
     fun eventRecordState(e: JsonObject): String = when {
         e.truthy("cached") -> "Saved copy, not live"
         e.truthy("forecast") -> "Forecast in progress"
@@ -237,26 +248,43 @@ object HomeModel {
         val hazardStrip: List<Chip>,
     )
 
-    /** The hazard select, filled from the live records ("All hazards (N)" then each type by count). */
-    fun hazardOptions(events: List<JsonObject>, selected: String?) = Format.hazardOptions(events.filter { it.bool("live") != false }, selected)
+    /**
+     * The hazard select (index.html `fillHazards`, changelog C38): reports per hazard key, most first; a hazard we only
+     * forecast says "(forecasts only)"; "All hazards" has no count.
+     */
+    fun hazardOptions(events: List<JsonObject>, selected: String?): List<Pair<String, String>> {
+        val rep = LinkedHashMap<String, Int>(); val fcs = HashSet<String>()
+        events.filter { it.bool("live") != false }.forEach { e ->
+            val k = Portal.hazardKey(e.text("type"))
+            if (k.isEmpty()) return@forEach
+            if (e.truthy("forecast")) fcs += k else rep[k] = (rep[k] ?: 0) + 1
+        }
+        val keys = (rep.keys + fcs).distinct().sortedWith { a, b -> ((rep[b] ?: 0) - (rep[a] ?: 0)).takeIf { it != 0 } ?: Sorts.collator.compare(a, b) }.toMutableList()
+        if (!selected.isNullOrEmpty() && selected !in keys) keys += selected
+        return listOf("" to "All hazards") + keys.map { k -> k to "$k (" + (rep[k]?.toString() ?: if (k in fcs) "forecasts only" else "0") + ")" }
+    }
 
     fun render(all: List<JsonObject>, hazardFilter: String, sort: String): Render {
         val events = all.filter { it.bool("live") != false }
         val h = hazardFilter.lowercase(Locale.ROOT)
         val list = events.filter { h.isEmpty() || h == "all" || Portal.sameHazard(it.text("type"), h) }
         val reports = list.filter { !it.truthy("forecast") }
-        val sev = reports.groupingBy { it.str("severity") ?: "" }.eachCount()
-        val bad = (sev["Extreme"] ?: 0) + (sev["Severe"] ?: 0); val routine = sev["Informational"] ?: 0
-        val note = if (reports.isNotEmpty() && (bad > 0 || routine > 0)) "$bad serious · $routine minor" else if (h.isEmpty() || h == "all") "From all our sources" else "Matching the hazard you chose"
+        // The count per level each report resolves to (PND.riskKey), so the parts add up to the total (changelog C38).
+        val byLvl = reports.groupingBy { RiskScale.keyFor(it) }.eachCount()
+        val levels = (listOf(Level.EXTREME, Level.SEVERE, Level.HIGH, Level.MODERATE, Level.WATCH, Level.LOW, Level.UNKNOWN))
+            .filter { (byLvl[it] ?: 0) > 0 }.joinToString(" · ") { "${byLvl[it]} ${it.label.lowercase(Locale.ROOT)}" }
+        val note = if (reports.isNotEmpty() && levels.isNotEmpty()) levels else if (h.isEmpty() || h == "all") "From all our sources" else "Matching the hazard you chose"
         val warnAll = Portal.officialWarnings(list) { it }
         val cmp = SORTS[sort] ?: newest
-        val fc = list.filter { it.truthy("forecast") && !it.truthy("windowClosed") }.sortedWith(newest)
+        // In order of when each starts, latest first (changelog C38).
+        val fcStart = { e: JsonObject -> JsDate.parse(if (e.truthy("targetStart")) e.text("targetStart") else e.text("updated")) ?: 0L }
+        val fc = list.filter { it.truthy("forecast") && !it.truthy("windowClosed") }.sortedWith { a, b -> fcStart(b).compareTo(fcStart(a)) }
         val split = Level.entries.filter { it != Level.UNKNOWN }.reversed().map { lv -> lv.label to fc.count { RiskScale.matchesRiskLevel(it, lv.name) } }.filter { it.second > 0 }
         val byHaz = LinkedHashMap<String, Int>()
         reports.forEach { e -> val k = Portal.hazardKey(e.text("type")); if (k.isNotEmpty()) byHaz[k] = (byHaz[k] ?: 0) + 1 }
         val strip = byHaz.entries.sortedWith { a, b -> (b.value - a.value).takeIf { it != 0 } ?: Sorts.collator.compare(a.key, b.key) }.filter { it.value > 0 }.map { (t, c) ->
             val never = !Hazards.hazardOf(t).forecastable
-            Chip(t, ICONS[t] ?: "◆", "$c reported" + if (never) " · observed only" else "", "/hazards/" + Format.enc(t), never)
+            Chip(t, ICONS[t] ?: "◆", "$c reported" + if (never) " · reports only, no forecast" else "", "/hazards/" + Format.enc(t), never)
         }
         return Render(list, reports, reports.size.toString(), note, warnAll.size.toString(), fc.size.toString(),
             if (split.isNotEmpty()) split.joinToString(" · ") { "${it.second} ${it.first}" } else "Recorded for grading",
@@ -278,7 +306,7 @@ object HomeModel {
         return listOf(e.text("source").ifEmpty { "Official" }, Format.placeOf(e, "-"), e.text("title"), if (end.isNotEmpty()) Format.fmtDate(end) else "Not stated")
     }
     fun forecastRow(e: JsonObject) = listOf(Format.fmtWhen(if (e.truthy("targetStart")) e.text("targetStart") else e.text("updated").ifEmpty { null }),
-        Format.placeOf(e, "-"), e.text("type").ifEmpty { "Outlook" }, RiskScale.riskLabel(e))
+        Format.placeOf(e, "-"), e.text("type").ifEmpty { "Outlook" }, RiskScale.tagText(e))
 }
 
 /** verification-detail.html (features.md §14, changelog C11). */
@@ -370,7 +398,7 @@ object PlaceAnswer {
         val lead = a.lead?.e
         val happening = if (lead != null) {
             val pl = Format.placeOf(lead)
-            lead.text("type").ifEmpty { "Hazard" } + (if (pl.isNotEmpty()) " · $pl" else "") + " · reported " + Format.age(lead.text("updated"))
+            lead.text("type").ifEmpty { "Hazard" } + (if (pl.isNotEmpty()) " · $pl" else "") + " · " + RiskScale.riskWords(lead) + " · reported " + Format.age(lead.text("updated"))
         } else "None of our sources reports anything at this place right now."
         return View(state, a.level?.label ?: "Nothing reported nearby", a.level, lead?.let { Glossary.expandAlways(Format.titleOf(it)) }, happening, false, a.why,
             act.steps, act.authority, if (generatedAt != null) Format.fmtDate(generatedAt) + " · " + Format.age(generatedAt) else "not yet: the data is still loading", false, lead)

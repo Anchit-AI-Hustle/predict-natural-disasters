@@ -143,7 +143,9 @@ final class ParityChangeTests: XCTestCase {
             XCTAssertFalse(l.contains("/") || l.isEmpty, z + " -> " + l)
         }
         XCTAssertEqual(Format.tzLabel("Not/AZone", at: Fixtures.now), "local time")
-        XCTAssertEqual(Format.tzMenuLabel("Asia/Kolkata"), "IST \u{00B7} India")
+        // C47: the menu reads "India (IST)", and the legacy id Asia/Calcutta is India too.
+        XCTAssertEqual(Format.tzMenuLabel("Asia/Kolkata"), "India (IST)")
+        XCTAssertEqual(Format.tzMenuLabel("Asia/Calcutta"), "India (IST)")
     }
 
     // iOS fix (b): foreground notifications match the site's /alerts rules:

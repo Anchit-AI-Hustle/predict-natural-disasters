@@ -46,7 +46,7 @@ public enum Hazards {
             definition: "A rotating storm system over warm ocean with organised convection and a closed low-level circulation. Named at tropical-storm strength; hurricane or typhoon strength begins at 64 knots of sustained wind.",
             onset: "rapid", forecastable: true, horizonH: 120,
             duration: "Days at sea; landfall impacts run roughly 12 to 72 hours at a given place.",
-            severityBasis: "Saffir-Simpson category from sustained wind, plus expected storm surge and rainfall over populated coast.",
+            severityBasis: "The regional agency\u{2019}s own scale from sustained wind (Saffir-Simpson in the Atlantic and eastern and central Pacific; IMD, JMA and BoM categories elsewhere), plus expected storm surge and rainfall over populated coast.",
             leadTime: "Three to five days. Storms can be forecast further ahead than most hazards, which is why official storm tracks cover five days."),
         HazardInfo(key: "Flood", name: "Flood",
             definition: "Water covering ground that is normally dry, from river overflow, intense rainfall, storm surge or dam failure. Flash floods develop within hours; riverine floods build over days.",
@@ -75,7 +75,7 @@ public enum Hazards {
         HazardInfo(key: "Drought", name: "Drought",
             definition: "A prolonged deficit of water relative to normal for a place and season. Meteorological drought is a rainfall deficit; agricultural and hydrological drought follow later as soil moisture and storage fall.",
             onset: "slow", forecastable: true, horizonH: 720,
-            duration: "Months to years. Drought does not have a three-day window and must never be published with one.",
+            duration: "Months to years, so it is never given a three-day window.",
             severityBasis: "Extent and duration of the deficit, and the population dependent on rain-fed agriculture or affected water supply.",
             leadTime: "Weeks to months. Drought builds slowly, so long-range forecasts give real warning."),
         HazardInfo(key: "Volcano", name: "Volcanic activity",
@@ -113,7 +113,7 @@ public enum Hazards {
             onset: "sudden", forecastable: true, horizonH: 24,
             duration: "Hours of wave trains; the first wave is often not the largest.",
             severityBasis: "Expected run-up height against coastal population and evacuation time available.",
-            leadTime: "Minutes to hours, depending on how far the wave has to travel. It is not forecast by any model.")
+            leadTime: "Minutes to hours, depending on how far the wave has to travel. Once an earthquake is detected, warning centres such as PTWC, JMA and INCOIS model arrival times and wave heights; the earthquake itself cannot be forecast.")
     ]
 
     public static let defaultHazard = HazardInfo(key: "", name: "Natural hazard",
@@ -136,6 +136,10 @@ public enum Hazards {
         let t = type ?? ""
         if let h = table[t] { return h }
         let k = t.lowercased()
+        // The weather models' own hazards (forecast-models.js MODEL_HAZARDS) belong to the family of the disaster they bear on.
+        if k == "unusually hot days" { return table["Extreme Heat"]! }
+        if k == "unusually heavy rain" { return table["Flood"]! }
+        if k == "high fire-weather index" { return table["Wildfire"]! }
         if rx.aftershock.test(k) { return table["Earthquake aftershock sequence"]! }
         if rx.quake.test(k) { return table["Earthquake"]! }
         if rx.cyclone.test(k) { return table["Tropical Cyclone"]! }
@@ -199,12 +203,19 @@ public enum Hazards {
         let kt = e.jsNumber("windKt")
         var wind = 0
         if kt.isFinite && kt > 0 { wind = kt >= 113 ? 5 : kt >= 96 ? 4 : kt >= 64 ? 3 : 2 }
+        // A weather model's forecast is not derived from anyone's alert: High is its 99th percentile, Moderate its 95th.
+        if e.s("forecastKind") == "model-advance" {
+            if e.s("alert") == "High" { return max(assessed, wind, 4) }
+            if e.s("alert") == "Moderate" { return max(assessed, wind, 3) }
+        }
         var issued = 0
         switch e.s("alert") {
         case "Red": issued = 4
         case "Orange": issued = 3
         case "High": issued = 3
         case "Moderate": issued = 2
+        // An NWS watch or advisory (api/events.js nwsAlertLevel): one below a warning of the same severity.
+        case "Yellow": issued = 2
         case "Watch": issued = 1
         default: issued = 0
         }
@@ -214,8 +225,80 @@ public enum Hazards {
     }
 
     public static func severityOf(_ e: Record) -> (severity: String, rank: Int) {
-        let r = max(impactRank(e), alertRank(e), 1)
+        let r = max(impactRank(e), alertRank(e), cycloneCategoryRank(e), 1)
         return (severityScale[r - 1].key, r)
+    }
+
+    private static let stormRx = (
+        named: JSRegex("cyclone|hurricane|typhoon|tropical storm", caseInsensitive: true),
+        category: JSRegex(#"\bcategory\s*([1-5])\b"#, caseInsensitive: true),
+        superTyphoon: JSRegex(#"\bsuper\s+typhoon\b"#, caseInsensitive: true),
+        typhoon: JSRegex(#"\b(?:typhoon|hurricane)\b"#, caseInsensitive: true),
+        tropicalStorm: JSRegex(#"\btropical storm\b"#, caseInsensitive: true)
+    )
+
+    /// `cycloneCategoryRank(e)` (changelog C31): a named storm is never shown
+    /// below its agency category. A tropical storm Minor, a typhoon, hurricane
+    /// or category 1 to 2 Moderate, category 3 Severe, category 4 to 5 or a
+    /// super typhoon Extreme; 0 for anything else.
+    public static func cycloneCategoryRank(_ e: Record) -> Int {
+        let t = ["type", "title", "name", "region"].map { e[$0].map { $0.isNull ? "null" : $0.jsString } ?? "" }.joined(separator: " ")
+        guard stormRx.named.test(t) else { return 0 }
+        var cat = e.jsNumber("category")
+        if !(cat >= 1 && cat <= 5), let m = stormRx.category.exec(t), let d = m[1].flatMap({ Double($0) }) { cat = d }
+        if stormRx.superTyphoon.test(t) { return 5 }
+        if cat >= 4 { return 5 }
+        if cat == 3 { return 4 }
+        if cat >= 1 || stormRx.typhoon.test(t) { return 3 }
+        if stormRx.tropicalStorm.test(t) { return 2 }
+        return 0
+    }
+
+    /// `cycloneBasin(lat, lon)` (changelog C43): whose scale a storm is classed on.
+    public static func cycloneBasin(_ lat: Double?, _ lon: Double?) -> String? {
+        guard let la = lat, var lo = lon, la.isFinite, lo.isFinite else { return nil }
+        if lo > 180 { lo -= 360 }
+        if la < 0 { return "south" }
+        if lo >= 30 && lo < 100 { return "nio" }
+        if lo >= 100 || lo < -180 { return "wpac" }
+        if lo >= -180 && lo < -140 { return "cpac" }
+        if lo >= -140 && lo < -100 { return "epac" }
+        if lo >= -100 && lo < -77 {
+            let coast = lo >= -83 ? 8.5 : lo >= -87 ? 11 : lo >= -92 ? 14 : 16.5
+            return la < coast ? "epac" : "atlantic"
+        }
+        return "atlantic"
+    }
+
+    public struct Authority: Equatable, Sendable { public let name: String, short: String, url: String }
+
+    public static let cycloneAuthorities: [String: Authority] = [
+        "nio": Authority(name: "India Meteorological Department (IMD), RSMC New Delhi", short: "IMD", url: "https://mausam.imd.gov.in/"),
+        "wpac": Authority(name: "Japan Meteorological Agency (JMA), RSMC Tokyo", short: "JMA", url: "https://www.jma.go.jp/bosai/map.html#contents=typhoon&lang=en"),
+        "atlantic": Authority(name: "NOAA National Hurricane Center", short: "NHC", url: "https://www.nhc.noaa.gov/"),
+        "epac": Authority(name: "NOAA National Hurricane Center", short: "NHC", url: "https://www.nhc.noaa.gov/"),
+        "cpac": Authority(name: "NOAA Central Pacific Hurricane Center", short: "CPHC", url: "https://www.nhc.noaa.gov/?cpac")
+    ]
+
+    /// `cycloneAuthority(e)`: the warning centre for a cyclone at this position, or nil.
+    public static func cycloneAuthority(_ e: Record) -> Authority? {
+        cycloneBasin(e.lat, e.lon).flatMap { cycloneAuthorities[$0] }
+    }
+
+    /// `cycloneClass(kt, lat, lon)`: a storm's class on its basin's scale, and that scale's name.
+    public static func cycloneClass(_ kt: Double?, _ lat: Double?, _ lon: Double?) -> (scale: String, value: String?)? {
+        guard let k = kt, k.isFinite, k > 0 else { return nil }
+        switch cycloneBasin(lat, lon) {
+        case nil: return ("Category", cycloneCategory(k))
+        case "nio":
+            return ("IMD class", k >= 120 ? "Super Cyclonic Storm" : k >= 90 ? "Extremely Severe Cyclonic Storm" : k >= 64 ? "Very Severe Cyclonic Storm"
+                : k >= 48 ? "Severe Cyclonic Storm" : k >= 34 ? "Cyclonic Storm" : k >= 28 ? "Deep Depression" : k >= 17 ? "Depression" : "Low pressure area")
+        case "wpac":
+            return ("JMA class (JTWC above 130 kt)", k >= 130 ? "Super typhoon" : k >= 64 ? "Typhoon" : k >= 48 ? "Severe tropical storm"
+                : k >= 34 ? "Tropical storm" : "Tropical depression")
+        case "atlantic", "epac", "cpac": return ("Saffir-Simpson category", cycloneCategory(k))
+        default: return ("Class", k >= 34 ? "Tropical cyclone" : "Tropical depression")
+        }
     }
 
     // MARK: key facts
@@ -299,8 +382,8 @@ public enum Hazards {
             let kt = k == k.rounded() ? JS.numberString(k) : JS.numberString(JS.round(k * 10) / 10)
             return fact(true, kt + " kt")
         case "category":
-            let c = cycloneCategory(e["windKt"].map { $0.has ? $0.jsNumber : .nan })
-            return fact(c != nil, c)
+            let cc = cycloneClass(e["windKt"].map { $0.has ? $0.jsNumber : .nan }, e.lat, e.lon)
+            return KeyFact(key: key, label: cc?.scale ?? label, reported: cc?.value != nil, value: cc?.value, note: nil)
         case "pressureMb":
             let mb = v?.jsNumber ?? .nan
             let ok = has && mb.isFinite && mb > 0

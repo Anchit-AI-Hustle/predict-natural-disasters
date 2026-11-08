@@ -222,7 +222,8 @@ final class ParityVectorTests: XCTestCase {
         let feed = (g["feed"]?.arrayValue ?? []).map { rec($0) }
         XCTAssertFalse(feed.isEmpty)
         let live = feed.filter { $0.isLive }
-        let opts = Format.hazardOptions(live, selected: "")
+        // C38: the home filter counts reports per hazard key; forecast-only hazards say so.
+        let opts = Home.hazardOptions(live, selected: "")
         XCTAssertEqual(opts.map { $0.value }, (g["hazardFilterOptions"]?.arrayValue ?? []).map { $0["value"]?.stringValue ?? "" })
         XCTAssertEqual(opts.map { $0.label }, (g["hazardFilterOptions"]?.arrayValue ?? []).map { $0["label"]?.stringValue ?? "" })
         XCTAssertEqual(Home.sortKeys, (g["sortOptions"]?.arrayValue ?? []).map { $0["value"]?.stringValue ?? "" })
@@ -278,7 +279,9 @@ final class ParityVectorTests: XCTestCase {
             XCTAssertEqual(Double(p.shown), o["shown"]?.numberValue, s["action"]?.stringValue ?? "")
             XCTAssertEqual(p.note, o["note"]?.stringValue)
             XCTAssertEqual(p.button, o["button"]?.stringValue)
-            XCTAssertEqual("\(total)", o["kOfficial"]?.stringValue)
+            // C39: the first stat counts official warnings in force; the generator's 45 official
+            // USGS reports are observed earthquakes, so none of them is one.
+            XCTAssertEqual("\(pagerRecords.filter { Format.isOfficialWarning($0) }.count)", o["kOfficial"]?.stringValue)
         }
         // Forty or fewer: no note at all.
         XCTAssertEqual(Screens.alertsPager(total: 12, limit: 40), Screens.Pager(shown: 12, note: nil, button: nil))
@@ -380,6 +383,13 @@ final class ParityVectorTests: XCTestCase {
     }
 
     /// The groups this file asserts (VectorTests checks every group has a test).
+    /// The 46 records tools/make-parity-vectors.js alertsPagerVectors serves.
+    var pagerRecords: [Record] {
+        (0..<45).map { i in Record(["id": .string("usgs-p\(i)"), "type": "Earthquake", "source": "USGS", "sourceType": "official",
+                                     "evidenceState": "observed", "alert": "Green", "country": "Japan"]) } +
+            [Record(["id": "eonet-x", "type": "Wildfire", "source": "NASA EONET", "sourceType": "aggregator"])]
+    }
+
     static let groups: Set<String> = ["sort.windowEndEnded", "search.emptyHtml.counts", "search.countryCount", "continents.NAMES",
         "continents.continentNamed", "fixtures.places.continents", "continents.continentsOf", "continents.onContinent", "portal.inPlace",
         "regionDetail.matches", "portal.hazardKey", "portal.sameHazard", "hazardDetail.fillHazards", "fixtures.events.hazards",

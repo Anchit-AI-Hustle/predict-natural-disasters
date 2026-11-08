@@ -93,13 +93,18 @@ class RepositoryTest {
         assertNull(none.state.value.feed)
     }
 
-    @Test fun refreshNowBypassesTheEdgeCopyAndTimersDoNot() = runBlocking {
+    @Test fun refreshNowRevalidatesWithNoCacheAndTimersDoNot() = runBlocking {
         AppClock.now = { Fixtures.NOW }
         val http = FakeHttp()
         val repo = FeedRepository(http, null, CoroutineScope(Dispatchers.Unconfined))
         repo.refresh(fresh = false); repo.refresh(fresh = true)
+        // One address for both: no ?ts=, so a refresh re-reads the shared edge copy instead of going to every provider.
         assertEquals(Api.BASE + "/api/events", http.requests[0])
-        assertEquals(Api.BASE + "/api/events?ts=${Fixtures.NOW}", http.requests[1])
+        assertEquals(Api.BASE + "/api/events", http.requests[1])
+        assertFalse(http.requests.any { it.contains("ts=") })
+        // Only the explicit refresh asks past the device's own cache.
+        assertEquals(emptyMap<String, String>(), http.headers[0])
+        assertEquals(mapOf("Cache-Control" to "no-cache"), http.headers[1])
     }
 
     @Test fun userAgentNamesTheAppAndNothingPersonal() {

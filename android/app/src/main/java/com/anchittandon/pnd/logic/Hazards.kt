@@ -72,7 +72,7 @@ object Hazards {
             "A rotating storm system over warm ocean with organised convection and a closed low-level circulation. Named at tropical-storm strength; hurricane or typhoon strength begins at 64 knots of sustained wind.",
             "rapid", true, 120,
             "Days at sea; landfall impacts run roughly 12 to 72 hours at a given place.",
-            "Saffir-Simpson category from sustained wind, plus expected storm surge and rainfall over populated coast.",
+            "The regional agency’s own scale from sustained wind (Saffir-Simpson in the Atlantic and eastern and central Pacific; IMD, JMA and BoM categories elsewhere), plus expected storm surge and rainfall over populated coast.",
             "Three to five days. Storms can be forecast further ahead than most hazards, which is why official storm tracks cover five days."),
         Hazard("Flood", "Flood",
             "Water covering ground that is normally dry, from river overflow, intense rainfall, storm surge or dam failure. Flash floods develop within hours; riverine floods build over days.",
@@ -101,7 +101,7 @@ object Hazards {
         Hazard("Drought", "Drought",
             "A prolonged deficit of water relative to normal for a place and season. Meteorological drought is a rainfall deficit; agricultural and hydrological drought follow later as soil moisture and storage fall.",
             "slow", true, 720,
-            "Months to years. Drought does not have a three-day window and must never be published with one.",
+            "Months to years, so it is never given a three-day window.",
             "Extent and duration of the deficit, and the population dependent on rain-fed agriculture or affected water supply.",
             "Weeks to months. Drought builds slowly, so long-range forecasts give real warning."),
         Hazard("Volcano", "Volcanic activity",
@@ -139,7 +139,7 @@ object Hazards {
             "sudden", true, 24,
             "Hours of wave trains; the first wave is often not the largest.",
             "Expected run-up height against coastal population and evacuation time available.",
-            "Minutes to hours, depending on how far the wave has to travel. It is not forecast by any model."),
+            "Minutes to hours, depending on how far the wave has to travel. Once an earthquake is detected, warning centres such as PTWC, JMA and INCOIS model arrival times and wave heights; the earthquake itself cannot be forecast."),
     ).associateBy { it.key }
 
     val DEFAULT = Hazard("", "Natural hazard",
@@ -153,6 +153,10 @@ object Hazards {
         val k = t.lowercase(Locale.ROOT)
         fun has(re: String) = Regex(re).containsMatchIn(k)
         return when {
+            // The weather models' own hazards (forecast-models.js MODEL_HAZARDS) belong to the family of the disaster they bear on.
+            k == "unusually hot days" -> HAZARDS.getValue("Extreme Heat")
+            k == "unusually heavy rain" -> HAZARDS.getValue("Flood")
+            k == "high fire-weather index" -> HAZARDS.getValue("Wildfire")
             has("aftershock") -> HAZARDS.getValue("Earthquake aftershock sequence")
             has("earthquake|seismic") -> HAZARDS.getValue("Earthquake")
             has("cyclone|hurricane|typhoon") -> HAZARDS.getValue("Tropical Cyclone")
@@ -206,7 +210,12 @@ object Hazards {
         val kt = e.jsNum("windKt")
         var wind = 0
         if (kt.isFinite() && kt > 0) wind = if (kt >= 113) 5 else if (kt >= 96) 4 else if (kt >= 64) 3 else 2
-        val issued = when (e.str("alert") ?: "") { "Red" -> 4; "Orange" -> 3; "High" -> 3; "Moderate" -> 2; "Watch" -> 1; else -> 0 }
+        // A weather model's forecast is not derived from anyone's alert: High is its 99th percentile, Moderate its 95th.
+        if (e.str("forecastKind") == "model-advance") {
+            when (e.str("alert") ?: "") { "High" -> return maxOf(assessed, wind, 4); "Moderate" -> return maxOf(assessed, wind, 3) }
+        }
+        // Yellow: an NWS watch or advisory, one below a warning of the same severity (api/events.js nwsAlertLevel).
+        val issued = when (e.str("alert") ?: "") { "Red" -> 4; "Orange" -> 3; "High" -> 3; "Moderate" -> 2; "Yellow" -> 2; "Watch" -> 1; else -> 0 }
         if (assessed != 0 || wind != 0 || issued != 0) return maxOf(assessed, wind, issued)
         if (mag.isFinite() && mag > 0) return 1
         return 0
@@ -214,8 +223,30 @@ object Hazards {
 
     fun severityOf(e: JsonObject?): String {
         val x = e ?: JsonObject(emptyMap())
-        val r = maxOf(impactRank(x), alertRank(x), 1)
+        val r = maxOf(impactRank(x), alertRank(x), cycloneCategoryRank(x), 1)
         return SEVERITY.first { it.rank == r }.key
+    }
+
+    /**
+     * A named storm is never shown below its agency category (hazard-model.js `cycloneCategoryRank`, changelog C31):
+     * a tropical storm Minor, a typhoon, hurricane or category 1 to 2 Moderate, category 3 Severe, category 4 to 5 or a
+     * super typhoon Extreme. 0 for anything that is not a named storm.
+     */
+    fun cycloneCategoryRank(e: JsonObject?): Int {
+        if (e == null) return 0
+        val t = listOf("type", "title", "name", "region").joinToString(" ") { e.str(it) ?: "" }
+        if (!Regex("cyclone|hurricane|typhoon|tropical storm", RegexOption.IGNORE_CASE).containsMatchIn(t)) return 0
+        var cat = e.jsNum("category").let { if (e.el("category") == null) Double.NaN else it }
+        val m = Regex("\\bcategory\\s*([1-5])\\b", RegexOption.IGNORE_CASE).find(t)
+        if (!(cat >= 1 && cat <= 5) && m != null) cat = m.groupValues[1].toDouble()
+        return when {
+            Regex("\\bsuper\\s+typhoon\\b", RegexOption.IGNORE_CASE).containsMatchIn(t) -> 5
+            cat >= 4 -> 5
+            cat == 3.0 -> 4
+            cat >= 1 || Regex("\\b(?:typhoon|hurricane)\\b", RegexOption.IGNORE_CASE).containsMatchIn(t) -> 3
+            Regex("\\btropical storm\\b", RegexOption.IGNORE_CASE).containsMatchIn(t) -> 2
+            else -> 0
+        }
     }
 
     fun severityMeaning(key: String?): String? = SEVERITY.firstOrNull { it.key == key }?.meaning
@@ -293,6 +324,57 @@ object Hazards {
         }
     }
 
+    /** Which warning centre's basin a storm is in (hazard-model.js `cycloneBasin`, changelog C43); null with no position. */
+    fun cycloneBasin(lat: Double?, lon: Double?): String? {
+        val la = lat ?: return null
+        var lo = lon ?: return null
+        if (!la.isFinite() || !lo.isFinite()) return null
+        if (lo > 180) lo -= 360
+        if (la < 0) return "south"
+        if (lo >= 30 && lo < 100) return "nio"
+        if (lo >= 100 || lo < -180) return "wpac"
+        if (lo >= -180 && lo < -140) return "cpac"
+        if (lo >= -140 && lo < -100) return "epac"
+        if (lo >= -100 && lo < -77) {
+            val coast = if (lo >= -83) 8.5 else if (lo >= -87) 11.0 else if (lo >= -92) 14.0 else 16.5
+            return if (la < coast) "epac" else "atlantic"
+        }
+        return "atlantic"
+    }
+
+    data class Authority(val name: String, val short: String, val url: String)
+
+    private val CYCLONE_AUTHORITY = mapOf(
+        "nio" to Authority("India Meteorological Department (IMD), RSMC New Delhi", "IMD", "https://mausam.imd.gov.in/"),
+        "wpac" to Authority("Japan Meteorological Agency (JMA), RSMC Tokyo", "JMA", "https://www.jma.go.jp/bosai/map.html#contents=typhoon&lang=en"),
+        "atlantic" to Authority("NOAA National Hurricane Center", "NHC", "https://www.nhc.noaa.gov/"),
+        "epac" to Authority("NOAA National Hurricane Center", "NHC", "https://www.nhc.noaa.gov/"),
+        "cpac" to Authority("NOAA Central Pacific Hurricane Center", "CPHC", "https://www.nhc.noaa.gov/?cpac"),
+    )
+
+    /** The warning centre whose warnings decide for a cyclone at this position (`cycloneAuthority`), or null. */
+    fun cycloneAuthority(e: JsonObject?): Authority? = e?.let { cycloneBasin(coordOf(it, "lat"), coordOf(it, "lon")) }?.let { CYCLONE_AUTHORITY[it] }
+
+    data class CycloneClass(val scale: String, val value: String?)
+
+    /** A storm's class on the scale of the basin it is in, and that scale's name (`cycloneClass`). */
+    fun cycloneClass(kt: Double?, lat: Double?, lon: Double?): CycloneClass? {
+        val k = kt ?: return null
+        if (!k.isFinite() || k <= 0) return null
+        return when (cycloneBasin(lat, lon)) {
+            null -> CycloneClass("Category", cycloneCategory(k))
+            "nio" -> CycloneClass("IMD class", when {
+                k >= 120 -> "Super Cyclonic Storm"; k >= 90 -> "Extremely Severe Cyclonic Storm"; k >= 64 -> "Very Severe Cyclonic Storm"
+                k >= 48 -> "Severe Cyclonic Storm"; k >= 34 -> "Cyclonic Storm"; k >= 28 -> "Deep Depression"; k >= 17 -> "Depression"
+                else -> "Low pressure area" })
+            "wpac" -> CycloneClass("JMA class (JTWC above 130 kt)", when {
+                k >= 130 -> "Super typhoon"; k >= 64 -> "Typhoon"; k >= 48 -> "Severe tropical storm"; k >= 34 -> "Tropical storm"
+                else -> "Tropical depression" })
+            "atlantic", "epac", "cpac" -> CycloneClass("Saffir-Simpson category", cycloneCategory(k))
+            else -> CycloneClass("Class", if (k >= 34) "Tropical cyclone" else "Tropical depression")
+        }
+    }
+
     private fun factOf(e: JsonObject, key: String): KeyFact {
         val label = LABELS[key] ?: key
         val has = e.has(key)
@@ -309,7 +391,10 @@ object Hazards {
                 val kt = if (!has) null else if (k == Math.rint(k) && k.isFinite()) k.toLong().toString() else com.anchittandon.pnd.model.jsNumText(jsRound(k * 10) / 10)
                 KeyFact(key, label, has, if (has) "$kt kt" else null)
             }
-            "category" -> { val c = cycloneCategory(e.jsNum("windKt")); KeyFact(key, label, c != null, c) }
+            "category" -> {
+                val cc = cycloneClass(e.jsNum("windKt"), coordOf(e, "lat"), coordOf(e, "lon"))
+                KeyFact(key, cc?.scale ?: label, cc?.value != null, cc?.value)
+            }
             "pressureMb" -> {
                 val mb = jsNumber(v)
                 val ok = has && mb.isFinite() && mb > 0

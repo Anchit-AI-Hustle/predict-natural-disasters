@@ -48,8 +48,18 @@
      but no source they read is complete for that hazard in that place.
      Those windows now carry ABSENCE_NOT_ESTABLISHABLE; OBSERVED_RECORD_EMPTY
      is kept for a record with no scan in it. Only the reason moves: every
-     classification and every rate is the one 1.3.0 gives. */
-  var VERIFICATION_VERSION = 'verify-1.3.1';
+     classification and every rate is the one 1.3.0 gives.
+
+     1.4.0: a forecast that restates an agency's alert (a continuation
+     outlook or a warning-derived one) is graded only on new damage or impact
+     reported inside its window, which is the rule the forecast pages publish.
+     It used to be credited whenever the agency was still listing the hazard
+     during the window: the outlook was made from that same listing, so the
+     test was close to a tautology and 97 of them read "correct". With sources
+     whose silence counts, no new impact is now a false alarm, as the
+     hand-checked verdicts already said. Verdicts from 1.3.x for these two
+     classes are not comparable. */
+  var VERIFICATION_VERSION = 'verify-1.4.0';
 
   var CLASSIFICATION = {
     HIT: 'HIT',
@@ -348,12 +358,21 @@
  */
   var IMPACT_FIELDS = ['deaths', 'injuries', 'missing', 'affected', 'displaced',
     'evacuated', 'infrastructureImpact'];
+  /* Since verify-1.4.0 all three classes need a new impact. The two that
+     restate an agency's alert used to accept 'still-reported': the provider
+     still carrying its record inside the window. That record is what the
+     outlook was copied from, so it cannot also be the evidence it came true.
+     continuedActivity still understands 'still-reported' for any caller that
+     asks for it, but no class is graded that way. */
   var CONTINUATION_EVIDENCE = {
-    'continuation-outlook': 'still-reported',
-    'warning-derived': 'still-reported',
+    'continuation-outlook': 'new-impact',
+    'warning-derived': 'new-impact',
     'post-event-conditional': 'new-impact'
   };
   var CONTINUATION_CLASSES = Object.keys(CONTINUATION_EVIDENCE);
+  /* The classes that restate an alert an agency had already issued. Not a
+     test of this site's skill: reported apart from the advance forecasts. */
+  var RESTATED_CLASSES = ['continuation-outlook', 'warning-derived'];
 
   /*
    * Evidence that the disaster was still going ON inside the window.
@@ -751,6 +770,14 @@
       return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
         'The only matching ' + observedHazard(early[0]) + ' began at ' + early[0].event.onset + ', before this forecast can be shown to have existed (' +
         claim.window.effectiveForecastStart + '), so it cannot count as having been predicted.', []);
+    }
+    if (awaitingActivity.length && RESTATED_CLASSES.indexOf(claim.forecastClass) >= 0) {
+      /* The record could have shown a new impact and shows none. The agency
+         still listing the hazard is the alert this outlook restated, not the
+         forecast coming true. */
+      return say(CLASSIFICATION.MISS_FALSE_POSITIVE,
+        'The ' + String(claim.hazard).replace(/-/g, ' ') + ' this forecast restates is on record, but no new damage or impact was reported inside the forecast period. ' +
+        'The agency still listing the hazard does not count as the forecast coming true.', []);
     }
     if (awaitingActivity.length) {
       return say(CLASSIFICATION.PENDING,
@@ -1266,7 +1293,7 @@
     observedCoverageFor: observedCoverageFor, MAX_SCAN_GAP_HOURS: MAX_SCAN_GAP_HOURS,
     providersFor: providersFor,
     continuedActivity: continuedActivity, reportsMoreImpact: reportsMoreImpact, CONTINUATION_CLASSES: CONTINUATION_CLASSES,
-    CONTINUATION_EVIDENCE: CONTINUATION_EVIDENCE, IMPACT_FIELDS: IMPACT_FIELDS,
+    CONTINUATION_EVIDENCE: CONTINUATION_EVIDENCE, RESTATED_CLASSES: RESTATED_CLASSES, IMPACT_FIELDS: IMPACT_FIELDS,
     providerCoversPlace: providerCoversPlace
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

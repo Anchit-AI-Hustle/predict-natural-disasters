@@ -24,7 +24,15 @@ object Api {
     /** Identifies the app to this site and to Nominatim (its usage policy asks for a real User-Agent). No personal data. */
     val USER_AGENT = "PredictNaturalDisasters-Android/${BuildConfig.VERSION_NAME} (+$BASE/about)"
 
-    fun events(fresh: Boolean, now: Long): String = if (fresh) "$BASE/api/events?ts=$now" else "$BASE/api/events"
+    /**
+     * The feed is one shared copy at the edge, rebuilt once it is 60 s old (api/events.js, vercel.json); `?cron=` is the only
+     * fresh path and is not the app's to use. A new address per refresh (`?ts=`) sent every click to every provider, so an
+     * explicit refresh asks with `Cache-Control: no-cache` on the same address instead, as the website does.
+     */
+    fun events(): String = "$BASE/api/events"
+
+    /** The request headers for a feed read: an explicit user refresh revalidates (`cache: 'no-cache'`); timers send none. */
+    fun eventsHeaders(fresh: Boolean): Map<String, String> = if (fresh) mapOf("Cache-Control" to "no-cache") else emptyMap()
     fun summary(): String = "$BASE/api/events?summary=1"
     fun alerts(): String = "$BASE/api/alerts"
     /** Static data files are served `max-age=0, must-revalidate`; reads revalidate with no-cache and carry no `?ts=` (changelog C25). */

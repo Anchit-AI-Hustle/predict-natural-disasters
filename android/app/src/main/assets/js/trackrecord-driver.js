@@ -39,8 +39,21 @@ var PNDTrackRecord = {
     var assessments = obsEvents.map(function (e) {
       return VER.assessCoverage(e, preds, scanLedger || { scans: [] }, { hazardFamilyOf: OBSM.familyOf, hazardForecastable: forecastableOf });
     });
+    /* One verdict per forecast (accuracy-model.js firstVersionIndex): the
+       rates count each outlook id once, by its earliest-frozen version. */
+    var ms = function (t) { var v = Date.parse(t || ''); return isFinite(v) ? v : null; };
+    var frozenAt = function (r) { return ms(r && (r.freezeTimestamp || r.recordedAt)) || ms(r && r.targetStart) || 0; };
+    var best = {};
+    l.forEach(function (r, i) {
+      if (!r || !r.id) return;
+      var b = best[r.id];
+      if (b === undefined || frozenAt(r) < frozenAt(l[b])) best[r.id] = i;
+    });
+    var first = {};
+    Object.keys(best).forEach(function (id) { first[best[id]] = true; });
     var headlineIdx = [], condIdx = [];
     preds.forEach(function (p, i) {
+      if (!first[i]) return;
       if (p.forecastClass === 'independent-prospective') headlineIdx.push(i);
       else if (p.forecastClass && p.forecastClass !== 'invalid-post-event') condIdx.push(i);
     });
@@ -70,6 +83,7 @@ var PNDTrackRecord = {
       predClasses: preds.map(function (p) { return p.forecastClass || null; }),
       verdicts: verdicts.map(slim),
       invalid: verdicts.filter(function (x) { return x.classification === 'INVALID_POST_EVENT'; }).length,
+      firstKeys: Object.keys(first).map(function (i) { return H.claimKey(preds[+i]); }),
       headlineCount: headlineIdx.length,
       condCount: condIdx.length,
       obsEvents: obsEvents.map(function (e) {

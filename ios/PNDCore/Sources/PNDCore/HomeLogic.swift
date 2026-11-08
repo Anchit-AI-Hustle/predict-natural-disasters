@@ -89,12 +89,19 @@ public enum Home {
         let filterOn = !(hazardFilter.isEmpty || hazardFilter.lowercased() == "all")
         let list = live.filter { passes($0, hazardFilter: hazardFilter) }
         let reports = list.filter { !$0.forecast }
-        let bad = reports.filter { $0.severity == "Extreme" || $0.severity == "Severe" }.count
-        let routine = reports.filter { $0.severity == "Informational" }.count
-        let note = !reports.isEmpty && (bad > 0 || routine > 0) ? "\(bad) serious \u{00B7} \(routine) minor"
+        // The count per level each report resolves to (PND.riskKey), so the parts add up to the total (changelog C38).
+        var byLevel: [RiskLevel: Int] = [:]
+        for e in reports { byLevel[RiskScale.keyFor(e), default: 0] += 1 }
+        let parts = ([.extreme, .severe, .high, .moderate, .watch, .low, .unknown] as [RiskLevel]).compactMap { l -> String? in
+            guard let n = byLevel[l], n > 0 else { return nil }
+            return "\(n) " + l.label.lowercased()
+        }
+        let note = !reports.isEmpty && !parts.isEmpty ? parts.joined(separator: " \u{00B7} ")
             : (filterOn ? "Matching the hazard you chose" : "From all our sources")
         let warnAll = Format.officialWarnings(list)
-        let fc = sorted(list.filter { $0.forecast && !$0.windowClosed }, "newest")
+        // In order of when each starts, latest first (changelog C38).
+        let fcStart = { (e: Record) -> Double in JSDate.ms(e.first("targetStart", "updated")?.jsString) ?? 0 }
+        let fc = Sorts.stableSort(list.filter { $0.forecast && !$0.windowClosed }) { fcStart($1) - fcStart($0) }
         let levels: [RiskLevel] = [.extreme, .severe, .high, .moderate, .watch, .low]
         let split = levels.compactMap { l -> String? in
             let n = fc.filter { RiskScale.matches($0, l.rawValue) }.count
@@ -124,6 +131,25 @@ public enum Home {
     /// Latest forecasts row: Starts, Location, Hazard, Risk.
     public static func forecastCells(_ e: Record, tz: String? = nil) -> [String] {
         [Format.fmtWhen(e.first("targetStart", "updated")?.jsString, nil, nil, tz: tz), Format.placeOf(e, "-"),
-         e.type.isEmpty ? "Outlook" : e.type, RiskScale.label(of: e)]
+         e.type.isEmpty ? "Outlook" : e.type, RiskScale.tagText(of: e)]
+    }
+
+    /// The hazard select (`index.html fillHazards`, changelog C38): reports
+    /// per hazard key, most first; a hazard we only forecast says
+    /// "(forecasts only)"; "All hazards" has no count.
+    public static func hazardOptions(_ live: [Record], selected: String) -> [(value: String, label: String)] {
+        var rep: [String: Int] = [:], fcs = Set<String>()
+        for e in live where e.isLive {
+            let k = Format.hazardKey(e.type)
+            if k.isEmpty { continue }
+            if e.forecast { fcs.insert(k) } else { rep[k, default: 0] += 1 }
+        }
+        var keys = Array(Set(rep.keys).union(fcs)).sorted { a, b in
+            let ca = rep[a] ?? 0, cb = rep[b] ?? 0
+            if ca != cb { return ca > cb }
+            return JS.localeCompare(a, b) < 0
+        }
+        if !selected.isEmpty && !keys.contains(selected) { keys.append(selected) }
+        return [("", "All hazards")] + keys.map { k in (k, k + " (" + (rep[k].map { String($0) } ?? (fcs.contains(k) ? "forecasts only" : "0")) + ")") }
     }
 }
