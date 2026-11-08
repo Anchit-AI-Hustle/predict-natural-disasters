@@ -16,11 +16,15 @@ const ROOT = path.join(__dirname, '..');
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
 const pages = new Set(fs.readdirSync(ROOT).filter(f => f.endsWith('.html')));
 
-/** How Vercel resolves a path: static file, cleanUrls alias, then rewrites in order. */
+/** How Vercel resolves a path: redirects, static file, cleanUrls alias, then rewrites in order. */
 function resolveRoute(url) {
   const p = url.split('?')[0];
   const clean = p.replace(/^\//, '');
   if (p === '/') return 'index';           // index.html is the directory index
+  /* A redirect answers before the filesystem, and only counts where it lands
+     somewhere that itself resolves. /dashboard is one now: its page is gone. */
+  const moved = (cfg.redirects || []).find(r => r.source === p);
+  if (moved) return moved.destination !== p && resolveRoute(moved.destination) ? 'redirect ' + p : null;
   if (pages.has(clean)) return 'file';
   if (cfg.cleanUrls && pages.has(clean + '.html')) return 'cleanUrl';
   for (const r of cfg.rewrites) {

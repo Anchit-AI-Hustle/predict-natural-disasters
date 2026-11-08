@@ -56,7 +56,7 @@ test('zone labels: aliases kept, every other zone named by its short name or off
 });
 
 test('zone labels: the time zone menu shows a friendly name for the chosen zone', () => {
-  for (const [tz, want] of [['America/Argentina/Buenos_Aires', /^GMT-3 · Buenos Aires$/], ['Asia/Kolkata', /^IST · India$/], ['UTC', /^UTC$/], ['Australia/Lord_Howe', /^GMT\+1[01](:30)? · Lord Howe$/]]) {
+  for (const [tz, want] of [['America/Argentina/Buenos_Aires', /^GMT-3 · Buenos Aires$/], ['Asia/Kolkata', /^India \(IST\)$/], ['UTC', /^UTC$/], ['Australia/Lord_Howe', /^GMT\+1[01](:30)? · Lord Howe$/]]) {
     const w = portal(tz);
     w.document.body.innerHTML = '<select id="s">' + w.PND.timezoneOptions() + '</select>';
     const s = w.document.getElementById('s');

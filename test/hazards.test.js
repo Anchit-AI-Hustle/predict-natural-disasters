@@ -273,8 +273,15 @@ test('a derived outlook is never published as grave as the signal it came from',
     const sv = R.levelOf(e.severity), a = R.levelOf(e.alert);
     return sv !== 'UNKNOWN' ? sv : a;
   };
-  const outlooks = events.filter(e => e.forecast && e.alert === 'High');
+  /* A weather model's forecast is derived from no signal, so it has no step
+     to keep (launch audit C9): its High is the 99th percentile forecast to be
+     crossed, and reads High. Only outlooks derived from a signal step down. */
+  const outlooks = events.filter(e => e.forecast && e.alert === 'High' && e.forecastKind !== 'model-advance' &&
+    !(H.cycloneCategoryRank && H.cycloneCategoryRank(e) > 3));
   assert.ok(outlooks.length, 'fixture should carry an outlook derived from a red signal');
+  for (const m of events.filter(e => e.forecastKind === 'model-advance' && e.alert === 'High')) {
+    assert.equal(R.keyFor(m), 'HIGH', m.id + ': a model forecast that crossed its 99th percentile should read High');
+  }
   for (const e of outlooks) {
     assert.notEqual(resolve(e), 'SEVERE',
       e.id + ' publishes the severity of the warning it was derived from');

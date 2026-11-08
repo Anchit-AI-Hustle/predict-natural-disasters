@@ -579,6 +579,354 @@
     return { outlooks: outlooks, misses: misses, counts: counts };
   }
 
+  /* ------------------------------ measurements, kept and settled once */
+
+  /*
+   * What NASA POWER measured, as it was when it settled.
+   *
+   * POWER's most recent days are provisional and are revised later. On
+   * 27 Oct 2026 eight rain forecasts graded correct on 26 Oct became false
+   * alarms with no code change: the rain they had been graded on (for
+   * example 12 mm and more at Toronto on 16 to 18 Oct) had been revised to
+   * 7.5 mm, 0 and 0, values 6 to 11 days old at the time. Hits were taken
+   * back when the data moved; misses, kept in a separate list that was only
+   * ever added to, never were (329 missed days, 26 on the measurements as
+   * they now stand).
+   *
+   * So the grading reads one archive, and one rule decides what it may use.
+   * A day's measurement is replaced by each newer fetch until it is
+   * SETTLE_DAYS old when fetched; from then on it is settled and never
+   * replaced. Verdicts and misses alike are recomputed on every run from the
+   * settled days only, so a hit and a miss are held to the same data.
+   *
+   * archive: { places: { placeId: { 'YYYY-MM-DD': [tmax, rain, dew, wind, fetchedOn] } } }
+   */
+  var SETTLE_DAYS = 14, FWI_SPINUP_DAYS = 30;
+  function isSettled(day, fetchedOn) {
+    var a = Date.parse(day + 'T00:00:00Z'), b = Date.parse(String(fetchedOn).slice(0, 10) + 'T00:00:00Z');
+    return isFinite(a) && isFinite(b) && b - a >= SETTLE_DAYS * 864e5;
+  }
+  /** Merge one fetch into a place's archive; returns how many days changed. */
+  function mergeMeasured(placeArchive, days, rows, fetchedOn) {
+    var changed = 0;
+    for (var i = 0; i < days.length; i++) {
+      var r = rows[i];
+      if (!r || ![r.tmax, r.rain, r.dew, r.wind].every(isFinite)) continue;
+      var old = placeArchive[days[i]];
+      if (old && isSettled(days[i], old[4])) continue;
+      var next = [round(r.tmax, 2), round(r.rain, 2), round(r.dew, 2), round(r.wind, 2), String(fetchedOn).slice(0, 10)];
+      if (!old || old.join() !== next.join()) changed++;
+      placeArchive[days[i]] = next;
+    }
+    return changed;
+  }
+  function addDays(ymd, n) { return ymdOf(Date.parse(ymd + 'T00:00:00Z') + n * 864e5); }
+  /**
+   * The observed events at one place from its archive, settled days only.
+   * The fire index is a chain over the days, so it is built over every day
+   * archived and used only from FWI_SPINUP_DAYS after the chain started.
+   */
+  function observedFromArchive(clim, placeArchive) {
+    var keys = Object.keys(placeArchive || {}).sort();
+    if (!keys.length) return null;
+    var days = [];
+    for (var d = keys[0]; d <= keys[keys.length - 1]; d = addDays(d, 1)) days.push(d);
+    var row = function (d) { var r = placeArchive[d]; return r && isSettled(d, r[4]) ? r : null; };
+    var wx = days.map(function (d) { var r = row(d); return r ? { temp: r[0], rh: rhFrom(r[0], r[2]), wind: r[3], rain: r[1] } : null; });
+    var fwi = fwiSeries(days, wx, clim.lat);
+    var run = 0;
+    var fwiUsable = fwi.map(function (v) { run = v === null ? 0 : run + 1; return v !== null && run > FWI_SPINUP_DAYS ? v : NaN; });
+    var measured = new Set(days.filter(function (d) { return !!row(d); }));
+    var ev = observedEvents(clim, days, {
+      tmax: days.map(function (d) { var r = row(d); return r ? r[0] : NaN; }),
+      rain: days.map(function (d) { var r = row(d); return r ? r[1] : NaN; }),
+      fwi: fwiUsable });
+    var through = null;
+    measured.forEach(function (d) { if (through === null || d > through) through = d; });
+    /* Fire is graded only where the index is usable. */
+    var fireMeasured = new Set(days.filter(function (d, i) { return measured.has(d) && isFinite(fwiUsable[i]); }));
+    return { measured: measured, fireMeasured: fireMeasured, through: through, heat: ev.heat, rain: ev.rain, fire: ev.fire,
+      value: function (hazard, d) {
+        var i = days.indexOf(d), r = row(d);
+        if (i < 0 || !r) return null;
+        if (hazard === 'heat') return r[0];
+        if (hazard === 'rain') return r[1];
+        return isFinite(fwiUsable[i]) ? round(fwiUsable[i], 1) : null;
+      },
+      threeDay: function (d) {
+        var a = row(addDays(d, -2)), b = row(addDays(d, -1)), c = row(d);
+        return a && b && c ? round(a[1] + b[1] + c[1], 1) : null;
+      } };
+  }
+
+  /** The line a measured day is held to, for the record shown with a verdict. */
+  function lineFor(clim, hazard, d) {
+    if (hazard === 'heat') return { line: round(heatLines(clim, d).p95, 1) };
+    var m = monthOf(d) - 1;
+    if (hazard === 'rain') return { line: Math.max(10, clim.rain.p99[m]), threeDay: Math.max(20, clim.rain.p99x3[m]) };
+    return { line: Math.max(FIRE_FLOOR, clim.fire.p95[m]) };
+  }
+
+  /*
+   * The published model forecasts, graded from the archive.
+   *
+   * Three views of one record, so no forecast is counted more than once and
+   * every rate has its denominator:
+   *
+   *  outlooks  one verdict per published forecast id, the rule each was
+   *            published with (correct if its line was crossed on a day of
+   *            its window), with the measured values against the line;
+   *  events    forecasts at one place for one hazard whose windows overlap
+   *            or touch, merged into one claim: a run that re-issues the same
+   *            hot spell does not make it two successes;
+   *  days      place by place and day by day, as the backtest is scored: a
+   *            day a published run was watching (1 to 7 days ahead of it, at
+   *            a place it checked) is a hit, a false alarm, a miss or a
+   *            correct negative. POD, FAR and the base rate come from these.
+   *
+   * And what chance would give under the window rule: a window of N days
+   * catches at least one crossing with probability 1 - (1 - p)^N, where p is
+   * the share of watched days on which that hazard's line was crossed. This
+   * ignores persistence, which makes a run of hot days likelier still, so it
+   * understates chance rather than flattering the forecasts.
+   */
+  function gradeModelRecord(ledger, runs, climatology, archive, opts) {
+    var o = opts || {};
+    /* Old place ids read as the place they name. */
+    ledger = (ledger || []).map(function (x) {
+      var m = x && x.model;
+      return m && PLACE_ID_RENAMES[m.placeId] ? Object.assign({}, x, { model: Object.assign({}, m, { placeId: placeIdOf(m.placeId) }) }) : x;
+    });
+    runs = (runs || []).map(function (r) {
+      return r && (r.checked || []).some(function (id) { return PLACE_ID_RENAMES[id]; })
+        ? Object.assign({}, r, { checked: r.checked.map(placeIdOf) }) : r;
+    });
+    var placeBy = {};
+    ((climatology && climatology.places) || []).forEach(function (p) { placeBy[p.id] = p; });
+    var known = new Set((ledger || []).map(function (x) { return x.id; }));
+    var published = (runs || []).filter(function (r) { return (r.outlooks || []).every(function (id) { return known.has(id); }); });
+    var observed = {};
+    var arch = (archive && archive.places) || {};
+    Object.keys(arch).forEach(function (pid) {
+      if (!placeBy[pid]) return;
+      var ob = observedFromArchive(placeBy[pid], arch[pid]);
+      if (ob) observed[pid] = ob;
+    });
+    /* Fire is measured on fewer days than heat and rain: its index needs a
+       month of weather behind it. gradePublished reads one measured set per
+       place, so fire is graded against its own. */
+    var forHazard = function (hz) {
+      var m = {};
+      Object.keys(observed).forEach(function (pid) {
+        var ob = observed[pid];
+        m[pid] = { measured: hz === 'fire' ? ob.fireMeasured : ob.measured, heat: ob.heat, rain: ob.rain, fire: ob.fire };
+      });
+      return m;
+    };
+    var outlooks = [], misses = [];
+    ['heat', 'rain', 'fire'].forEach(function (hz) {
+      var led = (ledger || []).filter(function (x) { return (x.model || {}).hazard === hz; });
+      var g = gradePublished(led, forHazard(hz), published);
+      outlooks = outlooks.concat(g.outlooks);
+      misses = misses.concat(g.misses.filter(function (m) { return m.hazard === hz; }));
+    });
+    var order = {};
+    (ledger || []).forEach(function (x, i) { order[x.id] = i; });
+    outlooks.sort(function (a, b) { return order[a.id] - order[b.id]; });
+    misses.sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : (a.placeId + a.hazard < b.placeId + b.hazard ? -1 : 1); });
+    var byId = {};
+    (ledger || []).forEach(function (x) { byId[x.id] = x; });
+
+    /* Day by day. */
+    var forecastBefore = function (pid, hz, day) {
+      return (ledger || []).some(function (x) {
+        var m = x.model || {};
+        return m.placeId === pid && m.hazard === hz && Date.parse(x.issuedAt) < Date.parse(day + 'T00:00:00Z') &&
+          windowDays(x.targetStart, x.targetEnd).indexOf(day) >= 0;
+      });
+    };
+    var days = {}, seen = {};
+    ['heat', 'rain', 'fire'].forEach(function (hz) { days[hz] = { days: 0, hits: 0, falseAlarms: 0, misses: 0, correctNegatives: 0 }; });
+    published.forEach(function (r) {
+      var runDay = Date.parse(ymdOf(Date.parse(r.at)) + 'T00:00:00Z'), lo = (r.leadDays || [1, 7])[0], hi = (r.leadDays || [1, 7])[1];
+      for (var L = lo; L <= hi; L++) {
+        var day = ymdOf(runDay + L * 864e5);
+        (r.checked || []).forEach(function (pid) {
+          var ob = observed[pid];
+          if (!ob) return;
+          ['heat', 'rain', 'fire'].forEach(function (hz) {
+            var set = hz === 'fire' ? ob.fireMeasured : ob.measured;
+            var key = pid + '|' + hz + '|' + day;
+            if (seen[key] || !set.has(day)) return;
+            seen[key] = true;
+            var f = forecastBefore(pid, hz, day), e = ob[hz].has(day), t = days[hz];
+            t.days++;
+            if (f && e) t.hits++; else if (f) t.falseAlarms++; else if (e) t.misses++; else t.correctNegatives++;
+          });
+        });
+      }
+    });
+    Object.keys(days).forEach(function (hz) {
+      var t = days[hz], fl = t.hits + t.falseAlarms, ob = t.hits + t.misses;
+      t.baseRate = t.days ? round(ob / t.days, 4) : null;
+      t.pod = ob ? round(t.hits / ob, 4) : null;
+      t.far = fl ? round(t.falseAlarms / fl, 4) : null;
+      t.frequencyBias = ob ? round(fl / ob, 4) : null;
+    });
+
+    /* One verdict per forecast, with what was measured. */
+    var rows = outlooks.map(function (g) {
+      var x = byId[g.id] || {}, m = x.model || {}, clim = placeBy[m.placeId], ob = observed[m.placeId];
+      var wd = windowDays(x.targetStart, x.targetEnd);
+      var p = days[m.hazard] && days[m.hazard].baseRate;
+      var row = { id: g.id, hazard: g.hazard, placeId: g.placeId, verdict: g.verdict, crossed: g.crossed,
+        place: x.region || '', recordedAt: x.recordedAt || null, issuedAt: x.issuedAt || null,
+        targetStart: x.targetStart, targetEnd: x.targetEnd, windowDays: wd.length,
+        leadDays: [Math.round((Date.parse(wd[0] + 'T00:00:00Z') - Date.parse(ymdOf(Date.parse(x.issuedAt)) + 'T00:00:00Z')) / 864e5),
+          Math.round((Date.parse(wd[wd.length - 1] + 'T00:00:00Z') - Date.parse(ymdOf(Date.parse(x.issuedAt)) + 'T00:00:00Z')) / 864e5)],
+        alert: x.alert || null,
+        chance: p === null || p === undefined ? null : round(1 - Math.pow(1 - p, wd.length), 3) };
+      /* What was measured on each day, settled days only (null until a day
+         settles), so a page can show how far a window has got. */
+      if (clim && ob) {
+        var set = m.hazard === 'fire' ? ob.fireMeasured : ob.measured;
+        row.measured = wd.map(function (d) {
+          var l = lineFor(clim, m.hazard, d), settled = set.has(d);
+          var r = { day: d, value: settled ? ob.value(m.hazard, d) : null, line: l.line, crossed: settled ? ob[m.hazard].has(d) : null };
+          if (m.hazard === 'rain') { r.threeDay = ob.threeDay(d); r.threeDayLine = l.threeDay; }
+          return r;
+        });
+      }
+      return row;
+    });
+
+    /* Overlapping re-issues merged into one claim. */
+    var groups = {};
+    rows.forEach(function (r) { (groups[r.placeId + '|' + r.hazard] = groups[r.placeId + '|' + r.hazard] || []).push(r); });
+    var events = [];
+    Object.keys(groups).forEach(function (k) {
+      var list = groups[k].slice().sort(function (a, b) { return a.targetStart < b.targetStart ? -1 : 1; });
+      var cur = null;
+      list.forEach(function (r) {
+        var wd = windowDays(r.targetStart, r.targetEnd);
+        if (cur && wd[0] <= addDays(cur.days[cur.days.length - 1], 1)) {
+          wd.forEach(function (d) { if (cur.days.indexOf(d) < 0) cur.days.push(d); });
+          cur.ids.push(r.id); cur.rows.push(r);
+        } else {
+          cur = { placeId: r.placeId, hazard: r.hazard, ids: [r.id], days: wd.slice(), rows: [r] };
+          events.push(cur);
+        }
+      });
+    });
+    events = events.map(function (e) {
+      var crossed = e.rows.some(function (r) { return r.verdict === 'correct'; });
+      var allGraded = e.rows.every(function (r) { return r.verdict !== 'pending'; });
+      return { placeId: e.placeId, hazard: e.hazard, ids: e.ids, from: e.days[0], to: e.days[e.days.length - 1],
+        verdict: crossed ? 'correct' : allGraded ? 'false alarm' : 'pending' };
+    });
+
+    var tally = function (list) {
+      var c = { correct: 0, falseAlarms: 0, pending: 0 };
+      list.forEach(function (r) { c[r.verdict === 'correct' ? 'correct' : r.verdict === 'false alarm' ? 'falseAlarms' : 'pending']++; });
+      return c;
+    };
+    var counts = Object.assign({ issued: (ledger || []).length }, tally(rows), { missedDays: misses.length });
+    var graded = rows.filter(function (r) { return r.verdict !== 'pending' && r.chance !== null; });
+    counts.expectedByChance = graded.length ? round(graded.reduce(function (a, r) { return a + r.chance; }, 0), 1) : null;
+    var through = null;
+    Object.keys(observed).forEach(function (pid) { var t = observed[pid].through; if (t && (through === null || t > through)) through = t; });
+    return {
+      counts: counts,
+      events: Object.assign({ total: events.length }, tally(events)),
+      eventList: events,
+      days: days,
+      outlooks: rows,
+      misses: misses,
+      settleDays: SETTLE_DAYS,
+      measuredThrough: through,
+      asOf: o.asOf || (archive && archive.updatedAt) || null
+    };
+  }
+
+  /* ------------------------------------------------------- place ids */
+
+  /** A place's id: its name transliterated, then its country code. */
+  function placeSlug(name, cc) {
+    return (String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '-' + String(cc || ''))
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  /* Ids made before accents were transliterated. They stay in the frozen
+     ledger and the run log, and mean the same place. */
+  var PLACE_ID_RENAMES = { 'bogot-co': 'bogota-co', 's-o-paulo-br': 'sao-paulo-br' };
+  function placeIdOf(id) { return PLACE_ID_RENAMES[id] || id; }
+
+  /* ----------------------------------------- how a model forecast is named */
+
+  /*
+   * The models' three hazards, named for what they measure. They were
+   * published as "Extreme heat", "Heavy rain and flooding" and "Wildfire
+   * weather": a 1-in-20-day high in Lima (26 °C) read as extreme heat with
+   * health warnings, and a rain percentile read as a flood, which nothing
+   * here models. The old type and title are kept in the ledger, which is
+   * frozen; modelDisplay renames them wherever they are shown.
+   */
+  var MODEL_HAZARDS = {
+    heat: { type: 'Unusually hot days', word: 'Unusually hot days', family: 'Extreme Heat', percentile: 95, every: '1 day in 20',
+      what: 'Daily maximum temperature at or above this place’s 95th percentile for the date (a level it reaches about 1 day in 20), on 2 or more days in a row' },
+    rain: { type: 'Unusually heavy rain', word: 'Unusually heavy rain', family: 'Flood', percentile: 99, every: '1 day in 100',
+      what: 'Rain in a day at or above this place’s 99th percentile for the month and at least 10 mm, or a 3-day total at or above its 99th percentile and at least 20 mm' },
+    fire: { type: 'High fire-weather index', word: 'High fire-weather index', family: 'Wildfire', percentile: 95, every: '1 day in 20',
+      what: 'Canadian Fire Weather Index at or above 21.3 (“very high”) and at or above this place’s 95th percentile for the month, on 2 or more days in a row' }
+  };
+  var OLD_WORDS = /^(?:Extreme heat|Heavy rain and flooding|Wildfire weather)(?= forecast)/;
+  /** How a model forecast is shown, whenever it was published. */
+  function modelDisplay(o) {
+    var m = (o && o.model) || {}, H = MODEL_HAZARDS[m.hazard];
+    if (!H) return null;
+    var level = m.hazard === 'rain' ? 'this place\u2019s 1-in-100-day level of ' : 'this place\u2019s 1-in-20-day level of ';
+    return { type: H.type, hazardLabel: H.word, family: H.family,
+      title: String(o.title || '').replace(OLD_WORDS, H.word),
+      /* "Usual worst" was a 95th percentile, crossed about 1 day in 20. The
+         fire line was quoted to two decimals beside an index to one. */
+      details: String(o.details || '').replace(/a usual worst of /g, level)
+        .replace(/(level of )(\d+\.\d{2,})/g, function (x, a, n) { return a + Number(n).toFixed(1); }) };
+  }
+
+  /*
+   * What the backtest says about a forecast covering days first to last
+   * ahead. It tested two leads, 3 and 5 days; this names the ones inside the
+   * window, says plainly which days were never tested, and for fire says that
+   * its test forecast only one day, an easier test than the live one.
+   */
+  function skillText(backtest, hazard, first, last) {
+    var w = backtest && backtest.window, res = backtest && backtest.results;
+    if (!w || !res) return 'Not yet measured.';
+    var leads = (w.leadsDays || [3, 5]).filter(function (L) { return res[hazard + '@' + L]; });
+    if (!leads.length) return 'Not yet measured.';
+    var pc = function (v) { return Math.round(v * 100) + '%'; };
+    var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var dd = function (t) { var x = String(t); return (+x.slice(8, 10)) + ' ' + MON[+x.slice(5, 7) - 1] + ' ' + x.slice(0, 4); };
+    var one = function (L) {
+      var r = res[hazard + '@' + L], fl = r.hits + r.falseAlarms, hp = r.hits + r.misses;
+      if (!(fl > 0) || !(hp > 0) || !(r.days > 0)) return null;
+      return 'at ' + L + ' days ahead, ' + pc(r.hits / fl) + ' of the days it flagged crossed the line (' + pc(hp / r.days) +
+        ' of days did anyway) and it flagged ' + pc(r.hits / hp) + ' of the days that crossed';
+    };
+    var inside = leads.filter(function (L) { return L >= first && L <= last; });
+    var use = inside.length ? inside : [leads.reduce(function (a, b) { return Math.abs(b - first) < Math.abs(a - first) ? b : a; })];
+    var parts = use.map(one).filter(Boolean);
+    if (!parts.length) return 'Not yet measured.';
+    var span = first === last ? 'day ' + first + ' ahead' : 'days ' + first + ' to ' + last + ' ahead';
+    var untested = [];
+    for (var d = first; d <= last; d++) if (leads.indexOf(d) < 0) untested.push(d);
+    var maxL = Math.max.apply(null, leads);
+    return 'This forecast covers ' + span + '. The method was tested only on forecasts made ' + leads.join(' and ') +
+      ' days ahead, on days from ' + dd(w.from) + ' to ' + dd(w.to) + ': ' + parts.join('; ') + '.' +
+      (last > maxL ? ' Days beyond ' + maxL + ' ahead were not tested.' : '') +
+      (hazard === 'fire' ? ' The fire test forecast only the last day, an easier test than this forecast.' : '') +
+      ' Those are day-by-day rates; this forecast is graded on its whole window.';
+  }
+
   function percentileOf(sortedRef, v) {
     if (!sortedRef || !sortedRef.length || !isFinite(v)) return NaN;
     var lo = 0; while (lo < sortedRef.length && sortedRef[lo] <= v) lo++;
@@ -597,6 +945,10 @@
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
     warmingTrend: warmingTrend, heatShift: heatShift, heatShiftText: heatShiftText, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
     observedEvents: observedEvents, gradePublished: gradePublished, windowDays: windowDays,
+    placeSlug: placeSlug, placeIdOf: placeIdOf, PLACE_ID_RENAMES: PLACE_ID_RENAMES,
+    MODEL_HAZARDS: MODEL_HAZARDS, modelDisplay: modelDisplay, skillText: skillText,
+    SETTLE_DAYS: SETTLE_DAYS, FWI_SPINUP_DAYS: FWI_SPINUP_DAYS, isSettled: isSettled, mergeMeasured: mergeMeasured,
+    observedFromArchive: observedFromArchive, gradeModelRecord: gradeModelRecord, lineFor: lineFor,
     HEAT_MIN_DAYS: HEAT_MIN_DAYS, FIRE_MIN_DAYS: FIRE_MIN_DAYS, FIRE_FLOOR: FIRE_FLOOR,
     percentileOf: percentileOf, round: round, mean: mean
   };

@@ -132,7 +132,10 @@ test('the GDACS cyclone measurement is converted into the unit the rest of the f
   // decides the category before anything classifies it.
   assert.ok(Math.abs(tc.windKt - 120 / 1.852) < 1e-9, '120 Kph is 64.79 kt, got ' + tc.windKt);
   assert.equal(byKey(H.keyFacts(tc), 'windKt').value, '64.8 kt');
-  assert.equal(byKey(H.keyFacts(tc), 'category').value, 'Category 1');
+  /* RAI-26 is in the western Pacific (11.2N 125.0E), where a storm is classed
+     on JMA's scale (launch audit B2), where 64 kt is the start of the typhoon
+     class: 64.8 kt is a typhoon. */
+  assert.equal(byKey(H.keyFacts(tc), 'category').value, 'Typhoon');
 });
 
 test('a hazard GDACS publishes no measurement for gains no invented one', async () => {
@@ -172,6 +175,9 @@ test('an event card carries the headline figures for its own hazard', async () =
     url: '/events',
     waitFor: d => d.querySelectorAll('.event-card').length > 0
   });
+  /* The list shows 40 cards at a time (launch events B19); every page of it
+     is opened, so the test does not depend on where in the order a card falls. */
+  for (let i = 0; i < 100 && r.document.getElementById('showMore'); i++) r.document.getElementById('showMore').click();
   const cards = [...r.document.querySelectorAll('.event-card')].map(c => c.textContent);
   r.close();
   assert.ok(cards.length, 'the events page rendered no cards');
@@ -186,7 +192,9 @@ test('an event card carries the headline figures for its own hazard', async () =
 /* --------------------------- the panel that claimed to forecast earthquakes */
 
 test('the homepage hazard panel counts what it actually counts', () => {
-  for (const page of ['index.html', 'home.html', 'home-v2.html', 'home-v3.html']) {
+  /* The old layouts (home, home-v2, home-v3) are deleted and redirected;
+     share-ready.test.js holds that. */
+  for (const page of ['index.html']) {
     const s = read(page);
     assert.ok(!/Forecasts by Hazard Type/.test(s),
       page + ' heads a count of every tracked record as a count of forecasts');
@@ -205,7 +213,8 @@ test('a hazard nobody forecasts the onset of is labelled observed only', async (
   const cls = quake ? quake.className : '';
   r.close();
   assert.ok(quake, 'the hazard strip should list earthquakes');
-  assert.match(text, /observed only/,
+  /* In plain words now (launch audit A32): "observed only" was jargon. */
+  assert.match(text, /reports only, no forecast/,
     'the site counted earthquakes under a forecast heading while forecasting none');
   assert.match(cls, /hazard-observed/);
   assert.equal(H.HAZARDS.Earthquake.forecastable, false);
@@ -270,6 +279,9 @@ test('no card or grid prints a zero for a count its source never published', asy
     url: '/events',
     waitFor: d => d.querySelectorAll('.event-card').length > 0
   });
+  /* The list shows 40 cards at a time (launch events B19); every page of it
+     is opened, so the test does not depend on where in the order a card falls. */
+  for (let i = 0; i < 100 && r.document.getElementById('showMore'); i++) r.document.getElementById('showMore').click();
   const cards = [...r.document.querySelectorAll('.event-card')].map(c => c.textContent);
   r.close();
   const claimed = cards.filter(t => /Lives lost 0\b|People displaced 0\b|People affected 0\b/.test(t));
@@ -607,11 +619,15 @@ function templateFor(prefix) {
 
 test('every record shows its hazard facts on the page its own link opens', async () => {
   const { events } = await feed();
-  const prefixes = routePrefixes();
+  /* Since launch audit B27 eventUrl builds one address per record
+     (/disasters/ or /forecasts/), and /alerts/:id stays served for the links
+     already shared, so it is checked as well. */
+  const prefixes = [...new Set(routePrefixes().concat('/alerts/'))];
   assert.ok(prefixes.length >= 3,
     'eventUrl routes to ' + prefixes.length + ' places; each needs the grid');
 
-  // The rule eventUrl applies, kept beside the assertion it drives.
+  // The rule eventUrl applies, kept beside the assertion it drives; an
+  // official Red or Orange record is the kind old /alerts/ links point at.
   const routeOf = e => e.forecast ? '/forecasts/'
     : (e.sourceType === 'official' && ['Red', 'Orange'].includes(e.alert)) ? '/alerts/'
       : '/disasters/';

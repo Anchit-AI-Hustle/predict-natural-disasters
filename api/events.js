@@ -10,11 +10,33 @@ const { queryOf } = require('./_lib/http.js');
  * record, which is what happened when outlook generation depended on GDACS
  * alone.
  *
- * CommonJS on purpose (see api/verified-support.js for why).
+ * CommonJS on purpose (see api/_lib/verified-support.js for why).
  */
 
 const UA = 'PredictNaturalDisasters/2.0 (+https://predict-natural-disasters.anchit-tandon.com)';
-const FETCH_TIMEOUT_MS = 6500;   // keep total wall-clock inside the function limit
+/* One upstream request, and the whole build, each get a fixed time.
+ *
+ * The response used to leave only when the slowest provider chain finished:
+ * 6.5 s per request, GDACS paged three deep one page at a time, and the
+ * weather service's five fallback queries walked in turn, so one provider
+ * that hung kept every visitor on "Loading..." for up to 32 s (measured with
+ * the weather service held). A request now gets 3 s, and the build 4.5 s:
+ * what has answered by then is served, and each provider that has not is
+ * reported as not answering in time, so "N of 8 working" stays true. */
+const FETCH_TIMEOUT_MS = 3000;
+const BUILD_BUDGET_MS = 4500;
+/* The copy this instance last built is served again for this long. A
+   request the edge sends on, ?ts= among them, then costs nothing upstream,
+   and a burst arriving together shares one build. */
+const MEMO_TTL_MS = 20000;
+/* A build where a provider was late is kept for less time, so that provider
+   gets another chance sooner. */
+const MEMO_TTL_PARTIAL_MS = 10000;
+/* ?cron= asks for a fresh build, which anyone can send; it is honoured only
+   when this instance's last fresh build is older than this. */
+const CRON_MIN_INTERVAL_MS = 30000;
+/* The providers every build asks, by the key each reports under. */
+const PROVIDER_KEYS = ['gdacs', 'usgs', 'eonet', 'nhc', 'nws', 'reliefweb', 'usgs_volcano', 'emsc'];
 let HAZARD_MODEL = null;
 try { HAZARD_MODEL = require('../hazard-model.js'); } catch (e) { HAZARD_MODEL = null; }
 
@@ -30,6 +52,11 @@ const MODEL_RUN_MAX_AGE_MS = 36 * 3600e3;
 let MODEL_OUTLOOKS;
 try { MODEL_OUTLOOKS = require('../data/model-outlooks.json'); }
 catch (e) { MODEL_OUTLOOKS = null; }
+/* The models' hazard names. A run made before they were renamed carries the
+   old "Extreme heat" and "Heavy rain and flooding" titles; they are shown
+   under the names that say what is measured (forecast-models.js modelDisplay). */
+let MODELS = null;
+try { MODELS = require('../forecast-models.js'); } catch (e) { MODELS = null; }
 
 /* A bound against a runaway upstream, not a quota. At 24 it was the latter:
    measured on the live feed of 26 September 2026, 40 active official signals
@@ -68,10 +95,16 @@ const num = v => {
   return Number.isFinite(n) ? n : null;
 };
 
-async function timedFetch(url, opts) {
+/* opts.signal, when given, aborts the request early too: the build's own
+   signal, raised when its budget runs out. */
+async function fetchUpstream(url, opts) {
   const o = opts || {};
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), o.timeout || FETCH_TIMEOUT_MS);
+  const ms = o.timeout || FETCH_TIMEOUT_MS;
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, ms);
+  const stop = () => controller.abort();
+  if (o.signal) { if (o.signal.aborted) stop(); else o.signal.addEventListener('abort', stop); }
   try {
     const r = await fetch(url, {
       cache: 'no-store',
@@ -84,8 +117,13 @@ async function timedFetch(url, opts) {
       throw new Error('HTTP ' + r.status + (detail ? ' - ' + detail : ''));
     }
     return o.text ? await r.text() : await r.json();
+  } catch (e) {
+    /* Said as what happened, not as the AbortError's "operation was aborted". */
+    if (timedOut) throw new Error('did not answer in time: no answer within ' + (Math.round(ms / 100) / 10) + ' s');
+    throw e;
   } finally {
     clearTimeout(timer);
+    if (o.signal) o.signal.removeEventListener('abort', stop);
   }
 }
 
@@ -337,17 +375,31 @@ function eonetTropicalCyclone(category, title, sources) {
  * beside "M 6.5 - JAVA, INDONESIA" from EMSC, one quake counted twice.
  *
  * Origin time is what makes merging safe here. Two distinct earthquakes
- * essentially never share an origin time to within 45 seconds, a location
- * within 200 km and a magnitude within half a unit; agency solutions for one
- * quake routinely differ by that much. Only seismic records are merged: a GDACS
+ * essentially never share an origin time to within two minutes, a location
+ * within 100 km and a magnitude within 0.7; agency solutions for one quake
+ * routinely differ by that much. (Measured on the live feed: EMSC and GDACS
+ * put the Reykjanes Ridge M4.7 35 km and 150 s apart, the GDACS time being
+ * when GDACS took the report; see GDACS_LAG_MS.) Only seismic records are merged: a GDACS
  * flood alert and a ReliefWeb situation report about the same flood describe
  * different things and are both worth keeping.
  */
-const ORIGIN_MS = 45000, SAME_KM = 200, SAME_MAG = 0.5;
+const ORIGIN_MS = 120000, SAME_KM = 100, SAME_MAG = 0.7;
+/* GDACS stamps an earthquake with the time its own system took the report,
+   which on the live feed ran 150 and 209 seconds behind EMSC's origin time for
+   the same quakes. A GDACS record is allowed to trail by this much, never to
+   lead. */
+const GDACS_LAG_MS = 300000;
+/* GDACS republishes quakes from more than one detecting agency. On 24 to 25
+   October 2026 its PTWC-sourced copy of the Bonin Islands M6.5 (GDACS event
+   1573848) carried fromdate and todate exactly one day before the origin time
+   USGS and GDACS's own NEIC-sourced copy (1573709) published. The day is wrong
+   upstream, in GDACS's record, not in how it is read here, so the same quake a
+   day apart to within ORIGIN_MS is matched only for a GDACS record. */
+const DAY_MS = 864e5;
 const SEISMIC_PRIORITY = ['USGS', 'EMSC', 'GDACS'];
 
 /** How grave each alert word is, for comparing two agencies' assessments. */
-const ALERT_STRENGTH = { Green: 1, Watch: 1, Moderate: 2, Orange: 3, High: 3, Red: 4 };
+const ALERT_STRENGTH = { Green: 1, Watch: 1, Moderate: 2, Yellow: 2, Orange: 3, High: 3, Red: 4 };
 
 function kmBetween(a, b) {
   const rad = d => d * Math.PI / 180;
@@ -484,8 +536,67 @@ function gdacsMeasurement(sd, eventType) {
     out.magnitude = value;
   }
   const text = d.severitytext || d.severityText;
-  if (text) out.severityText = String(text);
+  const words = gdacsSeverityWords(text, eventType, value, unit, out);
+  if (words) out.severityText = words;
   return out;
+}
+
+/*
+ * GDACS's own sentence about a measurement, in words that cannot contradict
+ * the page around them.
+ *
+ * A storm's class word ("Tropical Storm", "Tropical Depression") describes the
+ * system where it is now, while the speed beside it is its lifetime maximum, so
+ * Arnab was published as "Tropical Storm (maximum wind speed of 222 km/h)"
+ * directly under a "Category 4" badge. The class word is dropped and the peak
+ * wind stated in both units. A flood's "Magnitude 0" is a placeholder, not a
+ * measurement. Wildfire and drought sentences ("Green impact for forestfire in
+ * 8546 ha", "Minor impact for agricultural drought in 1552123 km2") are restated
+ * as the area they describe. An earthquake's "Magnitude 7M, Depth:473km" loses
+ * its unit glyphs. Anything not recognised is kept as GDACS wrote it.
+ */
+function gdacsSeverityWords(text, eventType, value, unit, out) {
+  const raw = String(text || '').replace(/\s+/g, ' ').trim();
+  const t = String(eventType || '').toUpperCase();
+  const group = n => Math.round(n).toLocaleString('en-GB');
+  if (t === 'TC') {
+    if (!Number.isFinite(out.windKt)) return '';
+    const kmh = out.windKt * 1.852;
+    return 'Peak wind ' + group(kmh) + ' km/h (' + group(out.windKt) + ' kt)';
+  }
+  if (t === 'FL' && (/^magnitude\s*0(\.0+)?\s*$/i.test(raw) || value === 0)) return '';
+  if (t === 'WF' && Number.isFinite(out.areaHa)) {
+    const km2 = out.areaHa / 100;
+    return 'Burned area ' + (km2 >= 10 ? group(km2) : km2.toFixed(1).replace(/\.0$/, '')) + ' km²';
+  }
+  if (t === 'DR') {
+    const m = /(agricultural|hydrological|meteorological)?\s*drought\s+in\s+([\d.,]+)\s*(km2|km²|ha)/i.exec(raw);
+    if (m) {
+      let km2 = Number(m[2].replace(/,/g, ''));
+      if (/^ha$/i.test(m[3])) km2 /= 100;
+      if (Number.isFinite(km2)) {
+        const area = km2 >= 1e6 ? (km2 / 1e6).toFixed(2).replace(/\.?0+$/, '') + ' million km²' : group(km2) + ' km²';
+        const kind = m[1] ? m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' drought' : 'Drought';
+        return kind + ' over ' + area;
+      }
+    }
+  }
+  if (t === 'EQ') {
+    const depth = gdacsDepthKm(raw);
+    if (Number.isFinite(depth)) out.depthKm = depth;
+    if (Number.isFinite(value)) {
+      return 'Magnitude ' + value + (Number.isFinite(depth) ? ', depth ' + (Math.round(depth * 10) / 10) + ' km' : '');
+    }
+  }
+  return raw;
+}
+
+/** "Magnitude 7M, Depth:473km" -> 473; null when GDACS gave no depth. */
+function gdacsDepthKm(text) {
+  const m = /depth\s*:?\s*([\d.]+)\s*km/i.exec(String(text || ''));
+  if (!m) return null;
+  const v = Number(m[1]);
+  return Number.isFinite(v) ? v : null;
 }
 
 /**
@@ -527,6 +638,69 @@ function reportRank(e) {
   ];
 }
 
+/** The time a seismic record gives for the quake itself. */
+function originMs(e) { return Date.parse(e.startedAt || ''); }
+
+/*
+ * Do two agencies' records give the same origin time?
+ *
+ * Within ORIGIN_MS either way for two catalogues. A GDACS record may trail the
+ * other by up to GDACS_LAG_MS, because its time is when GDACS took the report,
+ * and may sit exactly a day early (DAY_MS) because of the upstream error noted
+ * at DAY_MS. Two GDACS records are compared as catalogues: neither time is an
+ * origin time, so neither allowance applies.
+ */
+function seismicSameOrigin(a, b) {
+  const ta = originMs(a), tb = originMs(b);
+  if (!Number.isFinite(ta) || !Number.isFinite(tb)) return false;
+  const d = ta - tb;
+  if (Math.abs(d) < ORIGIN_MS) return true;
+  const ga = agencyOf(a) === 'GDACS', gb = agencyOf(b) === 'GDACS';
+  if (ga === gb) return false;
+  const late = ga ? d : -d;                     // how far the GDACS record trails
+  if (late > 0 && late <= GDACS_LAG_MS) return true;
+  return Math.abs(late + DAY_MS) < ORIGIN_MS;   // the day-early GDACS copy
+}
+
+/*
+ * Which catalogue a record comes from, for "never merge a catalogue with
+ * itself". GDACS is not one catalogue: it republishes NEIC, PTWC, EMSC and GFZ
+ * solutions under separate event ids, so two GDACS records of one quake are
+ * two agencies' solutions and may merge, while two from the same upstream stay
+ * apart, as they would at that agency.
+ */
+function seismicCatalogue(e) {
+  const a = agencyOf(e);
+  return a === 'GDACS' && e.gdacsOrigin ? 'GDACS:' + e.gdacsOrigin : a;
+}
+
+/** The detecting agency GDACS names for an earthquake ("NEIC", "PTWC"). */
+function gdacsOriginOf(p, eventType) {
+  if (!/^eq$/i.test(eventType)) return {};
+  const src = String((p && (p.source || p.Source)) || '').trim();
+  return src ? { gdacsOrigin: src } : {};
+}
+
+/*
+ * A merged quake keeps an origin time that is one. When a GDACS record leads
+ * (it can, by reporting deaths), its startedAt is GDACS's report time or, for
+ * the day-early copy, a day out; the time of the best-ranked catalogue member
+ * that is not GDACS is the earthquake's.
+ */
+function seismicAdoptOrigin(lead, ranked) {
+  if (agencyOf(lead) !== 'GDACS') return;
+  const cat = ranked.find(m => agencyOf(m) !== 'GDACS' && m.startedAt);
+  if (cat && cat.startedAt !== lead.startedAt) {
+    lead.gdacsStartedAt = lead.startedAt;
+    lead.startedAt = cat.startedAt;
+  }
+}
+
+/** Every provider id a (possibly merged) quake record stands for. */
+function quakeIdentity(e) {
+  return [e.id].concat((e.mergedFrom || []).map(m => m && m.id).filter(Boolean));
+}
+
 function mergeSeismicReports(events) {
   const groups = [], groupOf = new Map();
   for (const e of events) {
@@ -540,10 +714,10 @@ function mergeSeismicReports(events) {
     // agency's own determination -- the live feed carries doublets 21 and 44
     // seconds apart that are genuinely separate events.
     const hit = groups.find(g =>
-      Math.abs(g.t - t) <= ORIGIN_MS &&
+      g.members.some(m => seismicSameOrigin(m, e)) &&
       Math.abs(g.members[0].magnitude - e.magnitude) <= SAME_MAG &&
       kmBetween(g.members[0], e) <= SAME_KM &&
-      !g.members.some(m => agencyOf(m) === agencyOf(e)));
+      !g.members.some(m => seismicCatalogue(m) === seismicCatalogue(e)));
     if (hit) { hit.members.push(e); groupOf.set(e, hit); }
     else { const g = { t, members: [e] }; groups.push(g); groupOf.set(e, g); }
   }
@@ -553,6 +727,7 @@ function mergeSeismicReports(events) {
       return rb - ra || pb - pa;
     });
     g.lead = ranked[0];
+    seismicAdoptOrigin(g.lead, ranked);
     /* Only the lead record survives, so anything only one agency publishes
        would go with the discarded copies. GDACS earthquakes now carry a
        magnitude, which makes them eligible to lead a group, and a GDACS record
@@ -704,6 +879,8 @@ function unshout(text) {
     run.split(/\s+/).map((w, i) => {
       // A compass bearing ("8 km SSW of") stays as it is written.
       if (/^[NSEW]{1,3}$/.test(w)) return w;
+      // So does a dotted abbreviation: "U.S." is not "U.s.".
+      if (/^[A-Z](?:\.[A-Z])+\.?$/.test(w)) return w;
       const l = w.toLowerCase();
       if (/^(of|the|and|near|off|region)$/.test(l) && i) return l;
       return l.charAt(0).toUpperCase() + l.slice(1);
@@ -800,7 +977,7 @@ function countryAt(lat, lon) {
 
 /** "A, B, C, D," -> "A, B and 2 other countries". */
 function countryListText(raw) {
-  const parts = String(raw || '').split(',').map(s => s.trim()).filter(Boolean);
+  const parts = String(raw || '').split(',').map(s => countryName(s.trim())).filter(Boolean);
   if (parts.length <= 1) return parts[0] || '';
   if (parts.length === 2) return parts[0] + ' and ' + parts[1];
   if (parts.length === 3) return parts[0] + ', ' + parts[1] + ' and ' + parts[2];
@@ -859,6 +1036,80 @@ function placeLabel(e) {
   return countryAt(e.lat, e.lon) || oceanName(e.lat, e.lon);
 }
 
+/* One spelling per country. NHC and USGS write "México", GDACS "Mexico", and
+   both appeared on one list. */
+const COUNTRY_SPELLING = { 'méxico': 'Mexico', 'mexico': 'Mexico', 'türkiye': 'Türkiye', 'turkey': 'Türkiye' };
+function countryName(s) {
+  const t = String(s || '').trim();
+  return COUNTRY_SPELLING[t.toLowerCase()] || t;
+}
+
+/* "Aruba, , Brazil, ," -> "Aruba, Brazil": GDACS leaves empty slots in lists. */
+function tidyListText(s) {
+  return String(s || '').replace(/(?:\s*,\s*)+,/g, ',').replace(/,\s*(?=\s*$|\s*·)/g, '')
+    .replace(/\s+·/g, ' ·').replace(/\s+$/, '');
+}
+
+/* The observatory a USGS volcano record names, as the place it watches. */
+const OBSERVATORY_PLACES = { alaska: 'Alaska', hawaiian: 'Hawaii', cascades: 'Cascade Range',
+  california: 'California', yellowstone: 'Yellowstone', 'northern mariana islands': 'Northern Mariana Islands' };
+function observatoryPlace(region) {
+  const m = /^(Alaska|Hawaiian|Cascades|California|Yellowstone|Northern Mariana Islands) Volcano Observatory$/i.exec(String(region || '').trim());
+  return m ? OBSERVATORY_PLACES[m[1].toLowerCase()] : null;
+}
+
+/* What kind of status a volcano observatory's level is. */
+function volcanoProduct(level) {
+  const l = String(level || '').toUpperCase();
+  return l === 'WARNING' ? 'warning' : l === 'WATCH' ? 'watch' : l === 'ADVISORY' ? 'advisory' : l ? 'normal' : null;
+}
+
+/*
+ * The areas a record covers, as a reader would list them: the place fields a
+ * page shows under "Areas affected". Built from the frozen country and region
+ * without changing them. Never the hurricane centre's "(eastern Pacific system
+ * 2)", an observatory's name, a shouted region, or an empty list slot; a storm
+ * at sea names the countries it "may affect", not a country it is not in.
+ */
+function areasOf(e) {
+  const tidy = v => String(v || '').replace(/[\s,;·]+$/, '').replace(/\s+/g, ' ').trim();
+  if (e.type === 'Tropical Cyclone') {
+    const p = tidy(e.place || placeLabel(e));
+    return p ? [p] : [];
+  }
+  let region = tidy(e.region);
+  if (/\([a-z ]+ system \d+\)$/i.test(region)) region = '';
+  const obs = observatoryPlace(region);
+  if (obs) region = obs;
+  if (region && (region.toLowerCase() === tidy(e.title).toLowerCase() ||
+    region.toLowerCase() === tidy(e.sourceTitle).toLowerCase())) region = '';
+  const regions = region.includes(';')
+    ? region.split(';').map(x => unshout(tidy(x))).filter(Boolean)
+    : (region ? [unshout(region)] : []);
+  const countries = String(e.country || '').split(',').map(x => countryName(unshout(tidy(x)))).filter(Boolean);
+  const out = [];
+  for (const r of regions) if (!out.includes(r)) out.push(r);
+  for (const c of countries) if (!out.some(x => x.toLowerCase().includes(c.toLowerCase()))) out.push(c);
+  return out;
+}
+
+/*
+ * The reader-facing fields, set once the feed is merged: kept apart from the
+ * frozen source fields so a ledger claim's geography never moves.
+ */
+function readerFields(e) {
+  if (e.details) e.details = tidyListText(e.details);
+  if (e.type === 'Volcano' && e.alertLevel && !e.officialProduct) {
+    const prod = volcanoProduct(e.alertLevel);
+    if (prod) e.officialProduct = prod;
+  }
+  if (!e.forecast) {
+    const areas = areasOf(e);
+    if (areas.length) e.areas = areas;
+  }
+  return e;
+}
+
 /*
  * Which countries a record belongs to, for anything that groups by country:
  * the source's own list where it gave one (for a merged storm, the countries
@@ -867,7 +1118,7 @@ function placeLabel(e) {
  * "Tropical Cyclone FAY-26" and "COLOMBIA" regions of their own.
  */
 function countriesOf(e) {
-  const listed = String(e.country || e.affectedCountries || '').split(',').map(s => unshout(s.trim())).filter(Boolean);
+  const listed = String(e.country || e.affectedCountries || '').split(',').map(s => countryName(unshout(s.trim()))).filter(Boolean);
   const countries = listed.length ? listed : [countryAt(e.lat, e.lon)].filter(Boolean);
   return { countries, sea: countries.length ? '' : (oceanName(e.lat, e.lon) || '') };
 }
@@ -968,29 +1219,46 @@ function mergeCycloneReports(events) {
  * opens - but marked as no longer live, and says for how long it has been
  * silent.
  */
-const LIVE_DAYS = {
-  'Tropical Cyclone': 3, 'Severe Storm': 3, Tornado: 2, Earthquake: 7, Flood: 10,
-  Landslide: 14, Wildfire: 10, Volcano: 45, Drought: 60, 'Extreme Heat': 7, 'Extreme Cold': 7
+/*
+ * Per hazard, how long a provider can go without updating a record before it
+ * is no longer called live. A tropical cyclone is re-advised every six hours by
+ * every warning centre, so a storm GDACS has not touched for a day has gone:
+ * Arnab was still shown as "Live" 37 hours after GDACS last updated it, under
+ * "Updated 2 d ago". A volcano record with no published alert level is an
+ * eruption report (EONET, GDACS) and goes quiet after two weeks; one carrying
+ * an observatory's level is a status in force until the observatory changes it.
+ */
+const LIVE_HOURS = {
+  'Tropical Cyclone': 24, 'Severe Storm': 48, Tornado: 24, Earthquake: 7 * 24, Flood: 10 * 24,
+  Landslide: 14 * 24, Wildfire: 10 * 24, Volcano: 14 * 24, Drought: 60 * 24,
+  'Extreme Heat': 7 * 24, 'Extreme Cold': 7 * 24
 };
+function liveLimitHours(e) {
+  if (e.humanitarian) return 60 * 24;
+  if (e.type === 'Volcano' && e.alertLevel) return Infinity;
+  return LIVE_HOURS[e.type] || 14 * 24;
+}
 function markLive(events, nowMs) {
   let quiet = 0;
   for (const e of events) {
     if (e.forecast) continue;
     const t = Date.parse(e.updated || '');
     if (!Number.isFinite(t)) continue;
-    const days = (nowMs - t) / 864e5;
-    /* A humanitarian record is a response page opened when the disaster was
-       declared; it stays current for weeks after its date. */
-    const limit = e.humanitarian ? 60 : (LIVE_DAYS[e.type] || 14);
+    const hours = (nowMs - t) / 3600e3;
     /* An event its provider still expects to be running is live however
        long ago it started, and so is a warning its issuer has not yet let
        expire: the agency's own expiry is the better word on whether it is
        still in force than how long ago it was last reissued. */
-    e.live = days <= limit || Date.parse(e.expectedEnd || '') > nowMs ||
+    e.live = hours <= liveLimitHours(e) || Date.parse(e.expectedEnd || '') > nowMs ||
       Date.parse(e.expiresAt || '') > nowMs;
     if (!e.live) {
       quiet++;
-      e.quietDays = Math.floor(days);
+      e.quietDays = Math.floor(hours / 24);
+      e.quietHours = Math.floor(hours);
+    }
+    /* A drought GDACS has followed for years is live, and says since when. */
+    if (e.live && e.type === 'Drought' && Date.parse(e.startedAt || '') < nowMs - 60 * 864e5) {
+      e.ongoingSince = e.startedAt;
     }
   }
   return quiet;
@@ -1024,13 +1292,113 @@ function gdacsWhen(modified, to, from, now) {
   return out;
 }
 
-/** GDACS writes "2026-09-29T01:00:00" with no zone; it means UTC. */
+/*
+ * GDACS writes "2026-09-29T01:00:00" with no zone; it means UTC.
+ *
+ * Only the "T" form was given a zone. "2026-09-29 01:00:00", with a space, and
+ * an RFC date with no zone ("29 Sep 2026 01:00:00") were left to Date.parse,
+ * which reads both in the server's local zone: harmless on a UTC host, and
+ * hours out - across midnight, a day out - anywhere else, including a
+ * developer's machine running the tests. Every zone-less form is UTC now.
+ *
+ * The Bonin Islands quake that GDACS listed a day early (event 1573848) is not
+ * this: GDACS's own record says 2026-10-24T02:09:00 in fromdate, todate and its
+ * description. That is matched in the seismic merge (see DAY_MS).
+ */
 function gdacsTime(v) {
   if (!v) return null;
   const s = String(v).trim();
-  const withZone = /[zZ]$|[+-]\d\d:?\d\d$/.test(s) ? s : (/T\d/.test(s) ? s + 'Z' : s);
+  const zoned = /[zZ]$|[+-]\d\d:?\d\d$|\b(GMT|UTC|UT)$/.test(s);
+  let withZone = s;
+  if (!zoned) {
+    if (/^\d{4}-\d\d-\d\d[T ]\d/.test(s)) withZone = s.replace(' ', 'T') + 'Z';
+    else if (/^\d{4}-\d\d-\d\d$/.test(s)) withZone = s + 'T00:00:00Z';
+    else if (/\d{1,2}:\d\d/.test(s)) withZone = s + ' GMT';
+  }
   const t = Date.parse(withZone);
   return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+
+/* Which provider a served record came from, decided once from the source
+   label so the freshness and record counts below cannot drift from the
+   events themselves. Volcano is tested before the general USGS pattern,
+   since its label contains both. */
+const PROVIDER_OF_SOURCE = [
+  [/USGS Volcano/i, 'usgs_volcano'],
+  [/GDACS/i, 'gdacs'],
+  [/USGS/i, 'usgs'],
+  [/EMSC/i, 'emsc'],
+  [/EONET/i, 'eonet'],
+  [/Hurricane Center/i, 'nhc'],
+  [/Weather Service/i, 'nws'],
+  [/ReliefWeb/i, 'reliefweb']
+];
+
+function providerOf(source) {
+  const s = String(source || '');
+  /* A derived outlook names the signal it came from inside its own source
+     string. It is this engine's own record, not the provider's, and counting
+     it as one would inflate what the provider was seen to deliver. */
+  if (/^Predict Natural Disasters/i.test(s)) return null;
+  for (const [re, key] of PROVIDER_OF_SOURCE) if (re.test(s)) return key;
+  return null;
+}
+
+/*
+ * Does a GDACS time carry a time of day, or only a day? Floods, droughts and
+ * wildfires are stamped at 00:00:00, which is a date: printed in a reader's
+ * zone it became "5:30 AM IST" on 60 cards at once, a precision nobody gave.
+ */
+function gdacsDatePrecision(rec) {
+  if (!rec || !/^(FL|DR|WF)$/i.test(String(rec.rawType || ''))) return {};
+  const midnight = v => typeof v === 'string' && /T00:00:00(\.0+)?Z$/.test(v);
+  return midnight(rec.updated) && (!rec.startedAt || midnight(rec.startedAt)) ? { datePrecision: 'day' } : {};
+}
+
+/* ------------------------------------------------ National Weather Service */
+
+/*
+ * What kind of product an NWS alert is, from its event name: "Flash Flood
+ * Warning" is a warning, "Freeze Watch" a watch, "Wind Advisory" an advisory.
+ * The feed coloured every Severe product Orange, so a Freeze Watch wore the
+ * same badge as a Flash Flood Warning and was counted with it.
+ */
+function nwsProduct(event) {
+  const e = String(event || '').trim();
+  if (/\bwarning$/i.test(e) || /^tsunami warning/i.test(e)) return 'warning';
+  if (/\bwatch$/i.test(e)) return 'watch';
+  if (/\badvisory$/i.test(e)) return 'advisory';
+  if (/\b(statement|outlook|message|emergency)$/i.test(e)) return /emergency$/i.test(e) ? 'warning' : 'statement';
+  return 'other';
+}
+
+/* A warning keeps the colour of its severity; anything else ranks one below. */
+function nwsAlertLevel(p) {
+  const extreme = (p && p.severity) === 'Extreme';
+  if (nwsProduct(p && p.event) === 'warning') return extreme ? 'Red' : 'Orange';
+  return extreme ? 'Orange' : 'Yellow';
+}
+
+/*
+ * The weather service's own page for the warning, not a point forecast.
+ *
+ * MapClick.php is the seven-day forecast for a point, which lists the warning
+ * among everything else in force there. showsigwx.php is the hazard page the
+ * weather service itself links a warning to: the forecast zone and county the
+ * alert names (its UGC codes), the product by name, and the point inside the
+ * warned area. With no zone code the agency's front page is the honest link.
+ */
+function nwsAlertUrl(p, inside) {
+  const ugc = ((p && p.geocode && p.geocode.UGC) || []).map(String);
+  const zone = ugc.find(c => /^[A-Z]{2}Z\d{3}$/.test(c)) || ugc[0] || '';
+  const county = ugc.find(c => /^[A-Z]{2}C\d{3}$/.test(c)) || zone;
+  if (!zone || !p.event) return 'https://www.weather.gov/';
+  const q = new URLSearchParams({ warnzone: zone, warncounty: county, product1: String(p.event) });
+  if (inside && Number.isFinite(inside.lat) && Number.isFinite(inside.lon)) {
+    q.set('lat', Number(inside.lat).toFixed(4));
+    q.set('lon', Number(inside.lon).toFixed(4));
+  }
+  return 'https://forecast.weather.gov/showsigwx.php?' + q.toString();
 }
 
 /** ?summary=1 asks for the meta block alone. */
@@ -1048,19 +1416,78 @@ function isCron(req) {
   return !!queryOf(req).cron;
 }
 
+/* The copy this instance last built, and the build under way, if any. Each
+   is kept with the fetch it was made through: the runtime's fetch never
+   changes, and a test that swaps in a different set of upstreams gets a
+   build of its own rather than another test's copy.
+   A scheduled (?cron=) build leaves out the model outlooks (see buildFeed),
+   so it is a different feed and is kept apart from the visitors' one. */
+let MEMO = { cron: null, page: null };
+let INFLIGHT = { cron: null, page: null };
+
+function feedFor(req) {
+  const via = global.fetch;
+  const cron = isCron(req);
+  const kind = cron ? 'cron' : 'page';
+  const running = INFLIGHT[kind];
+  if (running && running.via === via) return running.promise;
+  const memo = MEMO[kind] && MEMO[kind].via === via ? MEMO[kind] : null;
+  if (memo) {
+    const age = Date.now() - memo.builtAt;
+    /* ?ts= is not a reason to rebuild: it is served what this instance has.
+       ?cron= is, unless a scheduled build finished moments ago, so the
+       hourly job still records a fresh feed and nobody else can use it to
+       make every request a fan-out to eight providers. */
+    if (cron ? age < CRON_MIN_INTERVAL_MS : age < memo.ttl) return Promise.resolve(memo.out);
+  }
+  const builtAt = Date.now();
+  const promise = buildFeed(cron).then(out => {
+    const partial = Array.isArray(out.meta.lateSources) && out.meta.lateSources.length > 0;
+    MEMO[kind] = { out, builtAt, via, ttl: partial ? MEMO_TTL_PARTIAL_MS : MEMO_TTL_MS };
+    return out;
+  }).finally(() => { if (INFLIGHT[kind] && INFLIGHT[kind].promise === promise) INFLIGHT[kind] = null; });
+  INFLIGHT[kind] = { promise, via };
+  return promise;
+}
+
 async function handler(req, res) {
+  /* The browser keeps nothing, so a reload or a Refresh click always asks
+     the edge, and the edge decides how old a copy may be. */
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   /* One shared copy at Vercel's edge, never in a browser. Rebuilding the feed
-     from every provider took 3 to 6 seconds, measured on the live site, and
-     every visitor paid it: a detail page read "Loading event…" for that long
-     and the homepage's forecast table for 13 seconds. A copy is rebuilt once
-     it is 30 seconds old, and the stale one is served for up to a minute more
-     while that happens, so no copy is older than 90 seconds. Pages print when
-     their copy was made. The scheduled jobs ask with ?cron=<time> and the
-     Refresh buttons with ?ts=<time>, so neither is ever served a copy. */
-  res.setHeader('Vercel-CDN-Cache-Control', 'max-age=30, stale-while-revalidate=60');
+     from every provider takes 3 to 4.5 seconds, and at max-age=30 with a
+     minute of stale-while-revalidate an edge region went cold after 90
+     seconds of quiet, so the first visitor after any lull paid the whole
+     build. Now a copy is fresh for 60 seconds; after that the last copy is
+     served while a new one is built in the background, for up to an hour,
+     and for up to a day if the function fails. Vercel's proxy reads this
+     header and strips it from the response (vercel.com/docs/caching/
+     cache-control-headers). Pages print when their copy was made. */
+  res.setHeader('Vercel-CDN-Cache-Control', 'max-age=60, stale-while-revalidate=3600, stale-if-error=86400');
 
+  const out = await feedFor(req);
+
+  // The counts without the records, so the deployed feed can be checked
+  // without transferring every event to do it.
+  if (wantsLedger(req)) {
+    res.status(200).json({
+      generatedAt: out.generatedAt,
+      meta: { ledger: out.meta.ledger },
+      ledger: Array.isArray(OUTLOOK_LEDGER) ? OUTLOOK_LEDGER : []
+    });
+    return;
+  }
+
+  if (wantsSummary(req)) {
+    res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
+    return;
+  }
+
+  res.status(200).json(out);
+}
+
+async function buildFeed(cron) {
   const now = new Date();
   const from = new Date(now.getTime() - 120 * 864e5);
 
@@ -1074,24 +1501,53 @@ async function handler(req, res) {
       coverage: 'Global terrestrial and coastal coverage; all countries and territories are supported by the UI, subject to upstream reporting.',
       forecasting: 'Experimental short-horizon risk outlooks are derived only from active official hazard signals. They are not deterministic predictions or emergency warnings.',
       /* The feed itself is recomputed from the upstream sources whenever the
-         shared copy is more than 30 seconds old (see the handler's headers). What runs
+         shared copy is more than 60 seconds old (see the handler's headers). What runs
          on a schedule is the written record - the ledger and the change log -
          and that is described by refreshRecorded, measured rather than
          declared. This field used to state a five-minute rate, which was the cron's
          request and about a fortieth of what GitHub actually granted it. */
-      refreshTarget: 'recomputed when the last copy is more than 30 seconds old; no copy served is older than 90 seconds'
+      refreshTarget: 'recomputed when the shared copy is more than 60 seconds old; while a new copy is being built, ' +
+        'or if the providers cannot be reached, the last one is served and pages show when it was made'
     },
     events: []
   };
 
+  /* The budget for this build. Once it is spent the response is assembled
+     from what has arrived: `closed`, set when the build returns, makes a job
+     that answers later a no-op,
+     and `stopAll` aborts the requests still open, so nothing a late provider
+     does can reach a response already on its way, and no new upstream
+     request starts after it. */
+  const deadline = Date.now() + BUILD_BUDGET_MS;
+  const stopAll = new AbortController();
+  let closed = false;
+  const lateError = () => new Error('did not answer in time: no answer within ' + (BUILD_BUDGET_MS / 1000) + ' s');
+  /* Every upstream request in this build: its own timeout, never past the
+     build's deadline, so a provider's retries and follow-up requests fit
+     inside the budget instead of stacking up behind it. */
+  const timedFetch = (url, opts) => {
+    const left = deadline - Date.now();
+    if (closed || left <= 0) return Promise.reject(lateError());
+    const o = Object.assign({}, opts || {});
+    /* A request cut short by the build's deadline is ended by stopAll when
+       the deadline passes, not by a timer of its own set to the same moment:
+       two timers due at once ran in either order, so a provider whose
+       follow-up request was cut off could catch the timeout, call itself
+       answered and escape being reported late, depending on load. */
+    o.timeout = Math.min(o.timeout || FETCH_TIMEOUT_MS, left + 250);
+    o.signal = stopAll.signal;
+    return fetchUpstream(url, o);
+  };
+
   const push = e => {
-    if (!e) return;
+    if (!e || closed) return;
     const lat = num(e.lat), lon = num(e.lon);
     if (lat === null || lon === null || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
     out.events.push(Object.assign({}, e, { lat, lon, type: e.type || 'Natural Hazard' }));
   };
 
   const mark = (key, ok, extra) => {
+    if (closed) return;
     out.meta.sources[key] = Object.assign({ ok: !!ok, checkedAt: now.toISOString() }, extra || {});
   };
 
@@ -1104,7 +1560,7 @@ async function handler(req, res) {
   const pushGdacs = rec => {
     if (gdacsSeen.has(rec.id)) return false;
     gdacsSeen.add(rec.id);
-    push(rec);
+    push(Object.assign(rec, gdacsDatePrecision(rec)));
     return true;
   };
 
@@ -1153,7 +1609,8 @@ async function handler(req, res) {
         ...counts,
         ...measured,
         sourceUrl: 'https://www.gdacs.org/report.aspx?eventid=' + encodeURIComponent(eid) + '&eventtype=' + encodeURIComponent(et),
-        rawId: eid, rawType: et
+        rawId: eid, rawType: et,
+        ...gdacsOriginOf(p, et)
       })) n++;
     }
     return { listed, added: n, ids };
@@ -1214,11 +1671,21 @@ async function handler(req, res) {
       '&fromDate=' + iso(from) + '&toDate=' + iso(now) + '&alertlevel=Green;Orange;Red' +
       (page > 1 ? '&pagenumber=' + page : '');
     const byHazard = {}, incomplete = [], failed = {};
+    /* Every page of every hazard is asked for at once, and the answers are
+       then read in page order with the same rules as before. One page after
+       another was 3 x the slowest page per hazard (GDACS answers a page in
+       1.5 to 1.7 s, measured), which on its own took most of the budget. */
     const history = GDACS_EVENT_TYPES.map(async t => {
+      const answers = await Promise.all(Array.from({ length: GDACS_MAX_PAGES }, (_, i) =>
+        timedFetch(searchUrl(t, i + 1)).then(body => ({ body }), error => ({ error }))));
       const mine = new Set();
       for (let page = 1; page <= GDACS_MAX_PAGES; page++) {
         let r;
-        try { r = parseGdacsJson(await timedFetch(searchUrl(t, page))); } catch (e) {
+        const got = answers[page - 1];
+        try {
+          if (got.error) throw got.error;
+          r = parseGdacsJson(got.body);
+        } catch (e) {
           if (page === 1) failed[t] = String(e.message || e);
           else incomplete.push(t);
           break;
@@ -1244,7 +1711,7 @@ async function handler(req, res) {
          as incomplete as a history cut short - unless the active list
          answered, in which case its running events are still carried. */
       Object.keys(failed).forEach(t => incomplete.push(t));
-      out.meta.gdacs = true;
+      if (!closed) out.meta.gdacs = true;
       mark('gdacs', true, {
         records: gdacsSeen.size,
         endpoint: searched ? 'search' : 'events4app',
@@ -1257,7 +1724,8 @@ async function handler(req, res) {
     }
     try {
       const r = parseGdacsRss(await timedFetch('https://www.gdacs.org/xml/rss.xml', { text: true, headers: { accept: 'application/rss+xml, application/xml' } }));
-      out.meta.gdacs = true; mark('gdacs', true, { records: r.added, endpoint: 'rss' });
+      if (!closed) out.meta.gdacs = true;
+      mark('gdacs', true, { records: r.added, endpoint: 'rss' });
     } catch (e) {
       mark('gdacs', false, { error: String(e.message || e) });
     }
@@ -1295,7 +1763,8 @@ async function handler(req, res) {
         });
         n++;
       }
-      out.meta.usgs = true; mark('usgs', true, { records: n, window: '7 days, M2.5+' });
+      if (!closed) out.meta.usgs = true;
+      mark('usgs', true, { records: n, window: '7 days, M2.5+' });
     } catch (e) { mark('usgs', false, { error: String(e.message || e) }); }
   })());
 
@@ -1340,7 +1809,8 @@ async function handler(req, res) {
         });
         n++;
       }
-      out.meta.eonet = true; mark('eonet', true, { records: n });
+      if (!closed) out.meta.eonet = true;
+      mark('eonet', true, { records: n });
     } catch (e) { mark('eonet', false, { error: String(e.message || e) }); }
   })());
 
@@ -1515,8 +1985,10 @@ async function handler(req, res) {
             type: normalizeType(p.event, p.event),
             title: p.event + (p.areaDesc ? ' - ' + spellUsPlaces(String(p.areaDesc).split(';')[0].trim()) : ''),
             country: 'United States', region: spellUsPlaces(p.areaDesc || ''),
-            /* The severity the alert itself carries, in this site's colours. */
-            alert: p.severity === 'Extreme' ? 'Red' : 'Orange',
+            /* The severity the alert itself carries, in this site's colours,
+               one step lower for a watch or an advisory (nwsAlertLevel). */
+            alert: nwsAlertLevel(p),
+            officialProduct: nwsProduct(p.event),
             alertBasis: 'issued',
             lat: c.lat, lon: c.lon,
             /* The affected area, not just its middle. It was already fetched -
@@ -1543,10 +2015,7 @@ async function handler(req, res) {
                  established the reader goes to the agency's own front page
                  rather than to a forecast for somewhere that is not warned. */
               const link = insidePoint(f.geometry || zoneGeometry.get(f) || null, c);
-              return link && Number.isFinite(link.lat) && Number.isFinite(link.lon)
-                ? 'https://forecast.weather.gov/MapClick.php?lat=' + Number(link.lat).toFixed(4) +
-                  '&lon=' + Number(link.lon).toFixed(4)
-                : 'https://www.weather.gov/';
+              return nwsAlertUrl(p, link);
             })(),
             sourceApiUrl: p['@id'] || '',
             issuingAgency: p.senderName || 'NWS'
@@ -1562,6 +2031,10 @@ async function handler(req, res) {
         return;
       } catch (e) {
         lastError = String(e.message || e);
+        /* The ladder is for a query the API rejects, which it says at once
+           with a 4xx. A timeout or a 5xx says the service is not answering,
+           and four more filters against it would only spend the budget. */
+        if (!/^HTTP 4\d\d/.test(lastError)) break;
       }
     }
     mark('nws', false, { error: lastError });
@@ -1874,7 +2347,28 @@ async function handler(req, res) {
     } catch (e) { mark('emsc', false, { error: String(e.message || e) }); }
   })());
 
-  await Promise.allSettled(jobs);
+  let budgetTimer = null;
+  await Promise.race([
+    Promise.allSettled(jobs),
+    new Promise(resolve => { budgetTimer = setTimeout(resolve, Math.max(0, deadline - Date.now())); })
+  ]);
+  clearTimeout(budgetTimer);
+  /* A provider that has not reported by now is reported as late, which the
+     scan below records as DATA_UNAVAILABLE with this reason, and anything it
+     had pushed so far is left out with it: half a provider's answer is not
+     served as though it had answered. */
+  const lateSources = PROVIDER_KEYS.filter(k => !out.meta.sources[k]);
+  for (const k of lateSources) mark(k, false, { error: lateError().message, late: true });
+  if (lateSources.length) {
+    out.events = out.events.filter(e => !lateSources.includes(providerOf(e.source)));
+    out.meta.lateSources = lateSources;
+  }
+  /* The requests still open are abandoned. Their jobs only learn of it in a
+     later turn of the event loop, and nothing from here to the end of this
+     function awaits, so the build finishes - its own fallback records and
+     outlooks included - before any of them runs again, and by then they
+     find `closed` set (just before the return below). */
+  stopAll.abort();
 
   const okSources = Object.values(out.meta.sources).filter(s => s && s.ok);
   out.meta.sourceCount = okSources.length;
@@ -2025,8 +2519,15 @@ async function handler(req, res) {
       updated: new Date(anchorMs).toISOString(), issuedAt: new Date(anchorMs).toISOString(),
       targetStart: new Date(anchorMs).toISOString(),
       targetEnd: new Date(windowEndMs).toISOString(),
-      details: 'Our own ' + windowText(horizonFor(e.type)) + ' forecast, made from a current report by ' + e.source +
-        '. The period matches how long this kind of hazard usually lasts. What may happen: ' +
+      /* A restatement, said as one. These copy an agency's current alert (an
+         NWS warning, a GDACS alert, a cyclone advisory) and keep it open for
+         as long as the hazard usually lasts. They were counted and described
+         as "our own forecast"; they are not a forecast made in advance, and
+         since verify-1.4.0 they are graded only on new impact reported inside
+         the window and reported apart from the advance forecasts. */
+      restatesAlert: true,
+      details: 'A restatement of a current ' + e.source + ' report, kept open as a ' + windowText(horizonFor(e.type)) +
+        ' outlook because that is how long this kind of hazard usually lasts. It is not a forecast made in advance and not a test of our skill. What may happen: ' +
         mechanism(e.type) + '. ' + FORECAST_DISCLAIMER,
       /* An outlook is no more precise than the area it is issued for, and
          the title above names that area: the signal's country where it has
@@ -2045,13 +2546,12 @@ async function handler(req, res) {
       forecast: true, forecastKind: 'signal-derived-outlook', forecastOf: e.id,
       /* Said as what the level rests on. A storm's colour is this site's
          reading of its wind speed, not an alert anyone issued. */
-      confidence: e.alertBasis === 'derived-from-intensity'
-        ? (e.alert === 'Red' ? 'Higher - a major storm (category 3 or stronger)'
-          : e.alert === 'Orange' ? 'Moderate - a hurricane-strength storm'
-            : 'Watch - a weaker storm')
-        : (e.alert === 'Red' ? 'Higher - the agency issued its highest (red) alert'
-          : e.alert === 'Orange' ? 'Moderate - the agency issued an orange alert'
-            : 'Watch - the agency issued a lower-level alert'),
+      /* Not a confidence: nothing measured how often these come true. The
+         words used to be a risk level ("Watch - a weaker storm") in a field
+         called confidence, a third scale on the same page as the badge. */
+      confidence: 'Not measured. This restates the agency\u2019s ' +
+        (e.alertBasis === 'derived-from-intensity' ? 'report of the storm\u2019s strength' : (e.alert ? e.alert.toLowerCase() + ' alert' : 'report')) +
+        '; we have no record of how often outlooks like it come true.',
       evidence: 'Based on the ' + e.source + ' report “' + e.title + '”' +
         (e.alert ? ' (' + e.alert.toLowerCase() + ' level)' : '') + ', last updated ' + utcText(e.updated) + '.',
       sourceUrl: e.sourceUrl || '',
@@ -2102,8 +2602,11 @@ async function handler(req, res) {
     const shockMs = Date.parse(e.startedAt || e.updated) || now.getTime();
     const shockEndMs = shockMs + AFTERSHOCK_HORIZON_HOURS * 3600e3;
     if (shockEndMs <= now.getTime()) continue;
-    if (seenQuake.has(e.id)) continue;
-    seenQuake.add(e.id);
+    /* Every record the merge folded into this one is the same quake: an
+       outlook already made from any of them covers this sequence too. */
+    const ids = quakeIdentity(e);
+    if (ids.some(x => seenQuake.has(x))) continue;
+    ids.forEach(x => seenQuake.add(x));
     outlooks.push({
       id: outlookId('aftershock-' + e.id),
       source: 'Predict Natural Disasters · derived from ' + e.source,
@@ -2149,12 +2652,13 @@ async function handler(req, res) {
     note: modelFresh ? 'Forecasts from the experimental weather models, run ' + new Date(modelRunAt).toISOString() + '.'
       : 'The experimental weather models have not run in the last 36 hours, so none of their forecasts is shown.'
   } : null;
-  if (!isCron(req) && modelFresh && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
+  if (!cron && modelFresh && Array.isArray(MODEL_OUTLOOKS.outlooks)) {
     for (const mo of MODEL_OUTLOOKS.outlooks) {
       if (!mo || !mo.targetEnd) continue;
       const endMs = Date.parse(mo.targetEnd);
       if (Number.isFinite(endMs) && endMs > now.getTime()) {
-        outlooks.push(Object.assign({}, mo, {
+        const shown = MODELS && MODELS.modelDisplay ? MODELS.modelDisplay(mo) : null;
+        outlooks.push(Object.assign({}, mo, shown ? { type: shown.type, title: shown.title, hazardLabel: shown.hazardLabel } : {}, {
           updated: mo.updated || mo.issuedAt || new Date(now).toISOString(),
           precision: mo.precision || 'regional',
           forecastScope: mo.forecastScope || 'regional',
@@ -2174,7 +2678,7 @@ async function handler(req, res) {
   /* --------------------------------------------------------- dedupe + sort */
 
   const seen = new Set();
-  const risk = { Red: 4, Orange: 3, High: 3, Moderate: 2, Watch: 1, Green: 1 };
+  const risk = { Red: 4, Orange: 3, High: 3, Moderate: 2, Yellow: 2, Watch: 1, Green: 1 };
   const byAlertThenTime = (a, b) =>
     (risk[b.alert] || 0) - (risk[a.alert] || 0) || new Date(b.updated) - new Date(a.updated);
   out.events = out.events
@@ -2187,8 +2691,9 @@ async function handler(req, res) {
     .sort(byAlertThenTime);
   for (const e of out.events) {
     const p = placeLabel(e); if (p) e.place = p;
+    readerFields(e);
     const where = countriesOf(e);
-    e.countries = where.countries;
+    Object.assign(e, require('../country-names.js').place(where.countries)); // one name per country, seas apart (country-names.js)
     if (where.sea) e.sea = where.sea;
   }
 
@@ -2577,31 +3082,6 @@ async function handler(req, res) {
     }
   };
 
-  /* Which provider a served record came from, decided once from the source
-     label so the freshness and record counts below cannot drift from the
-     events themselves. Volcano is tested before the general USGS pattern,
-     since its label contains both. */
-  const PROVIDER_OF_SOURCE = [
-    [/USGS Volcano/i, 'usgs_volcano'],
-    [/GDACS/i, 'gdacs'],
-    [/USGS/i, 'usgs'],
-    [/EMSC/i, 'emsc'],
-    [/EONET/i, 'eonet'],
-    [/Hurricane Center/i, 'nhc'],
-    [/Weather Service/i, 'nws'],
-    [/ReliefWeb/i, 'reliefweb']
-  ];
-
-  function providerOf(source) {
-    const s = String(source || '');
-    /* A derived outlook names the signal it came from inside its own source
-       string. It is this engine's own record, not the provider's, and counting
-       it as one would inflate what the provider was seen to deliver. */
-    if (/^Predict Natural Disasters/i.test(s)) return null;
-    for (const [re, key] of PROVIDER_OF_SOURCE) if (re.test(s)) return key;
-    return null;
-  }
-
   /* A run that fell back to a thinner feed, or dropped records it could not
      place, scanned less than the provider covers, and says so rather than
      reporting a clean sweep. */
@@ -2745,7 +3225,7 @@ async function handler(req, res) {
       FORECAST_CHANGES.observedCadenceHours || {},
       { note: 'The written record is what runs on a schedule. The feed above ' +
         'is recomputed from the upstream sources whenever the last copy is more than ' +
-        '30 seconds old, and no copy served is older than 90 seconds.' });
+        '60 seconds old, and pages show when the copy they read was made.' });
   } else {
     out.meta.forecastChanges = null;
   }
@@ -2809,27 +3289,15 @@ async function handler(req, res) {
   out.meta.officialWarningCount =
     out.events.filter(e => e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')).length;
 
-  // The counts without the records, so the deployed feed can be checked
-  // without transferring every event to do it.
-  if (wantsLedger(req)) {
-    res.status(200).json({
-      generatedAt: out.generatedAt,
-      meta: { ledger: out.meta.ledger },
-      ledger: Array.isArray(OUTLOOK_LEDGER) ? OUTLOOK_LEDGER : []
-    });
-    return;
-  }
-
-  if (wantsSummary(req)) {
-    res.status(200).json({ generatedAt: out.generatedAt, meta: out.meta });
-    return;
-  }
-
-  res.status(200).json(out);
+  /* No await anywhere after the budget race: see stopAll.abort() above. */
+  closed = true;
+  return out;
 }
 
 module.exports = handler;
 module.exports.default = handler;
+/* Forget this instance's copy, for a test that times a build of its own. */
+module.exports._resetMemo = () => { MEMO = { cron: null, page: null }; INFLIGHT = { cron: null, page: null }; };
 module.exports.normalizeType = normalizeType;
 module.exports.centroid = centroid;
 module.exports.insidePoint = insidePoint;
@@ -2846,3 +3314,15 @@ module.exports.countryAt = countryAt;
 module.exports.markLive = markLive;
 module.exports.gdacsTime = gdacsTime;
 module.exports.eonetTropicalCyclone = eonetTropicalCyclone;
+module.exports.gdacsMeasurement = gdacsMeasurement;
+module.exports.gdacsDepthKm = gdacsDepthKm;
+module.exports.gdacsDatePrecision = gdacsDatePrecision;
+module.exports.seismicSameOrigin = seismicSameOrigin;
+module.exports.unshout = unshout;
+module.exports.areasOf = areasOf;
+module.exports.readerFields = readerFields;
+module.exports.nwsProduct = nwsProduct;
+module.exports.nwsAlertLevel = nwsAlertLevel;
+module.exports.nwsAlertUrl = nwsAlertUrl;
+module.exports.liveLimitHours = liveLimitHours;
+module.exports.countryName = countryName;

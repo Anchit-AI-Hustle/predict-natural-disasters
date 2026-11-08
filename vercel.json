@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/",
@@ -29,7 +30,7 @@
       ]
     },
     {
-      "source": "/(alert-rules|alerts-client|backtest-view|collection|continents|event-enrichment|forecast-models|forecast-table|globe|glossary|hazard-model|history-data|map-setup|observed-model|place-risk|place-search|risk|search|trust|verdicts|verification-model)\\.js",
+      "source": "/(alert-rules|alerts-client|backtest-view|collection|continents|country-names|event-enrichment|forecast-models|forecast-table|globe|glossary|hazard-model|history-data|map-setup|observed-model|place-risk|place-search|risk|search|trust|verdicts|verification-model)\\.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -183,6 +184,31 @@
       "source": "/home-v3.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/live-map",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/live-map",
+      "permanent": true
+    },
+    {
+      "source": "/history/t-hoku-earthquake-and-tsunami",
+      "destination": "/history/tohoku-earthquake-and-tsunami",
+      "permanent": true
+    },
+    {
+      "source": "/history/t-rkiye-syria-earthquakes",
+      "destination": "/history/turkiye-syria-earthquakes",
+      "permanent": true
+    },
+    {
+      "source": "/history/great-kant-earthquake",
+      "destination": "/history/great-kanto-earthquake",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -259,6 +285,9 @@
   "functions": {
     "api/alerts-run.js": {
       "maxDuration": 60
+    },
+    "api/events.js": {
+      "maxDuration": 15
     }
   }
 }

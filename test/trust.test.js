@@ -121,7 +121,7 @@ test('when the feed does not answer, no time is invented', async () => {
 });
 
 test('every footer names the official agencies, once', async () => {
-  for (const page of ['about.html', 'alerts.html', 'index.html', 'dashboard.html']) {
+  for (const page of ['about.html', 'alerts.html', 'index.html', 'live-map.html']) {
     const r = await renderPage(page, { waitFor: d => d.querySelector('.trust-foot') });
     const feet = r.document.querySelectorAll('.trust-foot');
     assert.equal(feet.length, 1, page + ': ' + feet.length + ' footers');

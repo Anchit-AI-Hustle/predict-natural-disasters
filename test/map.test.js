@@ -101,13 +101,22 @@ test('the map carries a key to its marks, counted from what is drawn', async () 
   const key = r.document.querySelector('#map .pnd-key');
   assert.ok(key, 'the live map has no key');
   assert.equal(key.hidden, false, 'the key is hidden on a map full of events');
-  const rows = [...key.querySelectorAll('li')].map(li => ({
+  const all = [...key.querySelectorAll('li')].map(li => ({
     name: li.querySelector('.pnd-key-name').textContent,
     n: Number(li.querySelector('.pnd-key-n').textContent),
     shape: li.querySelector('.pnd-key-mark').className }));
-  /* Counted from the markers on the map, level by level. */
+  /* Counted from the markers on the map, level by level. The levels count
+     reported events; our forecasts are counted on a line of their own
+     (launch audit A5), so a level reads the same number as the page's own
+     count of reported events at that level. */
   const drawn = {};
-  r.window.__pndMaps[0].eachLayer(l => { if (l.options && l.options.pndLevel) drawn[l.options.pndLevel] = (drawn[l.options.pndLevel] || 0) + 1; });
+  let forecasts = 0;
+  r.window.__pndMaps[0].eachLayer(l => { if (!(l.options && l.options.pndLevel)) return;
+    if (l.options.pndForecast) forecasts++; else drawn[l.options.pndLevel] = (drawn[l.options.pndLevel] || 0) + 1; });
+  const fcRow = all.find(x => x.name === 'Our forecasts');
+  assert.ok(forecasts > 0 && fcRow, 'the live map draws our forecasts but the key does not say so');
+  assert.equal(fcRow.n, forecasts);
+  const rows = all.filter(x => x !== fcRow);
   const R = r.window.PNDRisk;
   const byLabel = Object.fromEntries(R.LEVELS.concat([R.UNKNOWN]).map(l => [l.label, l.key]));
   for (const row of rows) {
@@ -338,9 +347,10 @@ test('the label layer sits in its own pane, above the map and below the markers'
 });
 
 test('the view switcher is styled wherever it appears', () => {
-  // index.html and dashboard.html carry their own CSS and load neither shared
-  // stylesheet, so a rule kept in those sheets left the switcher white on
-  // exactly those two pages. It ships with the code that builds the control.
+  // index.html carries its own CSS and loads neither shared stylesheet, so a
+  // rule kept in those sheets left the switcher white on exactly that page
+  // (and on the old dashboard, since deleted). It ships with the code that
+  // builds the control.
   const src = read('map-setup.js');
   assert.match(src, /\.leaflet-control-layers\{[^}]*background:#/,
     'the switcher keeps Leaflet\'s white default on a dark page');
@@ -461,7 +471,7 @@ test('the satellite view is one seamless mosaic, and NASA’s photo of the day i
     'the mosaic no longer covers every zoom');
   assert.match(src, /maxZoom: DAILY_MAX_ZOOM,\s*\n?\s*maxNativeZoom: DAILY_MAX_ZOOM/,
     'the daily layer is not capped at the zoom it exists at');
-  assert.match(src, /extras\['NASA today \(' \+ latest\.label \+ '\)'\] = daily;/, 'NASA’s photo is not offered as its own layer');
+  assert.match(src, /extras\['NASA \(latest: ' \+ latest\.label \+ '\)'\] = daily;/, 'NASA’s photo is not offered as its own layer');
   assert.match(src, /var DAILY_PREF = 'pnd_nasa_today';/, 'the choice is not remembered');
 });
 

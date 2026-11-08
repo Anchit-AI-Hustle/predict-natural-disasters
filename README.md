@@ -1,6 +1,23 @@
 # Predict Natural Disasters
 
-Global natural-disaster intelligence and experimental forecast-verification dashboard.
+Live natural disasters worldwide on one map, as official agencies report them,
+a check of any place against those reports, and experimental forecast-verification:
+our own forecasts are graded in public, misses included. It is not an official
+warning service.
+
+## Main pages
+
+| Page | What it does |
+| --- | --- |
+| `/` | Answers "is a place I care about at risk?" for a searched place (`?place=&lat=&lon=` in the URL), with the global picture below |
+| `/live-map` | Every reported event on one map, plus our own forecasts, refreshed every minute |
+| `/personal-risk` | My places: saved places and the dangers reported near each |
+| `/location-detail` | One place: events within a chosen distance, the same answer the home page gives, and national emergency contacts |
+| `/compare-locations` | Two or three places side by side, each with the home page's answer; the places are in the URL |
+| `/forecasts`, `/accuracy` | Our experimental forecasts and how they were graded |
+
+`/home`, `/home-v2`, `/home-v3` (old layouts) redirect to `/`, and `/dashboard`
+(the old dashboard) redirects to `/live-map`.
 
 ## Production
 
@@ -19,7 +36,7 @@ provider outage degrades coverage instead of emptying the feed:
 | NASA EONET | Satellite-observed open natural events |
 | NOAA National Hurricane Center | Active tropical cyclones, Atlantic and eastern/central Pacific basins only |
 | NOAA / National Weather Service | Active Extreme and Severe US warnings with mapped geometry |
-| ReliefWeb (UN OCHA) | Listed humanitarian disasters, from the public RSS feed |
+| ReliefWeb (UN OCHA) | Listed humanitarian disasters, from the v2 API when an approved appname is set (see below) |
 | USGS Volcano Hazards Program | Volcanoes at elevated alert level, US observatory network only |
 
 These providers define the coverage. There is no global cell-by-cell scan: a
@@ -93,8 +110,12 @@ feed record, refreshed on a 5-minute cycle:
 - national support groups and international relief organisations with real
   donation links on their own domains
 
-Every incident, alert, calamity, outlook, region, location, hazard and historical
-archive page renders this block.
+Every incident, alert, calamity, outlook, region, hazard and historical archive
+page renders this block. A place page (`/location-detail`) is not an event, so
+it shows only the contacts part
+(emergency numbers, national agencies and support groups, `mode: 'place'` in
+`event-enrichment.js`), plus news only when a real reported event is near the
+place, and only from the last 30 days. It never shows videos.
 
 ### Contact-data policy
 
@@ -118,9 +139,9 @@ everywhere, and the choice is remembered per page in `localStorage`.
 - **Region and source aggregates** - priority, record count, most recent, name.
 - **Historical archive** - date, name, hazard type.
 
-`index.html`, `dashboard.html` and `home-v3.html` are self-contained pages that
-do not load `portal.js`, so they carry their own copy of the same vocabulary;
-the test suite asserts they stay in step.
+`index.html` carries its own sort table (`SORTS`), because its list renders
+from its own inline script; the test suite asserts it stays in step with the
+shared vocabulary.
 
 `about.html`, `insights.html` and `methodology.html` are static prose with no
 record list, so they have no sort control - and `methodology.html` is a numbered
@@ -130,7 +151,7 @@ sequence that reordering would actively break.
 
 - Detail pages re-request enrichment every 5 minutes; list and map pages poll the
   live feed every 60 seconds.
-- `.github/workflows/refresh-disaster-data.yml` runs every 5 minutes, validates
+- `.github/workflows/refresh-disaster-data.yml` runs every hour, validates
   the feed's shape, reports offline providers, and pre-warms the enrichment cache
   for every event using the exact query the browser sends. It fails loudly when
   the feed is empty, malformed, or when enrichment does not answer.
@@ -143,8 +164,10 @@ handlers and real pages run against them.
 ```bash
 cd test
 npm install
-npm test
+node --test --test-concurrency=2
 ```
+
+Keep the concurrency bounded: each page test runs a whole page in jsdom.
 
 - `api.test.js` - both API handlers across success and total-outage paths,
   outlook generation, ID stability, and the verified support directory.

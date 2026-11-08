@@ -73,7 +73,9 @@ function fakeMap(layers) {
 /* ---------- it is on every map ---------- */
 
 test('every page that builds a map loads the globe', () => {
-  assert.ok(MAP_PAGES.length >= 16, `only found ${MAP_PAGES.length} map pages`);
+  /* 16 until the old home layouts and the dashboard, four map pages, were
+     deleted (launch audit A7); they are redirected now. */
+  assert.ok(MAP_PAGES.length >= 12, `only found ${MAP_PAGES.length} map pages`);
   const missing = MAP_PAGES.filter(f => !/<script src="\/globe\.js"><\/script>/.test(read(f)));
   assert.deepEqual(missing, [], 'these pages have a map but no globe');
 });

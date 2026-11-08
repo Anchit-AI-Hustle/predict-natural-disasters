@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
+# The pages fill their content from these two read-only endpoints, and a
+# crawler that renders a page honours robots.txt for what the page fetches:
+# with all of /api/ disallowed, every list and detail page was indexed as
+# "Loading...". The longer rule wins, so the rest of /api/ stays disallowed.
+Allow: /api/events
+Allow: /api/event-enrichment
 Disallow: /api/
 
 Sitemap: https://predict-natural-disasters.anchit-tandon.com/sitemap.xml

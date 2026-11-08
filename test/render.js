@@ -37,6 +37,7 @@ const LEAFLET_STUB = `
   function chain(a, b){ var o = {
     addTo:function(t){ if(t && t.__take){ t.__take(o); if (t.__map) o.__map = t.__map; } return o; },
     bindPopup:function(h){ o.__popup = h; return o; },
+    bindTooltip:function(h){ o.__tooltip = h; return o; },
     openPopup:function(){return o}, setView:function(){return o},
     /* Real Leaflet removes each child from the map, which fires layerremove
        on it. Without that the globe never learns the page cleared its markers. */
@@ -321,6 +322,8 @@ async function renderPage(page, opts) {
   virtualConsole.on('error', (...a) => errors.push(new Error(a.map(String).join(' '))));
 
   const apiCalls = [];
+  /* The options each of those requests was made with, by position. */
+  const apiInits = [];
   const dom = new JSDOM(html, {
     url: o.url ? ORIGIN + o.url : ORIGIN + '/' + page + (o.search || ''),
     runScripts: 'dangerously',
@@ -334,14 +337,21 @@ async function renderPage(page, opts) {
           try { window.localStorage.setItem(k, v); } catch (e) { /* no storage */ }
         }
       }
-      window.fetch = async (input) => {
+      window.fetch = async (input, init) => {
         const url = String(input && input.url ? input.url : input);
         apiCalls.push(url);
+        apiInits.push(init || {});
         if (url.includes('/api/event-enrichment')) return callApi(enrichHandler, url, o.mock);
         if (/\/api\/alerts(?:\?|$)/.test(url)) return callApi(alertsHandler, url, o.mock);
         // feedDown is the endpoint itself being unreachable, which is not the
         // same as every upstream provider being down: that still returns 200.
         if (url.includes('/api/events')) {
+          /* A fixed feed (a snapshot of the live one, test/fixtures), served as
+             it is rather than rebuilt from the mocked upstreams. */
+          if (o.feed) {
+            const body = typeof o.feed === 'string' ? JSON.parse(fs.readFileSync(o.feed, 'utf8')) : o.feed;
+            return { ok: true, status: 200, headers: { get: () => null }, json: async () => body, text: async () => JSON.stringify(body) };
+          }
           if (o.feedDown) return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}), text: async () => '' };
           return callApi(eventsHandler, url, o.mock);
         }
@@ -395,10 +405,40 @@ async function renderPage(page, opts) {
 
   OPEN_WINDOWS.add(window);
   return {
-    window, document: window.document, errors, apiCalls,
+    window, document: window.document, errors, apiCalls, apiInits,
     text: () => window.document.body.textContent.replace(/\s+/g, ' ').trim(),
     html: () => window.document.body.innerHTML,
     close: () => { OPEN_WINDOWS.delete(window); try { window.close(); } catch (e) { /* already gone */ } }
+  };
+}
+
+
+/**
+ * A beforeParse hook that answers /api/events with a fixed feed, so a page can
+ * be rendered against exactly the records a test is about. `events` are
+ * filled out with the fields every record carries; `meta` is merged over a
+ * healthy one. Everything else is still served as renderPage serves it.
+ */
+function fixtureFeed(events, meta, extra) {
+  const now = new Date().toISOString();
+  const evs = (events || []).map((e, i) => Object.assign({
+    id: 'fx-' + i, title: 'Event ' + i, type: 'Flood', source: 'GDACS', sourceType: 'official',
+    alert: 'Green', lat: 10 + i * 0.01, lon: 20 + i * 0.01, updated: now, live: true, details: ''
+  }, e));
+  const sources = { gdacs: { ok: true }, usgs: { ok: true }, emsc: { ok: true }, eonet: { ok: true },
+    nhc: { ok: true }, nws: { ok: true }, reliefweb: { ok: true }, usgs_volcano: { ok: true } };
+  const body = { generatedAt: now, meta: Object.assign({ live: true, sources }, meta || {}), events: evs };
+  return function (window) {
+    const inner = window.fetch;
+    window.fetch = async (input, init) => {
+      const url = String(input && input.url ? input.url : input);
+      if (/\/api\/events(\?|$)/.test(url) && !/ledger=1/.test(url)) {
+        return { ok: true, status: 200, headers: { get: () => null }, clone() { return this; },
+          json: async () => JSON.parse(JSON.stringify(body)), text: async () => JSON.stringify(body) };
+      }
+      return inner(input, init);
+    };
+    if (typeof extra === 'function') extra(window);
   };
 }
 
@@ -408,4 +448,4 @@ async function sampleEvents(mockOpts) {
   return (await r.json()).events;
 }
 
-module.exports = { renderPage, sampleEvents, callApi, closeAllWindows, ORIGIN };
+module.exports = { renderPage, sampleEvents, callApi, closeAllWindows, fixtureFeed, ORIGIN };

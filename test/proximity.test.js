@@ -311,8 +311,11 @@ test('the page renders every evidence band, including the one with no data', asy
   for (const b of H.RISK_BANDS) {
     assert.ok(text.includes(b.title), 'band ' + b.key + ' is missing from the page');
   }
-  assert.ok(/We do not publish a history of past events for each place/.test(text),
-    'the historical band should say plainly that it has no data rather than look empty');
+  /* The band no longer says the site has no history (launch audit A13): it
+     points at the past events the site does keep, and still does not look empty. */
+  assert.ok(/Past disasters are on our Past events page/.test(text),
+    'the historical band should say where past disasters are rather than look empty');
+  assert.ok(r.document.querySelector('#risks a[href="/historical-events"]'), 'the band links no past events');
   r.close();
 });
 

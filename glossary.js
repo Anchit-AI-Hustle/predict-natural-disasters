@@ -131,6 +131,15 @@
     return /[A-Z]/.test(text) && !/[a-z]/.test(text);
   }
 
+  /* Most of an expansion's long words just before the brackets. */
+  function introducedBefore(before, expansion) {
+    var words = String(expansion).toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3; });
+    if (!words.length) return false;
+    var b = String(before).toLowerCase();
+    var hit = words.filter(function (w) { return b.indexOf(w) >= 0; }).length;
+    return hit * 2 >= words.length;
+  }
+
   function rewrite(text) {
     var out = expandAlways(text);
     /* Notation is expanded either way - "M 6.5" is a magnitude in any case,
@@ -157,6 +166,11 @@
       spelled[term] = true;
       // "ReliefWeb (UN OCHA)" should not become "ReliefWeb (... (UN OCHA))".
       var bracketed = whole.charAt(offset - 1) === '(' && whole.charAt(offset + m.length) === ')';
+      /* Bracketed after its own expansion in other words - "U.S. Geological
+         Survey (USGS)" - the acronym is being introduced already; replacing it
+         printed "U.S. Geological Survey (earthquakes) (United States
+         Geological Survey)". */
+      if (bracketed && introducedBefore(whole.slice(Math.max(0, offset - 80), offset - 1), full[term])) return m;
       return bracketed ? full[term] : full[term] + ' (' + term + ')';
     });
   }
@@ -300,7 +314,10 @@
     function unread(p) {
       if (!p || p.nodeType !== 1) return false;
       if (memo.has(p)) return memo.get(p);
-      var v = !!(UNREAD[p.tagName] || p === skip) || unread(p.parentNode);
+      /* Only what a reader can reach: not a hidden element. (A closed
+         <details> counts: the reader can open it.) */
+      var v = !!(UNREAD[p.tagName] || p === skip || p.hidden || p.getAttribute('aria-hidden') === 'true' ||
+        (p.style && p.style.display === 'none')) || unread(p.parentNode);
       memo.set(p, v);
       return v;
     }
@@ -341,16 +358,22 @@
        common nouns alike, and "AI is the artificial intelligence" is not a
        sentence. */
     var say = wanted.map(function (w) { return w[0] + ' stands for ' + w[1] + '.'; }).join(' ');
+    /* Folded away under one line, rather than a paragraph of definitions
+       printed at the foot of every page (launch audit D25). */
     if (!note) {
-      note = document.createElement('p');
+      note = document.createElement('details');
       note.id = NOTE_ID;
-      note.className = 'muted';
+      note.className = 'muted pnd-abbrs';
       note.setAttribute('data-keep-acronyms', '');
-      note.style.cssText = 'font-size:11px;line-height:1.5;margin:10px 16px 18px;max-width:80ch';
+      note.style.cssText = 'font-size:12px;line-height:1.5;margin:10px 16px 18px;max-width:80ch';
+      note.innerHTML = '<summary></summary><p style="margin:6px 0 0"></p>';
       var host = document.querySelector('main') || document.body;
       host.appendChild(note);
     }
-    if (note.textContent !== say) note.textContent = say;
+    var sum = note.querySelector('summary'), body = note.querySelector('p');
+    var head = 'Abbreviations on this page (' + wanted.length + ')';
+    if (sum && sum.textContent !== head) sum.textContent = head;
+    if (body && body.textContent !== say) body.textContent = say;
   }
 
   function pass() {

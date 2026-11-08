@@ -1,18 +1,31 @@
 const PND={
   /* The visitor's own zone until they pick one: a reader in New York was
      shown every time in IST, beside a trust note in their own zone. */
-  timezone:localStorage.getItem('pnd_timezone')||(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'}catch(e){return 'Asia/Kolkata'}})(),
+  /* Chromium still reports India's zone as Asia/Calcutta, and some systems
+     Asia/Katmandu or Asia/Saigon: the old names of the same zones. Read
+     as written, India saw "GMT+5:30 · Calcutta" on every time and in the
+     menu beside the India entry. The zone is read under its current name. */
+  ZONE_LEGACY:{'Asia/Calcutta':'Asia/Kolkata','Asia/Katmandu':'Asia/Kathmandu','Asia/Saigon':'Asia/Ho_Chi_Minh','Asia/Rangoon':'Asia/Yangon','Asia/Dacca':'Asia/Dhaka','Asia/Thimbu':'Asia/Thimphu','Asia/Ulan_Bator':'Asia/Ulaanbaatar','Asia/Macao':'Asia/Macau','Asia/Chongqing':'Asia/Shanghai','Asia/Chungking':'Asia/Shanghai','Asia/Harbin':'Asia/Shanghai','Asia/Ujung_Pandang':'Asia/Makassar','Asia/Ashkhabad':'Asia/Ashgabat','Asia/Istanbul':'Europe/Istanbul','Europe/Kiev':'Europe/Kyiv','America/Buenos_Aires':'America/Argentina/Buenos_Aires','Pacific/Truk':'Pacific/Chuuk','Pacific/Ponape':'Pacific/Pohnpei','Atlantic/Faeroe':'Atlantic/Faroe','US/Eastern':'America/New_York','US/Pacific':'America/Los_Angeles','US/Central':'America/Chicago','US/Mountain':'America/Denver'},
+  zoneName(tz){return (PND&&PND.ZONE_LEGACY&&PND.ZONE_LEGACY[tz])||tz},
+  timezone:null,
   /* Lists show what is live. A record its provider stopped updating (the
      feed marks it live:false) still opens on its own page, so a detail page
      asks for everything with {all:true}. */
   async getEvents(opts){
-    /* The feed is one shared copy at the edge, rebuilt once it is 30 seconds
+    /* The feed is one shared copy at the edge, rebuilt once it is 60 seconds
        old (api/events.js), so a page opens on it at once instead of waiting
-       3 to 6 seconds for every provider. A Refresh button asks past it: the
-       click is marked before the page's own handler runs (see init). */
+       for every provider. A Refresh button re-reads that copy: the click is
+       marked before the page's own handler runs (see init), and it asks with
+       cache:'no-cache', which revalidates past the browser but not past the
+       edge. It used to add ?ts=, a new address every click, so each one went
+       to every provider: a hundred visitors clicking Refresh was thousands
+       of upstream requests a minute. */
     const fresh=!!(opts&&opts.fresh)||PND._freshNext;PND._freshNext=false;
-    const r=await fetch(fresh?'/api/events?ts='+Date.now():'/api/events',fresh?{cache:'no-store'}:{});if(!r.ok)throw new Error('Live feed unavailable');
-    const d=await r.json();if(opts&&opts.all)return d;
+    const r=await fetch('/api/events',fresh?{cache:'no-cache'}:{});if(!r.ok)throw new Error('Live feed unavailable');
+    const d=await r.json();
+    /* The risk filters offer the levels this feed actually holds. */
+    try{if(PND.pruneRiskFilters)PND.pruneRiskFilters((Array.isArray(d.events)?d.events:[]).filter(e=>e&&e.live!==false))}catch(e){}
+    if(opts&&opts.all)return d;
     const ev=Array.isArray(d.events)?d.events:[];
     return Object.assign({},d,{events:ev.filter(e=>e&&e.live!==false),notLive:ev.filter(e=>e&&e.live===false)});
   },
@@ -30,15 +43,25 @@ const PND={
   /* A forecast's name as a reader should see it. Forecasts recorded before
      September 2026 were titled "3-day Flood risk outlook - Nepal", and the
      record keeps them as written; this only changes how that name is shown. */
-  titleOf(e){const t=String((e&&e.title)||'');let m=/^(\d+)-(day|hour) (.+?) risk outlook - (.+)$/.exec(t);
+  titleOf(e){
+    /* Dashes from an upstream title read as one plain hyphen: a feed title
+       put an em dash on a page whose own text never uses one. */
+    let t=String((e&&e.title)||'').replace(/\s*[\u2012-\u2015]\s*/g,' - ');
+    /* A weather model's forecast is named for what it measures, whenever it
+       was published (forecast-models.js MODEL_HAZARDS). */
+    if(e&&e.forecastKind==='model-advance')t=t.replace(/^Extreme heat(?= forecast)/,'Unusually hot days').replace(/^Heavy rain and flooding(?= forecast)/,'Unusually heavy rain').replace(/^Wildfire weather(?= forecast)/,'High fire-weather index');
+    let m=/^(\d+)-(day|hour) (.+?) risk outlook - (.+)$/.exec(t);
     if(m)return m[3]+' risk in '+m[4]+' - '+m[1]+'-'+m[2]+' forecast';
-    m=/^Aftershock-sequence outlook - (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^\d/.test(m[1])?'':'near ')+m[1]+' - 7-day forecast';
+    m=/^Aftershock-sequence outlook - (.+)$/.exec(t);if(m)return 'Aftershock risk '+(/^(?:\d|(?:north|south|east|west|near|off)\b)/i.test(m[1])?'':'near ')+m[1]+' - 7-day forecast';
     return t;},
   /* How many countries a list names. A drought's country field lists every
      country it covers, and counting that string as one country - and a
      storm's "Western Pacific Ocean" as another - is how the homepage came to
      report 195 countries. */
-  countryCount(list){const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
+  /* One name per country (country-names.js), so "Mexico", "México" and "MX"
+     are one country and a ridge in the ocean is none: /about said 206
+     countries while /regions said 136 for the same feed. */
+  countryCount(list){const N=(typeof window!=='undefined'&&window.PNDCountries)||null;if(N)return N.countryCount(list);const s=new Set();(list||[]).forEach(e=>String(e&&e.country||'').split(',').forEach(c=>{c=c.trim();if(c)s.add(c.toLowerCase())}));return s.size;},
   /* One answer for each quantity the site states on more than one page.
      Each page counted for itself, so at one moment the same feed read 92 open
      forecasts on the home page and 93 on /forecasts, 687 events here and 780
@@ -47,6 +70,31 @@ const PND={
   observed(list){return (list||[]).filter(e=>e&&e.live!==false&&!e.forecast)},
   /* Our forecasts whose window has not ended. One that ended is graded, not open. */
   openForecasts(list){return (list||[]).filter(e=>e&&e.live!==false&&e.forecast&&!e.windowClosed)},
+  /* What a forecast is, said the same way on every page. "Based on a current
+     report" sat on our weather models' forecasts, which are based on no
+     report; NWS warnings copied and kept open for days were "our forecasts". */
+  provenanceOf(e){
+    if(!e||!e.forecast)return 'Official report';
+    if(e.forecastKind==='model-advance')return 'Made in advance by our model';
+    if(e.forecastKind==='frozen-benchmark')return 'Test case, not made in advance';
+    if(e.forecastKind==='aftershock-sequence')return 'Aftershock forecast, after an earthquake';
+    if(e.restatesAlert||e.forecastKind==='signal-derived-outlook'||e.forecastOf)return 'Restates an agency alert';
+    return 'Our own estimate';
+  },
+  /* How many of each, for a line under a count of forecasts. */
+  forecastKinds(list){
+    const n={model:0,restated:0,aftershock:0,test:0,other:0};
+    (list||[]).forEach(e=>{const p=this.provenanceOf(e);
+      if(/^Made in advance/.test(p))n.model++;else if(/^Restates/.test(p))n.restated++;
+      else if(/^Aftershock/.test(p))n.aftershock++;else if(/^Test case/.test(p))n.test++;else n.other++});
+    const parts=[];
+    if(n.model)parts.push(n.model+' made in advance by our weather models');
+    if(n.restated)parts.push(n.restated+' restating an agency alert');
+    if(n.aftershock)parts.push(n.aftershock+' aftershock forecast'+(n.aftershock===1?'':'s'));
+    if(n.test)parts.push(n.test+' test case'+(n.test===1?'':'s'));
+    if(n.other)parts.push(n.other+' other');
+    return Object.assign(n,{text:parts.length?'Of these: '+parts.join(', ')+'.':''});
+  },
   /* A report an agency rated red, orange or high. Never one of our forecasts. */
   isHighAlert(e){return !!e&&!e.forecast&&['Red','Orange','High'].includes(e.alert)},
   /* A warning an agency issued and that is in force, as the feed classifies it
@@ -74,8 +122,14 @@ const PND={
     if(C&&C.continentNamed(q))return C.onContinent(e,q);
     /* The feed names a record's countries in `countries` as well, and fills it
        from the map outline where a provider gave none. */
+    /* A country exactly, by its one name; anything else as a whole word in
+       the record's place fields (country-names.js). A substring made Niger's
+       page list Nigeria's fires and India's an earthquake on the Western
+       Indian-Antarctic Ridge, and searched each record's description too. */
+    const N=(typeof window!=='undefined'&&window.PNDCountries)||null;
+    if(N)return N.inPlace(e,q);
     const t=String(q||'').toLowerCase().trim();
-    return this.matchesPlace(e,t)||(Array.isArray(e&&e.countries)&&e.countries.some(c=>String(c).toLowerCase().includes(t)));},
+    return this.matchesPlace(e,t)||(Array.isArray(e&&e.countries)&&e.countries.some(c=>String(c).toLowerCase()===t));},
   /* A failed load is not a quiet world. Zeros and a stuck "Loading…" both
      read as nothing happening, so every figure says it is unavailable and
      every list says why it is empty. */
@@ -85,7 +139,12 @@ const PND={
   /* The data-status word for a record. A record its provider stopped
      updating (live:false) was labelled "LIVE EVENT" and "Live" directly
      under the note saying it had not been updated for 48 days. */
-  liveWord(e){return !e?'-':e.cached?'Saved copy':e.forecast?'Our forecast':e.live===false?'Not updated recently':'Live'},
+  liveWord(e){return !e?'-':e.cached?'Saved copy':e.forecast?'Our forecast':e.live===false?'Not updated for '+this.quietFor(e):'Live'},
+  /* How long a record has been quiet, in hours under two days. */
+  quietFor(e){const h=Number(e&&e.quietHours),d=Number(e&&e.quietDays);
+    if(Number.isFinite(h)&&h<48)return h+' hour'+(h===1?'':'s');
+    if(Number.isFinite(d))return d>60?this.age(e.updated).replace(/ ago$/,''):d+' day'+(d===1?'':'s');
+    return 'some time';},
   /* Shown under a detail page's heading when the record is no longer live. */
   showQuiet(e,after,text){const t=text||this.quietNote(e);let n=document.getElementById('quietNote');
     if(!t){if(n)n.remove();return}
@@ -93,7 +152,7 @@ const PND={
     if(n)n.textContent=t;},
   /* Said on a record's own page when its provider has gone quiet. */
   quietNote(e){if(!e||e.live!==false)return '';const d=Number(e.quietDays);
-    return `Not updated by ${e.source||'its source'} for ${Number.isFinite(d)?d+' day'+(d===1?'':'s'):'some time'}. It may have ended; check the source for its current status.`;},
+    return `Not updated by ${e.source||'its source'} for ${Number.isFinite(d)?this.quietFor(e):'some time'}. It may have ended; check the source for its current status.`;},
   autoRefresh(fn,ms=60000){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await fn()}finally{busy=false}};run();return setInterval(run,Math.min(ms,60000))},
   esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
   pathParam(k){const p=location.pathname.split('/').filter(Boolean);const map={disasters:'id',calamities:'id',alerts:'id',forecasts:'id',history:'id',regions:'region',locations:'location',hazards:'type',sources:'source'};if(p.length>=2&&map[p[0]]===k){try{return decodeURIComponent(p.slice(1).join('/'))}catch(e){return p.slice(1).join('/')}}return ''},
@@ -105,20 +164,28 @@ const PND={
      since the site follows the device's zone, that put
      "America/Argentina/Buenos_Aires" after every time. The locale is fixed so
      the label does not change with the browser's language. */
-  TZ_ALIASES:{'Asia/Kolkata':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
-  tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
+  TZ_ALIASES:{'Asia/Kolkata':'IST','Asia/Calcutta':'IST','UTC':'UTC','America/New_York':'ET','America/Los_Angeles':'PT','Europe/London':'UK','Asia/Dubai':'GST','Asia/Singapore':'SGT','Asia/Tokyo':'JST','Australia/Sydney':'Sydney'},
+  tzLabel(tz=this.timezone,at){if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];tz=this.zoneName(tz);if(this.TZ_ALIASES[tz])return this.TZ_ALIASES[tz];
     try{const d=at===undefined?new Date(Date.now()):new Date(at);const p=this._fmt('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(isNaN(d)?new Date(Date.now()):d).find(x=>x.type==='timeZoneName');if(p&&p.value)return p.value}catch(e){}
     return 'local time';},
   /* The time zone menu's own words for the chosen zone: its label and its
      city ("GMT-3 · Buenos Aires"). The other options stay IANA ids. */
-  tzMenuLabel(tz=this.timezone,at){if(tz==='Asia/Kolkata')return 'IST · India';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
+  tzMenuLabel(tz=this.timezone,at){tz=this.zoneName(tz);if(tz==='Asia/Kolkata')return 'India (IST)';const l=this.tzLabel(tz,at),city=/^(Etc|SystemV)\//.test(String(tz))?'':String(tz||'').split('/').pop().replace(/_/g,' ');return city&&city!==l?l+' · '+city:l;},
   /* One formatter per zone and shape, made once. toLocaleString builds a new
      one on every call, and /accuracy formats thousands of dates: it was the
      largest single cost of that page's 6-second main-thread task. Output is
      identical, since toLocaleString is defined as exactly this. */
   _fmts:{},
   _fmt(locale,opts){const k=locale+JSON.stringify(opts);return this._fmts[k]||(this._fmts[k]=new Intl.DateTimeFormat(locale,opts))},
-  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
+  /* One month spelling everywhere: ICU writes September "Sept" in en-IN and
+     en-GB, while the feed's own sentences say "Sep", and both appeared on one
+     card. */
+  fmtDate(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return this._fmt('en-IN',{timeZone:this.timezone,day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(d).replace(/\bSept\b/,'Sep').replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
+  /* A day the source gave as a date (datePrecision 'day', GDACS floods,
+     droughts and wildfires stamped 00:00Z) is printed as that date, in UTC,
+     with no time: "5:30 AM IST" on 60 cards was a time nobody published. */
+  fmtDay(v){const d=new Date(v);if(!v||isNaN(d))return v?String(v):'-';return this._fmt('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(d).replace(/\bSept\b/,'Sep');},
+  fmtOf(e,field){const v=e&&e[field||'updated'];return e&&e.datePrecision==='day'?this.fmtDay(v):this.fmtDate(v)},
   /* A forecast window edge. Whole-day windows are stored as UTC midnight to
      23:59:59Z, or midnight to midnight with the end excluded, and fmtDate
      turned each edge into a time of day in the reader's zone: "19 Oct to
@@ -134,7 +201,10 @@ const PND={
     const day=m.last||role!=='end'?m.t:m.t-864e5;
     return this._fmt('en-IN',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(new Date(day));},
   fmtTime(v){if(!v)return '-';const d=new Date(v);if(isNaN(d))return v;return d.toLocaleTimeString('en-IN',{timeZone:this.timezone,hour:'numeric',minute:'2-digit',hour12:true}).replace(/\bam\b/i,'AM').replace(/\bpm\b/i,'PM')+' '+this.tzLabel(this.timezone,d);},
-  age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;},
+  /* Past two months an age is said in months, past two years in years:
+     "(1500 d ago)" is a number to work out, not an age. */
+  age(v){if(!v)return 'unknown';const m=Math.max(0,Math.round((Date.now()-new Date(v))/60000));if(!Number.isFinite(m))return 'unknown';const d=Math.round(m/1440);
+    return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:d<=60?`${d} d ago`:d<730?`${Math.round(d/30.44)} months ago`:`${Math.floor(d/365.25)} years ago`;},
   /* The one risk scale, from risk.js. This used to be a second vocabulary
      mapping onto a second palette, which is how `.badge.watch` came to be
      blue on one page while the same level was yellow on the next. Two
@@ -171,12 +241,37 @@ const PND={
    */
   /* The record's level on this site's scale, as a word - the same answer the
      badge gives, for the places that print text rather than a badge. */
+  /* The one level a record resolves to, as a key on the six-level scale
+     (or UNKNOWN). Every chip, map mark, map key, filter and count resolves a
+     record through this, so no two of them can disagree about it: the
+     homepage map coloured its marks by the raw alert word while the chips
+     beside it read the severity first, and its key said "High 17" beside a
+     tile reading "2 serious". */
+  riskKey(e){
+    /* A thin alias: the answer is risk.js keyFor, the one level function. */
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    return R&&R.keyFor?R.keyFor(e||{}):'UNKNOWN';
+  },
   riskLabel(e){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return 'Not rated';
-    const sv=R.levelOf(e&&e.severity),a=R.levelOf(e&&e.alert);
-    const k=sv!=='UNKNOWN'?sv:(a!=='UNKNOWN'?a:null);
-    return k&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+    const k=this.riskKey(e);
+    return k!=='UNKNOWN'&&R.BY_KEY[k]?R.BY_KEY[k].label:'Not rated';
+  },
+  /* The level in words that say where it came from, where an agency set it.
+     "Low" beside an M6.9 earthquake reads as an error; what it means is that
+     USGS PAGER (or GDACS) expects little damage, and the reader is told so.
+     The words are risk.js describe, the same text the badge carries. */
+  riskWords(e){
+    const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    const label=this.riskLabel(e);
+    if(!R||!e||!R.describe)return label;
+    const d=R.describe(e);
+    if(d.basis)return d.text;
+    const quake=/earthquake/i.test(e.type||'')&&!/aftershock/i.test(e.type||'');
+    if(d.key==='LOW'&&quake&&/^USGS\b/.test(String(e.alertSource||e.source||''))&&!e.pagerAlert&&!e.forecast)
+      return 'Low (no USGS PAGER impact alert issued)';
+    return label;
   },
   riskTag(e,opts){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
@@ -184,20 +279,17 @@ const PND={
     const o=opts||{};
     const rawAlert=e&&e.alert,rawSev=e&&e.severity;
     const a=R.levelOf(rawAlert),sv=R.levelOf(rawSev);
-    /* Not the higher of the two: severityOf already takes the worse of what
-       was observed and what the authority assessed, so the severity subsumes
-       the alert. Taking the maximum across both counted the alert twice, on
-       two scales that name the same rank differently - a forecast carrying
-       alert "High" was published as "Severe" because the severity table calls
-       rank 4 Severe. The severity is the record's answer where it has one. */
-    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
-    if(!known.length){
+    /* The level is risk.js keyFor, the one answer the filter, the calendar
+       and the map read too. */
+    const d=R.describe?R.describe(e||{}):{key:(sv!=='UNKNOWN'?sv:a),text:null,basis:null};
+    const top=d.key;
+    if(top==='UNKNOWN'){
       /* Never a made-up level. These lists used to print "Live" or "Watch"
          where a record carried no level at all, which invents one. */
+      const mag=Number(e&&e.magnitude);
       return R.badgeForLevel('UNKNOWN',{text:'Not rated',className:o.className,
-        title:'No alert level was published for this record and no severity has been assessed for it.'});
+        title:Number.isFinite(mag)&&mag>=6?'No impact assessment has been published for this earthquake yet, so it has no level. Its magnitude is a measurement, not a level.':'No alert level was published for this record and no severity has been assessed for it.'});
     }
-    const top=known.reduce((x,y)=>R.BY_KEY[x].rank>=R.BY_KEY[y].rank?x:y);
     const from=[];
     /* A merged storm can carry a level another agency gave; it names that
        agency, not the one whose report leads the record. */
@@ -205,9 +297,12 @@ const PND={
     if(a!=='UNKNOWN')from.push('the alert level \u201c'+rawAlert+'\u201d'+
       (alertBy?' published by '+this.shortSource(alertBy):''));
     if(sv!=='UNKNOWN')from.push('an assessed severity of \u201c'+rawSev+'\u201d');
+    const H=(typeof window!=='undefined'&&window.PNDHazards)||null;
+    if(H&&H.cycloneCategoryRank&&R.SEVERITY_KEY[H.cycloneCategoryRank(e)]===top&&top!==(sv!=='UNKNOWN'?sv:a))from.push('the storm\u2019s category, which is a floor');
+    if(e&&e.forecastKind==='model-advance')from.splice(0,from.length,'our weather model: High where the place\u2019s 99th percentile is forecast to be crossed, Moderate for its 95th');
     const title=R.BY_KEY[top].label+' on this site\u2019s six-level risk scale, from '+
-      from.join(' and ')+(a!=='UNKNOWN'&&sv!=='UNKNOWN'&&a!==sv?'. Where these differ the higher decides.':'.');
-    return R.badgeForLevel(top,{className:o.className,title});
+      (from.join(' and ')||'its record')+'.';
+    return R.badgeForLevel(top,{className:o.className,title,text:d.text||undefined});
   },
   /*
    * A source name short enough to sit in a row of pills.
@@ -258,12 +353,28 @@ const PND={
    * "Moderate" finds a GDACS Orange as well as a record already called
    * Moderate.
    */
-  riskLevelOptions(selected){
+  /* A level nothing in the list sits at is not offered: the forecast list
+     offered Extreme, Severe and High, and each found nothing. The chosen one
+     stays, so a filter never switches itself off. Each says how many. */
+  pruneRiskOptions(sel,records){
+    if(!sel)return;
+    [...sel.options].forEach(o=>{if(!o.value)return;
+      const n=(records||[]).filter(e=>this.matchesRiskLevel(e,o.value)).length;
+      if(!o.dataset.label)o.dataset.label=o.textContent;
+      o.textContent=o.dataset.label+' ('+n+')';
+      o.hidden=n===0&&sel.value!==o.value;o.disabled=n===0&&sel.value!==o.value;});
+  },
+  /* Given the records it filters, only the levels they hold are offered:
+     "High" and "Not rated" were offered over a list where nothing was either,
+     and both led to "No events to show". The level chosen stays offered. */
+  riskLevelOptions(selected,records){
     const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     if(!R)return '';
-    return R.LEVELS.slice().reverse().map(l=>
+    const have=Array.isArray(records)?new Set(records.map(e=>this.riskKey(e))):null;
+    const keep=k=>!have||have.has(k)||selected===k;
+    return R.LEVELS.slice().reverse().filter(l=>keep(l.key)).map(l=>
       `<option value="${l.key}"${selected===l.key?' selected':''}>${l.label}</option>`).join('')+
-      `<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`;
+      (keep('UNKNOWN')?`<option value="UNKNOWN"${selected==='UNKNOWN'?' selected':''}>Not rated</option>`:'');
   },
   /* The hazard filter, built from the records it filters.
    *
@@ -273,19 +384,21 @@ const PND={
    * list. Each hazard present is offered with how many records it has, most
    * first; one selected earlier and now absent stays selectable with a 0,
    * rather than the filter quietly switching itself back to everything. */
-  hazardOptions(records,selected){
+  /* byHazard groups the types under the hazard they name (hazardKey), for a
+     list filtered with sameHazard, so an option's count is what it finds. */
+  hazardOptions(records,selected,byHazard){
     const counts={};
-    (records||[]).forEach(e=>{const t=e&&e.type;if(t)counts[t]=(counts[t]||0)+1});
+    (records||[]).forEach(e=>{const t=e&&e.type&&(byHazard?this.hazardKey(e.type):e.type);if(t)counts[t]=(counts[t]||0)+1});
     if(selected&&!(selected in counts))counts[selected]=0;
     const esc=v=>this.esc(v);
     return `<option value="">All hazards (${(records||[]).length})</option>`+
       Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
         .map(([t,n])=>`<option value="${esc(t)}"${selected===t?' selected':''}>${esc(t)} (${n})</option>`).join('');
   },
-  fillHazardSelect(sel,records){
+  fillHazardSelect(sel,records,byHazard){
     if(!sel)return;
     const was=sel.value;
-    sel.innerHTML=this.hazardOptions(records,was);
+    sel.innerHTML=this.hazardOptions(records,was,byHazard);
     sel.value=was;
   },
   /** Does this record sit at the level the filter asks for? */
@@ -295,16 +408,22 @@ const PND={
     if(!R)return true;
     /* The same resolution the badge uses, or the filter and the badge
        disagree about the same record. */
-    const a=R.levelOf(e&&e.alert),sv=R.levelOf(e&&e.severity);
-    const known=(sv!=='UNKNOWN'?[sv]:[]).concat(a!=='UNKNOWN'?[a]:[]).slice(0,1);
-    if(!known.length)return key==='UNKNOWN';
-    return known[0]===key;
+    return this.riskKey(e)===key;
   },
   riskLevel(v){const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
     return R?R.levelOf(v):'UNKNOWN';},
-  slug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
+  /* Accents are folded before anything is replaced, so "Tōhoku" is "tohoku"
+     and "Türkiye" "turkiye": the bare replacement made them "t-hoku" and
+     "t-rkiye", and the addresses a reader would type did not open. */
+  slug(v=''){return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
+  /* The slug the history pages were published under before accents were folded. */
+  legacySlug(v=''){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');},
   enc(v=''){return encodeURIComponent(String(v))},
-  eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;if(e&&e.sourceType==='official'&&['Red','Orange'].includes(e.alert))return '/alerts/'+id;return '/disasters/'+id;},
+  /* One address per record. /alerts/ was chosen while a record was Red or
+     Orange, so a shared link's address changed with its level, and two
+     volcanoes at different levels lived under different paths. /alerts/:id and
+     /calamities/:id still open, and name /disasters/:id as canonical. */
+  eventUrl(e){const id=this.enc(e&&e.id||'');if(e&&e.forecast)return '/forecasts/'+id;return '/disasters/'+id;},
   /* Resolve a record by id even when the id was re-encoded by a rewrite, changed case,
      or arrived slugified from an older link. Returns null when nothing matches. */
   findEvent(events,id){
@@ -313,7 +432,10 @@ const PND={
     const norm=v=>String(v==null?'':v).toLowerCase().replace(/[^a-z0-9]+/g,'');
     const wanted=[raw,dec];
     for(const w of wanted){const hit=events.find(e=>String(e.id)===w);if(hit)return hit}
-    const n=norm(dec);
+    /* An agency's copy the feed merged into another record (mergedFrom) opens
+       the record it is now part of, so an old link to a duplicate still works. */
+    for(const w of wanted){const hit=events.find(e=>Array.isArray(e.mergedFrom)&&e.mergedFrom.some(m=>m&&String(m.id)===w));if(hit)return hit}
+    const n=norm(dec);if(!n)return null;
     const byNorm=events.find(e=>norm(e.id)===n);if(byNorm)return byNorm;
     const byTitle=events.find(e=>norm(e.title)===n);if(byTitle)return byTitle;
     const bySuffix=events.find(e=>norm(e.id).endsWith(n)||n.endsWith(norm(e.id)));
@@ -417,7 +539,9 @@ const PND={
     oldest:{label:'Oldest first',cmp(a,b){return PND.timeOf(a)-PND.timeOf(b)}},
     deaths:{label:'Most deaths first',cmp(a,b){return PND.numOf(b.deaths)-PND.numOf(a.deaths)||PND.timeOf(b)-PND.timeOf(a)}},
     affected:{label:'Most people affected first',cmp(a,b){return PND.numOf(b.affected)-PND.numOf(a.affected)||PND.numOf(b.displaced)-PND.numOf(a.displaced)||PND.timeOf(b)-PND.timeOf(a)}},
-    country:{label:'Place (A to Z)',cmp(a,b){return PND.textOf(a,'place','country','region').localeCompare(PND.textOf(b,'place','country','region'))||PND.timeOf(b)-PND.timeOf(a)}},
+    /* By country, then by the place after "of": the whole place text sorted
+       "1 km WSW of Butulan" before "10 km ... Esperanza", on the distance. */
+    country:{label:'Place (A to Z)',cmp(a,b){return PND.placeKey(a).localeCompare(PND.placeKey(b))||PND.timeOf(b)-PND.timeOf(a)}},
     type:{label:'Type of hazard (A to Z)',cmp(a,b){return PND.textOf(a,'type').localeCompare(PND.textOf(b,'type'))||PND.rankOf(b)-PND.rankOf(a)}},
     source:{label:'Source (A to Z)',cmp(a,b){return PND.textOf(a,'source').localeCompare(PND.textOf(b,'source'))||PND.timeOf(b)-PND.timeOf(a)}},
     title:{label:'Name (A to Z)',cmp(a,b){return PND.textOf(a,'title','name').localeCompare(PND.textOf(b,'title','name'))}},
@@ -431,6 +555,47 @@ const PND={
     countDesc:{label:'Most events first',cmp(a,b){return PND.numOf(b.count)-PND.numOf(a.count)}},
     countAsc:{label:'Fewest events first',cmp(a,b){return PND.numOf(a.count)-PND.numOf(b.count)}}
   },
+  placeKey(e){const c=(e&&Array.isArray(e.countries)&&e.countries[0])||(e&&e.sea)||'';
+    const p=String((e&&(e.place||e.country||e.region))||'').replace(/^.*?\bof\s+/i,'').trim();
+    return (c+'|'+p).toLowerCase();},
+  /* Sorts that need a figure no listed record has are hidden: "Most deaths
+     first" gave the same order as "Newest first" when no record had one. */
+  FIGURE_SORTS:{deaths:['deaths'],affected:['affected','displaced']},
+  syncSortOptions(id,list){const el=document.getElementById(id);if(!el||!Array.isArray(list))return;
+    let changed=false;
+    for(const o of el.options){const f=this.FIGURE_SORTS[o.value];if(!f)continue;
+      const has=list.some(e=>e&&f.some(k=>Number(e[k])>0));if(o.hidden!==!has){o.hidden=!has;o.disabled=!has;changed=true}}
+    if(el.selectedOptions[0]&&el.selectedOptions[0].hidden){el.value=[...el.options].find(o=>!o.hidden).value}
+    return changed;},
+  /* A source that did not answer, said to the public in words. The raw
+     upstream error ("no <item> elements at https://...") stays in the console
+     for whoever maintains the site. */
+  SOURCE_NAMES:{reliefweb:'ReliefWeb',usgs:'USGS',nhc:'The National Hurricane Center',emsc:'EMSC',nws:'The National Weather Service',usgs_volcano:'USGS Volcanoes',eonet:'NASA EONET',gdacs:'GDACS'},
+  sourceDownText(k,v){const n=this.SOURCE_NAMES[k]||String(k||'This source').replace(/_/g,' ');
+    if(v&&v.error&&typeof console!=='undefined'&&!this._loggedDown){this._loggedDown={}}
+    if(v&&v.error&&this._loggedDown&&!this._loggedDown[k]){this._loggedDown[k]=1;try{console.info('[sources] '+k+': '+v.error)}catch(e){}}
+    return n+' is not answering right now';},
+  /* --- Share, canonical and not-found, for every detail page. --- */
+  SITE:'https://predict-natural-disasters.anchit-tandon.com',
+  /* A "Copy link" button. The address copied is the record's canonical one,
+     and a polite live region says it was copied, so a screen reader hears it. */
+  copyLinkHtml(){return '<button type="button" class="btn copylink" data-copy-link aria-describedby="copyToast">Copy link</button><span id="copyToast" class="toast" role="status" aria-live="polite"></span>'},
+  wireCopyLink(root,url){const b=(root||document).querySelector('[data-copy-link]');if(!b)return;b.dataset.url=url||location.href;
+    if(b.dataset.wired)return;b.dataset.wired='1';
+    b.addEventListener('click',async()=>{const u=b.dataset.url||location.href,t=document.getElementById('copyToast');let ok=false;
+      try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(u);ok=true}}catch(e){}
+      if(!ok){try{const a=document.createElement('textarea');a.value=u;a.setAttribute('readonly','');a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();ok=document.execCommand&&document.execCommand('copy');a.remove()}catch(e){}}
+      if(t){t.textContent=ok?'Link copied':'Could not copy. The address is '+u;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show')},4000)}});},
+  setCanonical(path){const href=/^https?:/.test(path)?path:this.SITE+path;let l=document.querySelector('link[rel="canonical"]');
+    if(!l){l=document.createElement('link');l.rel='canonical';document.head.appendChild(l)}l.href=href;
+    const og=document.querySelector('meta[property="og:url"]');if(og)og.setAttribute('content',href);return href},
+  /* A not-found page is not to be indexed: it answered 200 with five "-" boxes. */
+  noindex(){let m=document.querySelector('meta[name="robots"]');if(!m){m=document.createElement('meta');m.name='robots';document.head.appendChild(m)}m.content='noindex';},
+  notFoundHtml(what,back){return `<p>${this.esc(what)}</p><p><a class="btn" href="${this.esc(back[0])}">${this.esc(back[1])}</a> <a class="btn" href="/events">Search recent events</a></p>`},
+  /* --- Filters and tabs in the address, so a view can be shared and kept. --- */
+  urlState(){const q=new URLSearchParams(location.search);const o={};q.forEach((v,k)=>{o[k]=v});return o},
+  writeUrlState(obj){try{const q=new URLSearchParams(location.search);for(const [k,v] of Object.entries(obj||{})){if(v===undefined||v===null||v==='')q.delete(k);else q.set(k,v)}
+    const s=q.toString();history.replaceState(history.state,'',location.pathname+(s?'?'+s:'')+location.hash)}catch(e){}},
   /** Default option set for a list of live hazard records. */
   EVENT_SORTS:['newest','severity','oldest','deaths','affected','country','type','source','title'],
   sortStoreKey(id){return 'pnd_sort_'+location.pathname+'_'+id},
@@ -461,7 +626,7 @@ const PND={
     return def?list.slice().sort(def.cmp):list.slice();
   },
   /** Sort by the current value of a page's sort control in one step. */
-  sortBy(id,list,keys){return this.applySort(list,this.sortValue(id,keys))},
+  sortBy(id,list,keys){this.syncSortOptions(id,list);return this.applySort(list,this.sortValue(id,keys))},
   calamityUrl(e){return '/calamities/'+this.enc(e&&e.id||'');},
   historicalUrl(e){return '/history/'+this.enc(this.slug(e&&e.name||e&&e.title||''));},
   regionUrl(name){return '/regions/'+this.enc(name||'World');},
@@ -476,7 +641,7 @@ const PND={
   collectionUrl(kind){return this.collectionRoutes[kind]||'/events';},
   inferCollection(text=''){const t=String(text).toLowerCase();if(/map/.test(t))return 'map';if(/calamit/.test(t))return 'calamities';if(/forecast|prediction|outlook/.test(t))return 'forecasts';if(/warning|alert/.test(t))return 'alerts';if(/region|country|location/.test(t))return 'regions';if(/histor/.test(t))return 'historical';if(/hazard|disaster type/.test(t))return 'hazards';if(/source/.test(t))return 'sources';if(/verif/.test(t))return 'verification';if(/calendar/.test(t))return 'calendar';if(/compare/.test(t))return 'compare';if(/notification/.test(t))return 'notifications';return 'events';},
   routeFromDataset(el){if(!el||!el.dataset)return '';const d=el.dataset;if(d.href)return this.canonicalDetailUrl(d.href);if(d.eventId)return '/disasters/'+this.enc(d.eventId);if(d.calamityId)return '/calamities/'+this.enc(d.calamityId);if(d.forecastId)return '/forecasts/'+this.enc(d.forecastId);if(d.alertId)return '/alerts/'+this.enc(d.alertId);if(d.historicalId)return '/history/'+this.enc(d.historicalId);if(d.region)return this.regionUrl(d.region);if(d.location)return this.locationUrl(d.location);if(d.hazard)return this.hazardUrl(d.hazard,d.region||'');if(d.source)return this.sourceDetailUrl(d.source);if(d.kind&&d.id)return this.detailUrl(d.kind,{id:d.id,name:d.name||d.id,type:d.type||d.id,source:d.source||d.id});return '';},
-  setTimezone(tz){this.timezone=tz||'Asia/Kolkata';localStorage.setItem('pnd_timezone',this.timezone);location.reload();},
+  setTimezone(tz){this.timezone=this.zoneName(tz||'Asia/Kolkata');localStorage.setItem('pnd_timezone',this.timezone);location.reload();},
   /* The options are built into the markup nav() returns rather than injected
      into it afterwards. Filling the picker from a timer meant the header could
      be in the page with an empty dropdown in it for as long as the timer took
@@ -484,7 +649,7 @@ const PND={
      promise-driven data load can complete in one turn, so that "moment" lasted
      over a second and anything looking at the page in it saw a dropdown with
      nothing to pick. */
-  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'||z===this.timezone?this.tzMenuLabel(z):z)}</option>`).join('');},
+  timezoneOptions(){const base=['Asia/Kolkata','UTC','America/New_York','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];let zones=base;try{if(Intl.supportedValuesOf)zones=Intl.supportedValuesOf('timeZone')}catch(e){}const preferred=[this.timezone,...base,...zones].map(z=>this.zoneName(z)).filter((v,i,a)=>a.indexOf(v)===i);return preferred.map(z=>`<option value="${this.esc(z)}" ${z===this.timezone?'selected':''}>${this.esc(z==='Asia/Kolkata'||z===this.timezone?this.tzMenuLabel(z):z)}</option>`).join('');},
   /* Still here for a header put into the page some other way; a no-op once the
      markup already carries its own options. */
   initTimezonePicker(){const s=document.getElementById('pndTimezone');if(!s||s.options.length)return;s.innerHTML=this.timezoneOptions();},
@@ -496,13 +661,29 @@ const PND={
      inventing a warning nobody issued. */
   provenance(e){const s=e&&e.evidenceState;
     if(s==='forecast'||(!s&&e&&e.forecast))return e.forecastKind==='frozen-benchmark'?'TEST FORECAST':'OUR FORECAST';
-    if(s==='official-warning')return 'OFFICIAL WARNING';
+    if(s==='official-warning')return this.officialWord(e).toUpperCase();
     return 'REPORTED EVENT';},
+  /* What kind of official statement a record is, said as the agency said it:
+     only a warning is a warning. An NWS Freeze Watch, or a USGS volcano at
+     ADVISORY (elevated unrest), was labelled OFFICIAL WARNING. A record with
+     no officialProduct (an older payload) keeps the old word. */
+  officialWord(e){const p=e&&e.officialProduct;
+    return p==='watch'?'Official watch':p==='advisory'?'Official advisory':p==='statement'||p==='other'?'Official statement':p==='normal'?'Official status':'Official warning';},
+  /* Whether a record is grave enough for the help and needs sections: an
+     agency's own warning, a rating of High or above, or reported deaths or
+     displacement. On anything else those lists are generic boilerplate - an
+     M4.5 141 km offshore listed "search and rescue" as an immediate need. */
+  lifeSafety(e){if(!e||e.forecast)return false;const R=(typeof window!=='undefined'&&window.PNDRisk)||null;
+    if(e.evidenceState==='official-warning'&&(!e.officialProduct||e.officialProduct==='warning'))return true;
+    /* The record's one level (risk.js keyFor), as its badge shows it. */if(R&&R.keyFor&&(R.BY_KEY[R.keyFor(e)]||{rank:0}).rank>=R.BY_KEY.HIGH.rank)return true;
+    return Number(e.deaths)>0||Number(e.displaced)>0;},
   savedLocations(){try{return JSON.parse(localStorage.getItem('pnd_saved_locations')||'[]')}catch(e){return[]}},
   saveLocation(x){const a=this.savedLocations();a.push({...x,id:'loc-'+Date.now()});localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   removeLocation(id){const a=this.savedLocations().filter(x=>x.id!==id);localStorage.setItem('pnd_saved_locations',JSON.stringify(a));return a},
   distanceKm(a,b,c,d){const r=Math.PI/180,R=6371,x=(c-a)*r,y=(d-b)*r,z=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(z))},
-  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;/* The same rules the background service applies (alert-rules.js), so the
+  evaluateRiskNotifications(events=[]){if(!('Notification' in window)||Notification.permission!=='granted')return;
+    /* Turned off on My places: the browser keeps its permission, so the choice is kept here. */
+    try{if(localStorage.getItem('pnd_page_alerts_off')==='1')return}catch(e){}/* The same rules the background service applies (alert-rules.js), so the
      page open in a tab and the service behind it never disagree about what is
      worth a notification. Where the service is on for this device it has
      already sent these; raising them again here would say everything twice. */
@@ -546,8 +727,13 @@ const PND={
   /* Everything that left the top bar, kept one tap away on every page. */
   FOOT:[['Check a place','/'],['Live events','/events'],['Official warnings','/official-warnings'],['Disasters now and in the past','/calamities'],['Regions','/regions'],['Forecast calendar','/forecast-calendar'],['How it works','/methodology'],['Our sources','/resources'],['Insights','/insights'],['About','/about']],
   footer(){return `<footer class="sitefoot" aria-label="More of this site"><nav>${this.FOOT.map(([n,u])=>`<a href="${u}">${n}</a>`).join('')}</nav><p>Up-to-date information from public sources. This is not an official warning service. In an emergency, follow your local authorities.</p></footer>`;},
+  /* The source's own level beside its name where it issued one ("GDACS:
+     Green"), so this site's rating next to it ("Extreme") is not read as
+     GDACS's: Super Typhoon In-fa was "Extreme · GDACS" while GDACS said Green. */
   sourceBadge(e){const full=(e&&e.source)||'Source not stated';
-    return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(full)}">${this.esc(this.shortSource(full))}</span>`;},
+    const own=e&&e.alertBasis==='issued'&&/GDACS/.test(full)&&['Red','Orange','Green'].includes(e.alert)?': '+e.alert:'';
+    const title=own?full+' issued a '+e.alert.toLowerCase()+' alert level. The coloured badge is this site\u2019s own rating.':full;
+    return `<span class="source" data-source="${this.esc(full)}" title="${this.esc(title)}">${this.esc(this.shortSource(full)+own)}</span>`;},
   /* A window is stated as a start plus how long it is expected to run, never as
      a date range: a joined pair of dates reads as one continuous event, and a second
      occurrence of the same hazard is a separate record with its own start. */
@@ -599,6 +785,7 @@ const PND={
   impactText(e){const p=[];if(e.deaths)p.push(`${e.deaths.toLocaleString()} deaths`);if(e.displaced)p.push(`${e.displaced.toLocaleString()} displaced`);if(e.affected)p.push(`${e.affected.toLocaleString()} affected`);return p.join(' · ')},
   countryOptions(){let names=[];try{const dn=new Intl.DisplayNames(['en'],{type:'region'});for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){const code=String.fromCharCode(a,b),name=dn.of(code);if(name&&name!==code&&!/Unknown Region|Pseudo|European Union|Eurozone|United Nations|Outlying Oceania|^world$/i.test(name))names.push(name)}}catch(e){}return [...new Set(names)].sort((a,b)=>a.localeCompare(b));}
 };
+PND.timezone=PND.zoneName((()=>{try{const v=localStorage.getItem('pnd_timezone');if(v)return v}catch(e){}try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'}catch(e){return 'Asia/Kolkata'}})());
 window.PND=PND;
 const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms,...args)=>__pndSetInterval(fn,Math.min(Number(ms)||60000,60000),...args);
 
@@ -637,7 +824,7 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
     if(document.querySelector('script[data-pnd-enrichment]')){
       document.querySelector('script[data-pnd-enrichment]').addEventListener('load',run);return}
     const s=document.createElement('script');
-    s.src='/event-enrichment.js?v=8';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
+    s.src='/event-enrichment.js?v=12';s.setAttribute('data-pnd-enrichment','1');s.onload=run;
     document.body.appendChild(s);
   }
   /* Fill every risk filter from the one scale.
@@ -655,14 +842,31 @@ const __pndSetInterval=window.setInterval.bind(window);window.setInterval=(fn,ms
            rated" and showed nothing at all. */
         const was=sel.value;
         const box=document.createElement('select');
-        box.innerHTML=PND.riskLevelOptions();
+        box.innerHTML=PND.riskLevelOptions(undefined,PND._riskRecords);
         while(box.firstChild)sel.insertBefore(box.firstChild,node);
         node.remove();
+        sel.dataset.riskFilter='1';
         sel.value=was;
         if(sel.selectedIndex<0)sel.selectedIndex=0;
       }
     });
   }
+  /* Once the records are known, each risk filter keeps only the levels they
+     hold, plus whichever one the reader has chosen. */
+  PND.pruneRiskFilters=function(records){
+    PND._riskRecords=records;
+    if(typeof document==='undefined')return;
+    const keys=new Set(((window.PNDRisk&&window.PNDRisk.LEVELS)||[]).map(l=>l.key).concat(['UNKNOWN']));
+    document.querySelectorAll('select[data-risk-filter]').forEach(sel=>{
+      const was=sel.value;
+      Array.from(sel.options).filter(o=>keys.has(o.value)).forEach(o=>o.remove());
+      const box=document.createElement('select');
+      box.innerHTML=PND.riskLevelOptions(was,records);
+      while(box.firstChild)sel.appendChild(box.firstChild);
+      sel.value=was;
+      if(sel.selectedIndex<0)sel.selectedIndex=0;
+    });
+  };
   /* A skip link, and every part of the page inside a named landmark. Each
      page's hero and the enrichment section sat outside <main>, unnamed, and
      no page had a way past the header and its links. */

@@ -176,9 +176,76 @@
     };
   }
 
+  /*
+   * The one answer to "what level is this record?", for the badge, the
+   * filter, the calendar bar and the map marker alike.
+   *
+   * They used to be answered three ways: the badge from the severity, the
+   * map from the provider's alert colour, the forecast page's "level N of 5"
+   * from the severity table. So one super typhoon was Extreme on a card and
+   * Low on the map, and a model forecast that crossed its 99th percentile
+   * read Moderate. Now:
+   *
+   *  - a weather model's forecast is its own level: High where its 99th
+   *    percentile is forecast to be crossed, Moderate where its 95th is;
+   *  - anything else is its assessed severity where it has one, else its
+   *    alert level, as the badge always did;
+   *  - a named storm is never below its agency category
+   *    (hazard-model.js cycloneCategoryRank), on the severity's steps.
+   */
+  var SEVERITY_KEY = { 1: 'LOW', 2: 'WATCH', 3: 'MODERATE', 4: 'SEVERE', 5: 'EXTREME' };
+  function hazardsModel() {
+    if (typeof window !== 'undefined' && window.PNDHazards) return window.PNDHazards;
+    if (typeof require === 'function') { try { return require('./hazard-model.js'); } catch (e) { /* not here */ } }
+    return null;
+  }
+  function keyFor(e) {
+    if (!e) return 'UNKNOWN';
+    var key;
+    if (e.forecastKind === 'model-advance' && levelOf(e.alert) !== 'UNKNOWN') key = levelOf(e.alert);
+    else {
+      var sv = levelOf(e.severity), a = levelOf(e.alert);
+      key = sv !== 'UNKNOWN' ? sv : a;
+    }
+    /* A strong earthquake with no impact assessment yet has a magnitude, not a
+       level: "Low" beside an M6.9 read as a judgement nobody made. */
+    var mag = Number(e.magnitude);
+    if (!e.forecast && key === 'LOW' && isFinite(mag) && mag >= 6 && !e.pagerAlert &&
+        levelOf(e.alert) === 'UNKNOWN') return 'UNKNOWN';
+    var H = hazardsModel();
+    var floor = H && H.cycloneCategoryRank ? SEVERITY_KEY[H.cycloneCategoryRank(e)] : null;
+    if (floor && (key === 'UNKNOWN' || BY_KEY[floor].rank > BY_KEY[key].rank)) key = floor;
+    return key;
+  }
+  /*
+   * Where a level is an agency's assessment of impact, the label says whose:
+   * "Low expected impact (USGS PAGER green)". An M6.9 earthquake tagged "Low"
+   * read as a judgement of the earthquake; it is the agency's estimate of
+   * the harm it will do.
+   */
+  function basisFor(e, key) {
+    if (!e || e.forecast) return null;
+    var pager = String(e.pagerAlert || '').toLowerCase();
+    if (pager && levelOf(pager) === key) return 'USGS PAGER ' + pager;
+    var alert = String(e.alert || '');
+    var colour = /^(green|yellow|orange|red)$/i.test(alert) ? alert.toLowerCase() : '';
+    var src = String(e.alertSource || e.source || '');
+    /* A colour this site read off a storm's wind speed is not GDACS's assessment. */
+    if (colour && /gdacs/i.test(src) && levelOf(colour) === key && e.alertBasis !== 'derived-from-intensity') {
+      return 'GDACS ' + colour;
+    }
+    return null;
+  }
+  function describe(e) {
+    var key = keyFor(e), lv = BY_KEY[key] || UNKNOWN, basis = key === 'UNKNOWN' ? null : basisFor(e, key);
+    return { key: key, label: lv.label, basis: basis,
+      text: basis ? lv.label + ' expected impact (' + basis + ')' : lv.label };
+  }
+
   var R = { LEVELS: LEVELS, UNKNOWN: UNKNOWN, VOCABULARY: VOCABULARY, BY_KEY: BY_KEY,
     levelOf: levelOf, level: level, classOf: classOf, rankOf: rankOf,
-    badge: badge, badgeForLevel: badgeForLevel, markerIcon: markerIcon };
+    badge: badge, badgeForLevel: badgeForLevel, markerIcon: markerIcon,
+    keyFor: keyFor, describe: describe, SEVERITY_KEY: SEVERITY_KEY };
   if (typeof window !== 'undefined') window.PNDRisk = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })();

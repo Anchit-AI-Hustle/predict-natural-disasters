@@ -172,12 +172,13 @@ test('no page ships a warning no agency issued', () => {
     'an empty table must say it is empty, not show an invented bulletin:\n' + offenders.join('\n'));
 });
 
-test('the dashboard reads the same merged feed as every other page', () => {
-  /* The trust note links each source's home page; a link is not a fetch. */
-  const s = read('dashboard.html').replace(/<aside class="trust"[\s\S]*?<\/aside>/, '');
-  assert.ok(!/earthquake\.usgs\.gov/.test(s) && !/eonet\.gsfc\.nasa\.gov/.test(s),
-    'its own capped upstream fetches gave it totals that disagreed with the rest of the site');
-  assert.match(s, /fetch\('\/api\/events'/, 'it should read /api/events');
+test('the old dashboard is gone, so it cannot show totals of its own', () => {
+  /* It once ran its own capped upstream fetches and disagreed with every other
+     page. It is deleted now, and its address lands on the live map, which
+     reads the same merged feed as the rest of the site. */
+  assert.ok(!fs.existsSync(path.join(ROOT, 'dashboard.html')), 'dashboard.html is still deployed');
+  const r = (JSON.parse(read('vercel.json')).redirects || []).find(x => x.source === '/dashboard');
+  assert.ok(r && r.destination === '/live-map', '/dashboard is not redirected to the live map');
 });
 
 /* --------------------------------------------------- labels match what is being counted */
@@ -203,7 +204,9 @@ test('the About page states no coverage figure it cannot show', () => {
   assert.ok(!/>195</.test(s), 'the feed names far fewer countries than 195');
   assert.match(s, /id="aCountries"/, 'the country figure should come from the feed');
   assert.match(s, /id="aHazards"/, 'the hazard-class figure should come from the feed');
-  assert.match(s, /api\/events\?summary=1/, 'it should read the published counts');
+  /* Counted from the feed as every other page counts them (launch audit D8):
+     the feed's summary said 206 countries while /regions said 136. */
+  assert.match(s, /PND\.countryCount\(PND\.observed\(/, 'it should count countries as every page does');
 });
 
 test('no page promises a fixed day window the feed can exceed', () => {

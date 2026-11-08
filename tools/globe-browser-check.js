@@ -200,7 +200,7 @@ async function captureGlobe(page) {
   const q = o => Object.entries(o)
     .map(([k, v]) => k + '=' + encodeURIComponent(String(v))).join('&');
 
-  const STANDALONE = 'live-map,index,forecasts,alerts,regions,home-v3,dashboard,home,home-v2';
+  const STANDALONE = 'live-map,index,forecasts,alerts,regions';
   const DETAIL = [
     ['event-detail',    q({ id: any.id })],
     ['alert-detail',    q({ id: any.id })],
@@ -211,7 +211,8 @@ async function captureGlobe(page) {
     ['region-detail',   q({ country: any.country, region: any.region || '' })]
   ];
   /* A page vercel.json redirects away is never served, so it is not
-     checked: /home, /home-v2 and /home-v3 all land on /, which is. */
+     checked: the old home layouts and the dashboard are deleted and
+     redirected, to / and /live-map, which are. */
   const redirected = new Set((JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8')).redirects || [])
     .map(r => r.source.replace(/^\//, '').replace(/\.html$/, '')));
   const PAGES = process.env.PAGES

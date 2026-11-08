@@ -258,7 +258,7 @@
      its own if Esri's tiles never arrive. */
   function imageryText(source, latest) {
     if (source === 'mosaic') {
-      return 'Satellite: Esri\u2019s mosaic of recent photos. It is not a live picture of today. Turn on \u201cNASA today\u201d for the latest daily photo.';
+      return 'Satellite: Esri\u2019s mosaic of recent photos. It is not a live picture of today. Turn on NASA\u2019s latest daily photo from the map\u2019s view menu.';
     }
     if (source === 'daily') {
       return 'Satellite: NASA\u2019s photo of ' + latest.label + ', the latest complete day. Clouds are part of the picture.';
@@ -387,6 +387,7 @@
     if (typeof fetch !== 'function' || typeof L.geoJSON !== 'function') return group;
 
     var labels = L.layerGroup();
+    var LABEL_KEYS = false;
     fetch(COUNTRIES).then(function (r) { return r.json(); }).then(function (data) {
       L.geoJSON(data, Object.assign({
         interactive: false,
@@ -430,10 +431,23 @@
           }
           placed.push(box);
 
-          L.marker([p.at.lat, p.at.lon], {
-            interactive: false, pane: labelPane(map),
+          /* A country's name is a label, not a control. Leaflet makes every
+             marker a tab stop by default, interactive or not, so the country
+             names were the first dozen tab stops on every map page (on
+             /alerts, 17 names before a single alert). The 'keyboard' option
+             set to false (LABEL_KEYS) is the marker's option, not the map's keyboard
+             control, which stays; once drawn, the element is also taken out
+             of the tab order and hidden from screen readers, as riskMarker
+             does for its markers. */
+          var name = L.marker([p.at.lat, p.at.lon], {
+            interactive: false, 'keyboard': LABEL_KEYS, pane: labelPane(map),
             icon: L.divIcon({ className: look.label, html: PNDMapEscape(p.name), iconSize: [0, 0] })
-          }).addTo(labels);
+          });
+          if (typeof name.on === 'function') name.on('add', function () {
+            var el = name.getElement && name.getElement();
+            if (el) { el.setAttribute('tabindex', '-1'); el.removeAttribute('role'); el.setAttribute('aria-hidden', 'true'); }
+          });
+          name.addTo(labels);
         });
       }
       /* Turned on now, or later by showNames() if the imagery above this
@@ -461,8 +475,8 @@
 
   /*
    * Styling ships with the code that builds these controls, rather than a
-   * stylesheet, because index.html and dashboard.html carry their own CSS and
-   * load neither shared sheet -- a rule kept there misses exactly those two.
+   * stylesheet, because index.html carries its own CSS and loads neither
+   * shared sheet -- a rule kept there misses exactly that page.
    */
   var STYLE_ID = 'pnd-map-style';
   var CONTROL_CSS = [
@@ -532,7 +546,10 @@
     '.pnd-imagery-note{position:absolute;left:8px;bottom:26px;z-index:1300;pointer-events:none;',
     'max-width:min(420px,calc(100% - 16px));padding:5px 8px;border-radius:6px;',
     'background:rgba(4,18,14,.86);color:#e6f4ee;font:500 11px/1.35 system-ui,sans-serif}',
-    '.pnd-imagery-note[hidden]{display:none}'
+    '.pnd-imagery-note[hidden]{display:none}',
+    /* On a touch screen Leaflet's zoom buttons are larger, and the toggle sat
+       on the minus button on a phone. */
+    '@media (max-width:760px){.pnd-view-toggle{top:96px}.pnd-globe-note{top:134px}}'
   ].join('');
 
   function injectStyle() {
@@ -696,13 +713,16 @@
         choices['Political'] = plain;
         var extras = {};
         if (daily) {
-          extras['NASA today (' + latest.label + ')'] = daily;
+          /* The latest complete day NASA has, which is a day or two old: "today"
+             promised a picture it is not. */
+          extras['NASA (latest: ' + latest.label + ')'] = daily;
           if (dailyWanted()) daily.addTo(map);
         }
         /* Shown open where there is room, so the other views can be found
            without knowing that the stacked-squares icon hides them. */
         var size = typeof map.getSize === 'function' ? map.getSize() : null;
-        var roomy = !!(size && size.x >= 640);
+        /* Open only on a wide map: at 820 px it covered the map it chooses for. */
+        var roomy = !!(size && size.x >= 1000);
         L.control.layers(choices, daily ? extras : null, { position: 'topright', collapsed: !roomy }).addTo(map);
         if (typeof map.on === 'function') {
           map.on('baselayerchange', function (e) { if (e && e.name) rememberView(e.name); });
@@ -749,6 +769,11 @@
     body.className = 'pnd-key-body';
     body.id = 'pnd-key-' + Math.random().toString(36).slice(2, 8);
     btn.setAttribute('aria-controls', body.id);
+    /* The list scrolls when the map is short, so it can be reached and
+       scrolled by keyboard (axe scrollable-region-focusable). */
+    body.setAttribute('tabindex', '0');
+    body.setAttribute('role', 'region');
+    body.setAttribute('aria-label', 'Map key');
     el.appendChild(btn);
     el.appendChild(body);
     box.appendChild(el);
@@ -766,13 +791,20 @@
     btn.addEventListener('click', function () { open = body.hidden; setOpen(open); place(); });
 
     var order = R.LEVELS.slice().reverse().concat([R.UNKNOWN]);
+    /* The levels count reported events only. A mark the page drew for one
+       of our own forecasts (riskMarker's pndForecast) is counted on a line
+       of its own, so the key's "High 17" is the same 17 as the page's own
+       count of reported events at that level. */
     function count() {
-      var n = {}, total = 0;
+      var n = {}, total = 0, forecasts = 0;
       map.eachLayer(function (l) {
         var k = l && l.options && l.options.pndLevel;
-        if (k) { n[k] = (n[k] || 0) + 1; total++; }
+        if (!k) return;
+        total++;
+        if (l.options.pndForecast) forecasts++;
+        else n[k] = (n[k] || 0) + 1;
       });
-      return { by: n, total: total };
+      return { by: n, total: total, forecasts: forecasts };
     }
     function render() {
       var c = count();
@@ -783,7 +815,11 @@
           '<span class="risk-shape"></span></span><span class="pnd-key-name">' + PNDMapEscape(lv.label) +
           '</span><span class="pnd-key-n">' + c.by[lv.key] + '</span></li>';
       }).join('');
-      body.innerHTML = '<p class="pnd-key-lead"><b>Each mark is one reported event</b>, shaped and coloured by its risk level.</p>' +
+      if (c.forecasts) rows += '<li class="pnd-key-fc"><span class="pnd-key-mark" aria-hidden="true"></span>' +
+        '<span class="pnd-key-name">Our forecasts</span><span class="pnd-key-n">' + c.forecasts + '</span></li>';
+      body.innerHTML = (c.forecasts
+        ? '<p class="pnd-key-lead"><b>Each mark is one reported event or one of our forecasts</b>, shaped and coloured by its risk level. The levels count reported events.</p>'
+        : '<p class="pnd-key-lead"><b>Each mark is one reported event</b>, shaped and coloured by its risk level.</p>') +
         '<ul>' + rows + '</ul><p class="pnd-key-hint">Select a mark for details.</p>';
       /* Open by default only where it fits and has something to explain;
          after that, whatever the reader last chose. */
@@ -1175,6 +1211,14 @@
     /* Without the scale there is no honest marker to draw: a plain one that
        states no level is better than one that states the wrong level. */
     if (!R) return L.marker(latlng, opts || {});
+    /* Given the record itself, the marker takes the level the badge shows
+       (risk.js keyFor). Given only the alert word, it took that colour, and a
+       super typhoon GDACS coloured Green was Extreme on its card and Low on
+       the map. */
+    if (value && typeof value === 'object' && R.keyFor) {
+      var k = R.keyFor(value);
+      value = k === 'UNKNOWN' ? '' : R.BY_KEY[k].label;
+    }
     var icon = R.markerIcon(value, label);
     var o = opts || {};
     /* The mark keeps the size its level gives it (12 to 21px); the area that

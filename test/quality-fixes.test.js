@@ -50,7 +50,9 @@ test('smooth scrolling waits for reduced motion, and focus is kept clear of the 
     assert.match(s, /scroll-padding-bottom:calc\(66px \+ env\(safe-area-inset-bottom\)\)/, f);
     assert.match(s, /scroll-padding-top:80px/, f);
   }
-  for (const f of ['portal.css', 'app-pages.css']) assert.match(read(f), /#nav:empty\{min-height:69px\}/, f + ' does not hold the header height');
+  /* portal.css holds it whether or not the header has arrived, at each width's
+     own height (launch audit A11, test/launch-map.test.js). */
+  for (const f of ['portal.css', 'app-pages.css']) assert.match(read(f), /#nav(?::empty)?\{min-height:69px\}/, f + ' does not hold the header height');
   assert.match(read('app-pages.css'), /\.top-search input:focus-visible\{outline:2px solid/);
 });
 

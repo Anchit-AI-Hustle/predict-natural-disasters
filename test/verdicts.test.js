@@ -60,7 +60,15 @@ function recomputed(now) {
   const { records } = V.joinVerdicts(OUTLOOKS, LEDGER.verifications);
   const graded = records.map(r => engine.has(H.claimKey(r))
     ? Object.assign({}, r, { _state: engine.get(H.claimKey(r)) }) : r);
-  return { t: V.tally(graded.concat(LEDGER.observedEvents), now), engineDecided: engine.size };
+  /* One verdict per forecast (launch audit C2): a forecast re-recorded on
+     every update was counted once per version, one storm outlook 23 times.
+     Each id counts once, by its first recorded version. */
+  const at = r => Date.parse(r.freezeTimestamp || r.recordedAt || '') || Date.parse(r.targetStart || '') || 0;
+  const first = new Map();
+  for (const r of OUTLOOKS) if (!first.has(r.id) || at(r) < at(first.get(r.id))) first.set(r.id, r);
+  const firstKeys = new Set([...first.values()].map(r => H.claimKey(r)));
+  const counted = graded.filter(r => firstKeys.has(H.claimKey(r)));
+  return { t: V.tally(counted.concat(LEDGER.observedEvents), now), engineDecided: engine.size, distinct: first.size };
 }
 
 /* ---------- the vocabulary must cover what the ledgers actually write ---------- */
@@ -171,11 +179,12 @@ test('recall counts the events that were missed, not only the ones caught', () =
 /* ---------- what the page actually publishes ---------- */
 
 test('the published figures equal the ledgers, recomputed independently', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   const num = id => Number(doc.getElementById(id).textContent);
-  const { t } = recomputed(Date.now());
-  assert.equal(num('mTotal'), OUTLOOKS.length);
+  const { t, distinct } = recomputed(Date.now());
+  assert.equal(num('mTotal'), distinct, 'a forecast is counted once per recorded version again');
+  assert.ok(distinct < OUTLOOKS.length, 'control: the ledger re-records forecasts');
   assert.equal(num('mGraded'), t.graded);
   assert.equal(num('mVerified'), t.verified);
   assert.equal(num('mPartial'), t.partial);
@@ -198,7 +207,7 @@ test('the published figures equal the ledgers, recomputed independently', async 
 });
 
 test('no headline rate is shown as a bare percentage', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   /* The two unqualified tiles this used to guard were removed: they published
      a hit rate over six hand-entered verdicts in the largest type on the page,
@@ -214,7 +223,7 @@ test('no headline rate is shown as a bare percentage', async () => {
 });
 
 test('the page never claims a perfect record while its ledger records failures', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   const failures = (LEDGER.verifications || []).filter(v => V.normalise(v.status) === 'FALSE_ALARM').length
     + (LEDGER.observedEvents || []).filter(o => V.normalise(o.status) === 'MISSED').length;
@@ -228,7 +237,7 @@ test('the page never claims a perfect record while its ledger records failures',
 });
 
 test('every graded prediction gets a predicted-against-observed comparison', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   const { t } = recomputed(Date.now());
   const cards = doc.querySelectorAll('#cmpList .cmp');
@@ -241,7 +250,7 @@ test('every graded prediction gets a predicted-against-observed comparison', asy
 });
 
 test('every ledger row answers whether it occurred', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   const answers = new Set(Object.values(V.OCCURRED));
   const rows = [...doc.querySelectorAll('#rows tr')];
@@ -255,7 +264,7 @@ test('every ledger row answers whether it occurred', async () => {
 });
 
 test('the verdict filter offers exactly the values the filter compares', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000, waitFor: settled });
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000, waitFor: settled });
   const doc = window.document;
   const opts = [...doc.querySelectorAll('#outcome option')]
     .map(o => o.value).filter(Boolean);

@@ -73,24 +73,27 @@ test('the risk filter on Alerts shows the alerts at that level, not none', async
      scale's level keys, so every level but "All" showed an empty list -
      while "Most serious first" put an Extreme typhoon at the top. */
   const r = await renderPage('alerts.html', { timeoutMs: 8000,
-    waitFor: d => d.querySelectorAll('#alerts article').length > 0 });
+    waitFor: d => d.querySelectorAll('#alerts a.al').length > 0 });
   const { document: d, window } = r;
   const PND = window.PND;
   const sel = d.getElementById('level');
   const levels = [...sel.options].map(o => o.value).filter(Boolean);
   assert.ok(levels.length >= 4, 'the filter offers ' + levels.length + ' levels');
-  const all = [...d.querySelectorAll('#alerts article')].length;
+  // Cards are links since launch audit B7.
+  const all = [...d.querySelectorAll('#alerts a.al')].length;
   let shownSomewhere = 0;
   for (const lv of levels) {
     sel.value = lv;
     sel.dispatchEvent(new window.Event('change', { bubbles: true }));
     sel.dispatchEvent(new window.Event('input', { bubbles: true }));
     await new Promise(res => setTimeout(res, 20));
-    const cards = [...d.querySelectorAll('#alerts article')];
+    const cards = [...d.querySelectorAll('#alerts a.al')];
     const badges = cards.map(c => (c.querySelector('.risk') || {}).textContent);
     if (cards.length) shownSomewhere++;
     const label = [...sel.options].find(o => o.value === lv).textContent.trim();
-    for (const b of badges) assert.equal(b.trim(), label, 'filtered to ' + label + ' but a card reads ' + b);
+    /* A level that is an agency's impact estimate names the agency after
+       the level (launch audit A6): "Moderate expected impact (GDACS orange)". */
+    for (const b of badges) assert.ok(b.trim() === label || b.trim().startsWith(label + ' expected impact ('), 'filtered to ' + label + ' but a card reads ' + b);
     assert.ok(cards.length <= all);
   }
   assert.ok(shownSomewhere >= 1, 'no level shows a single alert');
@@ -100,17 +103,23 @@ test('the risk filter on Alerts shows the alerts at that level, not none', async
 
 /* ------------------------------------------------ what a page shows first */
 
-test('the feed is shared at the edge for 30 seconds, never kept in a browser', async () => {
+/* The edge window was 30 s fresh plus 60 s stale, and these asserted that
+   value. Launch audit E2 changed it on purpose: 60 s fresh, an hour stale
+   while revalidating, a day stale on error (test/launch-hardening.test.js). */
+test('the feed is shared at the edge for 60 seconds, never kept in a browser', async () => {
   const eventsHandler = require(path.join(ROOT, 'api', 'events.js'));
   const res = await callApi(eventsHandler, '/api/events');
   assert.match(res.headers.get('cache-control'), /no-store/, 'a browser may keep the feed');
-  assert.equal(res.headers.get('vercel-cdn-cache-control'), 'max-age=30, stale-while-revalidate=60');
+  assert.equal(res.headers.get('vercel-cdn-cache-control'), 'max-age=60, stale-while-revalidate=3600, stale-if-error=86400');
   const d = await res.json();
-  assert.match(d.meta.refreshTarget, /30 seconds/);
-  assert.match(d.meta.refreshTarget, /90 seconds/, 'the oldest copy a page can get is not stated');
+  assert.match(d.meta.refreshTarget, /60 seconds/);
+  assert.match(d.meta.refreshTarget, /show when it was made/, 'a page is not told that an older copy may be served');
 });
 
-test('pages read the shared copy, and Refresh goes past it', async () => {
+/* Refresh used to add ?ts= and so go past the edge copy; launch audit E3
+   made it re-read that copy instead, so a click no longer costs a fan-out
+   to every provider. */
+test('pages read the shared copy, and so does Refresh', async () => {
   const r = await renderPage('alerts.html', { timeoutMs: 8000,
     waitFor: d => d.querySelectorAll('#alerts article').length > 0 });
   const first = r.apiCalls.filter(u => u.includes('/api/events'));
@@ -121,7 +130,7 @@ test('pages read the shared copy, and Refresh goes past it', async () => {
   await new Promise(res => setTimeout(res, 100));
   const after = r.apiCalls.slice(before).filter(u => u.includes('/api/events'));
   assert.ok(after.length >= 1, 'Refresh fetched nothing');
-  assert.match(after[0], /[?&]ts=\d+/, 'Refresh was served the shared copy');
+  assert.equal(after[0], '/api/events', 'Refresh asked past the shared copy');
   r.close();
 });
 
@@ -164,7 +173,10 @@ test('a count of events is a count of reports, the same on every page', async ()
     waitFor: d => /^\d+$/.test(d.getElementById('kEvents').textContent) });
   assert.equal(regions.document.getElementById('kEvents').textContent, String(reports), 'Regions counts forecasts as events');
   /* And each place's card counts the same records as the headline above it. */
-  const placesOf = e => (Array.isArray(e.countries) && e.countries.length ? e.countries : (e.sea ? [e.sea] : [String(e.country || '').trim()])).filter(Boolean);
+  /* Places as /regions groups them: one name per country, and records at sea
+     together (country-names.js, launch audit D3). */
+  const N = require('../country-names.js');
+  const placesOf = e => { const p = N.of(e); return p.countries.length ? p.countries : [N.AT_SEA]; };
   const perPlace = {};
   for (const e of live.filter(x => !x.forecast)) for (const n of placesOf(e)) perPlace[n] = (perPlace[n] || 0) + 1;
   const cards = [...regions.document.querySelectorAll('#regionGrid .reg')].map(c => [c.querySelector('h3').textContent, Number(c.querySelector('p b').textContent)]);
@@ -177,7 +189,9 @@ test('a count of events is a count of reports, the same on every page', async ()
     waitFor: d => /updated/.test(d.getElementById('statusLine').textContent) });
   const line = list.document.getElementById('statusLine').textContent;
   list.close();
-  assert.match(line, new RegExp('\\b' + reports + ' events? · ' + forecasts + ' forecasts?\\b'),
+  /* The frozen ND-001 benchmark is not listed on /events (launch audit B11). */
+  const listed = live.filter(e => e.forecast && e.forecastKind !== 'frozen-benchmark').length;
+  assert.match(line, new RegExp('\\b' + reports + ' events? · ' + listed + ' forecasts?\\b'),
     'the events list does not say how many are forecasts: ' + line);
 });
 
@@ -186,12 +200,38 @@ test('a count of events is a count of reports, the same on every page', async ()
 test('the old home layouts send a visitor to the homepage', () => {
   const cfg = JSON.parse(read('vercel.json'));
   for (const page of ['home', 'home-v2', 'home-v3']) {
-    for (const src of ['/' + page, '/' + page + '.html']) {
+    /* With a trailing slash too: /home/ served the old layout with a 200,
+       because only /home and /home.html were redirected. */
+    for (const asked of ['/' + page, '/' + page + '/', '/' + page + '.html']) {
+      /* trailingSlash:false (launch hardening E21) sends /home/ to /home first,
+         and a route source may not end in a slash, so /home/ lands through
+         the /home redirect. */
+      const src = cfg.trailingSlash === false ? asked.replace(/\/$/, '') : asked;
       const r = (cfg.redirects || []).find(x => x.source === src);
-      assert.ok(r, src + ' is still served');
+      assert.ok(r, asked + ' is still served');
       assert.equal(r.destination, '/');
       assert.equal(r.permanent, true, src + ' is not a permanent move');
     }
+  }
+});
+
+test('the old layouts are gone from the deployment, not only redirected', () => {
+  /* A file that is still deployed is still served at any address the redirects
+     miss. They are deleted, so the redirects are the only thing left. */
+  for (const f of ['home.html', 'home-v2.html', 'home-v3.html', 'dashboard.html']) {
+    assert.ok(!fs.existsSync(path.join(ROOT, f)), f + ' is still in the repository');
+  }
+});
+
+test('the old dashboard sends a visitor to the live map', () => {
+  const cfg = JSON.parse(read('vercel.json'));
+  for (const asked of ['/dashboard', '/dashboard/', '/dashboard.html']) {
+    /* /dashboard/ reaches /dashboard through trailingSlash:false (E21). */
+    const src = cfg.trailingSlash === false ? asked.replace(/\/$/, '') : asked;
+    const r = (cfg.redirects || []).find(x => x.source === src);
+    assert.ok(r, asked + ' is not redirected');
+    assert.equal(r.destination, '/live-map');
+    assert.equal(r.permanent, true, src + ' is not a permanent move');
   }
 });
 
@@ -258,7 +298,7 @@ test('no relief or authority link is one that answered 404', () => {
     'https://www.redcross.or.ke/donate',
     'https://www.redcross.sg/donate.html'
   ];
-  const src = read('api/verified-support.js');
+  const src = read('api/_lib/verified-support.js');
   const still = DEAD.filter(u => src.includes("'" + u + "'"));
   assert.deepEqual(still, [], 'still linked: ' + still.join(', '));
 });

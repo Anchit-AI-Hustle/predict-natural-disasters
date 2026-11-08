@@ -254,6 +254,16 @@ test('every experimental outlook has a working detail page', async () => {
     assert.equal(r.errors.length, 0, o.id + ': ' + r.errors.map(String).join('|'));
     // The page writes acronyms out, so compare against the same transform
     // rather than against the raw feed title.
+    if (o.forecastKind === 'model-advance') {
+      /* A weather model's forecast has its own screen (forecast-honesty C32):
+         its own name, the days it covers and the rule it is graded by. */
+      assert.equal(doc.getElementById('title').textContent, expandAlways(r.window.PNDModels.modelDisplay(o).title),
+        'wrong record resolved for ' + o.id);
+      assert.notEqual(doc.getElementById('mdDays').textContent, '-');
+      assert.ok(doc.getElementById('mdRule').textContent.length > 10, 'no grading rule on ' + o.id);
+      r.close();
+      continue;
+    }
     assert.equal(doc.getElementById('title').textContent, expandAlways(o.title),
       'wrong record resolved for ' + o.id);
     assert.equal(doc.getElementById('rid').textContent, o.id);
@@ -278,9 +288,17 @@ test('outlook detail pages withhold donation prompts but still show helplines', 
 /* ------------------------------------------------ place and hazard pages */
 
 test('region, location and hazard pages carry support and relief context', async () => {
+  /* A place page carries the place's contacts only (launch audit A1): it is
+     not an event, so it has no relief appeal and no news of its own. */
+  const place = await renderPage('location-detail.html', { search: '?location=Nepal', timeoutMs: 9000,
+    waitFor: d => d.querySelector('#helplinesBody .intelphone') });
+  assert.equal(place.errors.length, 0, 'location-detail.html: ' + place.errors.map(String).join('|'));
+  assert.match(place.document.getElementById('helplinesBody').innerHTML, /href="tel:/, 'location-detail.html has no dialable helpline');
+  assert.equal(place.document.getElementById('reliefBody'), null, 'a place page asks for donations');
+  assert.equal(place.document.getElementById('newsBody'), null, 'a place page has a news panel of its own');
+  place.close();
   for (const [page, search] of [
     ['region-detail.html', '?region=Nepal'],
-    ['location-detail.html', '?location=Nepal'],
     ['hazard-detail.html', '?type=Flood&region=Nepal']
   ]) {
     const r = await renderPage(page, { search, waitFor: enriched, timeoutMs: 9000 });
@@ -294,13 +312,17 @@ test('region, location and hazard pages carry support and relief context', async
   }
 });
 
-test('historical archive detail resolves a record and adds context', async () => {
-  const r = await renderPage('historical-event-detail.html', { search: '?id=0', waitFor: enriched, timeoutMs: 9000 });
+/* Replaces "historical archive detail resolves a record and adds context":
+   the live context (news, needs, videos) on an archive entry is what launch
+   audit B1 removed, so the archive page resolves a record and adds none. */
+test('historical archive detail resolves a record and adds no live context', async () => {
+  const r = await renderPage('historical-event-detail.html', { search: '?id=0', waitFor: d => d.getElementById('summary').textContent !== '-', timeoutMs: 9000 });
   const doc = r.document;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
   assert.doesNotMatch(doc.getElementById('title').textContent, /not found/i);
   assert.ok(doc.getElementById('summary').textContent.length > 20);
-  assert.ok(doc.getElementById('newsBody').textContent.length > 20);
+  assert.equal(doc.getElementById('newsBody'), null, 'an archive entry was given live news');
+  assert.ok(!r.apiCalls.some(u => u.includes('/api/event-enrichment')));
   r.close();
 });
 
@@ -332,14 +354,16 @@ test('collection pages list records and link to detail pages', async () => {
 });
 
 test('forecast list shows every outlook, not just the benchmark', async () => {
-  const expected = (await events()).filter(e => e.forecast).length;
+  /* Every open outlook: an ended one is on the track record, not in a list
+     of current forecasts (launch audit C14). */
+  const expected = (await events()).filter(e => e.forecast && e.live !== false && !e.windowClosed).length;
   /* One row per outlook. The list is a table now - thirty cards of the same
      shape is not a list anyone compares - so the count is of rows. */
   const r = await renderPage('forecast-list.html',
     { waitFor: doc => doc.querySelectorAll('#cards tbody tr').length > 1 });
   assert.equal(r.document.querySelectorAll('#cards tbody tr').length, expected,
     'forecast list should show all ' + expected + ' forecast records');
-  assert.match(r.document.getElementById('statusLine').textContent, /\d+ forecasts/);
+  assert.match(r.document.getElementById('statusLine').textContent, /\d+ open forecasts/);
   r.close();
 });
 
@@ -369,6 +393,12 @@ test('no element id is shadowed by a built-in Window property', async () => {
   for (let o = probe.window; o; o = Object.getPrototypeOf(o)) {
     for (const k of Object.getOwnPropertyNames(o)) reserved.add(k);
   }
+  /* The probe page's own element ids show up on its window as named
+     properties; they are not built-ins. (About now carries the shared
+     header, whose <div id="nav"> made every page's nav look shadowed.) */
+  for (const el of probe.document.querySelectorAll('[id]')) {
+    if (!(el.id in Object.getPrototypeOf(probe.window))) reserved.delete(el.id);
+  }
   probe.close();
 
   const PROPS = 'textContent|innerHTML|value|style|href|src|checked|onclick|onchange|oninput|classList|dataset|disabled|selectedIndex|options';
@@ -394,7 +424,9 @@ test('no element id is shadowed by a built-in Window property', async () => {
 
 // Pages that are static prose with no list of records to order. 404.html belongs
 // here too: its only list is a fixed set of six places to go next.
-const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html', '404.html']);
+/* compare-locations.html shows the two or three places the reader chose, in
+   the order they chose them: it is a comparison, not a record list. */
+const NO_LIST_PAGES = new Set(['about.html', 'insights.html', 'methodology.html', '404.html', 'compare-locations.html']);
 
 test('every page that lists records offers a sort control', async () => {
   const missing = [];
@@ -440,12 +472,17 @@ test('changing the sort reorders the list on a collection page', async () => {
       doc.getElementById('sortBy').options.length > 1
   });
   const doc = r.document, win = r.window;
+  /* 40 cards at a time (launch events B19): every page is opened before an
+     ordering is read, so both readings cover the whole list. */
+  const showAll = () => { for (let i = 0; i < 100 && doc.getElementById('showMore'); i++) doc.getElementById('showMore').click(); };
+  showAll();
   const bySeverity = orderOf(doc, 'cards');
   assert.ok(bySeverity.length > 2, 'not enough cards to compare orderings');
 
   const sel = doc.getElementById('sortBy');
   sel.value = 'title';
   sel.dispatchEvent(new win.Event('change'));
+  showAll();
   const byTitle = orderOf(doc, 'cards');
 
   assert.equal(byTitle.length, bySeverity.length, 'sorting changed how many records are shown');
@@ -576,9 +613,10 @@ test('the insights page reports the live feed, not hardcoded figures', async () 
   const doc = r.document;
   assert.equal(r.errors.length, 0, r.errors.map(String).join('|'));
 
-  assert.equal(doc.getElementById('iEvents').textContent, String(evs.length),
+  /* Reports and forecasts apart (launch audit C21): the tile added the two. */
+  assert.equal(doc.getElementById('iEvents').textContent, String(live.length),
     'the event count does not match the feed');
-  assert.equal(doc.getElementById('iForecasts').textContent, String(forecasts.length),
+  assert.equal(doc.getElementById('iForecasts').textContent, String(forecasts.filter(e => !e.windowClosed).length),
     'the outlook count does not match the feed');
 
   // The top hazard class must be the one the feed actually reports most.
@@ -643,12 +681,17 @@ test('every homepage headline figure is measured, not written into the page', as
   assert.equal(doc.getElementById('kEvents').textContent, String(evs.length));
 
   // The headline count is mostly routine detections, so the note beside it
-  // breaks the total down by severity rather than describing where it came
-  // from. Both halves have to be countable in the feed.
+  // breaks the total down by level rather than describing where it came
+  // from. Every part is countable in the feed, and the parts add up to the
+  // total: "2 serious · 698 minor" of 723 left 23 out (launch audit A5). The
+  // levels are the map key's own, through the one PND.riskKey.
+  const P = r.window.PND, R = r.window.PNDRisk;
+  const split = list => { const by = {}; list.forEach(e => { const k = P.riskKey(e); by[k] = (by[k] || 0) + 1; });
+    return R.LEVELS.slice().reverse().concat([R.UNKNOWN]).filter(l => by[l.key])
+      .map(l => by[l.key] + ' ' + l.label.toLowerCase()).join(' · '); };
   const note = doc.getElementById('kEventsNote').textContent;
-  const bad = evs.filter(e => e.severityRank >= 4).length;
-  const routine = evs.filter(e => e.severityRank === 1).length;
-  assert.equal(note, `${bad} serious · ${routine} minor`);
+  assert.equal(note, split(evs));
+  assert.equal(note.split(' · ').reduce((n, p) => n + Number(p.split(' ')[0]), 0), evs.length);
 
   // Filtering the page must move the counters with it, and say that it did.
   const filter = doc.getElementById('hazardFilter');
@@ -661,13 +704,10 @@ test('every homepage headline figure is measured, not written into the page', as
   assert.ok(shown > 0 && shown < evs.length, 'the filter did not narrow the feed: ' + shown);
 
   // The note tracks the filter too - the split is of what is on screen now.
-  const inView = evs.filter(e => String(e.type).toLowerCase().includes(flood.value.toLowerCase()));
-  const badIn = inView.filter(e => e.severityRank >= 4).length;
-  const routineIn = inView.filter(e => e.severityRank === 1).length;
+  const inView = evs.filter(e => P.sameHazard(e.type, flood.value));
+  assert.equal(shown, inView.length);
   assert.equal(doc.getElementById('kEventsNote').textContent,
-    badIn || routineIn
-      ? `${badIn} serious · ${routineIn} minor`
-      : 'Matching the hazard you chose');
+    inView.length ? split(inView) : 'Matching the hazard you chose');
   assert.ok(Number(doc.getElementById('kCountries').textContent) <= countries.size);
   r.close();
 });
@@ -678,7 +718,7 @@ test('the forecast calendar is a calendar, not the same card grid renamed', asyn
   // The page promised a calendar and rendered collection.js's generic grid,
   // filtered to forecasts. A forecast is a window in time and the grid could
   // not show one: every card read "starts just now".
-  const outlooks = (await events()).filter(e => e.forecast);
+  const outlooks = (await events()).filter(e => e.forecast && e.live !== false && !e.windowClosed);
   assert.ok(outlooks.length > 3, 'fixture feed needs several outlooks');
 
   const r = await renderPage('forecast-calendar.html', {

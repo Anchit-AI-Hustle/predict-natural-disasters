@@ -285,15 +285,19 @@ ranked = rows where band A and claimDistance and d finite,
          mapped to (x, nearLevel(x.e, x.d)), sorted by rank(level) desc then d asc
 top = ranked.first; nearest = top?.x
 outlook = first row with band C
+forecastLeads = outlook && !(top && rank(top.level) >= rank(WATCH))   // changelog C37: a report wins a tie
+observed = nearest (or nil); forecast = outlook (or nil)                 // returned beside lead
+ALSO_FC  = " One of our forecasts also covers your place."              // appended when outlook exists
+ALSO_OBS = " A reported event, {title without trailing dots/spaces}, is {round(d)} km away. On its own it rates {LEVELS[top.level].label} here."
 
 if insideWarning:     lead=it; level=atLeast(HIGH, ownLevel(e));  why=WHY_INSIDE_WARNING
 elif insideIncident:  lead=it; level=atLeast(MODERATE, ownLevel(e)); why=WHY_INSIDE_INCIDENT
 elif top && top.x.d <= 150 && rank(top.level) > rank(LOW):
-                      lead=nearest; level=top.level; why="An event was reported {round(d)} km from your place. That is the distance between two points. It does not mean the affected area reaches you."
-elif outlook:         lead=outlook; level=WATCH; why=WHY_FORECAST
+                      lead=nearest; level=top.level; why="An event was reported {round(d)} km from your place. That is the distance between two points. It does not mean the affected area reaches you." + (outlook ? ALSO_FC : "")
+elif forecastLeads:   lead=outlook; level=WATCH; why=WHY_FORECAST + (top ? ALSO_OBS : "")
 elif top:             lead=nearest; level=top.level
                       why = d <= 150 ? "A minor event was reported {round(d)} km from your place."
-                                     : "The most serious event near your place is {round(d)} km away. We look up to 500 km away, so it is shown, but it is far from this place."
+                                     : "The most serious event near your place is {round(d)} km away. We look up to 500 km away, so it is shown, but it is far from this place." + (outlook ? ALSO_FC : "")
 headline = level ? LEVELS[level].label : "Nothing reported nearby"
 if level == nil:
     areaOnly = count of rows with band D
@@ -319,8 +323,9 @@ if level == nil:
 | Severe | SEVERE | SEVERE | SEVERE | SEVERE | WATCH | WATCH | WATCH |
 | Extreme | EXTREME | EXTREME | EXTREME | EXTREME | WATCH | WATCH | WATCH |
 
-Note that a LOW nearLevel at ≤150 km does not pass the third branch (`> LOW`). It falls through to `outlook`, and
-then to the final `top` branch, which reports LOW with "A minor event was reported…".
+Note that a LOW nearLevel at ≤150 km does not pass the third branch (`> LOW`). It falls through to the forecast
+(which then leads, and names the event with ALSO_OBS), and otherwise to the final `top` branch, which reports LOW
+with "A minor event was reported…". A report beyond 150 km that rates WATCH outranks a forecast at WATCH (C37).
 
 `actionsFor(A)`:
 ```
@@ -368,7 +373,9 @@ answer (Home card, My places chip, place page line) calls `assess` only when the
 upper-cased (`CHECKING…`, `LIVE DATA UNAVAILABLE`). When there is no level, `NOTHING REPORTED NEARBY`.
 Otherwise `HEADLINE.uppercased()` followed by one of:
 `" · inside an official warning area"` (lead band B), `" · inside a reported affected area"` (band A with
-containment true), `" · a forecast covers it"` (band C), or `" · event {round(d)} km away"` when d is finite.
+containment true), `" · our forecast covers it"` (band C), or `" · event {round(d)} km away"` when d is finite.
+Then (C37) `" · a reported event is {round(observed.d)} km away"` when the lead is band C and `observed` has a finite
+distance, or `" · our forecast also covers it"` when the lead is not band C and `forecast` is set.
 
 ### 3.5 Place search (`place-search.js`)
 
@@ -446,7 +453,7 @@ never produces an alert.
 | case | result |
 | --- | --- |
 | green M4.6 quake at 13.6 km | `"Earthquake 14 km from your home"`, key `usgs-1\|A\|green`, rank 1.98638 |
-| Red M7.1 at 35.4 km | `"Earthquake 35 km from your home"`, url `/alerts/usgs-2` |
+| Red M7.1 at 35.4 km | `"Earthquake 35 km from your home"`, url `/disasters/usgs-2` |
 | Orange quake at 115 km | nil (more than 100 km) |
 | NWS polygon containing Phoenix | `"Flood warning covers your home"`, rank 3, body `"Flash Flood Warning · Red · NOAA / National Weather Service"` |
 | quake last updated 4 days ago | nil (not recent) |
@@ -663,7 +670,7 @@ return r || c || fallback
   Native: ICU via `TimeZone.abbreviation(for:)`/`DateFormatter` with `en_US_POSIX` "zzz" (Swift) or
   `DateTimeFormatter.ofPattern("zzz", Locale.US)` (Kotlin) give the same short names; check them against the vectors and
   turn any "GMT-03:00" form into "GMT-3".
-- `tzMenuLabel(tz, at)`: the time zone menu's text for the chosen zone. `IST · India` for Asia/Kolkata; otherwise
+- `tzMenuLabel(tz, at)`: the time zone menu's text for the chosen zone. `India (IST)` for Asia/Kolkata (features.md C47); otherwise
   `{tzLabel} · {city}` where city is the last `/` segment with `_` as space, or just `tzLabel` when there is no city,
   the city equals the label (UTC), or the zone starts `Etc/` or `SystemV/`. Other menu options stay IANA ids.
   **[vectors: portal.zoneLabel]** (`{in:{tz, at}, out:{label, fmtDate, fmtTime, menuLabel}}`)
@@ -684,8 +691,8 @@ a real moment, the value is formatted as a moment. **[vectors: portal.fmtWhen]**
 gives `"20 Oct 2026, 5:30 AM IST"`.
 
 ### 6.6 URLs and lookup
-- `eventUrl(e)`: forecast → `/forecasts/{id}`; `sourceType=="official"` with alert exactly `Red` or `Orange` →
-  `/alerts/{id}`; otherwise `/disasters/{id}`. The id is encoded with `encodeURIComponent` (a space becomes `%20`,
+- `eventUrl(e)`: forecast → `/forecasts/{id}`; otherwise `/disasters/{id}`, whatever the alert level (features.md
+  C45; `/alerts/{id}` and `/calamities/{id}` still open and name it canonical). The id is encoded with `encodeURIComponent` (a space becomes `%20`,
   `/` becomes `%2F`). On native, map these to screen routes. **[vectors: portal.eventUrl]**
 - `findEvent(events, id)`:
   1. exact id, then the percent-decoded id;
@@ -1123,7 +1130,7 @@ or nil. `inRecallPeriod(e, since)` is `since != nil && parse(e.onset) != nil && 
 precision 0.5, recall 0.375 and F1 0.428571.
 
 Geography tolerance per hazard family (km): earthquake 250, tropical-cyclone 500, flood 300, landslide 150,
-wildfire 200, volcano 100, drought 600, extreme-heat 400, severe-weather 250, other 250. `VERIFICATION_VERSION` is `verify-1.3.1`.
+wildfire 200, volcano 100, drought 600, extreme-heat 400, severe-weather 250, other 250. `VERIFICATION_VERSION` is `verify-1.4.0`. Since 1.4.0 the `continuation-outlook` and `warning-derived` classes are graded on `new-impact` only (see features.md changelog C37).
 
 ### 10.6 `claimKey(f)` (used to key verdicts)
 `[id, type, targetStart, targetEnd, country, region, coord(lat), coord(lon), forecastScope, title-if-type-names-no-hazard]`.
@@ -1133,7 +1140,7 @@ Each part becomes `"-"` when absent, null or `""`, and is trimmed otherwise. The
 
 ### 10.7 Port strategy for `verify()` and `assessCoverage()`
 `verification-model.js` (1,274 lines) and `observed-model.js` (589 lines: hazard families, same-event merging,
-significance) hold the grading engine. It changes with versioned rules (`verify-1.3.1`). There are two acceptable approaches.
+significance) hold the grading engine. It changes with versioned rules (`verify-1.4.0`). There are two acceptable approaches.
 
 1. **Recommended: run the website's JS on device.** On iOS use **JavaScriptCore** (`JSContext`). On Android use
    `androidx.javascriptengine.JavaScriptSandbox`, or QuickJS (for example `app.cash.quickjs`). Load

@@ -52,20 +52,23 @@ test('no page calls a matcher through a namespace it never loaded', () => {
   assert.deepEqual(broken, [], 'these pages throw a ReferenceError on use');
 });
 
-test('home-v3 filters its list without throwing', async () => {
-  const { window } = await renderPage('home-v3.html', { timeoutMs: 15000 });
+/* This was home-v3's search box. That page is deleted (and redirected), so the
+   same matcher path is held on the live map, whose list it filters. */
+test('the live map filters its list without throwing', async () => {
+  const r = await renderPage('live-map.html', { timeoutMs: 15000,
+    waitFor: d => d.querySelectorAll('#cards .event-card').length > 0 });
+  const { window } = r;
   const doc = window.document;
-  const box = doc.getElementById('search');
-  assert.ok(box, 'home-v3 still has a search box');
-  const before = doc.querySelectorAll('#liveList a, #liveList article').length;
+  const box = doc.getElementById('q');
+  assert.ok(box, 'the live map still has a search box');
+  const before = doc.querySelectorAll('#cards .event-card').length;
   box.value = 'earthquake';
   box.dispatchEvent(new window.Event('input', { bubbles: true }));
-  await new Promise(r => setTimeout(r, 120));
-  const errs = [];
-  window.addEventListener('error', e => errs.push(e));
-  assert.equal(errs.length, 0);
-  void before;
-  window.close();
+  await new Promise(res => setTimeout(res, 400));
+  const after = doc.querySelectorAll('#cards .event-card').length;
+  assert.ok(after > 0 && after <= before, 'filtering left ' + after + ' of ' + before);
+  assert.deepEqual(r.errors.map(String), []);
+  r.close();
 });
 
 /* ---------- a geography box must stay geographic ---------- */
@@ -75,7 +78,10 @@ test('a filter whose button opens a region matches only geography', () => {
   /* The box is labelled for places and its neighbour navigates to whatever was
      typed, so free-text matching made the preview and the navigation describe
      different things. */
-  assert.match(s, /regionUrl\(q\.value/, 'regions.html no longer opens the typed value');
+  /* One Go button (launch audit D32): a country, continent or the world opens
+     its own page, anything else goes to the place search. */
+  assert.match(s, /function goTarget\(v\)/, 'regions.html no longer decides where the typed value goes');
+  assert.match(s, /PND\.regionUrl\(t\.region\)/, 'regions.html no longer opens the typed place');
   assert.match(s, /PND\.matchesPlace\(/, 'regions.html filters with the free-text matcher');
   assert.doesNotMatch(s.replace(/\/\*[\s\S]*?\*\//g, ''), /PND\.matches\(/);
 });
@@ -149,7 +155,7 @@ test('the shipped ND-001 record keeps the corridor it froze', () => {
 });
 
 test('what the comparison calls "predicted" is what was recorded', async () => {
-  const { window } = await renderPage('accuracy.html', { timeoutMs: 20000,
+  const { window } = await renderPage('accuracy.html', { search: '?full=1', timeoutMs: 20000,
     waitFor: d => (d.getElementById('mTotal') || {}).textContent !== '-' });
   const doc = window.document;
   const card = [...doc.querySelectorAll('#cmpList .cmp')]
@@ -311,7 +317,11 @@ test('a link is only built from a point that was verified', () => {
   /* The zone fallback now supplies a shape when the alert has none inline,
      so the call is no longer the bare f.geometry it started as. */
   assert.match(src, /const link = insidePoint\(f\.geometry \|\| zoneGeometry/);
-  assert.match(src, /link && Number\.isFinite\(link\.lat\)/);
+  /* Built by nwsAlertUrl since launch audit B25; the point is still only used
+     when it was verified, and the front page is the fallback. */
+  assert.match(src, /return nwsAlertUrl\(p, link\);/);
+  assert.match(src, /if \(inside && Number\.isFinite\(inside\.lat\) && Number\.isFinite\(inside\.lon\)\)/);
+  assert.match(src, /if \(!zone \|\| !p\.event\) return 'https:\/\/www\.weather\.gov\/';/);
 });
 
 test('an alert with no usable geometry still gets a link', () => {

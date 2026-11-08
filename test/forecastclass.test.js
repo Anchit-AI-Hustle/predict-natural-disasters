@@ -372,7 +372,7 @@ test('the published hit rate is not a prediction hit rate', async () => {
 });
 
 test('the accuracy page separates predictions from conditional forecasts', async () => {
-  const r = await renderPage('accuracy.html', {
+  const r = await renderPage('accuracy.html', { search: '?full=1',
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-'
   });
   const get = id => (r.document.getElementById(id) || {}).textContent;

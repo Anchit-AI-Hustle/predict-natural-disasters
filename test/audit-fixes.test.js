@@ -148,7 +148,8 @@ test('P6: a record its provider stopped updating is not labelled live', async ()
   const r = await renderPage('event-detail.html', { search: '?id=' + encodeURIComponent(quiet.id), waitFor: filled('kMode') });
   const d = r.document;
   assert.notEqual(d.getElementById('eyebrow').textContent, 'LIVE EVENT');
-  assert.equal(d.getElementById('kMode').textContent, 'Not updated recently');
+  /* Says for how long since launch audit B2 ("Not updated for 48 days"). */
+  assert.match(d.getElementById('kMode').textContent, /^Not updated for (\d+ (hours?|days?|months)|\d+ years|some time)$/);
   assert.doesNotMatch(d.getElementById('recordState').textContent, /^Live/);
   r.close();
 });
@@ -162,7 +163,7 @@ test('P7: every page says the live data is unavailable when the feed fails', asy
     ['region-detail.html', '?region=Japan', 'kEvents'],
     ['hazard-detail.html', '?type=Flood', 'kEvents'],
     ['forecasts.html', '', 'changes'],
-    ['dashboard.html', '', 'ka'],
+    ['live-map.html', '', 'statusLine'],
     ['alerts.html', '', 'alerts']
   ]) {
     const r = await renderPage(page, { search, feedDown: true, timeoutMs: 3000 });
@@ -185,13 +186,16 @@ test('P7: every page says the live data is unavailable when the feed fails', asy
 
 test('P8: /events?region= lists only that region', async () => {
   const want = (await live()).filter(e => /Indonesia/.test([e.country].concat(e.countries || []).join(' '))).length;
-  const r = await renderPage('events.html', { search: '?region=Indonesia', waitFor: d => d.getElementById('cards').children.length > 0 });
+  /* The grid holds skeleton cards until the feed arrives (launch audit B10). */
+  const loaded = d => d.getElementById('cards').children.length > 0 && !d.querySelector('#cards .skeleton');
+  const r = await renderPage('events.html', { search: '?region=Indonesia', waitFor: loaded });
   const d = r.document;
   assert.equal(d.querySelectorAll('#cards .event-card').length, want);
   assert.match(d.getElementById('regionScope').textContent, /Showing only Indonesia/);
   r.close();
-  const asia = await renderPage('events.html', { search: '?region=Asia', waitFor: d2 => d2.getElementById('cards').children.length > 0 });
-  const inAsia = (await live()).filter(e => C.onContinent(e, 'Asia')).length;
+  const asia = await renderPage('events.html', { search: '?region=Asia', waitFor: loaded });
+  // The frozen ND-001 benchmark (Vietnam) is not an event (launch audit B11).
+  const inAsia = (await live()).filter(e => C.onContinent(e, 'Asia') && e.forecastKind !== 'frozen-benchmark').length;
   assert.equal(asia.document.querySelectorAll('#cards .event-card').length, inAsia);
   asia.close();
 });
@@ -223,7 +227,10 @@ test('P10: /alerts says how many it shows and shows the rest on request', async 
   }));
   const r = await renderPage('alerts.html', { mock: { feeds: { usgs: { features } } }, waitFor: d => d.querySelectorAll('#alerts .al').length > 0, timeoutMs: 10000 });
   const d = r.document;
-  const total = Number(d.getElementById('kOfficial').textContent);
+  /* kOfficial counts warnings in force since launch audit B3, so the list's
+     own length is read from the pager. */
+  const shown = /Showing 40 of (\d+)/.exec(d.getElementById('alerts').textContent);
+  const total = shown ? Number(shown[1]) : 0;
   assert.ok(total > 40, 'the fixture should hold more than one page: ' + total);
   assert.equal(d.querySelectorAll('#alerts .al').length, 40);
   assert.match(d.getElementById('alerts').textContent, new RegExp('Showing 40 of ' + total));
@@ -288,15 +295,20 @@ test('P13: a live map search moves the map to what it found, and says when nothi
 /* ----------------------------------------------------------------- P14 */
 
 test('P14: list pages offer every hazard type present', async () => {
-  const types = [...new Set((await live()).map(e => e.type))];
+  /* The frozen ND-001 benchmark is not listed on /events (launch audit B11). */
+  const types = [...new Set((await live()).filter(e => e.forecastKind !== 'frozen-benchmark').map(e => e.type))];
   const r = await renderPage('events.html', { waitFor: d => d.getElementById('type').options.length > 1 });
   const offered = [...r.document.getElementById('type').options].map(o => o.value);
-  for (const t of types) assert.ok(offered.includes(t), 'no option for ' + t);
-  // And choosing one matches it exactly.
+  /* /events offers each hazard under its hazard key (launch browse: the
+     filter groups types by PND.hazardKey and filters with PND.sameHazard), so
+     a model forecast typed "Unusually heavy rain" is found under Flood. */
+  const P = r.window.PND;
+  for (const t of types) assert.ok(offered.includes(P.hazardKey(t)), 'no option for ' + t);
+  // And choosing one finds every record of that hazard.
   const sel = r.document.getElementById('type');
   sel.value = 'Flood';
   sel.dispatchEvent(new r.window.Event('change'));
-  const want = (await live()).filter(e => e.type === 'Flood').length;
+  const want = (await live()).filter(e => e.forecastKind !== 'frozen-benchmark' && P.sameHazard(e.type, 'Flood')).length;
   assert.equal(r.document.querySelectorAll('#cards .event-card').length, want);
   r.close();
 });
@@ -338,10 +350,18 @@ test('P17: the dead ReliefWeb RSS address is gone from the feed and the sources 
 
 /* ----------------------------------------------------------------- P18 */
 
-test('P18: the track record and the old home layouts cannot widen a phone screen', () => {
+test('P18: the track record cannot widen a phone screen, and the old home layouts are redirected', () => {
   // Measured in Chromium at 390px; jsdom lays nothing out, so the rules that fixed it are held here.
   assert.match(read('accuracy.html'), /\.split>\*\{min-width:0\}\.status-title,\.sub\{overflow-wrap:anywhere\}/);
-  for (const f of ['home.html', 'home-v2.html', 'home-v3.html']) {
-    assert.match(read(f), /@media\(max-width:1150px\)\{\.homegrid\{grid-template-columns:minmax\(0,1fr\)\}/, f);
+  /* The old layouts are deleted, so what holds now is that every address they
+     had lands on the homepage. */
+  const cfg = JSON.parse(read('vercel.json')), redirects = cfg.redirects || [];
+  for (const f of ['home', 'home-v2', 'home-v3']) {
+    for (const asked of ['/' + f, '/' + f + '/', '/' + f + '.html']) {
+      /* With trailingSlash:false, /home/ is sent to /home before any route. */
+      const src = cfg.trailingSlash === false ? asked.replace(/\/$/, '') : asked;
+      const r = redirects.find(x => x.source === src);
+      assert.ok(r && r.destination === '/', asked + ' is not redirected to /');
+    }
   }
 });

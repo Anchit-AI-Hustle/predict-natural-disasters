@@ -320,6 +320,9 @@ function failure(status) {
  *   reliefwebEmptyUntil: only the candidate feed URL containing this returns items
  *   reliefwebEmpty: candidate feed URLs containing any of these answer without items
  *   reliefwebApiStatus: the HTTP status the ReliefWeb API answers with instead of data
+ *   delay(url): milliseconds to hold that request before answering, or 0. A
+ *     held request gives up the way a real fetch does when its signal aborts,
+ *     so a provider that hangs can be told apart from one that is slow.
  */
 function makeFetch(opts) {
   const o = opts || {};
@@ -327,9 +330,21 @@ function makeFetch(opts) {
   const isDown = key => (o.down === 'all' ? true : down.has(key));
   const calls = [];
 
-  const fn = async (url) => {
+  const fn = async (url, init) => {
     const u = String(url);
     calls.push(u);
+    const ms = typeof o.delay === 'function' ? o.delay(u) : 0;
+    if (ms > 0) {
+      const signal = init && init.signal;
+      await new Promise((resolve, reject) => {
+        const aborted = () => {
+          clearTimeout(t);
+          const e = new Error('This operation was aborted'); e.name = 'AbortError'; reject(e);
+        };
+        const t = setTimeout(() => { if (signal) signal.removeEventListener('abort', aborted); resolve(); }, ms);
+        if (signal) { if (signal.aborted) aborted(); else signal.addEventListener('abort', aborted); }
+      });
+    }
     /* A test can replace one upstream's payload without rebuilding the rest:
        some defects only appear when two agencies report the same event. */
     const feeds = o.feeds || {};
