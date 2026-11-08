@@ -18,7 +18,7 @@ public enum Route: Hashable, Sendable {
     /// The record's own detail screen (`eventUrl`).
     public static func detail(for e: Record) -> Route {
         if e.forecast { return .forecast(e.id) }
-        if e.isOfficial && e.isRedOrOrange { return .alert(e.id) }
+        // One address per record, whatever its level (changelog C45); /alerts/ still opens.
         return .event(e.id)
     }
 

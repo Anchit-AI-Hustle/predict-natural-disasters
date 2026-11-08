@@ -249,7 +249,7 @@ struct HomeView: View {
             SearchField(prompt: "Search location", text: $mapQuery, onSubmit: mapSearch).accessibilityIdentifier("mapSearch")
             HStack {
                 MenuPicker(label: "Filter the map by hazard", selection: $mapHazard,
-                           options: Format.hazardOptions(model.live, selected: mapHazard).map { ($0.value, $0.label) })
+                           options: Home.hazardOptions(model.live, selected: mapHazard).map { ($0.value, $0.label) })
                 Spacer()
             }
             MapCard(records: r.list, height: 260) { model.push(Route.detail(for: $0)) }

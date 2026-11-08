@@ -207,10 +207,16 @@ struct RecordDetailView: View {
     @ViewBuilder func content(_ e: Record) -> some View {
         let tz = model.zoneID
         // A record its provider stopped updating is not called live (changelog C5).
-        let eyebrow: String = kind == .alert ? "Official alert" : (kind == .calamity ? "Current disaster" : Format.eventEyebrow(e))
+        // Official labels follow the evidence (changelog C39).
+        let eyebrow: String = kind == .alert ? Format.alertEyebrow(e) : (kind == .calamity ? "Current disaster" : Format.eventEyebrow(e))
         let failedUpdate = kind == .event && model.status == .failed
         ScreenHeader(eyebrow: eyebrow, title: Format.titleOf(e),
                      subtitle: failedUpdate ? "We could not update this event just now." : e.type + " \u{00B7} " + Format.placeOf(e, "Place not given"))
+        // A cyclone links the warning centre for its basin (changelog C43).
+        if e.type == "Tropical Cyclone", let a = Hazards.cycloneAuthority(e), let u = URL(string: a.url) {
+            SwiftUI.Link("Official warnings: " + a.short + " \u{2197}", destination: u).buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("authorityLink")
+        }
         QuietNote(text: Format.quietNote(e))
         TrustNote()
         FeedBanner()
@@ -236,9 +242,9 @@ struct RecordDetailView: View {
         Panel("Overview") {
             FlowRow { RecordRiskBadge(record: e); SourcePill(source: e.source); if e.forecast { Pill(text: "Our forecast, not official") } }
             KeyFactsGrid(record: e)
-            KeyValueRow(key: "When it started", value: e.truthy("startedAt") ? Format.fmtDate(e.s("startedAt"), tz: tz) + " (" + Format.age(e.s("startedAt")) + ")"
+            KeyValueRow(key: "When it started", value: e.truthy("startedAt") ? Format.fmtOf(e, "startedAt") + " (" + Format.age(e.s("startedAt")) + ")"
                 : (e.forecast && e.truthy("targetStart") ? "Forecast period starts " + Format.fmtWhen(e.s("targetStart"), nil, nil, tz: tz) : "The source did not give a start time"))
-            KeyValueRow(key: "Last updated", value: Format.fmtDate(e.updated, tz: tz))
+            KeyValueRow(key: "Last updated", value: Format.fmtOf(e))
             KeyValueRow(key: "Where it started", value: Format.placeOf(e, "Not given by the source"))
             KeyValueRow(key: "Areas affected", value: areas(e))
             KeyValueRow(key: "Coordinates", value: coords(e))
@@ -256,8 +262,11 @@ struct RecordDetailView: View {
             KeyValueRow(key: "Type of source", value: e.isOfficial ? "Official source" : (e.forecast ? "Our own forecast, not official" : "Collected from other sources"))
             KeyValueRow(key: "Status", value: Format.eventRecordState(e))
         }
-        Panel("Who may need help") {
-            ForEach(Copy.responseContext(e.type), id: \.title) { i in KeyValueRow(key: i.title, value: i.body) }
+        // The generic needs list only where the record is grave (changelog C40).
+        if Format.lifeSafety(e) {
+            Panel("Who may need help") {
+                ForEach(Copy.responseContext(e.type), id: \.title) { i in KeyValueRow(key: i.title, value: i.body) }
+            }
         }
         Panel("Timeline") {
             KeyValueRow(key: "Source report \u{00B7} " + Format.fmtDate(e.updated, tz: tz), value: e.details.isEmpty ? "The latest report from the source." : e.details)
@@ -266,19 +275,29 @@ struct RecordDetailView: View {
     }
 
     func actionPanel(_ e: Record) -> some View {
-        let lifeSafety = e.evidenceState == "official-warning" || RiskScale.rankOf(e.first("severity", "alert")?.jsString) >= RiskLevel.high.rank
+        let lifeSafety = Format.lifeSafety(e)
+        let voice = e.evidenceState == "official-warning" ? "issuing an " + Format.officialWord(e).lowercased() : (Copy.voice[e.evidenceState] ?? Copy.voice["unknown"]!)
+        let place = Format.placeOf(e, "")
         return VStack(alignment: .leading, spacing: 8) {
-            Text("What should I do now?").font(.headline).foregroundStyle(Theme.text)
+            Text(lifeSafety ? "What should I do now?" : "What this report says").font(.headline).foregroundStyle(Theme.text)
             HStack { Pill(text: Format.provenance(e)); Text("Updated " + Format.age(e.updated)).font(.caption).foregroundStyle(Theme.muted) }
             KeyValueRow(key: "What", value: e.type.isEmpty ? "Natural hazard" : e.type)
-            KeyValueRow(key: "Where", value: areas(e, fallback: "See the map"))
+            KeyValueRow(key: "Where", value: place.isEmpty ? "See the map" : place)
             KeyValueRow(key: "How serious", value: RiskScale.label(of: e))
             KeyValueRow(key: "How reliable", value: e.isOfficial ? "OFFICIAL SOURCE" : (e.forecast ? "OUR OWN ESTIMATE" : "NOT YET CONFIRMED"))
-            KeyValueRow(key: "Who says this", value: (e.source.isEmpty ? "Source not stated" : e.source) + " \u{00B7} " + (Copy.voice[e.evidenceState] ?? Copy.voice["unknown"]!))
-            if lifeSafety { Text(Copy.lifeSafety).font(.subheadline.bold()).foregroundStyle(Theme.authority).accessibilityIdentifier("lifeSafety") }
-            Text("What matters most now").font(.subheadline.bold()).foregroundStyle(Theme.text)
-            ForEach(Copy.responseContext(e.type), id: \.title) { i in
-                (Text(i.title + ": ").bold() + Text(i.body)).font(.footnote).foregroundStyle(Theme.textSoft)
+            KeyValueRow(key: "Who says this", value: (e.source.isEmpty ? "Source not stated" : e.source) + " \u{00B7} " + voice)
+            if lifeSafety {
+                Text(Copy.lifeSafety).font(.subheadline.bold()).foregroundStyle(Theme.authority).accessibilityIdentifier("lifeSafety")
+                Text("What matters most now").font(.subheadline.bold()).foregroundStyle(Theme.text)
+                ForEach(Copy.responseContext(e.type), id: \.title) { i in
+                    (Text(i.title + ": ").bold() + Text(i.body)).font(.footnote).foregroundStyle(Theme.textSoft)
+                }
+            } else {
+                // Not grave (changelog C40): what the report says, and where general preparedness is.
+                Text("No damage reported by the source.").font(.subheadline.bold()).foregroundStyle(Theme.text).accessibilityIdentifier("noDamage")
+                Text((e.source.isEmpty ? "The source" : e.source) + " reports no deaths, displacement or damage, and this is not an official warning.")
+                    .font(.footnote).foregroundStyle(Theme.textSoft)
+                RouteLink("General preparedness for this hazard \u{2192}", value: Route.hazard(type: e.type, region: nil)).font(.footnote)
             }
             if let u = e.sourceURL {
                 SwiftUI.Link("OPEN THE ORIGINAL SOURCE \u{2197}", destination: u).buttonStyle(PrimaryButtonStyle())
@@ -303,8 +322,10 @@ struct RecordDetailView: View {
         .accessibilityIdentifier("impactPanel")
     }
 
+    /// "Areas affected": the feed's reader-facing `areas` (changelog C44), else the place.
     func areas(_ e: Record, fallback: String = "Not given by the source") -> String {
-        let a = [e.region, e.country].filter { !$0.isEmpty }.joined(separator: " \u{00B7} ")
+        let listed = (e["areas"]?.arrayValue ?? []).compactMap { $0.stringValue }.filter { !JS.trim($0).isEmpty }
+        let a = listed.isEmpty ? Format.placeOf(e, "") : listed.joined(separator: " \u{00B7} ")
         return a.isEmpty ? fallback : a
     }
 

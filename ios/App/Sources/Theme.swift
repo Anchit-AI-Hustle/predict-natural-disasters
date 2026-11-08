@@ -454,9 +454,13 @@ struct SortPicker: View {
 
 struct RiskFilterPicker: View {
     @Binding var selection: String
+    /// Given the records it filters, only the levels they hold are offered,
+    /// plus the chosen one (`riskLevelOptions(selected, records)`, changelog C31).
+    var records: [Record]? = nil
     var body: some View {
+        let levels = records.map { RiskScale.filterOptions(for: $0, selected: selection) } ?? RiskLevel.filterOptions
         MenuPicker(label: "Filter by risk level", selection: $selection,
-                   options: [("", "All risk levels")] + RiskLevel.filterOptions.map { ($0.rawValue, $0.label) })
+                   options: [("", "All risk levels")] + levels.map { ($0.rawValue, $0.label) })
     }
 }
 

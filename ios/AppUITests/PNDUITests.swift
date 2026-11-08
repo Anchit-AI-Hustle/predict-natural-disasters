@@ -115,7 +115,7 @@ final class PNDUITests: XCTestCase {
         let app = launch()
         waitFor(el(app, "trustNote"))
         let tabs: [(String, String, String)] = [
-            ("alerts", "Alerts & events", "Current reports from official agencies. Open any alert to see its details and its source."),
+            ("alerts", "Alerts & events", "Current reports from official agencies: events they have detected, and the warnings, watches and advisories they have issued. Open any report to see its details and its source."),
             ("forecasts", "Forecasts", "Natural disaster forecasts"),
             ("places", "My places", "Your saved places, and the dangers reported near them."),
             ("map", "Map", "Live disaster map"),
@@ -150,6 +150,27 @@ final class PNDUITests: XCTestCase {
         open(app, tab: "map", title: "Map")
         waitFor(app.staticTexts["Live disaster map"].firstMatch)
         shot(app, "05-five-tabs")
+    }
+
+    /// The map card's Key button is never covered: at 390 pt the layer switch
+    /// took its row and covered it. It is reachable and opens the key, it does
+    /// not sit under the tab bar, and every tab in the bar can be tapped.
+    func testMapKeyAndEveryTabAreReachable() {
+        let app = launch()
+        waitFor(el(app, "trustNote"))
+        open(app, tab: "map", title: "Map")
+        waitFor(app.staticTexts["Live disaster map"].firstMatch)
+        let key = scrollTo(app, el(app, "mapKeyButton"), hittable: true)
+        XCTAssertTrue(key.isHittable, "the Key button is covered")
+        if !isPad {
+            let bar = el(app, "tabBar")
+            waitFor(bar)
+            XCTAssertFalse(key.frame.intersects(bar.frame), "the Key button is under the tab bar")
+            for t in barTabs { XCTAssertTrue(el(app, "tab-" + t).isHittable, "tab \(t) cannot be reached") }
+        }
+        key.tap()
+        waitFor(el(app, "mapKey"), 5)
+        shot(app, "map-key")
     }
 
     /// Alerts shows 40 at a time and says so (changelog C6, vectors alerts.pager).
@@ -191,7 +212,8 @@ final class PNDUITests: XCTestCase {
         scrollTo(app, card, hittable: true)
         card.tap()
         waitFor(el(app, "trustNote"))
-        waitFor(app.staticTexts["OFFICIAL ALERT"].firstMatch)
+        // C45: a report opens at /disasters/ whatever its level; C39: its eyebrow follows the evidence.
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label == 'REPORTED EVENT' OR label BEGINSWITH 'OFFICIAL '")).firstMatch)
         waitFor(el(app, "shareButton"))
         shot(app, "10-alert-from-list")
     }
@@ -199,8 +221,9 @@ final class PNDUITests: XCTestCase {
     /// One screenshot per detail kind, opened as the site's own paths.
     func testEveryDetailKind() {
         let routes: [(String, String, String)] = [
-            ("event", "/disasters/usgs-us7000efgh", "LIVE EVENT"),
-            ("alert", "/alerts/gdacs-FL-1104999", "OFFICIAL ALERT"),
+            // C39: an observed report's eyebrow is "REPORTED EVENT", and an alert page that is not a warning says whose report it is.
+            ("event", "/disasters/usgs-us7000efgh", "REPORTED EVENT"),
+            ("alert", "/alerts/gdacs-FL-1104999", "REPORT FROM AN OFFICIAL AGENCY"),
             ("calamity", "/calamities/gdacs-FL-1104999", "CURRENT DISASTER"),
             ("forecast", "/forecasts/OUT-gdacs-FL-1104999", "FORECAST DETAILS"),
             ("region", "/regions/Nepal", "Disasters in Nepal"),
