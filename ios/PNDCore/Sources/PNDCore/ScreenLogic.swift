@@ -26,8 +26,8 @@ public enum Screens {
         public let count: Int
         public let observedOnly: Bool
         public var icon: String { Home.icons[type] ?? "\u{25C6}" }
-        /// "{n} reported", plus " · observed only" for a hazard no agency forecasts.
-        public var text: String { "\(count) reported" + (observedOnly ? " \u{00B7} observed only" : "") }
+        /// "{n} reported", plus " · reports only, no forecast" for a hazard no agency forecasts (changelog C38).
+        public var text: String { "\(count) reported" + (observedOnly ? " \u{00B7} reports only, no forecast" : "") }
         public var link: String { "/hazards/" + JS.encodeURIComponent(type) }
     }
 
@@ -86,7 +86,8 @@ public enum Screens {
         return (region, { e in
             if region == "World" { return true }
             if !continent.isEmpty { return Continents.onContinent(e, continent) }
-            return [e.country, e.region, e.title, e.details].joined(separator: " ").lowercased().contains(region.lowercased())
+            // A country exactly, anything else a whole word in the place fields, never the title (changelog C36).
+            return Format.inPlace(e, region)
         })
     }
 
@@ -118,7 +119,9 @@ public enum Screens {
     public static func syntheticRecord(title: String, country: String, region: String, type: String, updated: String,
                                        lat: Double?, lon: Double?, source: String) -> Record {
         var raw: [String: JSONValue] = ["title": .string(title), "country": .string(country), "region": .string(region),
-                                        "type": .string(type), "updated": .string(updated), "source": .string(source), "forecast": .bool(false)]
+                                        "type": .string(type), "updated": .string(updated), "source": .string(source), "forecast": .bool(false),
+                                        // A place page's combined record: its help panels are about the place (event-enrichment.js aggregate).
+                                        "aggregate": .bool(true)]
         if let la = lat, let lo = lon { raw["lat"] = .number(la); raw["lon"] = .number(lo) }
         return Record(raw)
     }
@@ -335,24 +338,39 @@ public enum Screens {
         public let from: Double, to: Double
         public let nowPct: Double
         public let groups: [(type: String, bars: [CalendarBar])]
+        /// Days from today the view starts at (-7 to `maxOffset`), and where it can go.
+        public var offset = 0, maxOffset = 0
+        /// Whether "now" falls inside the dates shown (the line is drawn only then).
+        public var nowIn = true
+        /// "27 Oct to 9 Nov 2026. Forecasts run to 26 Nov. 3 of 5 forecasts fall in these dates."
+        public var status = ""
     }
 
-    /// The day axis from local midnight today to min(today+15d, max(today+4d, lastEnd+1d)).
-    public static func calendar(_ list: [Record], now: Double, tz: String? = nil) -> Calendar {
+    public static let calendarDays = 14
+
+    /// `collection.js timeline`: 14 days from local midnight today plus
+    /// `offset` days (changelog C33), moved a week at a time, from a week back
+    /// to the latest `targetEnd`; only forecasts in those dates are drawn.
+    public static func calendar(_ list: [Record], now: Double, tz: String? = nil, offset requested: Int = 0) -> Calendar {
         let day = 86_400_000.0
         var cal = Foundation.Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: tz ?? Format.zoneID) ?? TimeZone(identifier: "UTC")!
-        let from = cal.startOfDay(for: Date(timeIntervalSince1970: now / 1000)).timeIntervalSince1970 * 1000
+        cal.timeZone = TimeZone(identifier: Format.zoneName(tz ?? Format.zoneID)) ?? TimeZone(identifier: "UTC")!
+        let today = cal.startOfDay(for: Date(timeIntervalSince1970: now / 1000)).timeIntervalSince1970 * 1000
         let ends = list.compactMap { $0.ms("targetEnd") }
-        let last = ends.max() ?? from + 3 * day
-        let to = min(from + 15 * day, max(from + 4 * day, last + day))
+        let last = ends.max() ?? today + 3 * day
+        let maxOffset = max(0, Int(((last - today) / day).rounded(.up)) - calendarDays + 1)
+        let offset = max(-7, min(requested, maxOffset))
+        let from = today + Double(offset) * day
+        let to = from + Double(calendarDays) * day
         let span = to - from
+        func startOf(_ e: Record) -> Double { JSDate.ms(e.first("targetStart", "startedAt")?.jsString) ?? from }
+        let inView = list.filter { e in let s = startOf(e); return (e.ms("targetEnd") ?? (s + day)) > from && s < to }
         var days: [Double] = []
         var t = from
         while t < to { days.append(t); t += day }
         func pct(_ x: Double) -> Double { max(0, min(100, (x - from) / span * 100)) }
         var groups: [String: [Record]] = [:]
-        for e in list { groups[e.type.isEmpty ? "Other" : e.type, default: []].append(e) }
+        for e in inView { groups[e.type.isEmpty ? "Other" : e.type, default: []].append(e) }
         let out = groups.keys.sorted().map { type -> (String, [CalendarBar]) in
             let items = Sorts.stableSort(groups[type]!) { a, b in
                 Sorts.sub(JSDate.ms(a.first("targetStart", "startedAt")?.jsString) ?? .nan, JSDate.ms(b.first("targetStart", "startedAt")?.jsString) ?? .nan)
@@ -361,20 +379,28 @@ public enum Screens {
                 let s = JSDate.ms(e.first("targetStart", "startedAt")?.jsString) ?? from
                 let en = e.ms("targetEnd") ?? (s + day)
                 let left = pct(s), right = pct(en)
+                // An arrow says the forecast carries on beyond these dates.
                 return CalendarBar(record: e, left: left, width: max(1.4, right - left), live: now >= s && now <= en,
-                                   label: dayRange(s, en, tz: tz), start: s)
+                                   label: (s < from ? "\u{2190} " : "") + dayRange(s, en, tz: tz) + (en > to ? " \u{2192}" : ""), start: s)
             })
         }
-        return Calendar(days: days, from: from, to: to, nowPct: pct(now), groups: out.map { (type: $0.0, bars: $0.1) })
+        var c = Calendar(days: days, from: from, to: to, nowPct: pct(now), groups: out.map { (type: $0.0, bars: $0.1) })
+        c.offset = offset; c.maxOffset = maxOffset; c.nowIn = now >= from && now < to
+        c.status = dmy(from, tz: tz) + " to " + dmy(to - day, tz: tz) + " \(Format.parts(to - day, tz ?? Format.zoneID).year). Forecasts run to " + dmy(last, tz: tz) +
+            ". \(inView.count) of \(list.count) forecasts fall in these dates."
+        return c
     }
 
+    /// `collection.js dmy`: "27 Oct" (en-GB day and short month).
+    public static func dmy(_ t: Double, tz: String?) -> String {
+        let p = Format.parts(t, tz ?? Format.zoneID)
+        return "\(p.day) " + Format.months[p.month - 1].prefix(3)
+    }
+
+    /// `collection.js dayRange`: "27 Oct to 26 Nov", or one day.
     public static func dayRange(_ a: Double, _ b: Double, tz: String?) -> String {
-        func f(_ t: Double) -> String {
-            let p = Format.parts(t, tz ?? Format.zoneID)
-            return "\(p.day) " + Format.months[p.month - 1].prefix(3)
-        }
-        let x = f(a), y = f(b)
-        return x == y ? x : x + " - " + y
+        let x = dmy(a, tz: tz), y = dmy(b, tz: tz)
+        return x == y ? x : x + " to " + y
     }
 
     public static func dayLabel(_ t: Double, tz: String? = nil) -> (dow: String, day: Int, mon: String) {

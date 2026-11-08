@@ -34,6 +34,7 @@ import com.anchittandon.pnd.logic.HomeModel
 import com.anchittandon.pnd.logic.Portal
 import com.anchittandon.pnd.model.Feed
 import com.anchittandon.pnd.model.PndJson
+import com.anchittandon.pnd.model.str
 import com.anchittandon.pnd.testContainer
 import com.anchittandon.pnd.ui.components.LocalLiveMap
 import kotlinx.coroutines.runBlocking
@@ -128,7 +129,8 @@ class ParityFlowTest {
         assertEquals(r.liveEvents.map { it["id"].toString().trim('"') }, live)
         assertTrue(live.none { id -> feed.events.first { it.id == id }.forecast })
         scrollTo("hazChip:Earthquake")
-        rule.onNodeWithTag("hazChip:Earthquake").assertTextContains("reported · observed only", substring = true)
+        // C38: the strip says "reports only, no forecast" (was "observed only").
+        rule.onNodeWithTag("hazChip:Earthquake").assertTextContains("reported · reports only, no forecast", substring = true)
         rule.onNodeWithText("No official warning is in force in our sources right now.").assertDoesNotExist()
     }
 
@@ -155,7 +157,8 @@ class ParityFlowTest {
     @Test fun c5AQuietRecordIsNotCalledLive() {
         start("disasters/usgs-us7000ijkl")
         rule.onNodeWithText("EVENT NO LONGER UPDATED").assertExists()
-        scrollToText("Not updated recently")
+        // C41: the quiet time is said ("Not updated for 36 days"), not "recently".
+        scrollToText("Not updated for 36 days")
         assertTrue(rule.onAllNodesWithText("LIVE EVENT").fetchSemanticsNodes().isEmpty())
     }
 
@@ -196,7 +199,9 @@ class ParityFlowTest {
         rule.onNodeWithTag("hazardFilter").performClick()
         val n = feed.live.count { it.type == "Extreme Heat" }
         rule.onNodeWithTag("hazardFilter:Extreme Heat").assertTextContains("Extreme Heat ($n)", substring = true)
-        rule.onNodeWithTag("hazardFilter:").assertTextContains("All hazards (${feed.live.size})", substring = true)
+        // C45: the frozen ND-001 benchmark is not listed among events, so it is not counted either.
+        val listed = feed.live.count { it.json.str("forecastKind") != "frozen-benchmark" }
+        rule.onNodeWithTag("hazardFilter:").assertTextContains("All hazards ($listed)", substring = true)
     }
 
     @Test fun c8HomeMapFilterIsFilledFromTheLiveRecords() {
@@ -326,7 +331,8 @@ class ParityFlowTest {
 
     @Test fun c19AlertsFiguresSayUnavailable() {
         start("alerts", http = FakeHttp(failEvents = true))
-        rule.onNodeWithText("Unavailable official reports").assertExists()
+        // C39: the first stat counts official warnings in force.
+        rule.onNodeWithText("Unavailable official warnings in force").assertExists()
         scrollTo("listError")
     }
 

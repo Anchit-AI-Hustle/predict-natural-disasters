@@ -218,7 +218,10 @@ public enum JS {
         let scaled = abs(x) * scale
         let floorV = scaled.rounded(.down)
         // An exact tie picks the larger magnitude, as the specification says.
-        if scaled - floorV == 0.5 {
+        // Only a product that is exact is a tie: 34.8625 is stored just below
+        // 34.8625, and JavaScript gives "34.862" (printf, below, rounds the
+        // exact stored value the same way).
+        if scaled - floorV == 0.5 && fma(abs(x), scale, -scaled) == 0 {
             let n = (floorV + 1) / scale * (x < 0 ? -1 : 1)
             return String(format: "%.\(digits)f", n)
         }

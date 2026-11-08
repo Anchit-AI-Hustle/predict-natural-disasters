@@ -8,9 +8,10 @@ enum class CollectionView(val route: String, val title: String, val subtitle: St
     EVENTS("events", "Events happening now", "Disasters reported by official agencies, and our own forecasts of what may happen next.", "events"),
     RECENT("recent-events", "Recent events", "The latest disasters reported by official agencies.", "recent events"),
     OFFICIAL("official-warnings", "Official warnings", "Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events.", "official warnings"),
-    ALERTS_NOTIFICATIONS("alerts-notifications", "Current alerts", "Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events.", "alerts"),
-    HAZARD_TYPES("hazard-types", "Events by type", "Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought.", "events"),
-    HISTORICAL("historical-events", "Past and recent events", "Recent past events from GDACS, plus the events happening now.", "events"),
+    ALERTS_NOTIFICATIONS("alerts-notifications", "Alerts in force", "Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events.", "alerts"),
+    HAZARD_TYPES("hazard-types", "Disasters by type", "Every type of hazard in the current reports, with its own page. Below them, every current event; our own forecasts are labelled as forecasts.", "events"),
+    // Records their own provider stopped updating (changelog C45).
+    HISTORICAL("historical-events", "Recently ended events", "Events our sources have stopped updating, most of which have ended. Major disasters from history are under Past disasters on the Calamities page.", "ended events"),
     COMPARE("compare-locations", "Compare places", "Search for a place to see its current events. Then search for another place to compare.", "events"),
     FORECAST_LIST("forecast-list", "Our forecasts", "All our current forecasts of what may happen next, including test cases that were not made in advance.", "forecasts"),
 }

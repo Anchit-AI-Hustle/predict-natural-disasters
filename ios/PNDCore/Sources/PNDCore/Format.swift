@@ -41,15 +41,33 @@ public enum Format {
     private static let aftershockRe = JSRegex(#"^Aftershock-sequence outlook - (.+)$"#)
 
     /// `titleOf(e)`: old forecast names rewritten for display.
-    public static func titleOf(_ e: Record?) -> String { titleOf(e?.title ?? "") }
+    private static let dashRe = JSRegex(#"\s*[\x{2012}-\x{2015}]\s*"#)
+    private static let aftershockPlaceRe = JSRegex(#"^(?:\d|(?:north|south|east|west|near|off)\b)"#, caseInsensitive: true)
+    private static let modelRenames: [(JSRegex, String)] = [
+        (JSRegex(#"^Extreme heat(?= forecast)"#), "Unusually hot days"),
+        (JSRegex(#"^Heavy rain and flooding(?= forecast)"#), "Unusually heavy rain"),
+        (JSRegex(#"^Wildfire weather(?= forecast)"#), "High fire-weather index")
+    ]
 
-    public static func titleOf(_ t: String) -> String {
+    /// `titleOf(e)`: dashes read as " - " (changelog C35), a weather model's
+    /// forecast named for what it measures (C32), old forecast names rewritten.
+    public static func titleOf(_ e: Record?) -> String {
+        var t = e?.title ?? ""
+        if e?.s("forecastKind") == "model-advance" {
+            t = dashRe.replace(t) { _ in " - " }
+            for (re, name) in modelRenames { t = re.replace(t) { _ in name } }
+            return titleOf(t)
+        }
+        return titleOf(t)
+    }
+
+    public static func titleOf(_ t0: String) -> String {
+        let t = dashRe.replace(t0) { _ in " - " }
         if let m = outlookRe.exec(t) {
             return (m[3] ?? "") + " risk in " + (m[4] ?? "") + " - " + (m[1] ?? "") + "-" + (m[2] ?? "") + " forecast"
         }
         if let m = aftershockRe.exec(t), let place = m[1] {
-            let digit = place.first.map { $0.isASCII && $0.isNumber } ?? false
-            return "Aftershock risk " + (digit ? "" : "near ") + place + " - 7-day forecast"
+            return "Aftershock risk " + (aftershockPlaceRe.test(place) ? "" : "near ") + place + " - 7-day forecast"
         }
         return t
     }
@@ -100,8 +118,19 @@ public enum Format {
         if s == "forecast" || (s.isEmpty && e.forecast) {
             return e.s("forecastKind") == "frozen-benchmark" ? "TEST FORECAST" : "OUR FORECAST"
         }
-        if s == "official-warning" { return "OFFICIAL WARNING" }
+        if s == "official-warning" { return officialWord(e).uppercased() }
         return "REPORTED EVENT"
+    }
+
+    /// `PND.officialWord(e)` (changelog C39): what kind of official statement a record is.
+    public static func officialWord(_ e: Record) -> String {
+        switch e.s("officialProduct") {
+        case "watch": return "Official watch"
+        case "advisory": return "Official advisory"
+        case "statement", "other": return "Official statement"
+        case "normal": return "Official status"
+        default: return "Official warning"
+        }
     }
 
     /// The card's forecast pill text.
@@ -112,7 +141,22 @@ public enum Format {
 
     // MARK: dates
 
-    public static let tzAliases = ["Asia/Kolkata": "IST", "UTC": "UTC", "America/New_York": "ET", "America/Los_Angeles": "PT",
+    /// Old names of zones some devices still report, read under their current
+    /// name (`PND.ZONE_LEGACY`, changelog C36 and C47).
+    public static let zoneLegacy: [String: String] = [
+        "Asia/Calcutta": "Asia/Kolkata", "Asia/Katmandu": "Asia/Kathmandu", "Asia/Saigon": "Asia/Ho_Chi_Minh", "Asia/Rangoon": "Asia/Yangon",
+        "Asia/Dacca": "Asia/Dhaka", "Asia/Thimbu": "Asia/Thimphu", "Asia/Ulan_Bator": "Asia/Ulaanbaatar", "Asia/Macao": "Asia/Macau",
+        "Asia/Chongqing": "Asia/Shanghai", "Asia/Chungking": "Asia/Shanghai", "Asia/Harbin": "Asia/Shanghai", "Asia/Ujung_Pandang": "Asia/Makassar",
+        "Asia/Ashkhabad": "Asia/Ashgabat", "Asia/Istanbul": "Europe/Istanbul", "Europe/Kiev": "Europe/Kyiv",
+        "America/Buenos_Aires": "America/Argentina/Buenos_Aires", "Pacific/Truk": "Pacific/Chuuk", "Pacific/Ponape": "Pacific/Pohnpei",
+        "Atlantic/Faeroe": "Atlantic/Faroe", "US/Eastern": "America/New_York", "US/Pacific": "America/Los_Angeles",
+        "US/Central": "America/Chicago", "US/Mountain": "America/Denver"
+    ]
+
+    /// `PND.zoneName(tz)`: a legacy zone id under its current name.
+    public static func zoneName(_ tz: String) -> String { zoneLegacy[tz] ?? tz }
+
+    public static let tzAliases = ["Asia/Kolkata": "IST", "Asia/Calcutta": "IST", "UTC": "UTC", "America/New_York": "ET", "America/Los_Angeles": "PT",
                                    "Europe/London": "UK", "Asia/Dubai": "GST", "Asia/Singapore": "SGT", "Asia/Tokyo": "JST",
                                    "Australia/Sydney": "Sydney"]
 
@@ -124,7 +168,9 @@ public enum Format {
     /// takes the en-US short name for the moment `at` ("CDT", "MST") or a GMT
     /// offset ("GMT-3", "GMT+5:45"); "local time" when the platform gives
     /// nothing. Never the IANA id.
-    public static func tzLabel(_ tz: String = zoneID, at ms: Double? = nil) -> String {
+    public static func tzLabel(_ tz0: String = zoneID, at ms: Double? = nil) -> String {
+        if let a = tzAliases[tz0] { return a }
+        let tz = zoneName(tz0)
         if let a = tzAliases[tz] { return a }
         guard let zone = TimeZone(identifier: tz) else { return "local time" }
         cacheLock.lock()
@@ -158,8 +204,9 @@ public enum Format {
     }
 
     /// `tzMenuLabel(tz)`: the time zone menu's text for the chosen zone.
-    public static func tzMenuLabel(_ tz: String = zoneID, at ms: Double? = nil) -> String {
-        if tz == "Asia/Kolkata" { return "IST \u{00B7} India" }
+    public static func tzMenuLabel(_ tz0: String = zoneID, at ms: Double? = nil) -> String {
+        let tz = zoneName(tz0)
+        if tz == "Asia/Kolkata" { return "India (IST)" }
         let label = tzLabel(tz, at: ms)
         let parts = tz.components(separatedBy: "/")
         guard parts.count > 1, !tz.hasPrefix("Etc/"), !tz.hasPrefix("SystemV/") else { return label }
@@ -171,7 +218,7 @@ public enum Format {
 
     public static func parts(_ ms: Double, _ tz: String) -> Parts {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: tz) ?? TimeZone(identifier: "UTC")!
+        cal.timeZone = TimeZone(identifier: zoneName(tz)) ?? TimeZone(identifier: "UTC")!
         let d = Date(timeIntervalSince1970: ms / 1000)
         let c = cal.dateComponents([.year, .month, .day, .hour, .minute], from: d)
         return Parts(year: c.year ?? 1970, month: c.month ?? 1, day: c.day ?? 1, hour: c.hour ?? 0, minute: c.minute ?? 0)
@@ -195,7 +242,22 @@ public enum Format {
     public static func fmtDate(ms: Double, tz: String? = nil) -> String {
         let z = tz ?? zoneID
         let p = parts(ms, z)
-        return two(p.day) + " " + months[p.month - 1] + " \(p.year), " + clock(p) + " " + tzLabel(z, at: ms)
+        // One month spelling everywhere: September is "Sep" (changelog C44); whole days keep ICU's "Sept".
+        return two(p.day) + " " + months[p.month - 1].replacingOccurrences(of: "Sept", with: "Sep") + " \(p.year), " + clock(p) + " " + tzLabel(z, at: ms)
+    }
+
+    /// `PND.fmtDay(v)`: a date the source gave as a day, as that UTC date with no time.
+    public static func fmtDay(_ v: String?) -> String {
+        guard let v = v, !v.isEmpty else { return "-" }
+        guard let ms = JSDate.ms(v) else { return v }
+        let p = parts(ms, "UTC")
+        return two(p.day) + " " + months[p.month - 1].replacingOccurrences(of: "Sept", with: "Sep") + " \(p.year)"
+    }
+
+    /// `PND.fmtOf(e, field)`: a date-only record (`datePrecision: 'day'`) as its date, else `fmtDate`.
+    public static func fmtOf(_ e: Record, _ field: String = "updated") -> String {
+        let v = e.opt(field)
+        return e.s("datePrecision") == "day" ? fmtDay(v) : fmtDate(v)
     }
 
     /// `fmtTime(v)`: `h:mm AM {tzLabel}`.
@@ -230,7 +292,11 @@ public enum Format {
         if m < 1 { return "just now" }
         if m < 60 { return JS.numberString(m) + " min ago" }
         if m < 1440 { return JS.numberString(JS.round(m / 60)) + " hr ago" }
-        return JS.numberString(JS.round(m / 1440)) + " d ago"
+        // Past two months in months, past two years in years (changelog C44).
+        let d = JS.round(m / 1440)
+        if d <= 60 { return JS.numberString(d) + " d ago" }
+        if d < 730 { return JS.numberString(JS.round(d / 30.44)) + " months ago" }
+        return JS.numberString((d / 365.25).rounded(.down)) + " years ago"
     }
 
     /// `duration(from, to)`.
@@ -281,17 +347,8 @@ public enum Format {
         (meta?["sources"]?.objectValue.map { Array($0.values) } ?? []).filter { $0["ok"]?.isTruthy ?? false }.count
     }
 
-    /// `countryCount(list)`: comma-separated countries, distinct, case-insensitive.
-    public static func countryCount(_ list: [Record]) -> Int {
-        var s = Set<String>()
-        for e in list {
-            for c in e.country.components(separatedBy: ",") {
-                let t = c.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !t.isEmpty { s.insert(t.lowercased()) }
-            }
-        }
-        return s.count
-    }
+    /// `countryCount(list)`: one name per country (country-names.js, changelog C36).
+    public static func countryCount(_ list: [Record]) -> Int { CountryNames.countryCount(list) }
 
     /// `impactText(e)`: truthy deaths, displaced and affected.
     public static func impactText(_ e: Record) -> String {
@@ -333,7 +390,7 @@ public enum Format {
         guard !e.isLive else { return "" }
         let d = e.jsNumber("quietDays")
         let src = e.source.isEmpty ? "its source" : e.source
-        let span = d.isFinite ? JS.numberString(d) + " day" + (d == 1 ? "" : "s") : "some time"
+        let span = d.isFinite ? quietFor(e) : "some time"
         return "Not updated by \(src) for \(span). It may have ended; check the source for its current status."
     }
 
@@ -443,7 +500,7 @@ public enum Format {
     public static func eventPath(_ e: Record) -> String {
         let id = JS.encodeURIComponent(e.id)
         if e.forecast { return "/forecasts/" + id }
-        if e.isOfficial && e.isRedOrOrange { return "/alerts/" + id }
+        // One address per record, whatever its level (changelog C45).
         return "/disasters/" + id
     }
 
@@ -456,7 +513,12 @@ public enum Format {
         guard let raw = id, !raw.isEmpty else { return nil }
         let dec = JS.decodeURIComponent(raw) ?? raw
         for w in [raw, dec] { if let hit = events.first(where: { $0.id == w }) { return hit } }
+        // An agency's copy merged into another record opens that record (changelog C42).
+        for w in [raw, dec] {
+            if let hit = events.first(where: { e in (e["mergedFrom"]?.arrayValue ?? []).contains { $0["id"].map { !$0.isNull && $0.jsString == w } ?? false } }) { return hit }
+        }
         let n = norm(dec)
+        if n.isEmpty { return nil }
         if let hit = events.first(where: { norm($0.id) == n }) { return hit }
         if let hit = events.first(where: { norm($0.title) == n }) { return hit }
         return events.first { e in

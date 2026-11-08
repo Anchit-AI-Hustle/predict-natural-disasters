@@ -52,7 +52,8 @@ fun ForecastsScreen() {
     val all = feed.events
     fun isHigh(e: Event) = Portal.isHighAlert(e.json)
     val pass = { e: Event -> Search.matches(e.json, q, e.searchText) && RiskScale.matchesRiskLevel(e.json, risk) }
-    val fcAll = all.filter { it.forecast }; val obsAll = all.filter(::isHigh)
+    // Open forecasts only (changelog C33): an ended one is graded on the track record.
+    val fcAll = Portal.openForecasts(all.filter { it.forecast }) { it.json }; val obsAll = all.filter(::isHigh)
     val fc = remember(feed, q, type, risk, sort) { Sorts.sort(fcAll.filter { pass(it) && (type.isEmpty() || it.type == type) }, sort) { it.json } }
     val obs = remember(feed, q, type, risk, sort) { Sorts.sort(obsAll.filter { pass(it) && (type.isEmpty() || it.type == type) }, sort) { it.json } }
     val meta = feed.feed?.meta?.json
@@ -69,6 +70,7 @@ fun ForecastsScreen() {
                     "updated" to (f?.let { Format.age(it.generatedAt) } ?: none),
                     "forecasts reach as far as" to (if (f == null) none else if (!h.isNullOrEmpty()) Format.fmtWhen(h, null, "end").replace(Regex(",[^,]*$"), "") else "-")))
                 if (f != null) Body(Format.horizonText(meta), Pnd.textSoft)
+                if (f != null) Portal.forecastKinds(fcAll) { it.json }.takeIf { it.isNotEmpty() }?.let { Muted(it, Modifier.testTag("forecastKinds")) }
             }
         }
         item(key = "tools") {
@@ -77,7 +79,7 @@ fun ForecastsScreen() {
                 Toolbar {
                     // Built from forecasts only, so its counts add up to the forecasts (changelog C8).
                     Select("Filter by hazard", Format.hazardOptions(fcAll.map { it.json }, type), type, tag = "hazardFilter") { type = it }
-                    RiskFilter(risk) { risk = it }
+                    RiskFilter(risk, fcAll.map { it.json }) { risk = it }
                     SortSelect("forecasts", Sorts.FORECASTS_TAB, sort, setSort)
                 }
                 RefreshRow(feed, label = "↻ Refresh live data")

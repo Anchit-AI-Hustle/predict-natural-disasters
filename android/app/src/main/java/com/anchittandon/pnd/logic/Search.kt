@@ -92,11 +92,34 @@ object Search {
         else -> "[object Object]"
     }
 
+    /** Pairs searched as one name, both ways (search.js `ALIASES`). */
+    private val ALIASES = listOf("turkiye" to "turkey", "myanmar" to "burma", "cote d'ivoire" to "ivory coast", "czechia" to "czech republic",
+        "united states" to "usa", "eswatini" to "swaziland", "timor-leste" to "east timor", "north macedonia" to "macedonia",
+        "cabo verde" to "cape verde", "democratic republic of the congo" to "dr congo", "viet nam" to "vietnam", "mumbai" to "bombay",
+        "kolkata" to "calcutta", "chennai" to "madras")
+
+    /** Lower case with accents folded (`normalize('NFD')` without combining marks). */
+    fun fold(v: String): String = java.text.Normalizer.normalize(v, java.text.Normalizer.Form.NFD).replace(Regex("[\u0300-\u036f]"), "")
+
+    /** The pairs above plus every country-names.js spelling of six letters or more without a dot (`aliasPairs`, changelog C36). */
+    val aliasPairs: List<Pair<String, String>> by lazy {
+        val seen = HashSet<String>(); val out = mutableListOf<Pair<String, String>>()
+        fun add(a0: String, b0: String) { val a = fold(a0.lowercase(Locale.ROOT)); val b = fold(b0.lowercase(Locale.ROOT)); val k = "$a|$b"
+            if (a.isEmpty() || b.isEmpty() || a == b || k in seen) return; seen += k; out += a to b }
+        ALIASES.forEach { (a, b) -> add(a, b) }
+        CountryNames.ALIASES.forEach { (k, v) -> if (k.length >= 6 && !k.contains('.')) add(k, v) }
+        out
+    }
+
     fun searchText(e: JsonObject?): String {
         if (e == null) return ""
         var t = SEARCH_FIELDS.filter { e.has(it) }.mapNotNull { e.el(it) }.joinToString(" ") { jsString(it) }
         t += " " + Glossary.expandAlways(t)
-        return t.lowercase(Locale.ROOT)
+        t = t.lowercase(Locale.ROOT)
+        // The other names a country goes by, and its spelling without accents.
+        t += " " + fold(t)
+        for ((a, b) in aliasPairs) { if (t.contains(a) && !t.contains(b)) t += " $b"; if (t.contains(b) && !t.contains(a)) t += " $a" }
+        return t
     }
 
     private fun terms(q: String?) = (q ?: "").lowercase(Locale.ROOT).split(Regex("\\s+")).filter { it.isNotEmpty() }
@@ -105,7 +128,7 @@ object Search {
         val ts = terms(q)
         if (ts.isEmpty()) return true
         val t = cached ?: searchText(e)
-        return ts.all { t.contains(it) }
+        return ts.all { t.contains(it) || t.contains(fold(it)) }
     }
 
     fun matchesPlace(e: JsonObject?, q: String?): Boolean {

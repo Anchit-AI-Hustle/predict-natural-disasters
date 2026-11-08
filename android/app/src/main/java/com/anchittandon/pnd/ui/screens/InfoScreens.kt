@@ -341,7 +341,7 @@ fun MoreScreen() {
             Panel {
                 listOf("Check a place" to "/", "Live events" to "/events", "Official warnings" to "/official-warnings", "Disasters now and in the past" to "/calamities",
                     "Regions" to "/regions", "Forecast calendar" to "/forecast-calendar", "How it works" to "/methodology", "Our sources" to "/resources", "Insights" to "/insights", "About" to "/about",
-                    "How we check forecasts" to "/verification", "Compare places" to "/compare-locations", "Past and recent events" to "/historical-events",
+                    "How we check forecasts" to "/verification", "Compare places" to "/compare-locations", "Recently ended events" to "/historical-events",
                     "Settings: time zone and alerts" to "/settings").forEach { (l, u) ->
                     LinkButton(l, Modifier.fmw().testTag("more:$u")) { env.navigate(u) }
                 }

@@ -54,13 +54,76 @@ extension Format {
         guard let e = e else { return "-" }
         if e.cached { return "Saved copy" }
         if e.forecast { return "Our forecast" }
-        if !e.isLive { return "Not updated recently" }
+        if !e.isLive { return "Not updated for " + quietFor(e) }
         return "Live"
     }
 
-    /// Event detail eyebrow (`event-detail.html`).
+    /// `PND.quietFor(e)` (changelog C41): hours under two days, else days, else its age.
+    public static func quietFor(_ e: Record) -> String {
+        let h = e.jsNumber("quietHours"), d = e.jsNumber("quietDays")
+        if h.isFinite && h < 48 { return JS.numberString(h) + " hour" + (h == 1 ? "" : "s") }
+        if d.isFinite {
+            if d > 60 {
+                let a = age(e.opt("updated"))
+                return a.hasSuffix(" ago") ? String(a.dropLast(4)) : a
+            }
+            return JS.numberString(d) + " day" + (d == 1 ? "" : "s")
+        }
+        return "some time"
+    }
+
+    /// Event detail eyebrow (`event-detail.html`, changelog C39): only an
+    /// agency's warning in force is an official one.
     public static func eventEyebrow(_ e: Record) -> String {
-        e.forecast ? "OUR FORECAST, NOT OFFICIAL" : (!e.isLive ? "EVENT NO LONGER UPDATED" : "LIVE EVENT")
+        if e.forecast { return "OUR FORECAST, NOT OFFICIAL" }
+        if !e.isLive { return "EVENT NO LONGER UPDATED" }
+        if isOfficialWarning(e) { return officialWord(e).uppercased() }
+        return "REPORTED EVENT"
+    }
+
+    /// Alert detail eyebrow: the same, else "REPORT FROM AN OFFICIAL AGENCY".
+    public static func alertEyebrow(_ e: Record) -> String {
+        let w = eventEyebrow(e)
+        return w == "REPORTED EVENT" ? "REPORT FROM AN OFFICIAL AGENCY" : w
+    }
+
+    /// `PND.provenanceOf(e)` (changelog C33): what a forecast is.
+    public static func provenanceOf(_ e: Record?) -> String {
+        guard let e = e, e.forecast else { return "Official report" }
+        switch e.s("forecastKind") {
+        case "model-advance": return "Made in advance by our model"
+        case "frozen-benchmark": return "Test case, not made in advance"
+        case "aftershock-sequence": return "Aftershock forecast, after an earthquake"
+        default: break
+        }
+        if e.truthy("restatesAlert") || e.s("forecastKind") == "signal-derived-outlook" || e.truthy("forecastOf") { return "Restates an agency alert" }
+        return "Our own estimate"
+    }
+
+    /// `PND.forecastKinds(list).text`: the "Of these: ..." line under a count of forecasts.
+    public static func forecastKinds(_ list: [Record]) -> String {
+        var model = 0, restated = 0, after = 0, test = 0, other = 0
+        for e in list {
+            let p = provenanceOf(e)
+            if p.hasPrefix("Made in advance") { model += 1 } else if p.hasPrefix("Restates") { restated += 1 }
+            else if p.hasPrefix("Aftershock") { after += 1 } else if p.hasPrefix("Test case") { test += 1 } else { other += 1 }
+        }
+        var parts: [String] = []
+        if model > 0 { parts.append("\(model) made in advance by our weather models") }
+        if restated > 0 { parts.append("\(restated) restating an agency alert") }
+        if after > 0 { parts.append("\(after) aftershock forecast" + (after == 1 ? "" : "s")) }
+        if test > 0 { parts.append("\(test) test case" + (test == 1 ? "" : "s")) }
+        if other > 0 { parts.append("\(other) other") }
+        return parts.isEmpty ? "" : "Of these: " + parts.joined(separator: ", ") + "."
+    }
+
+    /// `PND.lifeSafety(e)` (changelog C40): an agency's own warning, a rating
+    /// of High or above, or reported deaths or displacement.
+    public static func lifeSafety(_ e: Record) -> Bool {
+        if e.forecast { return false }
+        if e.evidenceState == "official-warning" && (!e.truthy("officialProduct") || e.s("officialProduct") == "warning") { return true }
+        if RiskScale.keyFor(e).rank >= RiskLevel.high.rank { return true }
+        return e.jsNumber("deaths") > 0 || e.jsNumber("displaced") > 0
     }
 
     /// Event detail "Status" row.
@@ -80,22 +143,19 @@ extension Format {
 
     // MARK: place membership (6.12, changelog C1)
 
-    /// `PND.inPlace(e, q)`: a continent is the countries on it; anything else
-    /// matches the place fields or a substring of `countries[]`.
+    /// `PND.inPlace(e, q)`: a continent is the countries on it; a country
+    /// exactly; anything else a whole word in the place fields (changelog C36).
     public static func inPlace(_ e: Record, _ q: String?) -> Bool {
         if !Continents.continentNamed(q).isEmpty { return Continents.onContinent(e, q) }
-        let t = JS.trim((q ?? "").lowercased())
-        if Search.matchesPlace(e, t) { return true }
-        guard let a = e["countries"]?.arrayValue else { return false }
-        return a.contains { t.isEmpty || $0.jsString.lowercased().contains(t) }
+        return CountryNames.inPlace(e, q)
     }
 
     // MARK: time zone (6.13, changelog C9)
 
     /// `PND.timezone`: the stored choice, else the device's zone, else India time.
     public static func timezoneDefault(stored: String?, device: String?) -> String {
-        if let s = stored, !s.isEmpty { return s }
-        if let d = device, !d.isEmpty { return d }
+        if let s = stored, !s.isEmpty { return zoneName(s) }
+        if let d = device, !d.isEmpty { return zoneName(d) }
         return defaultZoneID
     }
 

@@ -62,12 +62,45 @@ public enum Search {
                          "source", "src", "details", "summary", "id", "eventId"]
     public static let placeFields = ["country", "affectedCountries", "region", "location"]
 
+    /// Pairs searched as one name, both ways (search.js `ALIASES`).
+    public static let aliases: [(String, String)] = [("turkiye", "turkey"), ("myanmar", "burma"), ("cote d'ivoire", "ivory coast"), ("czechia", "czech republic"),
+        ("united states", "usa"), ("eswatini", "swaziland"), ("timor-leste", "east timor"), ("north macedonia", "macedonia"),
+        ("cabo verde", "cape verde"), ("democratic republic of the congo", "dr congo"), ("viet nam", "vietnam"), ("mumbai", "bombay"),
+        ("kolkata", "calcutta"), ("chennai", "madras")]
+
+    /// Lower case with accents folded (`normalize('NFD')` without combining marks).
+    public static func fold(_ v: String) -> String {
+        String(String.UnicodeScalarView(v.decomposedStringWithCanonicalMapping.unicodeScalars.filter { !(0x300...0x36F).contains($0.value) }))
+    }
+
+    /// The pairs above plus every country-names.js spelling of six letters or
+    /// more without a dot (`aliasPairs`, changelog C36).
+    public static let aliasPairs: [(String, String)] = {
+        var seen = Set<String>(), out: [(String, String)] = []
+        func add(_ a0: String, _ b0: String) {
+            let a = fold(a0.lowercased()), b = fold(b0.lowercased())
+            let k = a + "|" + b
+            if a.isEmpty || b.isEmpty || a == b || seen.contains(k) { return }
+            seen.insert(k); out.append((a, b))
+        }
+        for (a, b) in aliases { add(a, b) }
+        for (k, v) in CountryNames.aliasList where (k as NSString).length >= 6 && !k.contains(".") { add(k, v) }
+        return out
+    }()
+
     public static func buildSearchText(_ raw: [String: JSONValue]) -> String {
         let t = fields.compactMap { k -> String? in
             guard let v = raw[k], v.has else { return nil }
             return v.jsString
         }.joined(separator: " ")
-        return (t + " " + Glossary.expandAlways(t)).lowercased()
+        var s = (t + " " + Glossary.expandAlways(t)).lowercased()
+        // The other names a country goes by, and its spelling without accents.
+        s += " " + fold(s)
+        for (a, b) in aliasPairs {
+            if s.contains(a) && !s.contains(b) { s += " " + b }
+            if s.contains(b) && !s.contains(a) { s += " " + a }
+        }
+        return s
     }
 
     public static func terms(_ q: String?) -> [String] {
@@ -78,7 +111,7 @@ public enum Search {
     public static func matches(_ e: Record, _ q: String?) -> Bool {
         let ts = terms(q)
         if ts.isEmpty { return true }
-        return ts.allSatisfy { e.searchText.contains($0) }
+        return ts.allSatisfy { e.searchText.contains($0) || e.searchText.contains(fold($0)) }
     }
 
     /// Place fields only (never titles).

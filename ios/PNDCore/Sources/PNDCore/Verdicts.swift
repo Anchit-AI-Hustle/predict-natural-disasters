@@ -242,7 +242,7 @@ public enum Verification {
             "f1": "F1 = 2 \u{00D7} precision \u{00D7} recall \u{00F7} (precision + recall). It combines the two into one score. It is not a measure of accuracy.",
             "partialHitWeight": "A partly correct forecast counts as 0.5. It was right about the hazard and the period but wrong about part of the place, so it counts as half."
         ]
-        public static let version = "verify-1.3.1"
+        public static let version = "verify-1.4.0"
     }
 
     public static func score(_ verifications: [JSONValue], _ assessments: [JSONValue]) -> Score {

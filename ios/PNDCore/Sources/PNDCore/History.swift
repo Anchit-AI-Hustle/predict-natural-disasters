@@ -11,7 +11,25 @@ public struct PastDisaster: Hashable, Sendable, Identifiable {
     public let location: String
     public let severity: String
     public let summary: String
+    /// The archive's own facts (changelog C46): the date, the toll with its note, and the source.
+    public var date: String = ""
+    public var deaths: String = ""
+    public var deathsNote: String = ""
+    public var source: String = ""
+    public var sourceUrl: String = ""
     public var id: String { slug }
+
+    /// The date the entry is dated by: its `date`, else its year.
+    public var when: String { date.isEmpty ? year : date }
+
+    /// "Lives lost": the toll and its note, the note alone, or "No reliable figure."
+    public var deathsText: String {
+        if !deaths.isEmpty { return deaths + (deathsNote.isEmpty ? "" : ". " + deathsNote) }
+        return deathsNote.isEmpty ? "No reliable figure." : deathsNote
+    }
+
+    /// What its severity means (`PND_HISTORY_SEVERITY`).
+    public var severityMeaning: String { severity + ": " + (History.severityMeanings[severity] ?? "") }
 
     public var slug: String { History.slug(name) }
 
@@ -27,7 +45,19 @@ public struct PastDisaster: Hashable, Sendable, Identifiable {
 }
 
 public enum History {
+    /// `PND_HISTORY_SEVERITY` (history-data.js).
+    public static let severityMeanings = [
+        "Catastrophic": "A commonly cited toll of 10,000 deaths or more, or damage on a national scale.",
+        "Major": "A disaster with a toll below 10,000 or with severe regional damage."
+    ]
+
+    /// `PND.slug`: accents folded first, so "Tōhoku" is "tohoku" (changelog C46).
     public static func slug(_ s: String) -> String {
+        legacySlug(String(String.UnicodeScalarView(s.decomposedStringWithCanonicalMapping.unicodeScalars.filter { !(0x300...0x36F).contains($0.value) })))
+    }
+
+    /// `PND.legacySlug`: the slug history pages were published under before accents were folded.
+    public static func legacySlug(_ s: String) -> String {
         let lower = s.lowercased()
         var out = ""
         var dash = false
@@ -52,17 +82,26 @@ public enum History {
         return arr.compactMap { x in
             let r = Record(x.objectValue ?? [:])
             guard !r.s("name").isEmpty else { return nil }
-            return PastDisaster(year: r.s("year"), sort: r.numOf("sort"), type: r.s("type"), name: r.s("name"),
-                                location: r.s("location"), severity: r.s("severity"), summary: r.s("summary"))
+            var p = PastDisaster(year: r.s("year"), sort: r.numOf("sort"), type: r.s("type"), name: r.s("name"),
+                                 location: r.s("location"), severity: r.s("severity"), summary: r.s("summary"))
+            p.date = r.s("date"); p.deaths = r.s("deaths"); p.deathsNote = r.s("deathsNote"); p.source = r.s("source"); p.sourceUrl = r.s("sourceUrl")
+            return p
         }
     }
 
     /// Resolution order: slug of the name, the exact name, a numeric index,
     /// then a name containing the key.
     public static func find(_ list: [PastDisaster], _ key: String) -> PastDisaster? {
-        if let e = list.first(where: { $0.slug == key || $0.name == key }) { return e }
-        if !key.isEmpty, key.allSatisfy({ $0.isASCII && $0.isNumber }), let i = Int(key), i < list.count { return list[i] }
-        return list.first { $0.name.lowercased().contains(key.lowercased()) }
+        // The slug, the name, the slug published before accents were folded, or an index; then the key's own slug (changelog C46).
+        func found(_ k: String) -> PastDisaster? {
+            if let e = list.first(where: { $0.slug == k || $0.name == k }) { return e }
+            if let e = list.first(where: { legacySlug($0.name) == k }) { return e }
+            if !k.isEmpty, k.allSatisfy({ $0.isASCII && $0.isNumber }), let i = Int(k), i < list.count { return list[i] }
+            return nil
+        }
+        let k = JS.trim(key)
+        if k.isEmpty { return nil }
+        return found(k) ?? found(slug(k))
     }
 
     /// Similar past disasters: same first hazard word or same first location part.

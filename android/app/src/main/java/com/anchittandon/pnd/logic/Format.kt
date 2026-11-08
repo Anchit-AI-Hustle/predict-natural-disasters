@@ -61,11 +61,15 @@ object Format {
     private val AFTERSHOCK = Regex("^Aftershock-sequence outlook - (.+)$")
 
     fun titleOf(e: JsonObject?): String {
-        val t = e.text("title")
+        // Dashes from an upstream title read as one plain hyphen (changelog C35).
+        var t = e.text("title").replace(Regex("\\s*[\u2012-\u2015]\\s*"), " - ")
+        // A weather model's forecast is named for what it measures (forecast-models.js MODEL_HAZARDS, changelog C32).
+        if (e.str("forecastKind") == "model-advance") t = t.replace(Regex("^Extreme heat(?= forecast)"), "Unusually hot days")
+            .replace(Regex("^Heavy rain and flooding(?= forecast)"), "Unusually heavy rain").replace(Regex("^Wildfire weather(?= forecast)"), "High fire-weather index")
         OUTLOOK.matchEntire(t)?.let { m -> val g = m.groupValues; return "${g[3]} risk in ${g[4]} - ${g[1]}-${g[2]} forecast" }
         AFTERSHOCK.matchEntire(t)?.let { m ->
             val p = m.groupValues[1]
-            return "Aftershock risk " + (if (p.firstOrNull()?.isDigit() == true) "" else "near ") + p + " - 7-day forecast"
+            return "Aftershock risk " + (if (Regex("^(?:\\d|(?:north|south|east|west|near|off)\\b)", RegexOption.IGNORE_CASE).containsMatchIn(p)) "" else "near ") + p + " - 7-day forecast"
         }
         return t
     }
@@ -108,8 +112,17 @@ object Format {
         if (s == "forecast" || (s.isEmpty() && e.truthy("forecast"))) {
             return if (e.str("forecastKind") == "frozen-benchmark") "TEST FORECAST" else "OUR FORECAST"
         }
-        if (s == "official-warning") return "OFFICIAL WARNING"
+        if (s == "official-warning") return officialWord(e).uppercase(Locale.ROOT)
         return "REPORTED EVENT"
+    }
+
+    /** What kind of official statement a record is, as the agency said it (`PND.officialWord`, changelog C39). */
+    fun officialWord(e: JsonObject?): String = when (e.str("officialProduct")) {
+        "watch" -> "Official watch"
+        "advisory" -> "Official advisory"
+        "statement", "other" -> "Official statement"
+        "normal" -> "Official status"
+        else -> "Official warning"
     }
 
     /* ------------------------------------------------------------------- urls */
@@ -132,7 +145,7 @@ object Format {
     fun eventUrl(e: JsonObject?): String {
         val id = enc(e.str("id") ?: "")
         if (e.truthy("forecast")) return "/forecasts/$id"
-        if (e.str("sourceType") == "official" && (e.str("alert") == "Red" || e.str("alert") == "Orange")) return "/alerts/$id"
+        // One address per record, whatever its level (changelog C45); /alerts/ and /calamities/ still open.
         return "/disasters/$id"
     }
 
@@ -143,7 +156,10 @@ object Format {
         val raw = id
         val dec = try { URLDecoder.decode(raw.replace("+", "%2B"), "UTF-8") } catch (e: Exception) { raw }
         for (w in listOf(raw, dec)) events.firstOrNull { (json(it).str("id") ?: "undefined") == w }?.let { return it }
+        // An agency's copy the feed merged into another record opens the record it is now part of (changelog C42).
+        for (w in listOf(raw, dec)) events.firstOrNull { e -> json(e).arr("mergedFrom")?.any { m -> (m as? JsonObject)?.str("id") == w } == true }?.let { return it }
         val n = norm(dec)
+        if (n.isEmpty()) return null
         events.firstOrNull { norm(json(it).str("id") ?: "undefined") == n }?.let { return it }
         events.firstOrNull { norm(json(it).str("title") ?: "undefined") == n }?.let { return it }
         return events.firstOrNull { val x = norm(json(it).str("id") ?: "undefined"); x.endsWith(n) || n.endsWith(x) }
@@ -153,8 +169,22 @@ object Format {
 
     private val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec")
 
+    /** Old names of zones some devices still report, read under their current name (`PND.ZONE_LEGACY`, changelog C36, C47). */
+    val ZONE_LEGACY = mapOf(
+        "Asia/Calcutta" to "Asia/Kolkata", "Asia/Katmandu" to "Asia/Kathmandu", "Asia/Saigon" to "Asia/Ho_Chi_Minh", "Asia/Rangoon" to "Asia/Yangon",
+        "Asia/Dacca" to "Asia/Dhaka", "Asia/Thimbu" to "Asia/Thimphu", "Asia/Ulan_Bator" to "Asia/Ulaanbaatar", "Asia/Macao" to "Asia/Macau",
+        "Asia/Chongqing" to "Asia/Shanghai", "Asia/Chungking" to "Asia/Shanghai", "Asia/Harbin" to "Asia/Shanghai", "Asia/Ujung_Pandang" to "Asia/Makassar",
+        "Asia/Ashkhabad" to "Asia/Ashgabat", "Asia/Istanbul" to "Europe/Istanbul", "Europe/Kiev" to "Europe/Kyiv",
+        "America/Buenos_Aires" to "America/Argentina/Buenos_Aires", "Pacific/Truk" to "Pacific/Chuuk", "Pacific/Ponape" to "Pacific/Pohnpei",
+        "Atlantic/Faeroe" to "Atlantic/Faroe", "US/Eastern" to "America/New_York", "US/Pacific" to "America/Los_Angeles",
+        "US/Central" to "America/Chicago", "US/Mountain" to "America/Denver",
+    )
+
+    /** `PND.zoneName`: a legacy zone id under its current name. */
+    fun zoneName(tz: String): String = ZONE_LEGACY[tz] ?: tz
+
     val TZ_ALIASES = mapOf(
-        "Asia/Kolkata" to "IST", "UTC" to "UTC", "America/New_York" to "ET", "America/Los_Angeles" to "PT",
+        "Asia/Kolkata" to "IST", "Asia/Calcutta" to "IST", "UTC" to "UTC", "America/New_York" to "ET", "America/Los_Angeles" to "PT",
         "Europe/London" to "UK", "Asia/Dubai" to "GST", "Asia/Singapore" to "SGT", "Asia/Tokyo" to "JST",
         "Australia/Sydney" to "Sydney",
     )
@@ -165,7 +195,9 @@ object Format {
      * zones (EST/EDT, CST/CDT, MST/MDT, PST/PDT, AKST/AKDT, HST/HDT, AST/ADT); every other zone is its offset
      * ("GMT-3", "GMT+5:45", "GMT"). Never the raw IANA id; "local time" if the zone is unknown.
      */
-    fun tzLabel(tz: String = AppClock.zone, at: Long = AppClock.now()): String {
+    fun tzLabel(tz0: String = AppClock.zone, at: Long = AppClock.now()): String {
+        TZ_ALIASES[tz0]?.let { return it }
+        val tz = zoneName(tz0)
         TZ_ALIASES[tz]?.let { return it }
         val zid = try { ZoneId.of(tz) } catch (e: Exception) { return "local time" }
         val inst = Instant.ofEpochMilli(at)
@@ -185,15 +217,16 @@ object Format {
         "Hawaii Standard Time" to "HST", "Hawaii Daylight Time" to "HDT", "Atlantic Standard Time" to "AST", "Atlantic Daylight Time" to "ADT",
     )
 
-    /** The time zone menu's words for a zone (`tzMenuLabel`): "IST · India", else "{label} · {city}", or the label alone. */
-    fun tzMenuLabel(tz: String, at: Long = AppClock.now()): String {
-        if (tz == "Asia/Kolkata") return "IST \u00b7 India"
+    /** The time zone menu's words for a zone (`tzMenuLabel`): "India (IST)", else "{label} · {city}", or the label alone. */
+    fun tzMenuLabel(tz0: String, at: Long = AppClock.now()): String {
+        val tz = zoneName(tz0)
+        if (tz == "Asia/Kolkata") return "India (IST)"
         val l = tzLabel(tz, at)
         val city = if (Regex("^(Etc|SystemV)/").containsMatchIn(tz)) "" else tz.split('/').last().replace('_', ' ')
         return if (city.isNotEmpty() && city != l) "$l \u00b7 $city" else l
     }
 
-    private fun zoneId(tz: String): ZoneId = try { if (tz == "UTC") ZoneOffset.UTC else ZoneId.of(tz) } catch (e: Exception) { ZoneId.of("Asia/Kolkata") }
+    private fun zoneId(tz0: String): ZoneId = try { val tz = zoneName(tz0); if (tz == "UTC") ZoneOffset.UTC else ZoneId.of(tz) } catch (e: Exception) { ZoneId.of("Asia/Kolkata") }
 
     private fun clock12(h: Int, m: Int): String {
         val hh = if (h % 12 == 0) 12 else h % 12
@@ -205,9 +238,21 @@ object Format {
         if (v.isNullOrEmpty()) return "-"
         val t = JsDate.parse(v) ?: return v
         val z = Instant.ofEpochMilli(t).atZone(zoneId(tz))
-        return z.dayOfMonth.toString().padStart(2, '0') + " " + MONTHS[z.monthValue - 1] + " " + z.year + ", " +
+        // One month spelling everywhere: September is "Sep" here (changelog C44); fmtWhen's whole days keep ICU's "Sept".
+        return z.dayOfMonth.toString().padStart(2, '0') + " " + MONTHS[z.monthValue - 1].replace("Sept", "Sep") + " " + z.year + ", " +
             clock12(z.hour, z.minute) + " " + tzLabel(tz, t)
     }
+
+    /** A day the source gave as a date (`datePrecision: 'day'`), printed as that UTC date with no time (`PND.fmtDay`). */
+    fun fmtDay(v: String?): String {
+        val t = JsDate.parse(v ?: "")
+        if (v.isNullOrEmpty() || t == null) return if (v.isNullOrEmpty()) "-" else v
+        return utcDay(t).replace("Sept", "Sep")
+    }
+
+    /** `PND.fmtOf(e, field)`: a date-only record as its date, anything else as `fmtDate`. */
+    fun fmtOf(e: JsonObject?, field: String = "updated"): String =
+        if (e.str("datePrecision") == "day") fmtDay(e.str(field)) else fmtDate(e.str(field))
 
     fun fmtDateMs(ms: Long, tz: String = AppClock.zone): String = fmtDate(JsDate.iso(ms), tz)
 
@@ -253,7 +298,8 @@ object Format {
             m < 1 -> "just now"
             m < 60 -> "$m min ago"
             m < 1440 -> "${jsRoundL(m / 60.0)} hr ago"
-            else -> "${jsRoundL(m / 1440.0)} d ago"
+            // Past two months in months, past two years in years (changelog C44).
+            else -> { val d = jsRoundL(m / 1440.0); if (d <= 60) "$d d ago" else if (d < 730) "${jsRoundL(d / 30.44)} months ago" else "${Math.floor(d / 365.25).toLong()} years ago" }
         }
     }
 
@@ -297,11 +343,8 @@ object Format {
         return "$n/${if (all.isNotEmpty()) all.size else n}"
     }
 
-    fun countryCount(list: List<JsonObject>): Int {
-        val s = HashSet<String>()
-        list.forEach { e -> e.text("country").split(",").forEach { c -> val t = c.trim(); if (t.isNotEmpty()) s += t.lowercase(Locale.ROOT) } }
-        return s.size
-    }
+    /** One name per country (country-names.js `countryCount`, changelog C36). */
+    fun countryCount(list: List<JsonObject>): Int = CountryNames.countryCount(list)
 
     /** en-US grouping of a reported count (`Number.toLocaleString()` on an en-US viewer). */
     fun grouped(v: Double): String {
@@ -342,7 +385,7 @@ object Format {
         if (e == null || e.bool("live") != false) return ""
         val d = e.jsNum("quietDays")
         val src = e.text("source").ifEmpty { "its source" }
-        val span = if (d.isFinite()) jsNumText(d) + " day" + (if (d == 1.0) "" else "s") else "some time"
+        val span = if (d.isFinite()) Portal.quietFor(e) else "some time"
         return "Not updated by $src for $span. It may have ended; check the source for its current status."
     }
 

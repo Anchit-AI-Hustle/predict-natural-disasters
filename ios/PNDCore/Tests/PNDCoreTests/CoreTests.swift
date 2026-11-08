@@ -103,8 +103,12 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(t.requests[0].0.absoluteString, "https://predict-natural-disasters.anchit-tandon.com/api/events")
         XCTAssertTrue(t.requests[0].1["User-Agent"]!.hasPrefix("PredictNaturalDisasters-iOS/"))
         XCTAssertFalse(t.requests[0].1["User-Agent"]!.contains("@"), "no personal address in the User-Agent")
+        XCTAssertNil(t.requests[0].1["Cache-Control"], "a timed read sends no cache header")
         _ = try await c.events(fresh: true)
-        XCTAssertTrue(t.requests[1].0.query!.hasPrefix("ts="))
+        // An explicit refresh asks the same address with no-cache: no ?ts=, so it re-reads the shared edge copy.
+        XCTAssertEqual(t.requests[1].0.absoluteString, "https://predict-natural-disasters.anchit-tandon.com/api/events")
+        XCTAssertNil(t.requests[1].0.query)
+        XCTAssertEqual(t.requests[1].1["Cache-Control"], "no-cache")
     }
 
     func testHTTPErrorIsAnError() async {
@@ -194,7 +198,9 @@ final class RouteTests: XCTestCase {
 
     func testDetailForRecord() {
         XCTAssertEqual(Route.detail(for: Record(["id": "OUT-1", "forecast": true])), .forecast("OUT-1"))
-        XCTAssertEqual(Route.detail(for: Record(["id": "g", "sourceType": "official", "alert": "Red"])), .alert("g"))
+        // C45: one address per record, whatever its level; /alerts/ still parses to the alert screen.
+        XCTAssertEqual(Route.detail(for: Record(["id": "g", "sourceType": "official", "alert": "Red"])), .event("g"))
+        XCTAssertEqual(Route.parse(URL(string: "https://predict-natural-disasters.anchit-tandon.com/alerts/g")!), .alert("g"))
         XCTAssertEqual(Route.detail(for: Record(["id": "u", "sourceType": "official", "alert": "Green"])), .event("u"))
     }
 
@@ -252,8 +258,12 @@ final class ScreenTests: XCTestCase {
         let sorted = Sorts.apply(g, "priority")
         XCTAssertGreaterThanOrEqual(sorted[0].numOf("high"), sorted.last!.numOf("high"))
         let cal = withZone(nil) { Screens.calendar(feed.live.filter { $0.forecast }, now: Fixtures.now) }
-        XCTAssertGreaterThanOrEqual(cal.days.count, 4)
-        XCTAssertLessThanOrEqual(cal.days.count, 15)
+        // C33: always 14 days, moved a week at a time.
+        XCTAssertEqual(cal.days.count, Screens.calendarDays)
+        XCTAssertEqual(cal.offset, 0)
+        XCTAssertTrue(cal.status.hasSuffix(" forecasts fall in these dates."), cal.status)
+        let back = withZone(nil) { Screens.calendar(feed.live.filter { $0.forecast }, now: Fixtures.now, offset: -30) }
+        XCTAssertEqual(back.offset, -7, "no more than a week back")
         XCTAssertTrue(cal.groups.allSatisfy { g in g.bars.allSatisfy { $0.width >= 1.4 } })
         XCTAssertEqual(cal.groups.map { $0.type }, cal.groups.map { $0.type }.sorted())
     }
@@ -285,7 +295,9 @@ final class ScreenTests: XCTestCase {
         XCTAssertTrue(Screens.hazardMatches(Record(["type": "Volcano"]), hazard: "Volcano", region: ""))
         XCTAssertFalse(Screens.hazardMatches(Record(["type": "Flood", "country": "Japan"]), hazard: "Flood", region: "Nepal"))
         XCTAssertTrue(Screens.regionMatches(Record(["country": "Nepal"]), "World"))
-        XCTAssertTrue(Screens.regionMatches(Record(["title": "Flood in Nepal"]), "nepal"))
+        // C36: a place is matched in the place fields, never the title.
+        XCTAssertTrue(Screens.regionMatches(Record(["country": "Nepal"]), "nepal"))
+        XCTAssertFalse(Screens.regionMatches(Record(["title": "Flood in Nepal"]), "nepal"))
     }
 
     func testMajorEventsAndPlan() {
@@ -296,7 +308,8 @@ final class ScreenTests: XCTestCase {
         XCTAssertEqual(m.first?.title, "Major Earthquake M7 (Japan)")
         XCTAssertEqual(m.first?.body, "M 7.0 - Honshu \u{00B7} Red alert \u{00B7} USGS")
         XCTAssertEqual(m.first?.key, "major-u9|red")
-        XCTAssertEqual(m.first?.url, "/alerts/u9")
+        // C45: one address per record, whatever its level.
+        XCTAssertEqual(m.first?.url, "/disasters/u9")
         let home = Fixtures.place("home")
         let events = [Fixtures.event("quakeNear"), quake]
         let first = AlertRules.plan(events: events, places: [home], seen: [:], now: now)

@@ -54,7 +54,7 @@ public enum Copy {
         Item("4. Check", "Later, we check each forecast against what really happened. We lock the rules for that check when we make the forecast: the dates, the area, the cause and what counts as damage.")
     ]
     public static let nd001Blurb = "This forecast is separate from official warnings. A warning or heavy rain alone does not make it correct. It only counts as correct if serious damage or harm is reported inside the area and dates that were locked when it was made."
-    public static let calendarNote = "Each bar runs from the start of a forecast to its expected end. The line marks now. Forecasts are our own estimates, not official warnings."
+    public static let calendarNote = "Each bar runs from the start of a forecast to its expected end, coloured by the same level as its badge. The line marks now. An arrow means the forecast carries on beyond these dates. Forecasts are our own estimates, not official warnings."
     public static let calendarEmptyTitle = "No forecasts to show for these dates."
     public static let calendarEmptyBody = "Try removing a filter, or refresh the page."
     public static let verificationNotice = "Important: These are our own estimates, not official warnings. We do not predict exactly when an earthquake will strike. We check each forecast only against real harm or damage, reported by an independent source after the forecast was made."
