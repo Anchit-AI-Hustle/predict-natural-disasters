@@ -133,3 +133,13 @@ test('F3: one row per line, no run timestamp, and it parses to what the builder 
   /* Its timestamp is in the summary. */
   assert.ok(Date.parse(JSON.parse(read('data/accuracy-summary.json')).generatedAt));
 });
+
+test('a forecast first recorded under an old place id is not added to the ledger twice', () => {
+  const M = require('../forecast-models.js');
+  assert.equal(M.canonicalOutlookId('model-rain-s-o-paulo-br-2026-11-12'), 'model-rain-sao-paulo-br-2026-11-12');
+  assert.equal(M.canonicalOutlookId('model-rain-bogot-co-2026-10-27'), 'model-rain-bogota-co-2026-10-27');
+  assert.equal(M.canonicalOutlookId('model-rain-sao-paulo-br-2026-11-12'), 'model-rain-sao-paulo-br-2026-11-12');
+  assert.equal(M.canonicalOutlookId('model-heat-delhi-in-2026-11-12'), 'model-heat-delhi-in-2026-11-12');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'run-models.js'), 'utf8');
+  assert.match(src, /new Set\(ledger\.map\(o => M\.canonicalOutlookId\(o\.id\)\)\)/);
+});

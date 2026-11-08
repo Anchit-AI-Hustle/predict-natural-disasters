@@ -271,9 +271,14 @@ async function runPlace(place, fc, runAt, period) {
      Appended to, never changed: a forecast issued again by a later run keeps
      its first record, which is the proof it was made in advance. */
   const ledger = G.readLedger(LEDGER, Array.isArray, () => []);
-  const known = new Set(ledger.map(o => o.id));
+  /* Compared under current place ids: a forecast first recorded as
+     "...-s-o-paulo-br-..." is not added again as "...-sao-paulo-br-...". */
+  const known = new Set(ledger.map(o => M.canonicalOutlookId(o.id)));
   let added = 0;
-  for (const o of outlooks) if (!known.has(o.id)) { ledger.push(Object.assign({ recordedAt: runAt }, o)); known.add(o.id); added++; }
+  for (const o of outlooks) {
+    const key = M.canonicalOutlookId(o.id);
+    if (!known.has(key)) { ledger.push(Object.assign({ recordedAt: runAt }, o)); known.add(key); added++; }
+  }
   fs.writeFileSync(LEDGER, JSON.stringify(ledger, null, 1) + '\n');
 
   /* Grading does not depend on the forecast run. A place with an ended,

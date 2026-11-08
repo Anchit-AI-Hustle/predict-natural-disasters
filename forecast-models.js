@@ -859,6 +859,17 @@
      ledger and the run log, and mean the same place. */
   var PLACE_ID_RENAMES = { 'bogot-co': 'bogota-co', 's-o-paulo-br': 'sao-paulo-br' };
   function placeIdOf(id) { return PLACE_ID_RENAMES[id] || id; }
+  /* A model forecast id ("model-<hazard>-<place id>-<start>") under the
+     current place id, so a forecast first recorded under an old id is the
+     same forecast when a later run issues it under the new one. */
+  function canonicalOutlookId(id) {
+    var s = String(id);
+    for (var old in PLACE_ID_RENAMES) {
+      var at = s.indexOf('-' + old + '-');
+      if (s.indexOf('model-') === 0 && at > 0) return s.slice(0, at + 1) + PLACE_ID_RENAMES[old] + s.slice(at + 1 + old.length);
+    }
+    return s;
+  }
 
   /* ----------------------------------------- how a model forecast is named */
 
@@ -945,7 +956,7 @@
     runs: runs, heatModel: heatModel, rainModel: rainModel, fireModel: fireModel,
     warmingTrend: warmingTrend, heatShift: heatShift, heatShiftText: heatShiftText, heatLines: heatLines, MAX_HEAT_SHIFT_C: MAX_HEAT_SHIFT_C,
     observedEvents: observedEvents, gradePublished: gradePublished, windowDays: windowDays,
-    placeSlug: placeSlug, placeIdOf: placeIdOf, PLACE_ID_RENAMES: PLACE_ID_RENAMES,
+    placeSlug: placeSlug, placeIdOf: placeIdOf, canonicalOutlookId: canonicalOutlookId, PLACE_ID_RENAMES: PLACE_ID_RENAMES,
     MODEL_HAZARDS: MODEL_HAZARDS, modelDisplay: modelDisplay, skillText: skillText,
     SETTLE_DAYS: SETTLE_DAYS, FWI_SPINUP_DAYS: FWI_SPINUP_DAYS, isSettled: isSettled, mergeMeasured: mergeMeasured,
     observedFromArchive: observedFromArchive, gradeModelRecord: gradeModelRecord, lineFor: lineFor,
