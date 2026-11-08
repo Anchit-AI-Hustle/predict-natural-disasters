@@ -1,22 +1,22 @@
 {
  "note": "The figures /accuracy opens with, from tools/build-accuracy-summary.js over data/model-verdicts.json, data/outlook-ledger.json, data/verification-ledger.json, data/observed-disasters.json and data/scan-ledger.json. One verdict per forecast. Rebuilt whenever either ledger changes.",
- "generatedAt": "2026-10-30T21:54:53.778Z",
- "recordUpdated": "2026-10-29T14:17:19.920Z",
+ "generatedAt": "2026-11-08T21:10:07.511Z",
+ "recordUpdated": "2026-11-08T21:10:07.511Z",
  "verificationVersion": "verify-1.4.0",
  "model": {
-  "issued": 285,
+  "issued": 411,
   "since": "2026-10-14T23:55:05.359Z",
   "graded": 3,
   "correct": 0,
   "falseAlarms": 3,
-  "pending": 282,
+  "pending": 408,
   "missedDays": 11,
   "expectedByChance": 0.3,
   "events": {
-   "total": 154,
+   "total": 218,
    "correct": 0,
    "falseAlarms": 3,
-   "pending": 151
+   "pending": 215
   },
   "settleDays": 14,
   "measuredThrough": "2026-10-16",
@@ -24,10 +24,10 @@
   "byHazard": [
    {
     "hazard": "heat",
-    "issued": 132,
+    "issued": 195,
     "correct": 0,
     "falseAlarms": 2,
-    "pending": 130,
+    "pending": 193,
     "missedDays": 3,
     "expectedByChance": 0.2,
     "days": 190,
@@ -40,10 +40,10 @@
    },
    {
     "hazard": "rain",
-    "issued": 138,
+    "issued": 189,
     "correct": 0,
     "falseAlarms": 1,
-    "pending": 137,
+    "pending": 188,
     "missedDays": 8,
     "expectedByChance": 0.1,
     "days": 190,
@@ -56,10 +56,10 @@
    },
    {
     "hazard": "fire",
-    "issued": 15,
+    "issued": 27,
     "correct": 0,
     "falseAlarms": 0,
-    "pending": 15,
+    "pending": 27,
     "missedDays": 0,
     "expectedByChance": 0,
     "days": 190,
@@ -85,30 +85,30 @@
   "missed": 0
  },
  "restated": {
-  "forecasts": 1165,
-  "open": 42,
+  "forecasts": 1425,
+  "open": 39,
   "awaiting": 0,
-  "ungradeable": 1114,
-  "checked": 9,
-  "correct": 1,
+  "ungradeable": 1376,
+  "checked": 10,
+  "correct": 2,
   "partlyCorrect": 2,
   "wrong": 6,
   "notPrediction": 0,
   "missed": 0,
-  "versions": 3007
+  "versions": 3710
  },
  "aftershock": {
-  "forecasts": 81,
-  "open": 29,
+  "forecasts": 90,
+  "open": 5,
   "awaiting": 0,
-  "ungradeable": 24,
-  "checked": 28,
-  "correct": 18,
-  "partlyCorrect": 9,
+  "ungradeable": 44,
+  "checked": 41,
+  "correct": 26,
+  "partlyCorrect": 14,
   "wrong": 1,
   "notPrediction": 0,
   "missed": 0,
-  "versions": 93
+  "versions": 103
  },
  "test": {
   "forecasts": 1,
@@ -122,27 +122,27 @@
   "notPrediction": 0,
   "missed": 0
  },
- "outlookForecasts": 1247,
- "outlookVersions": 3101,
+ "outlookForecasts": 1516,
+ "outlookVersions": 3814,
  "disasters": {
-  "total": 51,
+  "total": 57,
   "forecastInAdvance": 0,
   "coverage": {
    "COVERAGE_FAILURE": 0,
    "FORECAST_FAILURE": 2,
    "DATA_UNAVAILABLE": 22,
-   "NOT_FORECASTABLE": 24,
-   "NO_PROSPECTIVE_INPUT": 3
+   "NOT_FORECASTABLE": 29,
+   "NO_PROSPECTIVE_INPUT": 4
   }
  },
  "answer": {
-  "lead": "Our weather models have published 285 forecasts in advance since 14 Oct 2026. 3 can be graded so far: 0 came true and 3 were false alarms.",
+  "lead": "Our weather models have published 411 forecasts in advance since 14 Oct 2026. 3 can be graded so far: 0 came true and 3 were false alarms.",
   "points": [
-   "A forecast is graded once every day of its window has a settled NASA POWER measurement (one at least 14 days old when fetched, because recent days are revised). 282 forecasts are still waiting; measurements have settled up to 16 Oct 2026.",
+   "A forecast is graded once every day of its window has a settled NASA POWER measurement (one at least 14 days old when fetched, because recent days are revised). 408 forecasts are still waiting; measurements have settled up to 16 Oct 2026.",
    "By chance alone, with the same windows, about 0.3 of the 3 graded forecasts would have come true.",
    "11 days crossed a model’s line at a place it was watching, with no forecast for it.",
-   "Our other 1,247 forecasts (3,101 recorded versions) were not made in advance. 1,165 restate an alert an agency had already issued and are not a test of our skill: 9 could be checked, 1 correct, 2 partly correct and 6 wrong, counted on new damage or impact reported inside the window. 81 are aftershock forecasts after an earthquake. 1 is a test case written after its period began.",
-   "51 significant disasters are on record. We forecast none of them in advance."
+   "Our other 1,516 forecasts (3,814 recorded versions) were not made in advance. 1,425 restate an alert an agency had already issued and are not a test of our skill: 10 could be checked, 2 correct, 2 partly correct and 6 wrong, counted on new damage or impact reported inside the window. 90 are aftershock forecasts after an earthquake. 1 is a test case written after its period began.",
+   "57 significant disasters are on record. We forecast none of them in advance."
   ]
  }
 }

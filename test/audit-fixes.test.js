@@ -299,12 +299,16 @@ test('P14: list pages offer every hazard type present', async () => {
   const types = [...new Set((await live()).filter(e => e.forecastKind !== 'frozen-benchmark').map(e => e.type))];
   const r = await renderPage('events.html', { waitFor: d => d.getElementById('type').options.length > 1 });
   const offered = [...r.document.getElementById('type').options].map(o => o.value);
-  for (const t of types) assert.ok(offered.includes(t), 'no option for ' + t);
-  // And choosing one matches it exactly.
+  /* /events offers each hazard under its hazard key (launch browse: the
+     filter groups types by PND.hazardKey and filters with PND.sameHazard), so
+     a model forecast typed "Unusually heavy rain" is found under Flood. */
+  const P = r.window.PND;
+  for (const t of types) assert.ok(offered.includes(P.hazardKey(t)), 'no option for ' + t);
+  // And choosing one finds every record of that hazard.
   const sel = r.document.getElementById('type');
   sel.value = 'Flood';
   sel.dispatchEvent(new r.window.Event('change'));
-  const want = (await live()).filter(e => e.type === 'Flood').length;
+  const want = (await live()).filter(e => e.forecastKind !== 'frozen-benchmark' && P.sameHazard(e.type, 'Flood')).length;
   assert.equal(r.document.querySelectorAll('#cards .event-card').length, want);
   r.close();
 });

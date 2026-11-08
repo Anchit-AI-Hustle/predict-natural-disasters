@@ -175,6 +175,9 @@ test('an event card carries the headline figures for its own hazard', async () =
     url: '/events',
     waitFor: d => d.querySelectorAll('.event-card').length > 0
   });
+  /* The list shows 40 cards at a time (launch events B19); every page of it
+     is opened, so the test does not depend on where in the order a card falls. */
+  for (let i = 0; i < 100 && r.document.getElementById('showMore'); i++) r.document.getElementById('showMore').click();
   const cards = [...r.document.querySelectorAll('.event-card')].map(c => c.textContent);
   r.close();
   assert.ok(cards.length, 'the events page rendered no cards');
@@ -276,6 +279,9 @@ test('no card or grid prints a zero for a count its source never published', asy
     url: '/events',
     waitFor: d => d.querySelectorAll('.event-card').length > 0
   });
+  /* The list shows 40 cards at a time (launch events B19); every page of it
+     is opened, so the test does not depend on where in the order a card falls. */
+  for (let i = 0; i < 100 && r.document.getElementById('showMore'); i++) r.document.getElementById('showMore').click();
   const cards = [...r.document.querySelectorAll('.event-card')].map(c => c.textContent);
   r.close();
   const claimed = cards.filter(t => /Lives lost 0\b|People displaced 0\b|People affected 0\b/.test(t));

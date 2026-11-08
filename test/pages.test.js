@@ -254,6 +254,16 @@ test('every experimental outlook has a working detail page', async () => {
     assert.equal(r.errors.length, 0, o.id + ': ' + r.errors.map(String).join('|'));
     // The page writes acronyms out, so compare against the same transform
     // rather than against the raw feed title.
+    if (o.forecastKind === 'model-advance') {
+      /* A weather model's forecast has its own screen (forecast-honesty C32):
+         its own name, the days it covers and the rule it is graded by. */
+      assert.equal(doc.getElementById('title').textContent, expandAlways(r.window.PNDModels.modelDisplay(o).title),
+        'wrong record resolved for ' + o.id);
+      assert.notEqual(doc.getElementById('mdDays').textContent, '-');
+      assert.ok(doc.getElementById('mdRule').textContent.length > 10, 'no grading rule on ' + o.id);
+      r.close();
+      continue;
+    }
     assert.equal(doc.getElementById('title').textContent, expandAlways(o.title),
       'wrong record resolved for ' + o.id);
     assert.equal(doc.getElementById('rid').textContent, o.id);
@@ -462,12 +472,17 @@ test('changing the sort reorders the list on a collection page', async () => {
       doc.getElementById('sortBy').options.length > 1
   });
   const doc = r.document, win = r.window;
+  /* 40 cards at a time (launch events B19): every page is opened before an
+     ordering is read, so both readings cover the whole list. */
+  const showAll = () => { for (let i = 0; i < 100 && doc.getElementById('showMore'); i++) doc.getElementById('showMore').click(); };
+  showAll();
   const bySeverity = orderOf(doc, 'cards');
   assert.ok(bySeverity.length > 2, 'not enough cards to compare orderings');
 
   const sel = doc.getElementById('sortBy');
   sel.value = 'title';
   sel.dispatchEvent(new win.Event('change'));
+  showAll();
   const byTitle = orderOf(doc, 'cards');
 
   assert.equal(byTitle.length, bySeverity.length, 'sorting changed how many records are shown');

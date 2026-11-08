@@ -76,6 +76,9 @@ test('A5: the risk filter on a list page drops levels the feed does not hold', a
     .filter(e => e.live !== false).map(e => r.window.PND.riskKey(e)));
   assert.ok(offered.length > 0);
   for (const v of offered) assert.ok(have.has(v), v + ' is offered but nothing in the feed is at that level');
-  assert.ok(!offered.includes('HIGH'), 'High is offered over a feed with nothing at High');
+  /* Offered exactly when the feed holds it: the October feed had nothing at
+     High, while a feed with our weather models' live 99th-percentile
+     forecasts does (forecast-honesty C31: those read High). */
+  assert.equal(offered.includes('HIGH'), have.has('HIGH'), 'High is offered over a feed with nothing at High, or missing');
   r.close();
 });
