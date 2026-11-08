@@ -8,7 +8,7 @@
  *
  * Writes, from the committed ledgers only:
  *   data/accuracy-summary.json   the headline and the figures (a few KB)
- *   data/forecast-verdicts.json  one row per outlook forecast, its verdict and
+ *   data/forecast-verdicts.json  one row per outlook forecast (one per line), its verdict and
  *                                how many versions were recorded: the paged
  *                                table on /accuracy, its CSV download and the
  *                                verdict on each forecast's own page.
@@ -29,9 +29,10 @@ const deps = {
   OBSM: require(path.join(ROOT, 'observed-model.js')),
   H: require(path.join(ROOT, 'hazard-model.js'))
 };
-const read = (n, fb) => { try { return JSON.parse(fs.readFileSync(path.join(DATA, n), 'utf8')); } catch (e) { return fb; } };
+const readIn = dir => (n, fb) => { try { return JSON.parse(fs.readFileSync(path.join(dir, n), 'utf8')); } catch (e) { return fb; } };
 
-function build() {
+function build(dir = DATA) {
+  const read = readIn(dir);
   const ledger = read('outlook-ledger.json', []);
   const verification = read('verification-ledger.json', { verifications: [] });
   const observed = read('observed-disasters.json', { events: [] });
@@ -48,21 +49,55 @@ function build() {
   const summary = A.summarise(g, modelVerdicts, deps, { now, modelLedger,
     recordUpdated: recordTimes.length ? new Date(Math.max(...recordTimes)).toISOString() : null });
   summary.answer = A.answer(summary);
-  const rows = A.outlookRows(g, deps.V).map(r => Object.assign(r, { reason: String(r.reason || '').slice(0, 400) }));
+  /* Newest recorded first, then by id: an order of its own, not whatever
+     order the ledger's rows came in, so the same verdicts are the same file. */
+  const rows = A.outlookRows(g, deps.V).map(r => Object.assign(r, { reason: String(r.reason || '').slice(0, 400) }))
+    .sort((a, b) => cmp(b.recordedAt || '', a.recordedAt || '') || cmp(a.id, b.id));
+  /* No generatedAt here: it moved on every run and rewrote the whole file.
+     When the record was graded is accuracy-summary.json's generatedAt. */
   const verdicts = {
     note: 'One row per outlook forecast (its first recorded version), graded by accuracy-model.js with checker ' +
-      deps.VER.VERIFICATION_VERSION + '. "versions" is how many times it was recorded. Model forecasts are in data/model-verdicts.json.',
-    generatedAt: summary.generatedAt, verificationVersion: deps.VER.VERIFICATION_VERSION, outlooks: rows
+      deps.VER.VERIFICATION_VERSION + '. "versions" is how many times it was recorded. Model forecasts are in data/model-verdicts.json. ' +
+      'When it was graded is generatedAt in data/accuracy-summary.json.',
+    verificationVersion: deps.VER.VERIFICATION_VERSION, outlooks: rows
   };
   return { summary, verdicts };
 }
+function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+
+/* forecast-verdicts.json is about 900 KB and the data bots commit it on every
+   run. Written on one line, a single new row was a 900 KB diff; one row per
+   line, a run's diff is the rows that changed. Still one JSON document. */
+function verdictsText(v) {
+  const head = Object.assign({}, v); delete head.outlooks;
+  const top = JSON.stringify(head);
+  return top.slice(0, -1) + (top.length > 2 ? ',' : '') + '"outlooks":[\n' +
+    v.outlooks.map(r => JSON.stringify(r)).join(',\n') + '\n]}\n';
+}
+
+/* A file whose content has not changed is not written at all. */
+function writeIfChanged(file, text) {
+  let old = null;
+  try { old = fs.readFileSync(file, 'utf8'); } catch (e) { /* new file */ }
+  if (old === text) return false;
+  fs.writeFileSync(file, text);
+  return true;
+}
+
+function writeAll(dir = DATA) {
+  const { summary, verdicts } = build(dir);
+  const written = {
+    summary: writeIfChanged(path.join(dir, 'accuracy-summary.json'), JSON.stringify(summary, null, 1) + '\n'),
+    verdicts: writeIfChanged(path.join(dir, 'forecast-verdicts.json'), verdictsText(verdicts))
+  };
+  return { summary, verdicts, written };
+}
 
 if (require.main === module) {
-  const { summary, verdicts } = build();
-  fs.writeFileSync(path.join(DATA, 'accuracy-summary.json'), JSON.stringify(summary, null, 1) + '\n');
-  fs.writeFileSync(path.join(DATA, 'forecast-verdicts.json'), JSON.stringify(verdicts) + '\n');
+  const { summary, verdicts, written } = writeAll(DATA);
   console.log('accuracy summary: model ' + JSON.stringify({ issued: summary.model.issued, correct: summary.model.correct,
     falseAlarms: summary.model.falseAlarms, missedDays: summary.model.missedDays }) +
-    '; restated ' + JSON.stringify(summary.restated) + '; ' + verdicts.outlooks.length + ' outlook forecasts');
+    '; restated ' + JSON.stringify(summary.restated) + '; ' + verdicts.outlooks.length + ' outlook forecasts' +
+    (written.verdicts ? '' : ' (forecast-verdicts.json unchanged)'));
 }
-module.exports = { build };
+module.exports = { build, verdictsText, writeAll };
