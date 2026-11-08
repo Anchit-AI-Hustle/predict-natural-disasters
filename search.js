@@ -15,6 +15,29 @@ const S={
      subset, so the same word answered differently depending on where it was
      typed: the homepage's list omitted the hazard type entirely and matched 1
      of 349 earthquake records for "earthquake". */
+  /* Pairs searched as one name, both ways. */
+  ALIASES:[['turkiye','turkey'],['myanmar','burma'],["cote d'ivoire",'ivory coast'],['czechia','czech republic'],
+    ['united states','usa'],['eswatini','swaziland'],['timor-leste','east timor'],['north macedonia','macedonia'],
+    ['cabo verde','cape verde'],['democratic republic of the congo','dr congo'],['viet nam','vietnam'],['mumbai','bombay'],
+    ['kolkata','calcutta'],['chennai','madras']],
+  /* The pairs above, plus every spelling country-names.js maps to one country
+     (its ALIASES, the same table /regions counts by), so search and the
+     country lists agree on what a country is called. Short codes ("us",
+     "mx") and abbreviations with a dot are left out: matched as substrings
+     they would find almost everything. */
+  aliasPairs(){
+    if(S._pairs)return S._pairs;
+    const fold=v=>String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    let C=(typeof window!=='undefined'&&window.PNDCountries)||null;
+    if(!C&&typeof require==='function'){try{C=require('./country-names.js')}catch(e){C=null}}
+    const seen=new Set(),out=[];
+    const add=(a,b)=>{a=fold(a);b=fold(b);const k=a+'|'+b;if(!a||!b||a===b||seen.has(k))return;seen.add(k);out.push([a,b])};
+    S.ALIASES.forEach(([a,b])=>add(a,b));
+    if(C&&C.ALIASES)Object.keys(C.ALIASES).forEach(k=>{if(k.length>=6&&!/[.]/.test(k))add(k,C.ALIASES[k])});
+    /* Cached only once the country table was there to read. */
+    if(C)S._pairs=out;
+    return out;
+  },
   SEARCH_FIELDS:['title','name','country','affectedCountries','region','location','type','hazard',
     'source','src','details','summary','id','eventId'],
   /* Built once per record and cached off the enumerable keys, because a
@@ -30,6 +53,10 @@ const S={
        record whose stored field only says "CA". */
     if(g&&g.expandAlways){try{t+=' '+g.expandAlways(t)}catch(err){}}
     t=t.toLowerCase();
+    /* The other names a country goes by, and its spelling without accents:
+       "Turkey" found nothing while "Türkiye" found two. */
+    t+=' '+t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    for(const [a,b] of S.aliasPairs()){if(t.indexOf(a)>=0&&t.indexOf(b)<0)t+=' '+b;if(t.indexOf(b)>=0&&t.indexOf(a)<0)t+=' '+a}
     try{Object.defineProperty(e,'__pndSearch',{value:t,enumerable:false,configurable:true})}
     catch(err){}
     return t;
@@ -40,7 +67,7 @@ const S={
     const terms=String(q==null?'':q).toLowerCase().split(/\s+/).filter(Boolean);
     if(!terms.length)return true;
     const t=S.searchText(e);
-    return terms.every(w=>t.indexOf(w)>=0);
+    return terms.every(w=>t.indexOf(w)>=0||t.indexOf(w.normalize('NFD').replace(/[\u0300-\u036f]/g,''))>=0);
   },
   /* The query a reader typed, from either spelling of the parameter. The
      homepage sent them to /events?search=… and nothing on the receiving page

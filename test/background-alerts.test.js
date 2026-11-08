@@ -405,7 +405,7 @@ test('a run sends each device what bears on its places, once, and says what it d
   assert.ok(w.pushes.every(p => p.url === a.sub.endpoint));
   const got = w.pushes.map(p => JSON.parse(a.decrypt(p.body)));
   assert.deepEqual(got.map(g => g.title), ['Flood warning covers your home', 'Earthquake 17 km from your home']);
-  assert.equal(got[0].url, '/alerts/w-1');
+  assert.equal(got[0].url, '/disasters/w-1'); // one address per record (launch audit B27)
   assert.ok(w.pushes.every(p => p.headers['Content-Encoding'] === 'aes128gcm' && /^vapid t=/.test(p.headers.Authorization)));
   assert.throws(() => far.decrypt(w.pushes[0].body), 'another device could read the alert');
   assert.deepEqual([first.body.subscriptions, first.body.alerted, first.body.sent, first.body.failed], [2, 1, 2, 0]);

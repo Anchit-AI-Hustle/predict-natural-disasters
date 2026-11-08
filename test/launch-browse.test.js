@@ -401,8 +401,9 @@ test('D19: the legacy zone names read as their current ones', async () => {
       waitFor: d => d.getElementById('pndTimezone') });
     const w = r.window;
     assert.equal(w.PND.tzLabel(zone), label, zone);
+    /* India's entry reads "India (IST)" since launch events C47 (was "IST · India"). */
     const opts = [...r.document.getElementById('pndTimezone').options].map(o => o.textContent);
-    assert.equal(opts.filter(o => /· India$|Calcutta|Kolkata/.test(o)).length, 1, opts.slice(0, 5).join(' | '));
+    assert.equal(opts.filter(o => /· India$|India \(IST\)|Calcutta|Kolkata/.test(o)).length, 1, opts.slice(0, 5).join(' | '));
     assert.ok(!opts.some(o => /Calcutta|Katmandu|Saigon/.test(o)), 'a legacy name is shown');
     r.close();
   }

@@ -4108,7 +4108,7 @@
     "rank": 1.9646011224798174,
     "title": "Earthquake 35 km from your home",
     "body": "M 7.1 · Red · USGS",
-    "url": "/alerts/usgs-2",
+    "url": "/disasters/usgs-2",
     "tag": "pnd-usgs-2"
    }
   },
@@ -4137,7 +4137,7 @@
     "rank": 3,
     "title": "Flood warning covers your home",
     "body": "Flash Flood Warning · Red · NOAA / National Weather Service",
-    "url": "/alerts/nws-1",
+    "url": "/disasters/nws-1",
     "tag": "pnd-nws-1"
    }
   },
@@ -4206,7 +4206,7 @@
      "rank": 3,
      "title": "Flood warning covers your home",
      "body": "Flash Flood Warning · Red · NOAA / National Weather Service",
-     "url": "/alerts/nws-1",
+     "url": "/disasters/nws-1",
      "tag": "pnd-nws-1"
     },
     {
@@ -4224,7 +4224,7 @@
      "rank": 1.9646011224798174,
      "title": "Earthquake 35 km from your home",
      "body": "M 7.1 · Red · USGS",
-     "url": "/alerts/usgs-2",
+     "url": "/disasters/usgs-2",
      "tag": "pnd-usgs-2"
     }
    ]
@@ -4278,7 +4278,7 @@
     "sourceType": "official",
     "alert": "Red"
    },
-   "out": "/alerts/gdacs-FL-1"
+   "out": "/disasters/gdacs-FL-1"
   },
   {
    "in": {
@@ -4527,7 +4527,7 @@
     "sourceType": "official",
     "alert": "Red"
    },
-   "out": "/alerts/gdacs-FL-1"
+   "out": "/disasters/gdacs-FL-1"
   },
   {
    "in": {
@@ -4535,7 +4535,7 @@
     "sourceType": "official",
     "alert": "Orange"
    },
-   "out": "/alerts/gdacs-FL-2"
+   "out": "/disasters/gdacs-FL-2"
   },
   {
    "in": {
@@ -6223,11 +6223,11 @@
    "e"
   ],
   "country": [
+   "e",
    "b",
    "a",
    "c",
-   "d",
-   "e"
+   "d"
   ],
   "type": [
    "c",
@@ -8804,7 +8804,7 @@
    "in": {
     "live": false
    },
-   "out": "Not updated recently"
+   "out": "Not updated for some time"
   },
   {
    "in": {
@@ -8828,7 +8828,7 @@
     "source": "GDACS"
    },
    "out": {
-    "eventEyebrow": "LIVE EVENT",
+    "eventEyebrow": "REPORTED EVENT",
     "eventDataStatus": "Live",
     "eventRecordState": "Live, as the source last reported it",
     "calamityStatus": "Live, as the source last reported it"
@@ -8842,7 +8842,7 @@
    },
    "out": {
     "eventEyebrow": "EVENT NO LONGER UPDATED",
-    "eventDataStatus": "Not updated recently",
+    "eventDataStatus": "Not updated for 48 days",
     "eventRecordState": "Not updated by GDACS for 48 days. It may have ended; check the source for its current status.",
     "calamityStatus": "Not updated by GDACS for 48 days. It may have ended; check the source for its current status."
    }
@@ -8853,7 +8853,7 @@
    },
    "out": {
     "eventEyebrow": "EVENT NO LONGER UPDATED",
-    "eventDataStatus": "Not updated recently",
+    "eventDataStatus": "Not updated for some time",
     "eventRecordState": "Not updated by its source for some time. It may have ended; check the source for its current status.",
     "calamityStatus": "Not updated by its source for some time. It may have ended; check the source for its current status."
    }
@@ -8874,7 +8874,7 @@
     "cached": true
    },
    "out": {
-    "eventEyebrow": "LIVE EVENT",
+    "eventEyebrow": "REPORTED EVENT",
     "eventDataStatus": "Saved copy",
     "eventRecordState": "Saved copy, not live",
     "calamityStatus": "A saved copy, shown because the source did not list it this time"
@@ -9752,7 +9752,7 @@
     "label": "IST",
     "fmtDate": "20 Oct 2026, 4:54 PM IST",
     "fmtTime": "4:54 PM IST",
-    "menuLabel": "IST · India"
+    "menuLabel": "India (IST)"
    }
   },
   {
@@ -9764,7 +9764,7 @@
     "label": "IST",
     "fmtDate": "05 Jan 2026, 11:35 PM IST",
     "fmtTime": "11:35 PM IST",
-    "menuLabel": "IST · India"
+    "menuLabel": "India (IST)"
    }
   },
   {
@@ -11166,7 +11166,7 @@
      "shown": 40,
      "note": "Showing 40 of 45.",
      "button": "Show 5 more",
-     "kOfficial": "45"
+     "kOfficial": "0"
     }
    },
    {
@@ -11175,7 +11175,7 @@
      "shown": 45,
      "note": "Showing all 45.",
      "button": null,
-     "kOfficial": "45"
+     "kOfficial": "0"
     }
    }
   ]
@@ -11290,7 +11290,7 @@
       [
        "Start date",
        "13 Sept 2026",
-       "13 Sept 2026"
+       "13 Sep 2026"
       ],
       [
        "Start time",
@@ -11324,8 +11324,8 @@
       ]
      ],
      "evidence": [
-      "/alerts/rw-vn-2",
-      "/alerts/gdacs-vn-1",
+      "/disasters/rw-vn-2",
+      "/disasters/gdacs-vn-1",
       "/disasters/usgs-vn-3",
       "/forecasts/ND-001"
      ]

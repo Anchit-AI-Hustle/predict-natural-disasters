@@ -190,7 +190,7 @@ test('a record its provider stopped updating is kept but not live', () => {
   const evs = [
     { type: 'Flood', updated: hoursAgo(40 * 24, now) },
     { type: 'Flood', updated: hoursAgo(20 * 24, now), expectedEnd: hoursAhead(24, now) },
-    { type: 'Tropical Cyclone', updated: hoursAgo(50, now) },
+    { type: 'Tropical Cyclone', updated: hoursAgo(20, now) },
     { type: 'Tropical Cyclone', updated: hoursAgo(4.5 * 24, now) },
     { type: 'Drought', updated: hoursAgo(30 * 24, now) },
     { type: 'Flood', forecast: true, updated: hoursAgo(90 * 24, now) }

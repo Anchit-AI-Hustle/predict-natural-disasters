@@ -43,7 +43,7 @@
   function urlFor(e) {
     var id = encodeURIComponent((e && e.id) || '');
     if (e && e.forecast) return '/forecasts/' + id;
-    if (e && e.sourceType === 'official' && (e.alert === 'Red' || e.alert === 'Orange')) return '/alerts/' + id;
+    /* One address per record, whatever its level (launch audit B27). */
     return '/disasters/' + id;
   }
 

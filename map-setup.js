@@ -431,14 +431,23 @@
           }
           placed.push(box);
 
-          L.marker([p.at.lat, p.at.lon], {
-            /* Not a tab stop either (LABEL_KEYS). Leaflet makes every marker
-               one by default, interactive or not, so the country names were
-               the first dozen tab stops on every map page. This is the
-               marker's option, not the map's keyboard control, which stays. */
+          /* A country's name is a label, not a control. Leaflet makes every
+             marker a tab stop by default, interactive or not, so the country
+             names were the first dozen tab stops on every map page (on
+             /alerts, 17 names before a single alert). The 'keyboard' option
+             set to false (LABEL_KEYS) is the marker's option, not the map's keyboard
+             control, which stays; once drawn, the element is also taken out
+             of the tab order and hidden from screen readers, as riskMarker
+             does for its markers. */
+          var name = L.marker([p.at.lat, p.at.lon], {
             interactive: false, 'keyboard': LABEL_KEYS, pane: labelPane(map),
             icon: L.divIcon({ className: look.label, html: PNDMapEscape(p.name), iconSize: [0, 0] })
-          }).addTo(labels);
+          });
+          if (typeof name.on === 'function') name.on('add', function () {
+            var el = name.getElement && name.getElement();
+            if (el) { el.setAttribute('tabindex', '-1'); el.removeAttribute('role'); el.setAttribute('aria-hidden', 'true'); }
+          });
+          name.addTo(labels);
         });
       }
       /* Turned on now, or later by showNames() if the imagery above this
