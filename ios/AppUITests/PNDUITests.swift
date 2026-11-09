@@ -123,7 +123,8 @@ final class PNDUITests: XCTestCase {
         ]
         for (i, t) in tabs.enumerated() {
             open(app, tab: t.0, title: t.1)
-            waitFor(app.staticTexts[t.2].firstMatch)
+            // A query string is capped at 128 characters, so a long subtitle is matched by its start.
+            waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", String(t.2.prefix(100)))).firstMatch)
             if t.0 != "track" { waitFor(el(app, "trustNote")) }
             if t.0 == "track" { waitFor(el(app, "answerLead"), 60) }
             shot(app, String(format: "%02d-", i + 2) + t.0)
@@ -160,7 +161,10 @@ final class PNDUITests: XCTestCase {
         waitFor(el(app, "trustNote"))
         open(app, tab: "map", title: "Map")
         waitFor(app.staticTexts["Live disaster map"].firstMatch)
-        let key = scrollTo(app, el(app, "mapKeyButton"), hittable: true)
+        // Checked where the tab opens: the Key row sits just above the tab bar,
+        // and a drag that starts on the map pans the map instead of the page.
+        let key = el(app, "mapKeyButton")
+        waitFor(key)
         XCTAssertTrue(key.isHittable, "the Key button is covered")
         if !isPad {
             let bar = el(app, "tabBar")
@@ -240,7 +244,8 @@ final class PNDUITests: XCTestCase {
             if r.0 != "history" && r.0 != "notfound" { waitFor(el(app, "trustNote")) }
             if r.0 == "quiet" { waitFor(el(app, "quietNote")) }
             // The source page has no enrichment block (features.md 10.2).
-            if r.0 != "notfound" && r.0 != "source" { scrollTo(app, el(app, "enrichment")) }
+            // The source page has none either, and a history page is the archive, with no live enrichment (C46).
+            if r.0 != "notfound" && r.0 != "source" && r.0 != "history" { scrollTo(app, el(app, "enrichment")) }
             shot(app, "20-detail-" + r.0)
             app.terminate()
         }
@@ -324,7 +329,7 @@ final class PNDUITests: XCTestCase {
         scrollTo(app, el(app, "alertCard"))
         shot(app, "61-alerts-axl")
         let app2 = launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL", "-PNDOpenRoute", "/alerts/gdacs-FL-1104999"])
-        waitFor(app2.staticTexts["OFFICIAL ALERT"].firstMatch, 30)
+        waitFor(app2.staticTexts["REPORT FROM AN OFFICIAL AGENCY"].firstMatch, 30)
         shot(app2, "62-alert-detail-axl")
     }
 }
