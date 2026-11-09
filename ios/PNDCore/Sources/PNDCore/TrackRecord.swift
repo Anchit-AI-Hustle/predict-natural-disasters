@@ -9,9 +9,12 @@ public enum TrackRecord {
         public var verificationLedger: JSONValue?
         public var observed: JSONValue?
         public var scanLedger: JSONValue?
-        public init(outlookLedger: JSONValue?, verificationLedger: JSONValue?, observed: JSONValue?, scanLedger: JSONValue?) {
+        /// `data/accuracy-summary.json` (tools/build-accuracy-summary.js), whose
+        /// `answer` is the headline the site opens with (changelog C29); nil when absent.
+        public var summary: JSONValue?
+        public init(outlookLedger: JSONValue?, verificationLedger: JSONValue?, observed: JSONValue?, scanLedger: JSONValue?, summary: JSONValue? = nil) {
             self.outlookLedger = outlookLedger; self.verificationLedger = verificationLedger
-            self.observed = observed; self.scanLedger = scanLedger
+            self.observed = observed; self.scanLedger = scanLedger; self.summary = summary
         }
     }
 
@@ -137,6 +140,21 @@ public enum TrackRecord {
 
     /// Builds the screen. `verdicts` align with `prepared.preds`, `assessments`
     /// with `prepared.obsEvents`; pass nil when the engine could not run.
+    /// When a recorded version was frozen (`accuracy-model.js frozenAt`).
+    static func frozenAt(_ r: Record) -> Double {
+        JSDate.ms(r.first("freezeTimestamp", "recordedAt")?.jsString) ?? JSDate.ms(r.first("targetStart")?.jsString) ?? 0
+    }
+
+    /// One verdict per forecast (`accuracy-model.js firstVersionIndex`, changelog
+    /// C29): the index of each id's earliest-frozen version.
+    public static func firstVersionIndex(_ rows: [Record]) -> Set<Int> {
+        var best: [String: Int] = [:]
+        for (i, r) in rows.enumerated() where !r.id.isEmpty {
+            if let b = best[r.id] { if frozenAt(r) < frozenAt(rows[b]) { best[r.id] = i } } else { best[r.id] = i }
+        }
+        return Set(best.values)
+    }
+
     public static func build(_ i: Inputs, _ p: Prepared, verdicts: [JSONValue]?, assessments: [JSONValue]?, now: Double, tz: String? = nil) -> Report {
         var r = Report()
         let l = p.rows
@@ -213,8 +231,15 @@ public enum TrackRecord {
         }
 
         let records = recs.map { $0.0 }
-        let t = Verdicts.tally(records, now: now)
-        r.keyFigures = zip(keyLabels, [l.count, t.open, t.awaiting, t.ungradeable, t.graded, t.verified, t.partial, t.falseAlarm, t.missed, t.notPrediction])
+        // One verdict per forecast (changelog C29): each id counted once, by its first recorded version.
+        let first = firstVersionIndex(l)
+        let firstKeys = Set(first.map { Hazards.claimKey(l[$0]) })
+        let counted = records.filter { rr in
+            let isForecast = rr.truthy("targetStart") || rr.truthy("targetEnd") || rr.truthy("forecastKind")
+            return isForecast ? firstKeys.contains(Hazards.claimKey(rr)) : true
+        }
+        let t = Verdicts.tally(counted, now: now)
+        r.keyFigures = zip(keyLabels, [distinct, t.open, t.awaiting, t.ungradeable, t.graded, t.verified, t.partial, t.falseAlarm, t.missed, t.notPrediction])
             .map { Metric(label: $0.0, value: "\($0.1)") }
         let disagree = recs.filter { $0.2 != nil }.count
         let unrep = recs.filter { $0.3 }.count
@@ -230,8 +255,8 @@ public enum TrackRecord {
         if t.unknown > 0 { h += " " + pl(t.unknown, "forecast has", "forecasts have") + " a result this page does not recognise. " + (t.unknown == 1 ? "It is" : "They are") + " counted as not checked." }
         r.honesty = h
 
-        let headlineIdx = p.preds.indices.filter { p.preds[$0].s("forecastClass") == "independent-prospective" }
-        let condIdx = p.preds.indices.filter { let c = p.preds[$0].s("forecastClass"); return !c.isEmpty && c != "independent-prospective" && c != "invalid-post-event" }
+        let headlineIdx = p.preds.indices.filter { first.contains($0) && p.preds[$0].s("forecastClass") == "independent-prospective" }
+        let condIdx = p.preds.indices.filter { let c = p.preds[$0].s("forecastClass"); return first.contains($0) && !c.isEmpty && c != "independent-prospective" && c != "invalid-post-event" }
         let asm = assessments ?? []
         let sH = Verification.score(headlineIdx.map { vds[$0] }, asm)
         let since = Verification.predictingSince(p.preds)
@@ -319,6 +344,11 @@ public enum TrackRecord {
               (predicted > 0 ? "We forecast \(predicted) of them in advance." : "We forecast none of them in advance.") + (why.isEmpty ? "" : " " + why.joined(separator: " ")))
         if t.missed > 0 { pts.append(pl(t.missed, "more missed event was", "more missed events were") + " recorded by hand.") }
         r.answerPoints = pts
+        // The site opens with the summary's answer (accuracy-model.js answer) where it has one (changelog C29).
+        if let a = i.summary?["answer"], let lead = a["lead"]?.stringValue, !lead.isEmpty {
+            r.answerLead = lead
+            r.answerPoints = (a["points"]?.arrayValue ?? []).compactMap { $0.stringValue }
+        }
         let m = Verification.Score.methodology
         r.methodNote = [m["precision"]!, m["recall"]!, m["f1"]!, m["partialHitWeight"]!].joined(separator: " ") + " Checker version: " + Verification.Score.version + "."
         let parts = Verdicts.partitionByClass(records)
@@ -345,7 +375,7 @@ public enum TrackRecord {
         r.missed = r.rows.filter { ["MISSED", "COVERAGE_FAILURE"].contains($0.state) }
         r.comparisons = r.rows.filter { ["VERIFIED", "PARTIAL", "FALSE_ALARM"].contains($0.state) }
         r.figures = [
-            "mTotal": "\(l.count)", "mOpen": "\(t.open)", "mAwaiting": "\(t.awaiting)", "mUngradeable": "\(t.ungradeable)", "mGraded": "\(t.graded)",
+            "mTotal": "\(distinct)", "mOpen": "\(t.open)", "mAwaiting": "\(t.awaiting)", "mUngradeable": "\(t.ungradeable)", "mGraded": "\(t.graded)",
             "mVerified": "\(t.verified)", "mPartial": "\(t.partial)", "mFalse": "\(t.falseAlarm)", "mMissed": "\(t.missed)", "mNotPrediction": "\(t.notPrediction)",
             "ipTotal": "\(headlineIdx.count)", "ipMatured": "\(sH.eligibleMaturedPredictions)", "ipHit": "\(sH.hit)", "ipPartial": "\(sH.partial)",
             "ipMiss": "\(sH.miss)", "ipPending": "\(sH.pending)", "ipInvalid": "\(invalid)", "ipPrecision": r.advance[7].value,

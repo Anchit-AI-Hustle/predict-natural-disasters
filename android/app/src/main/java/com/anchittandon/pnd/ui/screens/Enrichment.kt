@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.anchittandon.pnd.data.Api
 import com.anchittandon.pnd.data.EnrichmentRepository
 import com.anchittandon.pnd.logic.Format
+import com.anchittandon.pnd.logic.Portal
 import com.anchittandon.pnd.model.arr
 import com.anchittandon.pnd.model.jsNum
 import com.anchittandon.pnd.model.num
@@ -124,8 +125,16 @@ private fun Rendered(d: JsonObject, e: JsonObject) {
         if (e.truthy("sourceUrl")) LinkButton("Open the original report ↗") { open(e.text("sourceUrl")) }
         KvList(listOf("About these times" to wh.text("note")))
     }
-    // 2. Who may need help
-    Panel(PANELS[1].second, subtitle = "${d.arr("distressGroups")?.size ?: 0} groups · ${d.arr("immediateNeeds")?.size ?: 0} needs") {
+    // 2. Who may need help: needs only where the record is grave (event-enrichment.js grave, PND.lifeSafety, changelog C40).
+    if (!e.truthy("aggregate") && !e.truthy("forecast") && !Portal.lifeSafety(e)) {
+        Panel(PANELS[1].second, subtitle = "Shown when an agency warns, or reports harm") {
+            CardBox(Modifier.testTag("noDamageEnrichment")) {
+                Text("No damage reported by the source", color = Pnd.text, fontWeight = FontWeight.Bold)
+                Muted(e.text("source").ifEmpty { "The source" } + " reports no deaths, displacement or damage for this event, and it is not an official warning, so we list no needs. " +
+                    "General preparedness for this hazard is in the agency links below.")
+            }
+        }
+    } else Panel(PANELS[1].second, subtitle = "${d.arr("distressGroups")?.size ?: 0} groups · ${d.arr("immediateNeeds")?.size ?: 0} needs") {
         listOf("Who may need help first" to "distressGroups", "Immediate needs" to "immediateNeeds", "Other dangers to watch for" to "secondaryRisks", "How to stay safe" to "safetyActions").forEach { (t, k) ->
             CardBox {
                 Text(t, color = Pnd.text, fontWeight = FontWeight.Bold)

@@ -20,7 +20,9 @@ final class TrackRecordModel: ObservableObject {
         async let s = try? client.dataFile("scan-ledger.json")
         async let bt = try? client.dataFile("model-backtest.json")
         async let mv = try? client.dataFile("model-verdicts.json")
-        let inputs = TrackRecord.Inputs(outlookLedger: await l, verificationLedger: await v, observed: await o, scanLedger: await s)
+        // The headline the site opens with, one verdict per forecast (changelog C29).
+        async let sm = try? client.dataFile("accuracy-summary.json")
+        let inputs = TrackRecord.Inputs(outlookLedger: await l, verificationLedger: await v, observed: await o, scanLedger: await s, summary: await sm)
         let btDoc = await bt
         backtestDoc = btDoc
         backtest = Backtest.rows(btDoc)

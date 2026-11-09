@@ -225,7 +225,7 @@ fun RegionDetailScreen(region0: String) {
         val top = es.firstOrNull { !it.forecast } ?: es.firstOrNull()
         enrichmentBlock(jsonObjectOf("title" to (if (region == "World") "global natural disaster response" else "$region natural disaster"),
             "country" to (if (region == "World") "" else region), "region" to (if (region == "World") "" else region), "type" to (top?.type ?: "Natural Hazard"),
-            "updated" to feed.feed!!.generatedAt, "lat" to top?.lat, "lon" to top?.lon, "source" to "Combined from the official sources we read", "forecast" to false))
+            "updated" to feed.feed!!.generatedAt, "lat" to top?.lat, "lon" to top?.lon, "source" to "Combined from the official sources we read", "forecast" to false, "aggregate" to true))
     }
 }
 
@@ -308,7 +308,7 @@ fun LocationDetailScreen(name: String, lat: Double?, lon: Double?, level: String
         val top = es.firstOrNull { !it.forecast } ?: es.firstOrNull()
         enrichmentBlock(jsonObjectOf("title" to "$name natural disaster", "country" to (if (at != null) country else if (name == "World") "" else name),
             "region" to (if (name == "World") "" else name), "type" to (top?.type ?: "Natural Hazard"), "updated" to feed.feed!!.generatedAt,
-            "lat" to (at?.first ?: top?.lat), "lon" to (at?.second ?: top?.lon), "source" to "Combined from the official sources we read", "forecast" to false))
+            "lat" to (at?.first ?: top?.lat), "lon" to (at?.second ?: top?.lon), "source" to "Combined from the official sources we read", "forecast" to false, "aggregate" to true))
     }
 }
 
@@ -382,7 +382,7 @@ fun HazardDetailScreen(type0: String, region0: String) {
         val top = es.firstOrNull()
         enrichmentBlock(jsonObjectOf("title" to type + (if (rr.isNotEmpty()) " " + region0.trim() else ""), "country" to (if (rr.isNotEmpty()) region0.trim() else top?.country ?: ""),
             "region" to (if (rr.isNotEmpty()) region0.trim() else top?.region ?: ""), "type" to type, "updated" to feed.feed!!.generatedAt,
-            "lat" to top?.lat, "lon" to top?.lon, "source" to "Combined from the official sources we read", "forecast" to false))
+            "lat" to top?.lat, "lon" to top?.lon, "source" to "Combined from the official sources we read", "forecast" to false, "aggregate" to true))
     }
 }
 
@@ -392,21 +392,29 @@ fun HistoryDetailScreen(key: String) {
     val env = LocalApp.current
     val all = env.container.history
     val dec = Format.dec(key)
-    val e = all.firstOrNull { slug(it.text("name")) == dec || it.text("name") == dec }
-        ?: dec.toIntOrNull()?.let { all.getOrNull(it) }
-        ?: all.firstOrNull { it.text("name").lowercase().contains(dec.lowercase()) }
+    // The accent-folded slug, the name, the slug it was published under before accents were folded, or an index (changelog C46).
+    fun found(k: String) = all.firstOrNull { slug(it.text("name")) == k || it.text("name") == k } ?: all.firstOrNull { legacySlug(it.text("name")) == k }
+        ?: k.takeIf { Regex("^\\d+$").matches(it) }?.toIntOrNull()?.let { all.getOrNull(it) }
+    val e = if (dec.isBlank()) null else found(dec) ?: found(slug(dec))
     val (sort, setSort) = rememberSort("history_sortBy", Sorts.HISTORY_RELATED)
     PndScreen(trust = null, feedBanner = false) {
         if (e == null) {
-            item { Column { Heading("Past disaster not found", Modifier.testTag("notFound")); Body("Go back to the list and choose a disaster."); OutlinePillButton("See current calamities") { env.navigate("/calamities") } } }
+            item { Column { Heading("Past disaster not found", Modifier.testTag("notFound")); Body("We have no past disaster at this address."); OutlinePillButton("See all past disasters") { env.navigate("/calamities?tab=history") } } }
             return@PndScreen
         }
         val name = e.text("name"); val type = e.text("type"); val loc = e.text("location")
-        item(key = "top") { DetailTop("PAST DISASTER", name, "${e.text("year")} · $loc", "/history/" + Format.enc(slug(name))) }
+        // Dated by the event, not by a refresh time (changelog C46).
+        val date = e.text("date").ifEmpty { e.text("year") }
+        item(key = "top") { DetailTop("PAST DISASTER", name, "$date · $loc", "/history/" + Format.enc(slug(name))) }
         item(key = "stats") { FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) { Figure("When", e.text("year")); Figure("Hazard", type); Figure("Severity", e.text("severity")); Figure("Where", loc) } }
         item(key = "about") {
             Panel("About this disaster", trailing = { LinkButton("Past and recent events →") { env.navigate("/historical-events") } }) {
-                KvList(listOf("Name" to name, "When" to e.text("year"), "Hazard type" to type, "Where" to loc, "Severity" to e.text("severity"), "Summary" to e.text("summary")))
+                val deaths = e.text("deaths").let { d -> if (d.isNotEmpty()) d + (e.text("deathsNote").takeIf { it.isNotEmpty() }?.let { ". $it" } ?: "") else e.text("deathsNote").ifEmpty { "No reliable figure." } }
+                val sev = e.text("severity")
+                KvList(listOf("Name" to name, "When" to date, "Hazard type" to type, "Where" to loc, "Severity" to sev + ": " + (HISTORY_SEVERITY[sev] ?: ""),
+                    "Lives lost" to deaths, "Summary" to e.text("summary"),
+                    "Source" to (if (e.truthy("sourceUrl")) e.text("source") + ". The commonly cited figure; other sources may differ." else "-")))
+                if (e.truthy("sourceUrl")) LinkButton(e.text("source") + " ↗") { env.container.platform.openUrl(e.text("sourceUrl")) }
             }
         }
         item(key = "sure") {
@@ -431,9 +439,15 @@ fun HistoryDetailScreen(key: String) {
                 OutlinePillButton("See current calamities") { env.navigate("/calamities") }
             }
         }
-        enrichmentBlock(jsonObjectOf("title" to name, "country" to loc.split(",").last().trim(), "region" to loc, "type" to type, "updated" to "", "source" to "Historical disaster archive", "forecast" to false))
+        // An archive page never runs the live enrichment (changelog C46).
     }
 }
+
+/** What a past disaster's severity means (history-data.js `PND_HISTORY_SEVERITY`). */
+val HISTORY_SEVERITY = mapOf(
+    "Catastrophic" to "A commonly cited toll of 10,000 deaths or more, or damage on a national scale.",
+    "Major" to "A disaster with a toll below 10,000 or with severe regional damage.",
+)
 
 /** Source detail (features.md §10.2). */
 private data class Profile(val name: String, val cls: String, val coverage: String, val use: String, val fresh: String, val limits: String, val url: String)

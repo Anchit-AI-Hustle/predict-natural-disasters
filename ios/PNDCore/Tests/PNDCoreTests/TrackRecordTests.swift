@@ -67,7 +67,8 @@ final class TrackRecordTests: XCTestCase {
         let expected = try JSONValue.parse(expData)
         let now = expected["now"]!.jsNumber
         let i = TrackRecord.Inputs(outlookLedger: loadData("outlook-ledger.json"), verificationLedger: loadData("verification-ledger.json"),
-                                   observed: loadData("observed-disasters.json"), scanLedger: loadData("scan-ledger.json"))
+                                   observed: loadData("observed-disasters.json"), scanLedger: loadData("scan-ledger.json"),
+                                   summary: loadData("accuracy-summary.json"))
         let p = TrackRecord.prepare(i)
         XCTAssertTrue(p.canGrade)
         var graded: (verdicts: [JSONValue], assessments: [JSONValue])?
@@ -103,7 +104,9 @@ final class FixtureLedgerTests: XCTestCase {
         let r = TrackRecord.build(i, p, verdicts: Array(repeating: .object([:]), count: p.preds.count),
                                   assessments: Array(repeating: .object(["falseNegative": true, "status": "DATA_UNAVAILABLE"]), count: p.obsEvents.count), now: Fixtures.now)
         XCTAssertNil(r.ledgerError)
-        XCTAssertEqual(r.figures["mTotal"], "\(p.rows.count)")
+        // C29: one verdict per forecast, so the total counts each forecast id once, not every recorded version.
+        XCTAssertEqual(r.figures["mTotal"], "\(Set(p.rows.map { $0.id }).count)")
+        XCTAssertLessThan(Set(p.rows.map { $0.id }).count, p.rows.count, "the fixture ledger has re-issued versions")
         XCTAssertEqual(r.figures["obUnknown"], "\(p.obsEvents.count)")
         XCTAssertNotNil(Backtest.rows(Fixtures.json("model-backtest.json")))
         XCTAssertFalse(TrackRecord.published(Fixtures.json("model-verdicts.json")).status.isEmpty)

@@ -124,16 +124,77 @@ public enum RiskScale {
 
     public static func rankOf(_ value: String?) -> Int { levelOf(value).rank }
 
-    /// The record's one resolved level: severity wins, the alert only where
-    /// there is no severity (`PND.riskTag`, `riskLabel`, `matchesRiskLevel`).
-    public static func level(of e: Record) -> RiskLevel {
-        let sv = levelOf(e["severity"])
-        if sv != .unknown { return sv }
-        return levelOf(e["alert"])
+    /// risk.js `SEVERITY_KEY`: the severity scale's ranks on the six levels.
+    public static let severityKey: [Int: RiskLevel] = [1: .low, 2: .watch, 3: .moderate, 4: .severe, 5: .extreme]
+
+    /// `PNDRisk.keyFor(e)` (changelog C31): the one level a record resolves
+    /// to, for the badge, the filter, the calendar bar and the map marker.
+    /// A weather model's forecast is its own alert; anything else its
+    /// severity, else its alert; a named storm is floored at its category; an
+    /// M6+ earthquake with no PAGER and no alert is Not rated.
+    public static func keyFor(_ e: Record) -> RiskLevel {
+        var key: RiskLevel
+        if e.s("forecastKind") == "model-advance" && levelOf(e["alert"]) != .unknown { key = levelOf(e["alert"]) }
+        else { let sv = levelOf(e["severity"]); key = sv != .unknown ? sv : levelOf(e["alert"]) }
+        let mag = e.jsNumber("magnitude")
+        if !e.forecast && key == .low && mag.isFinite && mag >= 6 && !e.truthy("pagerAlert") && levelOf(e["alert"]) == .unknown { return .unknown }
+        if let floor = severityKey[Hazards.cycloneCategoryRank(e)], key == .unknown || floor.rank > key.rank { key = floor }
+        return key
     }
+
+    /// Whose impact estimate a level is, where an agency set it ("USGS PAGER green", "GDACS orange").
+    public static func basisFor(_ e: Record, _ key: RiskLevel) -> String? {
+        if e.forecast { return nil }
+        let pager = e.s("pagerAlert").lowercased()
+        if !pager.isEmpty && levelOf(pager) == key { return "USGS PAGER " + pager }
+        let alert = e.s("alert")
+        let colour = ["green", "yellow", "orange", "red"].contains(alert.lowercased()) ? alert.lowercased() : ""
+        let src = e.first("alertSource", "source")?.jsString ?? ""
+        if !colour.isEmpty && src.lowercased().contains("gdacs") && levelOf(colour) == key && e.s("alertBasis") != "derived-from-intensity" {
+            return "GDACS " + colour
+        }
+        return nil
+    }
+
+    public struct Described: Equatable, Sendable {
+        public let key: RiskLevel
+        public let basis: String?
+        public var label: String { key.label }
+        /// The badge text: "Low expected impact (USGS PAGER green)" where an agency set the level.
+        public var text: String { basis.map { key.label + " expected impact (" + $0 + ")" } ?? key.label }
+    }
+
+    /// `PNDRisk.describe(e)`.
+    public static func describe(_ e: Record) -> Described {
+        let k = keyFor(e)
+        return Described(key: k, basis: k == .unknown ? nil : basisFor(e, k))
+    }
+
+    /// The record's one resolved level (`PND.riskKey`, an alias of `keyFor`).
+    public static func level(of e: Record) -> RiskLevel { keyFor(e) }
 
     /// `riskLabel(e)`.
     public static func label(of e: Record) -> String { level(of: e).label }
+
+    /// The badge's text (`PND.riskTag`): `describe(e).text`, "Not rated" for no level.
+    public static func tagText(of e: Record) -> String {
+        let d = describe(e)
+        return d.key == .unknown ? "Not rated" : d.text
+    }
+
+    private static let quakeRe = JSRegex("earthquake", caseInsensitive: true)
+    private static let aftershockRe = JSRegex("aftershock", caseInsensitive: true)
+    private static let usgsRe = JSRegex(#"^USGS\b"#)
+
+    /// `PND.riskWords(e)`: the level in words that say where it came from.
+    public static func riskWords(_ e: Record) -> String {
+        let d = describe(e)
+        if d.basis != nil { return d.text }
+        let quake = quakeRe.test(e.type) && !aftershockRe.test(e.type)
+        let src = e.first("alertSource", "source")?.jsString ?? ""
+        if d.key == .low && quake && usgsRe.test(src) && !e.truthy("pagerAlert") && !e.forecast { return "Low (no USGS PAGER impact alert issued)" }
+        return d.label
+    }
 
     /// `matchesRiskLevel(e, key)`; an empty key matches everything.
     public static func matches(_ e: Record, _ key: String?) -> Bool {
@@ -141,13 +202,22 @@ public enum RiskScale {
         return level(of: e).rawValue == key
     }
 
+    /// `riskLevelOptions(selected, records)`: only the levels the records hold, plus the chosen one.
+    public static func filterOptions(for records: [Record], selected: String?) -> [RiskLevel] {
+        let have = Set(records.map { keyFor($0) })
+        return RiskLevel.filterOptions.filter { have.contains($0) || $0.rawValue == selected }
+    }
+
     /// The badge's accessibility label / tooltip (`riskTag` title).
     public static func badgeTitle(of e: Record) -> String {
         let rawAlert = e["alert"], rawSev = e["severity"]
         let a = levelOf(rawAlert), sv = levelOf(rawSev)
-        let top: RiskLevel = sv != .unknown ? sv : a
+        let top = keyFor(e)
         if top == .unknown {
-            return "No alert level was published for this record and no severity has been assessed for it."
+            let mag = e.jsNumber("magnitude")
+            return mag.isFinite && mag >= 6
+                ? "No impact assessment has been published for this earthquake yet, so it has no level. Its magnitude is a measurement, not a level."
+                : "No alert level was published for this record and no severity has been assessed for it."
         }
         var from: [String] = []
         let alertBy = e.first("alertSource", "source")?.jsString ?? ""
@@ -156,8 +226,12 @@ public enum RiskScale {
                 (alertBy.isEmpty ? "" : " published by " + Format.shortSource(alertBy)))
         }
         if sv != .unknown { from.append("an assessed severity of \u{201C}" + (rawSev?.jsString ?? "") + "\u{201D}") }
-        return top.label + " on this site\u{2019}s six-level risk scale, from " + from.joined(separator: " and ") +
-            (a != .unknown && sv != .unknown && a != sv ? ". Where these differ the higher decides." : ".")
+        if severityKey[Hazards.cycloneCategoryRank(e)] == top && top != (sv != .unknown ? sv : a) { from.append("the storm\u{2019}s category, which is a floor") }
+        if e.s("forecastKind") == "model-advance" {
+            from = ["our weather model: High where the place\u{2019}s 99th percentile is forecast to be crossed, Moderate for its 95th"]
+        }
+        let joined = from.joined(separator: " and ")
+        return top.label + " on this site\u{2019}s six-level risk scale, from " + (joined.isEmpty ? "its record" : joined) + "."
     }
 
     public struct Marker: Equatable, Sendable {
@@ -174,7 +248,10 @@ public enum RiskScale {
         return Marker(level: lv, colourHex: lv.colourHex, size: lv.markerSize, label: name)
     }
 
+    /// A record's marker takes its one level (`riskMarker` given the record, changelog C31).
     public static func marker(for e: Record) -> Marker {
-        marker(alert: e.alert, label: Format.titleOf(e))
+        let lv = keyFor(e)
+        let t = Format.titleOf(e)
+        return Marker(level: lv, colourHex: lv.colourHex, size: lv.markerSize, label: (t.isEmpty ? "" : t + " - ") + lv.label + " risk")
     }
 }

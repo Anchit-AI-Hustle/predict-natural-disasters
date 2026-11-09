@@ -23,7 +23,12 @@
 .nf code{background:#08251c;border:1px solid #1d654c;border-radius:6px;padding:2px 6px;font-size:12px;word-break:break-all}
 .nf .onward{display:inline-block;margin-top:10px;background:#35d79a;color:#04211a;font-weight:700;border-radius:9px;padding:11px 18px;text-decoration:none}
 .nf .onward[hidden]{display:none}
-@media(max-width:760px){.nf .paths{grid-template-columns:1fr}}</style><link rel="stylesheet" href="/trust.css"><script src="/trust.js"></script></head>
+@media(max-width:760px){.nf .paths{grid-template-columns:1fr}}
+/* The headline and line under it are rewritten by script once the address is checked; on a phone the
+   new text can take a different number of lines, which moved the page (CLS 0.18 at 390px). Both hold two lines. */
+@media(max-width:700px){.hero #headline,.hero #sub{min-height:2.8em}}
+/* The status beside "What happened" keeps one line and its place when it is cleared, so the panel does not resize under the reader. */
+.nf #state{min-height:1.4em;white-space:nowrap}@media(max-width:700px){.nf #state{flex-basis:100%}}</style><link rel="stylesheet" href="/trust.css"><script src="/trust.js"></script></head>
 <body><div id="nav"></div>
 <section class="hero"><h1 id="headline">Looking for this page…</h1>
 <p id="sub">Checking the latest data for a matching event, warning or forecast.</p></section>
@@ -31,6 +36,8 @@
   <section class="panel"><div class="ph"><h2>What happened</h2><span id="state" class="statusbar">Checking…</span></div>
     <div class="detail">
       <p>There is no page at the address <code id="attempted">-</code>.</p>
+      <!-- Filled in as the page is read, not once the scripts at the end arrive: a long address wraps onto more lines than "-", which moved everything under it on a phone. -->
+      <script>attempted.textContent = location.pathname + location.search;</script>
       <p class="muted" id="explain">Our sources stop listing an event once it is over. So a page from an old link may no longer
         exist. If the event is still listed, we will take you to it automatically.</p>
       <a id="onward" class="onward" href="/events" data-keep-href hidden>Continue</a>
@@ -115,8 +122,8 @@ async function resolve() {
     sub.textContent = 'There is no page at this address on our site.';
   }
   /* Nothing left to report once the lookup has finished: a stray "Done"
-     beside "What happened" read as part of the answer. */
-  state.hidden = true;
+     beside "What happened" read as part of the answer. It keeps its place, so nothing under it moves up. */
+  state.style.visibility = 'hidden';
 }
 resolve();
 </script><script src="/glossary.js"></script></body></html>

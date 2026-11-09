@@ -56,7 +56,7 @@
       forecastable: true,
       horizonH: 120,
       duration: 'Days at sea; landfall impacts run roughly 12 to 72 hours at a given place.',
-      severityBasis: 'Saffir-Simpson category from sustained wind, plus expected storm surge and rainfall over populated coast.',
+      severityBasis: 'The regional agency’s own scale from sustained wind (Saffir-Simpson in the Atlantic and eastern and central Pacific; IMD, JMA and BoM categories elsewhere), plus expected storm surge and rainfall over populated coast.',
       leadTime: 'Three to five days. Storms can be forecast further ahead than most hazards, which is why official storm tracks cover five days.'
     },
     Flood: {
@@ -105,7 +105,7 @@
       onset: 'slow',
       forecastable: true,
       horizonH: 720,
-      duration: 'Months to years. Drought does not have a three-day window and must never be published with one.',
+      duration: 'Months to years, so it is never given a three-day window.',
       severityBasis: 'Extent and duration of the deficit, and the population dependent on rain-fed agriculture or affected water supply.',
       leadTime: 'Weeks to months. Drought builds slowly, so long-range forecasts give real warning.'
     },
@@ -167,7 +167,7 @@
       horizonH: 24,
       duration: 'Hours of wave trains; the first wave is often not the largest.',
       severityBasis: 'Expected run-up height against coastal population and evacuation time available.',
-      leadTime: 'Minutes to hours, depending on how far the wave has to travel. It is not forecast by any model.'
+      leadTime: 'Minutes to hours, depending on how far the wave has to travel. Once an earthquake is detected, warning centres such as PTWC, JMA and INCOIS model arrival times and wave heights; the earthquake itself cannot be forecast.'
     }
   };
 
@@ -187,6 +187,12 @@
     var t = String(type || '');
     if (HAZARDS[t]) return HAZARDS[t];
     var k = t.toLowerCase();
+    /* The weather models' own hazards (forecast-models.js MODEL_HAZARDS) are
+       weather lines, not disasters, and are named so; they belong to the
+       family of the disaster they bear on. */
+    if (/^unusually hot days$/.test(k)) return HAZARDS['Extreme Heat'];
+    if (/^unusually heavy rain$/.test(k)) return HAZARDS.Flood;
+    if (/^high fire-weather index$/.test(k)) return HAZARDS.Wildfire;
     // Ordered so a compound type lands on the entry that describes it best.
     if (/aftershock/.test(k)) return HAZARDS['Earthquake aftershock sequence'];
     if (/earthquake|seismic/.test(k)) return HAZARDS.Earthquake;
@@ -286,11 +292,24 @@
      * or Watch.
      */
     var issued = 0;
+    /* A weather model's forecast is not derived from anyone's alert, so it
+       is not set one step below one. Its "High" means the place's
+       99th percentile was forecast to be crossed and is ranked as high;
+       its "Moderate", the 95th, as moderate. They were published as
+       Moderate and Watch. */
+    if (e.forecastKind === 'model-advance') {
+      var mk = String(e.alert || '');
+      if (mk === 'High') return Math.max(assessed, wind, 4);
+      if (mk === 'Moderate') return Math.max(assessed, wind, 3);
+    }
     switch (String(e.alert || '')) {
       case 'Red': issued = 4; break;
       case 'Orange': issued = 3; break;
       case 'High': issued = 3; break;
       case 'Moderate': issued = 2; break;
+      /* An NWS watch or advisory (api/events.js nwsAlertLevel): one below a
+         warning of the same severity. */
+      case 'Yellow': issued = 2; break;
       case 'Watch': issued = 1; break;
       default: break;
     }
@@ -310,8 +329,35 @@
    * The severity to publish: the worse of what was observed and what the
    * issuing authority assessed. Never below Informational.
    */
+  /*
+   * A named storm is never shown below its agency category.
+   *
+   * GDACS colours a cyclone by the population its winds reach, so a super
+   * typhoon over open sea is Green, and an outlook derived from it was then
+   * set a step lower still: "Low · Storm risk from Super Typhoon In-fa". The
+   * category the agency gave the storm is a floor, on the same steps as the
+   * wind speed: a tropical storm Minor (Watch), a typhoon, hurricane or
+   * category 1 to 2 Moderate, category 3 Severe, category 4 to 5 or a super
+   * typhoon Extreme.
+   */
+  function cycloneCategoryRank(e) {
+    if (!e) return 0;
+    var t = String(e.type || '') + ' ' + String(e.title || '') + ' ' + String(e.name || '') + ' ' + String(e.region || '');
+    if (!/cyclone|hurricane|typhoon|tropical storm/i.test(t)) return 0;
+    var cat = Number(e.category);
+    var m = /\bcategory\s*([1-5])\b/i.exec(t);
+    if (!(cat >= 1 && cat <= 5) && m) cat = +m[1];
+    var r = 0;
+    if (/\bsuper\s+typhoon\b/i.test(t)) r = 5;
+    else if (cat >= 4) r = 5;
+    else if (cat === 3) r = 4;
+    else if (cat >= 1 || /\b(?:typhoon|hurricane)\b/i.test(t)) r = 3;
+    else if (/\btropical storm\b/i.test(t)) r = 2;
+    return r;
+  }
+
   function severityOf(e) {
-    var r = Math.max(impactRank(e || {}), alertRank(e || {}), 1);
+    var r = Math.max(impactRank(e || {}), alertRank(e || {}), cycloneCategoryRank(e || {}), 1);
     return BY_RANK[r];
   }
   function severityRank(e) { return RANK[severityOf(e)]; }
@@ -442,6 +488,72 @@
     return 'Tropical depression';
   }
 
+  /*
+   * Which warning centre's scale a storm is classed on.
+   *
+   * Saffir-Simpson categories are the hurricane centres' scale, for the
+   * Atlantic and the eastern and central North Pacific. A North Indian Ocean
+   * storm is classed by IMD (RSMC New Delhi), a western North Pacific one by
+   * JMA (RSMC Tokyo), with JTWC's "super typhoon" above 130 kt. Calling
+   * Cyclone Arnab "Category 4" in the Bay of Bengal used a scale IMD does not
+   * use, beside an IMD disclaimer telling Indian readers to follow IMD.
+   */
+  function cycloneBasin(lat, lon) {
+    var la = Number(lat), lo = Number(lon);
+    if (!isFinite(la) || !isFinite(lo)) return null;
+    if (lo > 180) lo -= 360;
+    if (la < 0) return 'south';
+    if (lo >= 30 && lo < 100) return 'nio';
+    if (lo >= 100 || lo < -180) return 'wpac';
+    if (lo >= -180 && lo < -140) return 'cpac';
+    if (lo >= -140 && lo < -100) return 'epac';
+    /* The Central American isthmus, as api/events.js oceanName draws it. */
+    if (lo >= -100 && lo < -77) {
+      var coast = lo >= -83 ? 8.5 : lo >= -87 ? 11 : lo >= -92 ? 14 : 16.5;
+      return la < coast ? 'epac' : 'atlantic';
+    }
+    return 'atlantic';
+  }
+
+  /* The authority whose warnings decide, per basin, for a cyclone page's link. */
+  var CYCLONE_AUTHORITY = {
+    nio: { name: 'India Meteorological Department (IMD), RSMC New Delhi', short: 'IMD', url: 'https://mausam.imd.gov.in/' },
+    wpac: { name: 'Japan Meteorological Agency (JMA), RSMC Tokyo', short: 'JMA', url: 'https://www.jma.go.jp/bosai/map.html#contents=typhoon&lang=en' },
+    atlantic: { name: 'NOAA National Hurricane Center', short: 'NHC', url: 'https://www.nhc.noaa.gov/' },
+    epac: { name: 'NOAA National Hurricane Center', short: 'NHC', url: 'https://www.nhc.noaa.gov/' },
+    cpac: { name: 'NOAA Central Pacific Hurricane Center', short: 'CPHC', url: 'https://www.nhc.noaa.gov/?cpac' }
+  };
+  function cycloneAuthority(e) {
+    var b = e ? cycloneBasin(e.lat, e.lon) : null;
+    return (b && CYCLONE_AUTHORITY[b]) || null;
+  }
+
+  /** The class of a storm on the scale of the basin it is in, and that scale's name. */
+  function cycloneClass(kt, lat, lon) {
+    var k = Number(kt);
+    if (!isFinite(k) || k <= 0) return null;
+    var b = cycloneBasin(lat, lon);
+    /* No position, no basin: the category the wind alone gives, as before. */
+    if (!b) return { scale: 'Category', value: cycloneCategory(k) };
+    if (b === 'nio') {
+      return { scale: 'IMD class', value:
+        k >= 120 ? 'Super Cyclonic Storm' : k >= 90 ? 'Extremely Severe Cyclonic Storm'
+          : k >= 64 ? 'Very Severe Cyclonic Storm' : k >= 48 ? 'Severe Cyclonic Storm'
+            : k >= 34 ? 'Cyclonic Storm' : k >= 28 ? 'Deep Depression' : k >= 17 ? 'Depression' : 'Low pressure area' };
+    }
+    if (b === 'wpac') {
+      return { scale: 'JMA class (JTWC above 130 kt)', value:
+        k >= 130 ? 'Super typhoon' : k >= 64 ? 'Typhoon' : k >= 48 ? 'Severe tropical storm'
+          : k >= 34 ? 'Tropical storm' : 'Tropical depression' };
+    }
+    if (b === 'atlantic' || b === 'epac' || b === 'cpac') {
+      return { scale: 'Saffir-Simpson category', value: cycloneCategory(k) };
+    }
+    /* The southern hemisphere's centres (BoM, Meteo-France La Reunion, Fiji)
+       each use their own scale; none is guessed at. */
+    return { scale: 'Class', value: k >= 34 ? 'Tropical cyclone' : 'Tropical depression' };
+  }
+
   /** Render one metric. Returns null only when the metric does not apply at all. */
   function factOf(e, key) {
     var label = LABELS[key] || key;
@@ -480,8 +592,8 @@
           value: has ? kt + ' kt' : null };
       }
       case 'category': {
-        var c = cycloneCategory(e.windKt);
-        return { key: key, label: label, reported: !!c, value: c };
+        var cc = cycloneClass(e.windKt, e.lat, e.lon);
+        return { key: key, label: cc ? cc.scale : label, reported: !!(cc && cc.value), value: cc ? cc.value : null };
       }
       case 'pressureMb': {
         var mb = Number(v);
@@ -1077,10 +1189,11 @@
   var api = {
     HAZARDS: HAZARDS, DEFAULT: DEFAULT, SEVERITY: SEVERITY,
     hazardOf: hazardOf, horizonHours: horizonHours,
-    severityOf: severityOf, severityRank: severityRank, severityRanks: RANK,
+    severityOf: severityOf, severityRank: severityRank, severityRanks: RANK, cycloneCategoryRank: cycloneCategoryRank,
     impactRank: impactRank, alertRank: alertRank,
     leadTimeHours: leadTimeHours, leadTimeText: leadTimeText,
-    keyFacts: keyFacts, cycloneCategory: cycloneCategory, METRICS: METRICS,
+    keyFacts: keyFacts, cycloneCategory: cycloneCategory, cycloneClass: cycloneClass,
+    cycloneBasin: cycloneBasin, cycloneAuthority: cycloneAuthority, METRICS: METRICS,
     geometryContains: geometryContains, distanceKm: distanceKm,
     riskRow: riskRow, RISK_BANDS: RISK_BANDS, RISK_RADIUS_KM: RISK_RADIUS_KM,
     countryMatches: countryMatches, countryFromCode: countryFromCode,

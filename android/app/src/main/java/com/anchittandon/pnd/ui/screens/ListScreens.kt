@@ -88,9 +88,10 @@ fun rememberSort(screen: String, keys: List<String>): Pair<String, (String) -> U
 fun SortSelect(screen: String, keys: List<String>, value: String, onChange: (String) -> Unit) =
     Select("Sort results", keys.map { it to Sorts.label(it) }, value, tag = "sort:$screen", onSelect = onChange)
 
+/** The risk filter; given the records it filters, only the levels they hold are offered, plus the chosen one (changelog C31). */
 @Composable
-fun RiskFilter(value: String, onChange: (String) -> Unit) =
-    Select("Filter by risk level", listOf("" to "All risk levels") + RiskScale.filterOptions, value, tag = "riskFilter", onSelect = onChange)
+fun RiskFilter(value: String, records: List<kotlinx.serialization.json.JsonObject>? = null, onChange: (String) -> Unit) =
+    Select("Filter by risk level", listOf("" to "All risk levels") + RiskScale.filterOptions(records, value), value, tag = "riskFilter", onSelect = onChange)
 
 fun statusLine(feed: FeedState, extra: String? = null): String {
     val f = feed.feed
@@ -179,30 +180,31 @@ fun AlertsScreen() {
     var focusFrom by remember { mutableStateOf(-1) }
     val down = feed.feed == null && feed.failed
     fun fig(v: String) = if (down) Portal.UNAVAILABLE else v
-    PndScreen(header = { item { ScreenHeader("Official alerts and reported events", "Alerts", "Current reports from official agencies. Open any alert to see its details and its source.") } }) {
+    PndScreen(header = { item { ScreenHeader("Reported events and official alerts", "Alerts", "Current reports from official agencies: events they have detected, and the warnings, watches and advisories they have issued. Open any report to see its details and its source.") } }) {
         item(key = "stats") {
             val f = feed.feed
-            StatLine(listOf("official reports" to (if (f != null) es.size.toString() else fig("-")),
-                "red or orange alert" to (if (f != null) es.count { it.alert == "Red" || it.alert == "Orange" }.toString() else fig("-")),
+            // Warnings in force only (changelog C39): "723 official reports" counted every M2.5 detection.
+            StatLine(listOf("official warnings in force" to (if (f != null) es.count { Portal.isOfficialWarning(it.json) }.toString() else fig("-")),
+                "red or orange alerts" to (if (f != null) es.count { it.alert == "Red" || it.alert == "Orange" }.toString() else fig("-")),
                 "countries and areas" to (if (f != null) Format.countryCount(es.map { it.json }).toString() else fig("-")),
                 "sources working" to (f?.let { Format.sourcesRatio(it.meta.json) } ?: fig("-")),
                 "updated" to (f?.let { Format.age(it.generatedAt) } ?: fig("-"))))
         }
         item(key = "nav") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("Live events" to "/events", "Official warnings" to "/official-warnings", "Recent events" to "/recent-events", "Current alerts" to "/alerts-notifications",
-                    "Events by type" to "/hazard-types", "Disasters now and in the past" to "/calamities", "Past and recent events" to "/historical-events").forEach { (l, u) -> OutlinePillButton(l) { env.navigate(u) } }
+                listOf("Live events" to "/events", "Official warnings" to "/official-warnings", "Recent events" to "/recent-events", "Alerts in force" to "/alerts-notifications",
+                    "Disasters by type" to "/hazard-types", "Disasters now and in the past" to "/calamities", "Recently ended events" to "/historical-events").forEach { (l, u) -> OutlinePillButton(l) { env.navigate(u) } }
             }
         }
         item(key = "tools") {
             Column {
                 SearchField(q, "Search by alert, place, hazard or agency", tag = "search") { q = it }
-                Toolbar { RiskFilter(level) { level = it }; SortSelect("alerts", Sorts.EVENT_SORTS, sort, setSort) }
+                Toolbar { RiskFilter(level, all.filter { it.official }.map { it.json }) { level = it }; SortSelect("alerts", Sorts.offered(Sorts.EVENT_SORTS, all.filter { it.official }.map { it.json }), sort, setSort) }
                 RefreshRow(feed)
             }
         }
         item(key = "map") { Column { SubHeading("Map of official alerts"); RiskMap(es.take(250)) { env.navigate(Format.eventUrl(it.json)) } } }
-        item(key = "head") { Row(verticalAlignment = Alignment.CenterVertically) { SubHeading("Current official alerts"); LinkButton("See all official warnings →") { env.navigate("/official-warnings") } } }
+        item(key = "head") { Row(verticalAlignment = Alignment.CenterVertically) { SubHeading("Latest reports"); LinkButton("Official warnings only →") { env.navigate("/official-warnings") } } }
         if (!notLoaded(feed)) {
             if (es.isEmpty()) item { EmptyCard(Search.emptyState(q, all.map { it.json }, all.map { it.json }, "official alerts")) { env.navigate("/events?q=" + Format.enc(it)) } }
             itemsIndexed(es.take(limit), key = { _, e -> "a" + e.id + e.hashCode() }) { i, e ->
@@ -256,11 +258,16 @@ fun CollectionScreen(view: CollectionView, initialQuery: String, region: String 
     val all = if (view == CollectionView.HISTORICAL) feed.all else feed.events
     // collection.js keep() and scoped(): ?region= narrows every list (changelog C3, C17).
     val pool = remember(feed, region) { Collections.scoped(all, view.route, region) { it.json } }
-    val es = remember(feed, q, hazard, level, sort, region) {
+    // "Most deaths first" and "Most people affected first" only where a listed record has the figure (changelog C45).
+    val sortKeys = remember(pool) { Sorts.offered(keys, pool.map { it.json }) }
+    val effSort = if (sort in sortKeys) sort else sortKeys.first()
+    val es = remember(feed, q, hazard, level, effSort, region) {
         Sorts.sort(pool.filter { e ->
             Search.matches(e.json, q, e.searchText) && (hazard.isEmpty() || e.type.lowercase() == hazard.lowercase()) && RiskScale.matchesRiskLevel(e.json, level)
-        }, sort) { it.json }
+        }, effSort) { it.json }
     }
+    // 40 cards, then "Show {n} more" (changelog C45); a new search, filter or sort goes back to 40.
+    var limit by rememberSaveable(q, hazard, level, effSort) { mutableStateOf(AlertsPager.PAGE) }
     PndScreen(header = { item { ScreenHeader(null, view.title, view.subtitle) } }) {
         item(key = "tools") {
             Column {
@@ -268,18 +275,26 @@ fun CollectionScreen(view: CollectionView, initialQuery: String, region: String 
                 Toolbar {
                     // Built from the records this list holds, with counts (changelog C8).
                     Select("Filter by hazard", Format.hazardOptions(pool.map { it.json }, hazard), hazard, tag = "hazardFilter") { hazard = it }
-                    RiskFilter(level) { level = it }
-                    SortSelect(view.route, keys, sort, setSort)
+                    RiskFilter(level, pool.map { it.json }) { level = it }
+                    SortSelect(view.route, sortKeys, effSort, setSort)
                 }
                 RefreshRow(feed, Collections.countText(pool, view.route, view.noun) { it.json })
+                // What each open forecast is (changelog C33).
+                if (forecastMode) Portal.forecastKinds(pool) { it.json }.takeIf { it.isNotEmpty() }?.let { Muted(it, Modifier.testTag("forecastKinds")) }
             }
         }
         Collections.scopeNote(region)?.let { n -> item(key = "scope") { ScopeNote(n) { env.navigate("/" + view.route) } } }
         if (forecastMode) item(key = "note") { Notice(Format.horizonText(feed.feed?.meta?.json) + " Each forecast is our own estimate, based on a current official report. It may be wrong. It is not an official warning and does not replace one.") }
         if (!notLoaded(feed)) {
             if (es.isEmpty()) item(key = "empty") { EmptyCard(Search.emptyState(q, pool.map { it.json }, all.map { it.json }, view.noun)) { env.navigate("/events?q=" + Format.enc(it)) } }
-            if (forecastMode) items(es, key = { "f" + it.id + it.hashCode() }) { e -> ForecastRowCard(e, full = true) }
-            else eventCards(es, "c", { env.navigate(Format.eventUrl(it.json)) })
+            if (forecastMode) items(es.take(limit), key = { "f" + it.id + it.hashCode() }) { e -> ForecastRowCard(e, full = true) }
+            else eventCards(es.take(limit), "c", { env.navigate(Format.eventUrl(it.json)) })
+            if (es.size > limit) item(key = "more") {
+                CardBox(Modifier.padding(bottom = 10.dp).testTag("pager")) {
+                    Muted("Showing $limit of ${es.size}.", Modifier.testTag("pagerNote"))
+                    SecondaryButton("Show ${minOf(AlertsPager.PAGE, es.size - limit)} more", Modifier.testTag("showMore")) { limit += AlertsPager.PAGE }
+                }
+            }
         }
     }
 }
@@ -348,7 +363,7 @@ fun ForecastCalendarScreen(region: String = "") {
                 SearchField(q, "Search events, places or hazards", tag = "search") { q = it }
                 Toolbar {
                     Select("Filter by hazard", Format.hazardOptions(pool.map { it.json }, hazard), hazard) { hazard = it }
-                    RiskFilter(level) { level = it }
+                    RiskFilter(level, pool.map { it.json }) { level = it }
                     SortSelect("forecast-calendar", Sorts.FORECAST_LIST, sort, setSort)
                 }
                 RefreshRow(feed, Collections.countText(pool, "forecast-calendar", "forecasts") { it.json })
@@ -369,43 +384,61 @@ private fun Calendar(list: List<Event>) {
     }
     val day = 86_400_000L
     val now = AppClock.now()
-    val zone = try { ZoneId.of(AppClock.zone) } catch (e: Exception) { ZoneId.of("UTC") }
-    val from = Instant.ofEpochMilli(now).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+    val zone = try { ZoneId.of(Format.zoneName(AppClock.zone)) } catch (e: Exception) { ZoneId.of("UTC") }
+    val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
     val ends = list.mapNotNull { JsDate.parse(it.json.text("targetEnd")) }
-    val last = ends.maxOrNull() ?: (from + 3 * day)
-    val to = minOf(from + 15 * day, maxOf(from + 4 * day, last + day))
+    val last = ends.maxOrNull() ?: (today + 3 * day)
+    // 14 days at a time, a week back to the latest forecast end (collection.js timeline, changelog C33).
+    val maxOffset = maxOf(0, Math.ceil((last - today).toDouble() / day).toInt() - CAL_DAYS + 1)
+    var offset0 by rememberSaveable { mutableStateOf(0) }
+    val offset = offset0.coerceIn(-7, maxOffset)
+    val from = today + offset * day
+    val to = from + CAL_DAYS * day
     val span = (to - from).toDouble()
     val days = generateSequence(from) { it + day }.takeWhile { it < to }.toList()
     val fsc = androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceIn(1f, 2.2f)
     val dayW = 56.dp * fsc; val labelW = 118.dp * fsc
     val trackW = dayW * days.size
     fun pct(t: Long) = ((t - from) / span).coerceIn(0.0, 1.0)
+    val nowIn = now in from until to
     val dows = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    val mons = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec")
+    val startOf = { e: Event -> JsDate.parse(e.json.text("targetStart").ifEmpty { e.json.text("startedAt") })?.takeIf { it != 0L } ?: from }
+    val endOf = { e: Event, st: Long -> JsDate.parse(e.json.text("targetEnd"))?.takeIf { it != 0L } ?: (st + day) }
+    val inView = list.filter { e -> val st = startOf(e); endOf(e, st) > from && st < to }
     Column(Modifier.fillMaxWidth().testTag("calendar")) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            SecondaryButton("Previous week", Modifier.testTag("calPrev"), enabled = offset > -7) { offset0 = offset - 7 }
+            SecondaryButton("Today", Modifier.testTag("calToday"), enabled = offset != 0) { offset0 = 0 }
+            SecondaryButton("Next week", Modifier.testTag("calNext"), enabled = offset < maxOffset) { offset0 = offset + 7 }
+        }
+        Muted(calDmy(from, zone) + " to " + calDmy(to - day, zone) + " " + Instant.ofEpochMilli(to - day).atZone(zone).year + ". Forecasts run to " + calDmy(last, zone) + ". " +
+            "${inView.size} of ${list.size} forecasts fall in these dates.", Modifier.testTag("calStatus").semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
         Row(Modifier.horizontalScroll(rememberScrollState())) {
             Column {
                 Row {
                     Box(Modifier.width(labelW))
                     days.forEach { t ->
                         val d = Instant.ofEpochMilli(t).atZone(zone)
-                        Column(Modifier.width(dayW).background(if (t == from) Color(0xFF0C3527) else Color.Transparent).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(Modifier.width(dayW).background(if (t == today) Color(0xFF0C3527) else Color.Transparent).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(dows[d.dayOfWeek.value - 1], color = Color(0xFF9EC7B6), fontSize = 11.sp)
-                            Text("${d.dayOfMonth}", color = if (t == from) Color(0xFF7EF0C0) else Pnd.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(mons[d.monthValue - 1], color = Color(0xFF9EC7B6), fontSize = 11.sp)
+                            Text("${d.dayOfMonth}", color = if (t == today) Color(0xFF7EF0C0) else Pnd.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(CAL_MONS[d.monthValue - 1], color = Color(0xFF9EC7B6), fontSize = 11.sp)
                         }
                     }
                 }
-                list.groupBy { it.type.ifEmpty { "Other" } }.toSortedMap().forEach { (type, items) ->
+                if (inView.isEmpty()) CardBox { Text("No forecast falls in these dates.", fontWeight = FontWeight.Bold, color = Pnd.text) }
+                inView.groupBy { it.type.ifEmpty { "Other" } }.toSortedMap().forEach { (type, items) ->
                     Text(type.uppercase(), color = Color(0xFF7FD8B4), fontSize = 12.sp, letterSpacing = 1.5.sp, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
                     items.sortedBy { JsDate.parse(it.json.text("targetStart").ifEmpty { it.json.text("startedAt") }) ?: 0L }.forEach { e ->
-                        val s = JsDate.parse(e.json.text("targetStart").ifEmpty { e.json.text("startedAt") })?.takeIf { it != 0L } ?: from
-                        val en = JsDate.parse(e.json.text("targetEnd"))?.takeIf { it != 0L } ?: (s + day)
-                        val left = pct(s); val right = pct(en); val width = maxOf(0.014, right - left)
-                        val liveNow = now in s..en
-                        val lv = RiskScale.levelOf(e.alert)
+                        val st = startOf(e)
+                        val en = endOf(e, st)
+                        val left = pct(st); val right = pct(en); val width = maxOf(0.014, right - left)
+                        val liveNow = now in st..en
+                        // The bar takes the same level as the badge beside it (risk.js keyFor).
+                        val lv = RiskScale.keyFor(e.json)
                         val fill = lv.fill() ?: Color(0xFF5FD3A6)
                         val label = "${e.displayTitle}. ${Format.windowText(e.json)}"
+                        val more = (if (st < from) "← " else "") + dayRange(st, en, zone) + (if (en > to) " →" else "")
                         Row(Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = "Open forecast") { env.navigate(Format.eventUrl(e.json)) }
                             .semantics(mergeDescendants = true) { contentDescription = label }, verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.width(labelW).padding(end = 6.dp)) {
@@ -415,25 +448,30 @@ private fun Calendar(list: List<Event>) {
                             Box(Modifier.width(trackW).height(30.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF082A20))) {
                                 Box(Modifier.offset(x = trackW * left.toFloat()).width(trackW * width.toFloat()).height(30.dp).padding(3.dp)
                                     .clip(RoundedCornerShape(5.dp)).background(fill).let { if (liveNow) it.border(2.dp, Color(0xFF7EF0C0), RoundedCornerShape(5.dp)) else it }) {
-                                    Text(dayRange(s, en, zone), color = lv.ink?.let { Color(it) } ?: Color.Black, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                                    Text(more, color = lv.ink?.let { Color(it) } ?: Color.Black, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp))
                                 }
-                                Box(Modifier.offset(x = trackW * pct(now).toFloat()).width(2.dp).height(30.dp).background(Color(0xFF7EF0C0)))
+                                if (nowIn) Box(Modifier.offset(x = trackW * pct(now).toFloat()).width(2.dp).height(30.dp).background(Color(0xFF7EF0C0)))
                             }
                         }
                     }
                 }
             }
         }
-        Muted("Each bar runs from the start of a forecast to its expected end. The line marks now. Forecasts are our own estimates, not official warnings.", Modifier.padding(top = 8.dp))
+        Muted("Each bar runs from the start of a forecast to its expected end, coloured by the same level as its badge. The line marks now. An arrow means the forecast carries on beyond these dates. Forecasts are our own estimates, not official warnings.", Modifier.padding(top = 8.dp))
     }
 }
 
+private const val CAL_DAYS = 14
+private val CAL_MONS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+/** collection.js `dmy`: "27 Oct". */
+private fun calDmy(t: Long, zone: ZoneId): String = Instant.ofEpochMilli(t).atZone(zone).let { "${it.dayOfMonth} ${CAL_MONS[it.monthValue - 1]}" }
+
+/** collection.js `dayRange`: "27 Oct to 26 Nov", or one day. */
 private fun dayRange(a: Long, b: Long, zone: ZoneId): String {
-    val mons = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec")
-    fun f(t: Long) = Instant.ofEpochMilli(t).atZone(zone).let { "${it.dayOfMonth} ${mons[it.monthValue - 1]}" }
-    val x = f(a); val y = f(b)
-    return if (x == y) x else "$x - $y"
+    val x = calDmy(a, zone); val y = calDmy(b, zone)
+    return if (x == y) x else "$x to $y"
 }
 
 /* ------------------------------------------------------------- calamities */
@@ -482,7 +520,7 @@ fun CalamitiesScreen() {
                     Toolbar {
                         Select("Country or territory", listOf("" to "All countries and territories") + Hazards.englishCountryNames.map { it to it }, geo) { geo = it }
                         Select("Hazard", listOf("" to "All hazards") + listOf("Flood", "Earthquake", "Wildfire", "Volcano", "Storm", "Drought").map { it to it }, haz) { haz = it }
-                        RiskFilter(risk) { risk = it }
+                        RiskFilter(risk, all.map { it.json }) { risk = it }
                         SortSelect("calamities", Sorts.EVENT_SORTS, sort, setSort)
                     }
                     RefreshRow(feed)
@@ -554,4 +592,8 @@ fun ScopeNote(text: String, onEverywhere: () -> Unit) {
     }
 }
 
-fun slug(v: String): String = v.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+/** `PND.slug`: accents folded first, so "Tōhoku" is "tohoku" (changelog C46). */
+fun slug(v: String): String = legacySlug(java.text.Normalizer.normalize(v, java.text.Normalizer.Form.NFD).replace(Regex("[\\u0300-\\u036f]"), ""))
+
+/** `PND.legacySlug`: the slug history pages were published under before accents were folded. */
+fun legacySlug(v: String): String = v.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')

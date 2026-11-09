@@ -56,10 +56,10 @@ class FeedRepository(private val http: Http, private val cacheDir: File?, privat
 
     private fun readDisk(): Feed? = try { cacheFile()?.takeIf { it.exists() }?.readText()?.let { Feed.parse(it) } } catch (e: Exception) { null }
 
-    /** `fresh` is an explicit user refresh: `?ts=` bypasses the 30 s edge copy. Timers never send it. */
+    /** `fresh` is an explicit user refresh: it sends `Cache-Control: no-cache` to the same address (no `?ts=`). Timers never send it. */
     suspend fun refresh(fresh: Boolean = false) = mutex.withLock {
         _state.value = _state.value.copy(loading = true)
-        val r = http.get(Api.events(fresh, AppClock.now()), if (fresh) mapOf("Cache-Control" to "no-cache") else emptyMap())
+        val r = http.get(Api.events(), Api.eventsHeaders(fresh))
         val feed = if (r.ok) try { Feed.parse(r.body!!) } catch (e: Exception) { null } else null
         if (feed != null) {
             _state.value = FeedState(feed, loading = false, failed = false, savedCopy = false)
@@ -140,7 +140,8 @@ class TrackRecordRepository(private val data: DataRepository, private val engine
             val s = async { data.json("scan-ledger.json") as? JsonObject }
             val b = async { data.json("model-backtest.json") as? JsonObject }
             val m = async { data.json("model-verdicts.json") as? JsonObject }
-            Ledgers(o.await(), v.await(), ob.await(), s.await(), b.await(), m.await())
+            val sm = async { data.json("accuracy-summary.json") as? JsonObject }
+            Ledgers(o.await(), v.await(), ob.await(), s.await(), b.await(), m.await(), sm.await())
         }
         val now = AppClock.now()
         val canGrade = l.outlook != null && l.verification != null && l.observed != null && l.scan != null

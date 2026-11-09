@@ -80,13 +80,15 @@ fun responseContext(type: String): List<Pair<String, String>> {
 
 /** Share and the not-found / error states every detail screen shares. */
 @Composable
-fun DetailTop(eyebrow: String, title: String, subtitle: String?, sharePath: String?) {
+fun DetailTop(eyebrow: String, title: String, subtitle: String?, sharePath: String?, authority: Hazards.Authority? = null) {
     val env = LocalApp.current
     Column(Modifier.padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Eyebrow(eyebrow)
         Heading(title, Modifier.testTag("detailTitle"))
         if (!subtitle.isNullOrEmpty()) Body(subtitle, Pnd.textSoft)
         if (sharePath != null) OutlinePillButton("Share", Modifier.testTag("share")) { env.container.platform.share(title, DeepLinks.webUrl(sharePath)) }
+        // A cyclone links the warning centre for its basin (changelog C43).
+        if (authority != null) OutlinePillButton("Official warnings: ${authority.short} ↗", Modifier.testTag("authorityLink")) { env.container.platform.openUrl(authority.url) }
     }
 }
 
@@ -164,7 +166,8 @@ fun RecordDetailScreen(kind: DetailKind, id: String) {
     val e = found ?: last[0]
     val (sort, setSort) = rememberSort(when (kind) { DetailKind.EVENT -> "event_sortBy"; DetailKind.ALERT -> "alert_sortBy"; DetailKind.CALAMITY -> "calamity_sortBy" },
         if (kind == DetailKind.EVENT) Sorts.NEARBY else Sorts.EVENT_SORTS)
-    val path = when (kind) { DetailKind.EVENT -> "/disasters/"; DetailKind.ALERT -> "/alerts/"; DetailKind.CALAMITY -> "/calamities/" } + Format.enc(e?.id ?: id)
+    // One address per record (changelog C45): /alerts/ and /calamities/ still open, and share the canonical address.
+    val path = e?.let { Format.eventUrl(it.json) } ?: ("/disasters/" + Format.enc(id))
     PndScreen(feedBanner = false) {
         val failed = when (kind) {
             DetailKind.EVENT -> GoneLine("We could not load this event just now. Trying again automatically. ", "See all events", "/events", ".")
@@ -182,8 +185,9 @@ fun RecordDetailScreen(kind: DetailKind, id: String) {
             return@PndScreen
         }
         val j = e.json
-        val eyebrow = when (kind) { DetailKind.EVENT -> DetailWords.eventEyebrow(j); DetailKind.ALERT -> "OFFICIAL ALERT"; DetailKind.CALAMITY -> "CURRENT DISASTER" }
-        item(key = "top") { DetailTop(eyebrow, e.displayTitle, "${e.type} · ${Format.placeOf(j, "Place not given")}", path) }
+        val eyebrow = when (kind) { DetailKind.EVENT -> DetailWords.eventEyebrow(j); DetailKind.ALERT -> DetailWords.alertEyebrow(j); DetailKind.CALAMITY -> "CURRENT DISASTER" }
+        val authority = if (e.type == "Tropical Cyclone") Hazards.cycloneAuthority(j) else null
+        item(key = "top") { DetailTop(eyebrow, e.displayTitle, "${e.type} · ${Format.placeOf(j, "Place not given")}", path, authority) }
         Format.quietNote(j).takeIf { it.isNotEmpty() }?.let { q -> item(key = "quiet") { StaleBox(q, tag = "quietNote") } }
         item(key = "status") { Muted(Format.statusText(feed.feed!!.meta.json) + " · checked " + Format.fmtDate(feed.feed!!.generatedAt)) }
         when (kind) {
@@ -213,10 +217,11 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
             val corroborated = j.arr("corroboratedBy").strings()
             val alertNote = if (j.truthy("alertSource") && j.text("alertSource") != e.source && e.alert.isNotEmpty()) " The “${e.alert}” alert level shown is from ${j.text("alertSource")}." else ""
             KvList(listOf(
-                "When it started" to (if (j.truthy("startedAt")) "${Format.fmtDate(j.str("startedAt"))} (${Format.age(j.str("startedAt"))})" else if (e.forecast && j.truthy("targetStart")) "Forecast period starts ${Format.fmtWhen(j.str("targetStart"))}" else "The source did not give a start time"),
-                "Last updated" to Format.fmtDate(e.updated),
+                "When it started" to (if (j.truthy("startedAt")) "${Format.fmtOf(j, "startedAt")} (${Format.age(j.str("startedAt"))})" else if (e.forecast && j.truthy("targetStart")) "Forecast period starts ${Format.fmtWhen(j.str("targetStart"))}" else "The source did not give a start time"),
+                "Last updated" to Format.fmtOf(j),
                 "Where it started" to Format.placeOf(j, "Not given by the source"),
-                "Areas affected" to (listOf(e.region, e.country).filter { it.isNotEmpty() }.joinToString(" · ").ifEmpty { "Not given by the source" }),
+                // The feed's reader-facing `areas` (changelog C44), else the place.
+                "Areas affected" to areasText(j, "Not given by the source"),
                 "Coordinates" to Format.coords(e.lat, e.lon),
                 "Description" to e.details.ifEmpty { "The source gave no further details." },
                 "Also reported by" to ((if (corroborated.isNotEmpty()) corroborated.joinToString(" · ") else "No other agency we read has reported this event separately") + alertNote),
@@ -234,14 +239,15 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
                 "Status" to DetailWords.eventRecordState(j)))
         }
     }
-    item(key = "context") {
+    // The generic needs list only where the record is grave enough (changelog C40).
+    if (Portal.lifeSafety(j)) item(key = "context") {
         Panel("Who may need help, and what they need", subtitle = "General guidance for this type of disaster. Not every group listed is confirmed to be affected.") {
             responseContext(e.type).forEach { (k, v) -> CardBox { Text(k, color = Pnd.text, fontWeight = FontWeight.Bold); Muted(v) } }
         }
     }
     item(key = "timeline") {
         Panel("Timeline", subtitle = "When the source and this page were last updated") {
-            CardBox { Text("Source report", color = Pnd.text, fontWeight = FontWeight.Bold); Muted(Format.fmtDate(e.updated)); Body(e.details.ifEmpty { "The latest report from the source." }) }
+            CardBox { Text("Source report", color = Pnd.text, fontWeight = FontWeight.Bold); Muted(Format.fmtOf(j)); Body(e.details.ifEmpty { "The latest report from the source." }) }
             CardBox { Text("This page updated", color = Pnd.text, fontWeight = FontWeight.Bold); Muted(Format.fmtDate(feed.feed?.generatedAt)); Body("We checked our sources again and found this event.") }
         }
     }
@@ -283,19 +289,25 @@ private fun LazyListScope.eventBody(e: Event, all: List<Event>, feed: FeedState,
 private fun ActionPanel(e: Event) {
     val env = LocalApp.current
     val j = e.json
-    val voice = mapOf("observed" to "reporting an event that has happened", "official-warning" to "issuing an official warning", "forecast" to "a forecast made by this site", "unknown" to "type of report not known")
+    val voice = mapOf("observed" to "reporting an event that has happened", "official-warning" to "issuing an " + Format.officialWord(j).lowercase(), "forecast" to "a forecast made by this site", "unknown" to "type of report not known")
+    val grave = Portal.lifeSafety(j)
     Row(Modifier.fillMaxWidth().padding(bottom = 10.dp).clip(RoundedCornerShape(10.dp)).background(Pnd.panel).border(1.dp, Pnd.panelBorder, RoundedCornerShape(10.dp)).testTag("actionPanel")) {
         Box(Modifier.width(4.dp).background(Pnd.actionAccent).padding(vertical = 40.dp))
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { ProvenancePill(Format.provenance(j)); Muted("Updated " + Format.age(e.updated)) }
-            SubHeading("What should I do now?")
-            KvList(listOf("WHAT" to e.type.ifEmpty { "Natural hazard" }, "WHERE" to listOf(e.region, e.country).filter { it.isNotEmpty() }.joinToString(" · ").ifEmpty { "See the map" },
+            SubHeading(if (grave) "What should I do now?" else "What this report says")
+            KvList(listOf("WHAT" to e.type.ifEmpty { "Natural hazard" }, "WHERE" to Format.placeOf(j, "").ifEmpty { "See the map" },
                 "HOW SERIOUS" to RiskScale.riskLabel(j), "HOW RELIABLE" to (if (e.official) "OFFICIAL SOURCE" else if (e.forecast) "OUR OWN ESTIMATE" else "NOT YET CONFIRMED"),
                 "WHO SAYS THIS" to e.source.ifEmpty { "Source not stated" } + " · " + (voice[e.evidenceState] ?: voice.getValue("unknown"))))
-            val lifeSafety = e.evidenceState == "official-warning" || RiskScale.levelOf(j.firstNonEmpty("severity", "alert")).rank >= Level.HIGH.rank
-            if (lifeSafety) StaleBox("Follow instructions from the issuing authority and local emergency services.", tag = "lifeSafety")
-            Text("What matters most now", color = Pnd.text, fontWeight = FontWeight.Bold)
-            responseContext(e.type).forEach { (k, v) -> Body("• $k: $v") }
+            if (grave) {
+                StaleBox("Follow instructions from the issuing authority and local emergency services.", tag = "lifeSafety")
+                Text("What matters most now", color = Pnd.text, fontWeight = FontWeight.Bold)
+                responseContext(e.type).forEach { (k, v) -> Body("• $k: $v") }
+            } else {
+                Text("No damage reported by the source.", color = Pnd.text, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("noDamage"))
+                Body("${e.source.ifEmpty { "The source" }} reports no deaths, displacement or damage, and this is not an official warning.")
+                LinkButton("General preparedness for this hazard →") { env.navigate("/hazards/" + Format.enc(e.type)) }
+            }
             if (e.sourceUrl.isNotEmpty()) PrimaryButton("OPEN THE ORIGINAL SOURCE ↗") { env.container.platform.openUrl(Api.absolute(e.sourceUrl)) }
             else StaleBox("The source gave no link for this report. Check with your local emergency service before you act.")
             Muted("This is up-to-date information from the report named above. It is not an instruction issued by any authority.")
@@ -303,7 +315,11 @@ private fun ActionPanel(e: Event) {
     }
 }
 
-private fun kotlinx.serialization.json.JsonObject.firstNonEmpty(vararg keys: String): String { for (k in keys) if (truthy(k)) return text(k); return "" }
+/** "Areas affected": the feed's reader-facing `areas` list (changelog C44), else the place, else [missing]. */
+fun areasText(j: kotlinx.serialization.json.JsonObject, missing: String): String {
+    val areas = j.arr("areas").strings().filter { it.isNotBlank() }
+    return (if (areas.isNotEmpty()) areas.joinToString(" · ") else Format.placeOf(j, "")).ifEmpty { missing }
+}
 
 @Composable
 fun ImpactPanel(j: kotlinx.serialization.json.JsonObject, note: String, extra: Pair<String, String>? = null, missing: String = "Not reported") {
@@ -328,9 +344,9 @@ private fun LazyListScope.alertBody(e: Event, all: List<Event>, sort: String, se
         val env = LocalApp.current
         Panel("Alert summary") {
             KeyFactsGrid(j)
-            KvList(listOf("Hazard" to e.type.ifEmpty { "-" }, "Place" to Format.placeOf(j, "-"), "Areas affected" to listOf(e.region, e.country).filter { it.isNotEmpty() }.joinToString(" · ").ifEmpty { "-" },
-                "When it started" to (if (j.truthy("startedAt")) "${Format.fmtDate(j.str("startedAt"))} (${Format.age(j.str("startedAt"))})" else "The source did not give a start time"),
-                "Issued or last updated" to Format.fmtDate(e.updated),
+            KvList(listOf("Hazard" to e.type.ifEmpty { "-" }, "Place" to Format.placeOf(j, "-"), "Areas affected" to areasText(j, "-"),
+                "When it started" to (if (j.truthy("startedAt")) "${Format.fmtOf(j, "startedAt")} (${Format.age(j.str("startedAt"))})" else "The source did not give a start time"),
+                "Issued or last updated" to Format.fmtOf(j),
                 "Warning ends" to (if (j.truthy("expiresAt")) Format.fmtDate(j.str("expiresAt")) else "The source did not give an end time"),
                 "What the alert says" to e.details.ifEmpty { "The source gave no further details." },
                 "Source report ID" to j.text("rawId").ifEmpty { e.id }))

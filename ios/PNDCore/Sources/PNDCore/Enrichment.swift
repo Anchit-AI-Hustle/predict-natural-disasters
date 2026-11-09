@@ -120,14 +120,23 @@ public enum EnrichmentPanels {
         rows.append(KeyValue(key: "About these times", value: s(when["note"])))
         out.append(EnrichmentPanel(id: "whenWhere", title: panels[0].title, meta: "Updated " + fmt(d.generatedAt), rows: rows))
 
-        // 2. Who may need help
+        // 2. Who may need help: needs only where the record is grave (event-enrichment.js grave,
+        // PND.lifeSafety, changelog C40); a place page's combined record keeps them.
         let groups = d.strings("distressGroups"), needs = d.strings("immediateNeeds")
+        if !e.truthy("aggregate") && !e.forecast && !Format.lifeSafety(e) {
+            out.append(EnrichmentPanel(id: "distress", title: panels[1].title, meta: "Shown when an agency warns, or reports harm", cards: [
+                EnrichmentCard(title: "No damage reported by the source", body: [(e.source.isEmpty ? "The source" : e.source) +
+                    " reports no deaths, displacement or damage for this event, and it is not an official warning, so we list no needs. " +
+                    "General preparedness for this hazard is in the agency links below."])
+            ]))
+        } else {
         out.append(EnrichmentPanel(id: "distress", title: panels[1].title, meta: "\(groups.count) groups \u{00B7} \(needs.count) needs", cards: [
             EnrichmentCard(title: "Who may need help first", body: groups.isEmpty ? ["Not available for this event."] : [], list: list(groups)),
             EnrichmentCard(title: "Immediate needs", body: needs.isEmpty ? ["Not available for this event."] : [], list: list(needs)),
             EnrichmentCard(title: "Other dangers to watch for", body: d.strings("secondaryRisks").isEmpty ? ["Not available for this event."] : [], list: list(d.strings("secondaryRisks"))),
             EnrichmentCard(title: "How to stay safe", body: d.strings("safetyActions").isEmpty ? ["Not available for this event."] : [], list: list(d.strings("safetyActions")))
         ]))
+        }
 
         let searches = j["searches"] ?? .object([:])
         func newsCard(_ x: Record) -> EnrichmentCard {

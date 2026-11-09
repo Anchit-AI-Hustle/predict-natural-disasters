@@ -43,7 +43,7 @@ class AlertWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx,
     override suspend fun doWork(): Result {
         val settings = SettingsStore(DataStoreBackend(applicationContext, CoroutineScope(SupervisorJob() + Dispatchers.IO)))
         if (!settings.alertsEnabled) return Result.success()
-        val r = OkHttpHttp().get(Api.events(false, System.currentTimeMillis()), emptyMap())
+        val r = OkHttpHttp().get(Api.events(), Api.eventsHeaders(false))
         if (!r.ok) return Result.retry()
         val feed = try { Feed.parse(r.body!!) } catch (e: Exception) { return Result.retry() }
         val now = System.currentTimeMillis()

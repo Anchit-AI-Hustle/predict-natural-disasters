@@ -58,7 +58,8 @@ object Sorts {
         "affected" to SortDef("Most people affected first", Comparator { a, b ->
             sign(numOf(b, "affected") - numOf(a, "affected")) or { sign(numOf(b, "displaced") - numOf(a, "displaced")) } or { cmpL(timeOf(b), timeOf(a)) }
         }),
-        "country" to SortDef("Place (A to Z)", Comparator { a, b -> locale(textOf(a, "place", "country", "region"), textOf(b, "place", "country", "region")) or { cmpL(timeOf(b), timeOf(a)) } }),
+        // By country, then by the place after "of" (changelog C45).
+        "country" to SortDef("Place (A to Z)", Comparator { a, b -> locale(placeKey(a), placeKey(b)) or { cmpL(timeOf(b), timeOf(a)) } }),
         "type" to SortDef("Type of hazard (A to Z)", Comparator { a, b -> locale(textOf(a, "type"), textOf(b, "type")) or { sign(rankOfD(b) - rankOfD(a)) } }),
         "source" to SortDef("Source (A to Z)", Comparator { a, b -> locale(textOf(a, "source"), textOf(b, "source")) or { cmpL(timeOf(b), timeOf(a)) } }),
         "title" to SortDef("Name (A to Z)", Comparator { a, b -> locale(textOf(a, "title", "name"), textOf(b, "title", "name")) }),
@@ -113,6 +114,24 @@ object Sorts {
     val HISTORY_RELATED = listOf("yearNew", "yearOld", "name", "type")
 
     fun label(key: String): String = SORT_DEFS[key]?.label ?: key
+
+    /** `PND.placeKey`: the record's first country (or sea), then its place after "of", lower-cased. */
+    fun placeKey(e: JsonObject?): String {
+        val c = e?.get("countries")?.let { it as? kotlinx.serialization.json.JsonArray }?.firstOrNull()
+            ?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.content }?.takeIf { it.isNotEmpty() } ?: e.text("sea")
+        val raw = when { e.truthy("place") -> e.text("place"); e.truthy("country") -> e.text("country"); else -> e.text("region") }
+        val p = raw.replace(Regex("^.*?\\bof\\s+", RegexOption.IGNORE_CASE), "").trim()
+        return "$c|$p".lowercase(Locale.ROOT)
+    }
+
+    /** Sorts that need a figure: hidden when no listed record has it (`PND.FIGURE_SORTS`, `syncSortOptions`). */
+    private val FIGURE_SORTS = mapOf("deaths" to listOf("deaths"), "affected" to listOf("affected", "displaced"))
+
+    /** The sort keys worth offering for this list. */
+    fun offered(keys: List<String>, list: List<JsonObject>): List<String> = keys.filter { k ->
+        val f = FIGURE_SORTS[k] ?: return@filter true
+        list.any { e -> f.any { x -> e.jsNum(x).let { it.isFinite() && it > 0 } } }
+    }
 
     /** A sorted copy (stable); an unknown key leaves the order. */
     fun <T> sort(list: List<T>, key: String?, json: (T) -> JsonObject): List<T> {

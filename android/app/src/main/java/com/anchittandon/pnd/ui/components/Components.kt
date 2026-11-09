@@ -122,7 +122,7 @@ fun RiskBadge(level: Level, text: String = level.label, description: String? = n
 @Composable
 fun RecordBadge(e: JsonObject, modifier: Modifier = Modifier) {
     val lv = RiskScale.resolve(e)
-    RiskBadge(lv, lv.label, RiskScale.tagTitle(e), modifier)
+    RiskBadge(lv, RiskScale.tagText(e), RiskScale.tagTitle(e), modifier)
 }
 
 /** Never a LOW badge for nothing found (global rule 3). */
@@ -314,8 +314,8 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
 ) { Text(text, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp) }
 
 @Composable
-fun SecondaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) = OutlinedButton(
-    onClick, modifier.heightIn(min = 48.dp), shape = RoundedCornerShape(9.dp), border = BorderStroke(1.dp, Color(0xFF2E6B55)),
+fun SecondaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) = OutlinedButton(
+    onClick, modifier.heightIn(min = 48.dp), enabled = enabled, shape = RoundedCornerShape(9.dp), border = BorderStroke(1.dp, Color(0xFF2E6B55)),
     colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF0B3E2E), contentColor = Color(0xFFEAF7F1)),
 ) { Text(text, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
 

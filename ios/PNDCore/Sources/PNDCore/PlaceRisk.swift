@@ -172,7 +172,9 @@ public enum PlaceRisk {
 
     /// The level a record itself carries, read the way its badge reads it.
     public static func ownLevel(_ e: Record) -> RiskLevel? {
-        let l = RiskScale.level(of: e)
+        // place-risk.js ownLevel: severity, else alert (not keyFor's storm floor).
+        let sv = RiskScale.levelOf(e["severity"])
+        let l = sv != .unknown ? sv : RiskScale.levelOf(e["alert"])
         return l == .unknown ? nil : l
     }
 
@@ -201,6 +203,10 @@ public enum PlaceRisk {
         public let why: String
         public let checkedAt: String?
         public let searchedKm: Int
+        /// The top-ranked reported event and the forecast covering the place,
+        /// whichever leads (changelog C37).
+        public var observed: Hit? = nil
+        public var forecast: Hit? = nil
     }
 
     /// `assess(place, events, meta)`: "nothing found" is never a safe level.
@@ -217,6 +223,8 @@ public enum PlaceRisk {
         let top = ranked.first
         let nearest = top?.0
         let outlook = rows.first { $0.row.band == .C }
+        // The forecast leads only when no reported event rates Watch or above on its own; a report wins a tie.
+        let forecastLeads = outlook != nil && !(top.map { rank($0.1) >= RiskLevel.watch.rank } ?? false)
         var level: RiskLevel? = nil
         var lead: Hit? = nil
         var why = ""
@@ -229,15 +237,22 @@ public enum PlaceRisk {
             why = "Your place is inside the area reported as affected by this event."
         } else if let t = top, t.0.d <= moderateKm, rank(t.1) > RiskLevel.low.rank {
             lead = nearest; level = t.1
-            why = "An event was reported " + JS.numberString(JS.round(t.0.d)) + " km from your place. That is the distance between two points. It does not mean the affected area reaches you."
-        } else if let o = outlook {
+            why = "An event was reported " + JS.numberString(JS.round(t.0.d)) + " km from your place. That is the distance between two points. It does not mean the affected area reaches you." +
+                (outlook != nil ? " One of our forecasts also covers your place." : "")
+        } else if forecastLeads, let o = outlook {
             lead = o; level = .watch
             why = "One of our forecasts covers your place. It is our own estimate of what may happen. It is not a report that something has happened, and it is not an official warning."
+            if let t = top {
+                let name = t.0.event.title.isEmpty ? (t.0.event.type.isEmpty ? "an event" : t.0.event.type) : t.0.event.title
+                why += " A reported event, " + trailingDots.replace(name) { _ in "" } + ", is " + JS.numberString(JS.round(t.0.d)) +
+                    " km away. On its own it rates " + (t.1 ?? .low).label + " here."
+            }
         } else if let t = top {
             lead = nearest; level = t.1
             let d = JS.numberString(JS.round(t.0.d))
             why = t.0.d <= moderateKm ? "A minor event was reported \(d) km from your place."
-                : "The most serious event near your place is \(d) km away. We look up to \(searched) km away, so it is shown, but it is far from this place."
+                : "The most serious event near your place is \(d) km away. We look up to \(searched) km away, so it is shown, but it is far from this place." +
+                    (outlook != nil ? " One of our forecasts also covers your place." : "")
         }
         var headline = "Nothing reported nearby"
         if let l = level { headline = l.label }
@@ -250,8 +265,10 @@ public enum PlaceRisk {
                 "This does not mean the place is safe. Your national and local disaster agencies have the official information."
         }
         return Assessment(place: place, rows: rows, level: level, lead: lead, headline: headline, why: why,
-                          checkedAt: generatedAt, searchedKm: searched)
+                          checkedAt: generatedAt, searchedKm: searched, observed: nearest, forecast: outlook)
     }
+
+    private static let trailingDots = JSRegex(#"[.\s]+$"#)
 
     public static let authorityLine = "Follow instructions from the issuing authority and local emergency services. Nothing on this page replaces official instructions."
 
@@ -294,8 +311,11 @@ public enum PlaceRisk {
         if let lead = a.lead {
             if lead.row.band == .B { s += " \u{00B7} inside an official warning area" }
             else if lead.row.band == .A && lead.row.containment == true { s += " \u{00B7} inside a reported affected area" }
-            else if lead.row.band == .C { s += " \u{00B7} a forecast covers it" }
+            else if lead.row.band == .C { s += " \u{00B7} our forecast covers it" }
             else if lead.d.isFinite { s += " \u{00B7} event " + JS.numberString(JS.round(lead.d)) + " km away" }
+            // Whichever of the report and our forecast did not set the level is still named (changelog C37).
+            if lead.row.band == .C, let o = a.observed, o.d.isFinite { s += " \u{00B7} a reported event is " + JS.numberString(JS.round(o.d)) + " km away" }
+            else if lead.row.band != .C && a.forecast != nil { s += " \u{00B7} our forecast also covers it" }
         }
         return s
     }

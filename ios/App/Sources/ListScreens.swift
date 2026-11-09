@@ -55,24 +55,25 @@ struct AlertsView: View {
         let pager = Screens.alertsPager(total: list.count, limit: limit)
         let tz = model.zoneID
         ScreenScroll(title: "Alerts & events") {
-            ScreenHeader(eyebrow: "Official alerts and reported events", title: "Alerts",
-                         subtitle: "Current reports from official agencies. Open any alert to see its details and its source.")
+            ScreenHeader(eyebrow: "Reported events and official alerts", title: "Alerts",
+                         subtitle: "Current reports from official agencies: events they have detected, and the warnings, watches and advisories they have issued. Open any report to see its details and its source.")
             TrustNote()
             FeedBanner()
-            StatGrid(items: [("Official reports", model.fig(list.count)),
-                             ("Red or orange alert", model.fig(list.filter { $0.isRedOrOrange }.count)),
+            // Warnings in force only (changelog C39): "723 official reports" counted every M2.5 detection.
+            StatGrid(items: [("Official warnings in force", model.fig(list.filter { Format.isOfficialWarning($0) }.count)),
+                             ("Red or orange alerts", model.fig(list.filter { $0.isRedOrOrange }.count)),
                              ("Countries and areas", model.fig(Format.countryCount(list))),
                              ("Sources working", model.figText(Format.sourcesRatio(model.meta))),
                              ("Updated", model.feedDown ? Format.unavailable : Format.age(model.feed?.generatedAt))])
             SearchField(prompt: "Search by alert, place, hazard or agency", text: $query)
-            HStack { RiskFilterPicker(selection: $level); SortPicker(screen: "alerts_sortBy", keys: Sorts.eventSorts, selection: $sort) }
+            HStack { RiskFilterPicker(selection: $level, records: official); SortPicker(screen: "alerts_sortBy", keys: Sorts.offered(Sorts.eventSorts, official), selection: $sort) }
             RefreshRow(status: model.statusLine())
             HStack(spacing: 8) {
                 RouteLink("Live events", value: Route.collection(.events, query: nil)).buttonStyle(SecondaryButtonStyle())
                 RouteLink("Disasters now and past", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
             }
             MapCard(records: Array(list.prefix(250)), height: 260) { model.push(Route.detail(for: $0)) }
-            Panel("Current official alerts", trailing: AnyView(RouteLink("See all official warnings \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
+            Panel("Latest reports", trailing: AnyView(RouteLink("Official warnings only \u{2192}", value: Route.collection(.officialWarnings, query: nil)).font(.caption))) {
                 if model.feedDown {
                     UnavailableCard()
                 } else if list.isEmpty && model.feed != nil {
@@ -169,11 +170,14 @@ struct CollectionScreen: View {
 
     var body: some View {
         let kept = CollectionView.scoped(pool.filter { view.keep($0) }, region: region)
+        // "Most deaths first" and "Most people affected first" only where a listed record has the figure (changelog C45).
+        let sortKeys = Sorts.offered(view.sortKeys, kept)
+        let effSort = sortKeys.contains(sort) ? sort : (sortKeys.first ?? sort)
         // The hazard filter is built from the list's own records and matches
         // the type exactly (changelog C8).
         let list = Sorts.apply(kept.filter { e in
             Search.matches(e, query) && (hazard.isEmpty || e.type.lowercased() == hazard.lowercased()) && RiskScale.matches(e, level)
-        }, sort)
+        }, effSort)
         ScreenScroll(title: view.title) {
             ScreenHeader(title: view.title, subtitle: view.subtitle)
             TrustNote()
@@ -181,10 +185,14 @@ struct CollectionScreen: View {
             SearchField(prompt: "Search", text: $query).accessibilityIdentifier("collectionSearch")
             FlowRow(spacing: 8) {
                 MenuPicker(label: "Filter by hazard", selection: $hazard, options: Format.hazardOptions(kept, selected: hazard).map { ($0.value, $0.label) })
-                RiskFilterPicker(selection: $level)
-                SortPicker(screen: view.rawValue + "_sortBy", keys: view.sortKeys, selection: $sort)
+                RiskFilterPicker(selection: $level, records: kept)
+                SortPicker(screen: view.rawValue + "_sortBy", keys: sortKeys, selection: $sort)
             }
             RefreshRow(status: statusText(kept))
+            // What each open forecast is (changelog C33).
+            if view.isForecastView, !Format.forecastKinds(kept).isEmpty {
+                Text(Format.forecastKinds(kept)).font(.footnote).foregroundStyle(Theme.muted).accessibilityIdentifier("forecastKinds")
+            }
             if view.isForecastView { Text(Format.horizonText(model.meta, tz: model.zoneID) + " " + Copy.forecastNote).font(.footnote).foregroundStyle(Theme.muted) }
             if view == .compareLocations {
                 Text("Search for a place to see its current events. Then search for another place to compare.").font(.footnote).foregroundStyle(Theme.muted)
@@ -285,7 +293,8 @@ struct ForecastsView: View {
 
     var body: some View {
         let tz = model.zoneID
-        let fcAll = model.live.filter { $0.forecast }
+        // Open forecasts only (changelog C33): an ended one is graded on the track record.
+        let fcAll = Format.openForecasts(model.live)
         let highAll = model.live.filter { Format.isHighAlert($0) }
         let down = model.feedDown
         let matchQ: (Record) -> Bool = { Search.matches($0, query) && RiskScale.matches($0, level) }
@@ -394,12 +403,14 @@ struct CalendarScreen: View {
     @State var hazard = ""
     @State var level = ""
     @State var sort = SortPicker.initial("forecast-calendar_sortBy", Sorts.forecastListSorts)
+    /// Days from today the 14-day view starts at (changelog C33).
+    @State var offset = 0
 
     var body: some View {
         let tz = model.zoneID
         let kept = CollectionView.scoped(model.live.filter { CollectionView.forecastCalendar.keep($0) }, region: region)
         let list = Sorts.apply(kept.filter { Search.matches($0, query) && (hazard.isEmpty || $0.type.lowercased() == hazard.lowercased()) && RiskScale.matches($0, level) }, sort)
-        let cal = Screens.calendar(list, now: Format.now(), tz: tz)
+        let cal = Screens.calendar(list, now: Format.now(), tz: tz, offset: offset)
         ScreenScroll(title: "Forecast calendar") {
             ScreenHeader(title: "Forecast calendar", subtitle: "Each current forecast, shown across the days it covers.")
             TrustNote()
@@ -407,7 +418,7 @@ struct CalendarScreen: View {
             SearchField(prompt: "Search", text: $query)
             FlowRow(spacing: 8) {
                 MenuPicker(label: "Filter by hazard", selection: $hazard, options: Format.hazardOptions(kept, selected: hazard).map { ($0.value, $0.label) })
-                RiskFilterPicker(selection: $level)
+                RiskFilterPicker(selection: $level, records: kept)
                 SortPicker(screen: "forecast-calendar_sortBy", keys: Sorts.forecastListSorts, selection: $sort)
             }
             RefreshRow(status: model.feed == nil ? model.statusLine() : model.statusLine(CollectionView.forecastCalendar.countText(shown: kept.count, kept: kept)))
@@ -421,6 +432,12 @@ struct CalendarScreen: View {
             if list.isEmpty {
                 MessageCard(title: Copy.calendarEmptyTitle, detail: Copy.calendarEmptyBody)
             } else {
+                FlowRow(spacing: 8) {
+                    Button("Previous week") { offset = cal.offset - 7 }.buttonStyle(SecondaryButtonStyle()).disabled(cal.offset <= -7)
+                    Button("Today") { offset = 0 }.buttonStyle(SecondaryButtonStyle()).disabled(cal.offset == 0)
+                    Button("Next week") { offset = cal.offset + 7 }.buttonStyle(SecondaryButtonStyle()).disabled(cal.offset >= cal.maxOffset)
+                }
+                Text(cal.status).font(.footnote).foregroundStyle(Theme.muted).accessibilityIdentifier("calendarStatus")
                 CalendarGrid(cal: cal)
             }
             Text(Copy.calendarNote).font(.footnote).foregroundStyle(Theme.muted)
@@ -525,7 +542,8 @@ struct CalendarBarRow: View {
     }
 
     var track: some View {
-        let lv = RiskScale.levelOf(bar.record.alert)
+        // The bar takes the same level as the badge beside it (risk.js keyFor, changelog C31).
+        let lv = RiskScale.keyFor(bar.record)
         let ink: Color = lv == .unknown ? Theme.ink : lv.inkColor
         let fill: Color = lv.fill ?? Color(hex: "#5FD3A6")
         let ring: Color = bar.live ? Color(hex: "#7EF0C0") : Color.clear

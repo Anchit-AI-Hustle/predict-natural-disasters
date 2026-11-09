@@ -288,16 +288,11 @@ struct MapCard: View {
     var body: some View {
         let layer = MapLayer(rawValue: layerRaw) ?? .map
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Picker("Map layer", selection: $layerRaw) {
-                    ForEach(MapLayer.allCases) { Text($0.rawValue).tag($0.rawValue) }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 220)
-                Spacer()
-                Button(showKey ? "Hide key" : "Key") { showKey.toggle() }
-                    .buttonStyle(OutlinePillButtonStyle())
-                    .accessibilityLabel("Map key")
+            // One row: the layer switch gives way, the Key button keeps its size.
+            HStack(spacing: 8) {
+                layerPicker.frame(maxWidth: 220)
+                Spacer(minLength: 8)
+                keyButton
             }
             RiskMapView(records: records, layer: layer, center: center, spanDegrees: spanDegrees, circleKm: circleKm,
                         circleColor: UIColor(circleColor), circleFill: circleFill, showCentreDot: showCentreDot,
@@ -312,6 +307,24 @@ struct MapCard: View {
                 Text(EsriTiles.attribution).font(.caption2).foregroundStyle(Theme.muted)
             }
         }
+    }
+}
+
+extension MapCard {
+    var layerPicker: some View {
+        Picker("Map layer", selection: $layerRaw) {
+            ForEach(MapLayer.allCases) { Text($0.rawValue).tag($0.rawValue) }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    var keyButton: some View {
+        Button(showKey ? "Hide key" : "Key") { showKey.toggle() }
+            .buttonStyle(OutlinePillButtonStyle())
+            .fixedSize()
+            .layoutPriority(1)
+            .accessibilityLabel("Map key")
+            .accessibilityIdentifier("mapKeyButton")
     }
 }
 

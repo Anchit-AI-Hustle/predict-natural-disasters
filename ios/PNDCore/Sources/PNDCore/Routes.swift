@@ -18,7 +18,7 @@ public enum Route: Hashable, Sendable {
     /// The record's own detail screen (`eventUrl`).
     public static func detail(for e: Record) -> Route {
         if e.forecast { return .forecast(e.id) }
-        if e.isOfficial && e.isRedOrOrange { return .alert(e.id) }
+        // One address per record, whatever its level (changelog C45); /alerts/ still opens.
         return .event(e.id)
     }
 
@@ -146,9 +146,9 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
         case .events: return "Events happening now"
         case .recentEvents: return "Recent events"
         case .officialWarnings: return "Official warnings"
-        case .alertsNotifications: return "Current alerts"
-        case .hazardTypes: return "Events by type"
-        case .historicalEvents: return "Past and recent events"
+        case .alertsNotifications: return "Alerts in force"
+        case .hazardTypes: return "Disasters by type"
+        case .historicalEvents: return "Recently ended events"
         case .compareLocations: return "Compare places"
         case .forecastList: return "Our forecasts"
         case .forecastCalendar: return "Forecast calendar"
@@ -162,8 +162,8 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
         case .recentEvents: return "The latest disasters reported by official agencies."
         case .officialWarnings: return "Warnings and watches that official agencies have issued and that are in force now. Reports of disasters that already happened are on Alerts & events."
         case .alertsNotifications: return "Warnings and watches that official agencies have issued and that are in force now, with a link to each source. Reports of disasters that already happened are on Alerts & events."
-        case .hazardTypes: return "Browse current events by type: flood, earthquake, wildfire, volcano, storm and drought."
-        case .historicalEvents: return "Recent past events from GDACS, plus the events happening now."
+        case .hazardTypes: return "Every type of hazard in the current reports, with its own page. Below them, every current event; our own forecasts are labelled as forecasts."
+        case .historicalEvents: return "Events our sources have stopped updating, most of which have ended. Major disasters from history are under Past disasters on the Calamities page."
         case .compareLocations: return "Search for a place to see its current events. Then search for another place to compare."
         case .forecastList: return "All our current forecasts of what may happen next, including test cases that were not made in advance."
         case .forecastCalendar: return "Each current forecast, shown across the days it covers."
@@ -176,6 +176,7 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
         case .recentEvents: return "recent events"
         case .officialWarnings: return "official warnings"
         case .alertsNotifications: return "alerts"
+        case .historicalEvents: return "ended events"
         case .forecastList, .forecastCalendar: return "forecasts"
         case .resources: return "sources"
         default: return "events"
@@ -200,9 +201,17 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
     /// keep warnings in force (`isOfficialWarning`, changelog C3).
     public func keep(_ e: Record) -> Bool {
         switch self {
-        case .recentEvents: return e.isOfficial
         case .officialWarnings, .alertsNotifications: return Format.isOfficialWarning(e)
-        case .forecastList, .forecastCalendar: return e["forecast"] == .bool(true)
+        // Open forecasts only (changelog C33): an ended one is graded on the track record.
+        case .forecastList, .forecastCalendar: return e["forecast"] == .bool(true) && Format.openForecasts([e]).count == 1
+        default: break
+        }
+        // The frozen ND-001 benchmark is a test case, not an event happening now (changelog C45).
+        if e.s("forecastClass") == "retrospective-benchmark" || e.s("forecastKind") == "frozen-benchmark" { return false }
+        switch self {
+        // Recently ended events: records their own provider stopped updating.
+        case .historicalEvents: return !e.isLive && !e.forecast
+        case .recentEvents: return e.isOfficial
         default: return true
         }
     }
@@ -239,10 +248,8 @@ public enum CollectionView: String, CaseIterable, Hashable, Sendable {
     public func countText(shown: Int, kept: [Record], noun: String? = nil) -> String {
         let w = noun ?? self.noun
         func one(_ n: Int, _ w: String) -> String { "\(n) " + (n == 1 && w.hasSuffix("s") ? String(w.dropLast()) : w) }
-        if isForecastView {
-            let open = Format.openForecasts(kept).count
-            return one(shown, w) + ": \(open) open, \(shown - open) ended"
-        }
+        // Open forecasts only, counted as everywhere else (changelog C33).
+        if isForecastView { return one(shown, "open " + w) }
         let fc = kept.filter { $0.forecast }.count
         return fc > 0 ? one(shown - fc, w) + " \u{00B7} " + one(fc, "forecasts") : one(shown, w)
     }

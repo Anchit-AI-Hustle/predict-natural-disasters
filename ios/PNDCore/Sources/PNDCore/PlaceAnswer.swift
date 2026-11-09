@@ -84,7 +84,7 @@ extension PlaceRisk {
         var line: String? = nil
         if let e = lead {
             let where_ = Format.placeOf(e)
-            line = (e.type.isEmpty ? "Hazard" : e.type) + (where_.isEmpty ? "" : " \u{00B7} " + where_) + " \u{00B7} reported " + Format.age(e.updated)
+            line = (e.type.isEmpty ? "Hazard" : e.type) + (where_.isEmpty ? "" : " \u{00B7} " + where_) + " \u{00B7} " + RiskScale.riskWords(e) + " \u{00B7} reported " + Format.age(e.updated)
         }
         let last = generatedAt.map { Format.fmtDate($0, tz: tz) + " \u{00B7} " + Format.age($0) } ?? pendingLoading.lastChecked
         return AnswerCard(state: state, eyebrow: "Current risk", badge: a.level?.label ?? Copy.nothingNearbyChip, level: a.level, heading: place.name,

@@ -74,8 +74,9 @@ public enum Sorts {
         add("affected", "Most people affected first") { a, b in
             chain(b.numOf("affected") - a.numOf("affected"), b.numOf("displaced") - a.numOf("displaced"), b.time - a.time)
         }
+        // By country, then by the place after "of" (changelog C45).
         add("country", "Place (A to Z)") { a, b in
-            chain(Double(JS.localeCompare(textOf(a, "place", "country", "region"), textOf(b, "place", "country", "region"))), b.time - a.time)
+            chain(Double(JS.localeCompare(placeKey(a), placeKey(b))), b.time - a.time)
         }
         add("type", "Type of hazard (A to Z)") { a, b in
             chain(Double(JS.localeCompare(textOf(a, "type"), textOf(b, "type"))), Double(rankOf(b) - rankOf(a)))
@@ -115,6 +116,28 @@ public enum Sorts {
     public static func label(_ key: String) -> String { defs[key]?.label ?? key }
 
     // Per-screen key lists (the first is the default).
+    private static let ofRe = JSRegex(#"^.*?\bof\s+"#, caseInsensitive: true)
+
+    /// `PND.placeKey(e)`: the record's first country (or sea), then its place after "of", lower-cased.
+    public static func placeKey(_ e: Record) -> String {
+        var c = ""
+        if let first = e["countries"]?.arrayValue?.first, first.isTruthy { c = first.jsString } else { c = e.s("sea") }
+        let raw = e.first("place", "country", "region")?.jsString ?? ""
+        let p = JS.trim(ofRe.replace(raw) { _ in "" })
+        return (c + "|" + p).lowercased()
+    }
+
+    /// Sorts that need a figure: offered only when a listed record has it (`PND.FIGURE_SORTS`, changelog C45).
+    public static let figureSorts: [String: [String]] = ["deaths": ["deaths"], "affected": ["affected", "displaced"]]
+
+    /// The sort keys worth offering for this list (`syncSortOptions`).
+    public static func offered(_ keys: [String], _ list: [Record]) -> [String] {
+        keys.filter { k in
+            guard let f = figureSorts[k] else { return true }
+            return list.contains { e in f.contains { e.jsNumber($0) > 0 } }
+        }
+    }
+
     public static let eventSorts = ["newest", "severity", "oldest", "deaths", "affected", "country", "type", "source", "title"]
     public static let forecastTabSorts = ["severity", "windowEnd", "newest", "oldest", "country", "type", "title"]
     public static let forecastListSorts = ["newest", "severity", "windowEnd", "oldest", "country", "type", "title"]

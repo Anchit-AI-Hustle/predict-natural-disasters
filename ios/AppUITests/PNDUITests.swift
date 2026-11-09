@@ -115,7 +115,7 @@ final class PNDUITests: XCTestCase {
         let app = launch()
         waitFor(el(app, "trustNote"))
         let tabs: [(String, String, String)] = [
-            ("alerts", "Alerts & events", "Current reports from official agencies. Open any alert to see its details and its source."),
+            ("alerts", "Alerts & events", "Current reports from official agencies: events they have detected, and the warnings, watches and advisories they have issued. Open any report to see its details and its source."),
             ("forecasts", "Forecasts", "Natural disaster forecasts"),
             ("places", "My places", "Your saved places, and the dangers reported near them."),
             ("map", "Map", "Live disaster map"),
@@ -123,7 +123,8 @@ final class PNDUITests: XCTestCase {
         ]
         for (i, t) in tabs.enumerated() {
             open(app, tab: t.0, title: t.1)
-            waitFor(app.staticTexts[t.2].firstMatch)
+            // A query string is capped at 128 characters, so a long subtitle is matched by its start.
+            waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", String(t.2.prefix(100)))).firstMatch)
             if t.0 != "track" { waitFor(el(app, "trustNote")) }
             if t.0 == "track" { waitFor(el(app, "answerLead"), 60) }
             shot(app, String(format: "%02d-", i + 2) + t.0)
@@ -150,6 +151,62 @@ final class PNDUITests: XCTestCase {
         open(app, tab: "map", title: "Map")
         waitFor(app.staticTexts["Live disaster map"].firstMatch)
         shot(app, "05-five-tabs")
+    }
+
+    /// The map card's Key button is never covered: at 390 pt the layer switch
+    /// took its row and covered it. It is reachable and opens the key, it does
+    /// not sit under the tab bar, and every tab in the bar can be tapped.
+    func testMapKeyAndEveryTabAreReachable() {
+        let app = launch()
+        waitFor(el(app, "trustNote"))
+        open(app, tab: "map", title: "Map")
+        waitFor(app.staticTexts["Live disaster map"].firstMatch)
+        // The Key row can start well below the screen. The page is dragged from
+        // high on the screen: a drag that starts on the map (just under the Key
+        // row) pans the map, not the page.
+        // Every map card has a Key button, and a tab kept in memory behind this
+        // one (Home's map) has one too, so the Map page's own button is the one
+        // that comes on screen as the page scrolls.
+        let keys = app.buttons.matching(identifier: "mapKeyButton")
+        waitFor(keys.firstMatch)
+        let win = app.windows.firstMatch.frame
+        func shown() -> XCUIElement? {
+            keys.allElementsBoundByIndex.first { $0.exists && $0.frame.minY >= win.minY + 60 && $0.frame.maxY <= win.maxY - 130 }
+        }
+        var drags = 0
+        while shown() == nil && drags < 12 {
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.3)
+            drags += 1
+        }
+        guard let key = shown() else {
+            XCTFail("no Key button came on screen after \(drags) drags: " + keys.allElementsBoundByIndex.map { "\($0.frame)" }.joined(separator: " "))
+            return
+        }
+        Thread.sleep(forTimeInterval: 0.5)
+        shot(app, "map-key-row")
+        if !key.isHittable {
+            // Name what sits over the button, so a failure says what covers it.
+            let c = CGPoint(x: key.frame.midX, y: key.frame.midY)
+            let kinds: [XCUIElement.ElementType] = [.other, .button, .staticText, .scrollView, .map, .image, .segmentedControl]
+            var over: [String] = []
+            for k in kinds {
+                for e in app.descendants(matching: k).allElementsBoundByIndex.prefix(400) where e.exists && e.frame.contains(c) {
+                    over.append("\(k.rawValue):\(e.identifier):\(e.label.prefix(30)):\(e.frame)")
+                }
+            }
+            XCTFail("the Key button is covered at \(c) after \(drags) drags; elements there: " + over.joined(separator: " | "))
+        }
+        if !isPad {
+            let bar = el(app, "tabBar")
+            waitFor(bar)
+            XCTAssertFalse(key.frame.intersects(bar.frame), "the Key button is under the tab bar")
+            for t in barTabs { XCTAssertTrue(el(app, "tab-" + t).isHittable, "tab \(t) cannot be reached") }
+        }
+        key.tap()
+        waitFor(el(app, "mapKey"), 5)
+        shot(app, "map-key")
     }
 
     /// Alerts shows 40 at a time and says so (changelog C6, vectors alerts.pager).
@@ -191,7 +248,8 @@ final class PNDUITests: XCTestCase {
         scrollTo(app, card, hittable: true)
         card.tap()
         waitFor(el(app, "trustNote"))
-        waitFor(app.staticTexts["OFFICIAL ALERT"].firstMatch)
+        // C45: a report opens at /disasters/ whatever its level; C39: its eyebrow follows the evidence.
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label == 'REPORTED EVENT' OR label BEGINSWITH 'OFFICIAL '")).firstMatch)
         waitFor(el(app, "shareButton"))
         shot(app, "10-alert-from-list")
     }
@@ -199,8 +257,9 @@ final class PNDUITests: XCTestCase {
     /// One screenshot per detail kind, opened as the site's own paths.
     func testEveryDetailKind() {
         let routes: [(String, String, String)] = [
-            ("event", "/disasters/usgs-us7000efgh", "LIVE EVENT"),
-            ("alert", "/alerts/gdacs-FL-1104999", "OFFICIAL ALERT"),
+            // C39: an observed report's eyebrow is "REPORTED EVENT", and an alert page that is not a warning says whose report it is.
+            ("event", "/disasters/usgs-us7000efgh", "REPORTED EVENT"),
+            ("alert", "/alerts/gdacs-FL-1104999", "REPORT FROM AN OFFICIAL AGENCY"),
             ("calamity", "/calamities/gdacs-FL-1104999", "CURRENT DISASTER"),
             ("forecast", "/forecasts/OUT-gdacs-FL-1104999", "FORECAST DETAILS"),
             ("region", "/regions/Nepal", "Disasters in Nepal"),
@@ -217,7 +276,8 @@ final class PNDUITests: XCTestCase {
             if r.0 != "history" && r.0 != "notfound" { waitFor(el(app, "trustNote")) }
             if r.0 == "quiet" { waitFor(el(app, "quietNote")) }
             // The source page has no enrichment block (features.md 10.2).
-            if r.0 != "notfound" && r.0 != "source" { scrollTo(app, el(app, "enrichment")) }
+            // The source page has none either, and a history page is the archive, with no live enrichment (C46).
+            if r.0 != "notfound" && r.0 != "source" && r.0 != "history" { scrollTo(app, el(app, "enrichment")) }
             shot(app, "20-detail-" + r.0)
             app.terminate()
         }
@@ -301,7 +361,7 @@ final class PNDUITests: XCTestCase {
         scrollTo(app, el(app, "alertCard"))
         shot(app, "61-alerts-axl")
         let app2 = launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL", "-PNDOpenRoute", "/alerts/gdacs-FL-1104999"])
-        waitFor(app2.staticTexts["OFFICIAL ALERT"].firstMatch, 30)
+        waitFor(app2.staticTexts["REPORT FROM AN OFFICIAL AGENCY"].firstMatch, 30)
         shot(app2, "62-alert-detail-axl")
     }
 }

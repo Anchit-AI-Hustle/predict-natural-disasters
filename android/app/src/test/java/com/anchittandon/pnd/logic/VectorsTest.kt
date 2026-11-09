@@ -64,7 +64,7 @@ class VectorsTest {
             val title = Regex("title=\"([^\"]*)\"").find(html)!!.groupValues[1]
             val text = Regex("</i>([^<]*)</span>").find(html)!!.groupValues[1]
             assertEquals(title, RiskScale.tagTitle(o(c["in"])))
-            assertEquals(text, RiskScale.riskLabel(o(c["in"])))
+            assertEquals(text, RiskScale.tagText(o(c["in"])))
         }
         val opts = group("portal.riskLevelOptions")[0]["out"]!!.jsonArray.objects().map { s(it["value"])!! to s(it["label"])!! }
         assertEquals(opts, RiskScale.filterOptions)
@@ -184,7 +184,9 @@ class VectorsTest {
         val a = AlertRules.majorAlert(JsonObject(base), NOW)!!
         assertEquals("Major Earthquake M6.8 (Japan)", a.title)
         assertEquals("M 6.8 - Japan · Red alert · USGS", a.body)
-        assertEquals("major-q1|red", a.key); assertEquals("pnd-major-q1", a.tag); assertEquals("/alerts/q1", a.url)
+        assertEquals("major-q1|red", a.key); assertEquals("pnd-major-q1", a.tag)
+        // C45: one address per record, whatever its level (was /alerts/ for a Red official report).
+        assertEquals("/disasters/q1", a.url)
         val red = AlertRules.majorAlert(JsonObject(base + ("magnitude" to JsonPrimitive(5.0)) + ("type" to JsonPrimitive("Flood"))), NOW)!!
         assertEquals("Red Alert: Flood (Japan)", red.title)
         val storm = AlertRules.majorAlert(JsonObject(base + ("type" to JsonPrimitive("Tropical Cyclone")) + ("title" to JsonPrimitive("Hurricane X Category 4")) + ("alert" to JsonPrimitive("Orange"))), NOW)!!
@@ -456,6 +458,14 @@ class VectorsTest {
         }
     }
 
+    /** The 46 records tools/make-parity-vectors.js alertsPagerVectors serves (45 official USGS reports and one EONET record). */
+    private val pagerRecords: List<JsonObject> by lazy {
+        (0 until 45).map { i ->
+            com.anchittandon.pnd.model.jsonObjectOf("id" to "usgs-p$i", "type" to "Earthquake", "source" to "USGS", "sourceType" to "official",
+                "evidenceState" to "observed", "alert" to "Green", "country" to "Japan", "updated" to JsDate.iso(NOW - (i + 1) * 3_600_000L))
+        } + com.anchittandon.pnd.model.jsonObjectOf("id" to "eonet-x", "type" to "Wildfire", "source" to "NASA EONET", "sourceType" to "aggregator")
+    }
+
     @Test fun alertsPager() {
         val p = V["alerts.pager"]!!.jsonObject
         val total = dbl(p["officialRecords"])!!.toInt(); val page = dbl(p["pageSize"])!!.toInt()
@@ -468,7 +478,9 @@ class VectorsTest {
             assertEquals(st.toString(), dbl(out["shown"])!!.toInt(), minOf(limit, total))
             assertEquals(st.toString(), s(out["note"]), f?.note)
             assertEquals(st.toString(), s(out["button"]), f?.button)
-            assertEquals(st.toString(), s(out["kOfficial"]), total.toString())
+            // C39: the first stat counts official warnings in force (isOfficialWarning), and the generator's 45
+            // official USGS reports are observed earthquakes, not warnings.
+            assertEquals(st.toString(), s(out["kOfficial"]), pagerRecords.count { Portal.isOfficialWarning(it) }.toString())
         }
         // Fewer than a page: no footer at all.
         assertNull(AlertsPager.footer(40, 12))
@@ -542,6 +554,27 @@ class VectorsTest {
         }
     }
 
+    /* ---------------------------------------------- C28 to C47 (launch audit, spec commit 99ecbf5) */
+
+    @Test fun oneRiskLevelFunction() {
+        group("risk.keyFor").forEach { c -> assertEquals(c.toString(), s(c["out"]), RiskScale.keyFor(o(c["in"])).name) }
+        group("risk.describe").forEach { c ->
+            val d = RiskScale.describe(o(c["in"])); val out = c["out"]!!.jsonObject
+            assertEquals(c.toString(), s(out["key"]), d.key.name); assertEquals(c.toString(), s(out["label"]), d.label)
+            assertEquals(c.toString(), s(out["basis"]), d.basis); assertEquals(c.toString(), s(out["text"]), d.text)
+        }
+        group("portal.riskTagHtml.levels").forEach { c ->
+            val html = s(c["out"])!!
+            assertEquals(c.toString(), Regex("risk-([a-z]+)\"").find(html)!!.groupValues[1], RiskScale.keyFor(o(c["in"])).name.lowercase())
+            assertEquals(c.toString(), Regex("title=\"([^\"]*)\"").find(html)!!.groupValues[1], RiskScale.tagTitle(o(c["in"])))
+            assertEquals(c.toString(), Regex("</i>([^<]*)</span>").find(html)!!.groupValues[1], RiskScale.tagText(o(c["in"])))
+        }
+        group("hazards.cycloneCategoryRank").forEach { c -> assertEquals(c.toString(), dbl(c["out"])!!.toInt(), Hazards.cycloneCategoryRank(o(c["in"]))) }
+    }
+
+    @Test fun provenanceOfSaysWhatEachForecastIs() =
+        group("portal.provenanceOf").forEach { c -> assertEquals(c.toString(), s(c["out"]), Portal.provenanceOf(o(c["in"]))) }
+
     @Test fun everyVectorGroupIsCovered() {
         val covered = setOf("meta", "risk.levelOf", "risk.markerIcon", "portal.riskLabel", "portal.matchesRiskLevel", "portal.riskTagHtml",
             "portal.riskLevelOptions", "hazards.hazardOf.name", "hazards.horizonHours", "hazards.severityOf", "hazards.cycloneCategory",
@@ -563,7 +596,9 @@ class VectorsTest {
             "fixtures.events.collection", "collection.keep", "verdicts.LABELS", "verdicts.label", "fixtures.verdictFiles", "forecastDetail.gradeOf",
             "portal.timezoneDefault", "home.render", "alerts.pager", "verificationDetail.render",
             // C26 and C27.
-            "home.placeAnswerStates", "portal.zoneLabel")
+            "home.placeAnswerStates", "portal.zoneLabel",
+            // C28 to C47.
+            "risk.keyFor", "risk.describe", "portal.riskTagHtml.levels", "hazards.cycloneCategoryRank", "portal.provenanceOf")
         // Groups that only describe the web page's DOM and have nothing to port, each with its reason. None so far.
         val webOnly = emptyMap<String, String>()
         val uncovered = V.keys - covered - audit - webOnly.keys

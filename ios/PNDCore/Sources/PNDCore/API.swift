@@ -35,10 +35,16 @@ public enum API {
     public static let siteHost = "predict-natural-disasters.anchit-tandon.com"
     public static var userAgent = "PredictNaturalDisasters-iOS/\(PNDCore.version) (+https://predict-natural-disasters.anchit-tandon.com/about)"
 
-    public static func eventsURL(fresh: Bool, now: Double = Format.now()) -> URL {
-        fresh ? URL(string: "/api/events?ts=\(Int64(now))", relativeTo: baseURL)!.absoluteURL
-              : URL(string: "/api/events", relativeTo: baseURL)!.absoluteURL
-    }
+    /// The feed is one shared copy at the edge, rebuilt once it is 60 s old
+    /// (api/events.js, vercel.json); `?cron=` is the only fresh path and is not
+    /// the app's to use. A new address per refresh (`?ts=`) sent every click to
+    /// every provider, so there is one address and an explicit refresh asks
+    /// with `Cache-Control: no-cache` instead, as the website does.
+    public static var eventsURL: URL { URL(string: "/api/events", relativeTo: baseURL)!.absoluteURL }
+
+    /// Extra request headers for a feed read: an explicit user refresh
+    /// revalidates (`cache: 'no-cache'` on the web); timers send none.
+    public static func eventsHeaders(fresh: Bool) -> [String: String] { fresh ? ["Cache-Control": "no-cache"] : [:] }
 
     public static var summaryURL: URL { URL(string: "/api/events?summary=1", relativeTo: baseURL)!.absoluteURL }
     public static var ledgerURL: URL { URL(string: "/api/events?ledger=1", relativeTo: baseURL)!.absoluteURL }
@@ -137,9 +143,11 @@ public final class APIClient: @unchecked Sendable {
         do { return try JSONValue.parse(data) } catch { throw APIError.decoding }
     }
 
-    /// `GET /api/events`; `fresh` adds `?ts=` (only for an explicit refresh).
+    /// `GET /api/events`; `fresh` (only an explicit refresh) sends
+    /// `Cache-Control: no-cache` to the same address, never a `?ts=`.
     public func events(fresh: Bool) async throws -> (Feed, Data) {
-        let (data, code) = try await transport.get(API.eventsURL(fresh: fresh), headers: headers, timeout: 25)
+        let h = headers.merging(API.eventsHeaders(fresh: fresh)) { _, new in new }
+        let (data, code) = try await transport.get(API.eventsURL, headers: h, timeout: 25)
         guard code == 200 else { throw APIError.http(code) }
         guard let json = try? JSONValue.parse(data), json["events"] != nil || json["meta"] != nil else { throw APIError.decoding }
         return (Feed(json: json), data)

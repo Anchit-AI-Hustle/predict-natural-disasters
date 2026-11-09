@@ -420,15 +420,21 @@ struct HistoryDetailView: View {
         let e = History.find(model.history, slug)
         ScreenScroll(title: e?.name ?? "Past disaster", refreshable: false) {
             if let e = e {
-                ScreenHeader(title: e.name, subtitle: e.year + " \u{00B7} " + e.location)
+                // Dated by the event, with the archive's own toll, source and what its severity means (changelog C46).
+                ScreenHeader(title: e.name, subtitle: e.when + " \u{00B7} " + e.location)
                 StatGrid(items: [("When", e.year), ("Hazard", e.type), ("Severity", e.severity), ("Where", e.location)])
                 Panel("About this disaster") {
                     KeyValueRow(key: "Name", value: e.name)
-                    KeyValueRow(key: "When", value: e.year)
+                    KeyValueRow(key: "When", value: e.when)
                     KeyValueRow(key: "Hazard type", value: e.type)
                     KeyValueRow(key: "Where", value: e.location)
-                    KeyValueRow(key: "Severity", value: e.severity)
+                    KeyValueRow(key: "Severity", value: e.severityMeaning)
+                    KeyValueRow(key: "Lives lost", value: e.deathsText)
                     KeyValueRow(key: "Summary", value: e.summary)
+                    if let u = URL(string: e.sourceUrl), !e.sourceUrl.isEmpty {
+                        SwiftUI.Link(e.source + " \u{2197}", destination: u).font(.footnote).foregroundStyle(Theme.link)
+                        Text("The commonly cited figure; other sources may differ.").font(.caption).foregroundStyle(Theme.muted)
+                    }
                 }
                 Panel("How sure is this?") { Text(History.evidence).font(.footnote).foregroundStyle(Theme.textSoft) }
                 let rel = Sorts.apply(History.related(model.history, to: e).map { $0.record }, sort)
@@ -450,11 +456,10 @@ struct HistoryDetailView: View {
                     RouteLink("This region", value: Route.region(e.location.components(separatedBy: ",")[0].components(separatedBy: "/")[0].trimmingCharacters(in: .whitespaces))).buttonStyle(SecondaryButtonStyle())
                     RouteLink("Current calamities", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
                 }
-                Text("Help and context").font(.title3.bold()).foregroundStyle(Theme.text)
-                EnrichmentSection(record: Screens.syntheticRecord(title: e.name, country: (e.location.components(separatedBy: ",").last ?? "").trimmingCharacters(in: .whitespaces),
-                                                                  region: e.location, type: e.type, updated: "", lat: nil, lon: nil, source: "Historical disaster archive"))
+                // An archive page never runs the live enrichment (changelog C46).
             } else {
-                ScreenHeader(title: "Past disaster not found", subtitle: "Go back to the list and choose a disaster.").accessibilityElement(children: .contain).accessibilityIdentifier("notFound")
+                ScreenHeader(title: "Past disaster not found", subtitle: "We have no past disaster at this address.").accessibilityElement(children: .contain).accessibilityIdentifier("notFound")
+                RouteLink("See all past disasters", value: Route.calamities).buttonStyle(SecondaryButtonStyle())
             }
         }
         .toolbar { if let e = e { ToolbarItem(placement: .topBarTrailing) { ShareButton(route: .history(e.slug), title: e.name) } } }

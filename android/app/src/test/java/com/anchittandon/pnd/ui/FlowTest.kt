@@ -93,8 +93,9 @@ class FlowTest {
         scrollTo("card:gdacs-FL-1104999")
         rule.onNodeWithTag("card:gdacs-FL-1104999").performClick()
         rule.waitForIdle()
-        // Official + Red opens alert detail (PND.eventUrl).
-        rule.onNodeWithText("OFFICIAL ALERT").assertExists()
+        // C45: every report opens at /disasters/ (PND.eventUrl), whatever its level; C39: an observed report's eyebrow says so.
+        rule.onAllNodesWithText("REPORTED EVENT")[0].assertExists()
+        rule.onNodeWithText("OFFICIAL ALERT").assertDoesNotExist()
         rule.onNodeWithTag("detailTitle").assertIsDisplayed()
         rule.onNodeWithText("Flood in Bagmati Province, Nepal").assertExists()
         // The enrichment block is there, and the forecast flag is false so donation links may show.
@@ -137,7 +138,8 @@ class FlowTest {
         rule.onNodeWithTag("hazTile:Drought").performClick()
         rule.waitForIdle()
         scrollTo("fcCount")
-        rule.onNodeWithText("Forecasts · 1 of 43").assertExists()
+        // C33: the tab lists open forecasts only (ND-001's window has ended).
+        rule.onNodeWithText("Forecasts · 1 of 42").assertExists()
     }
 
     @Test fun aFailedFeedSaysSoAndIsNotEmpty() {

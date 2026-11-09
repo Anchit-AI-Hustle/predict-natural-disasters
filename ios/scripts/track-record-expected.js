@@ -1,8 +1,9 @@
 'use strict';
 /*
  * Renders the site's own /accuracy page (accuracy.html, in jsdom, over the
- * committed data/*.json) and prints the figures it shows as JSON, so the
- * iOS Track record can be checked against them in CI.
+ * committed data/*.json) with its full record open (?full=1: the figures
+ * below are graded only when a reader opens it) and prints the figures it
+ * shows as JSON, so the iOS Track record can be checked against them in CI.
  *
  * Usage, from the repository root after `cd test && npm ci`:
  *   node ios/scripts/track-record-expected.js > expected.json
@@ -19,6 +20,7 @@ const IDS = ['mTotal', 'mOpen', 'mAwaiting', 'mUngradeable', 'mGraded', 'mVerifi
 (async () => {
   const now = Date.now();
   const r = await renderPage('accuracy.html', {
+    search: '?full=1',
     timeoutMs: 120000,
     waitFor: d => (d.getElementById('ipTotal') || {}).textContent !== '-'
   });
