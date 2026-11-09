@@ -165,7 +165,18 @@ final class PNDUITests: XCTestCase {
         // and a drag that starts on the map pans the map instead of the page.
         let key = el(app, "mapKeyButton")
         waitFor(key)
-        XCTAssertTrue(key.isHittable, "the Key button is covered")
+        if !key.isHittable {
+            // Name what sits over the button, so a failure says what covers it.
+            let c = CGPoint(x: key.frame.midX, y: key.frame.midY)
+            let kinds: [XCUIElement.ElementType] = [.other, .button, .staticText, .scrollView, .map, .image, .segmentedControl]
+            var over: [String] = []
+            for k in kinds {
+                for e in app.descendants(matching: k).allElementsBoundByIndex.prefix(400) where e.exists && e.frame.contains(c) {
+                    over.append("\(k.rawValue):\(e.identifier):\(e.label.prefix(30)):\(e.frame)")
+                }
+            }
+            XCTFail("the Key button is covered at \(c); elements there: " + over.joined(separator: " | "))
+        }
         if !isPad {
             let bar = el(app, "tabBar")
             waitFor(bar)

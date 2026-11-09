@@ -288,20 +288,13 @@ struct MapCard: View {
     var body: some View {
         let layer = MapLayer(rawValue: layerRaw) ?? .map
         VStack(alignment: .leading, spacing: 6) {
-            // The layer switch and the Key button share a row where both fit at
-            // their own size; on a narrow phone (390 pt, inside a panel's padding)
-            // the segmented control took the row and covered the button, so
-            // there the button goes on its own line instead.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    layerPicker.frame(width: 200)
-                    Spacer(minLength: 8)
-                    keyButton
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    layerPicker
-                    keyButton
-                }
+            // One plain row: the layer switch gives way, the Key button keeps its
+            // size. (With a ViewThatFits here the button was drawn about 30 pt
+            // below its accessibility frame on iPhone and could not be tapped.)
+            HStack(spacing: 8) {
+                layerPicker.frame(maxWidth: 220)
+                Spacer(minLength: 8)
+                keyButton
             }
             RiskMapView(records: records, layer: layer, center: center, spanDegrees: spanDegrees, circleKm: circleKm,
                         circleColor: UIColor(circleColor), circleFill: circleFill, showCentreDot: showCentreDot,
