@@ -164,15 +164,25 @@ final class PNDUITests: XCTestCase {
         // The Key row can start well below the screen. The page is dragged from
         // high on the screen: a drag that starts on the map (just under the Key
         // row) pans the map, not the page.
-        let key = el(app, "mapKeyButton")
-        waitFor(key)
+        // Every map card has a Key button, and a tab kept in memory behind this
+        // one (Home's map) has one too, so the Map page's own button is the one
+        // that comes on screen as the page scrolls.
+        let keys = app.buttons.matching(identifier: "mapKeyButton")
+        waitFor(keys.firstMatch)
         let win = app.windows.firstMatch.frame
+        func shown() -> XCUIElement? {
+            keys.allElementsBoundByIndex.first { $0.exists && $0.frame.minY >= win.minY + 60 && $0.frame.maxY <= win.maxY - 130 }
+        }
         var drags = 0
-        while key.frame.maxY > win.maxY - 130 && drags < 12 {
+        while shown() == nil && drags < 12 {
             let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
             let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.3)
             drags += 1
+        }
+        guard let key = shown() else {
+            XCTFail("no Key button came on screen after \(drags) drags: " + keys.allElementsBoundByIndex.map { "\($0.frame)" }.joined(separator: " "))
+            return
         }
         Thread.sleep(forTimeInterval: 0.5)
         shot(app, "map-key-row")
