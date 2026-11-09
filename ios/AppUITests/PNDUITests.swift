@@ -161,10 +161,21 @@ final class PNDUITests: XCTestCase {
         waitFor(el(app, "trustNote"))
         open(app, tab: "map", title: "Map")
         waitFor(app.staticTexts["Live disaster map"].firstMatch)
-        // Checked where the tab opens: the Key row sits just above the tab bar,
-        // and a drag that starts on the map pans the map instead of the page.
+        // The Key row can start well below the screen. The page is dragged from
+        // high on the screen: a drag that starts on the map (just under the Key
+        // row) pans the map, not the page.
         let key = el(app, "mapKeyButton")
         waitFor(key)
+        let win = app.windows.firstMatch.frame
+        var drags = 0
+        while key.frame.maxY > win.maxY - 130 && drags < 12 {
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.3)
+            drags += 1
+        }
+        Thread.sleep(forTimeInterval: 0.5)
+        shot(app, "map-key-row")
         if !key.isHittable {
             // Name what sits over the button, so a failure says what covers it.
             let c = CGPoint(x: key.frame.midX, y: key.frame.midY)
@@ -175,7 +186,7 @@ final class PNDUITests: XCTestCase {
                     over.append("\(k.rawValue):\(e.identifier):\(e.label.prefix(30)):\(e.frame)")
                 }
             }
-            XCTFail("the Key button is covered at \(c); elements there: " + over.joined(separator: " | "))
+            XCTFail("the Key button is covered at \(c) after \(drags) drags; elements there: " + over.joined(separator: " | "))
         }
         if !isPad {
             let bar = el(app, "tabBar")

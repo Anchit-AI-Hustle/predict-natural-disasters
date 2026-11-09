@@ -288,9 +288,7 @@ struct MapCard: View {
     var body: some View {
         let layer = MapLayer(rawValue: layerRaw) ?? .map
         VStack(alignment: .leading, spacing: 6) {
-            // One plain row: the layer switch gives way, the Key button keeps its
-            // size. (With a ViewThatFits here the button was drawn about 30 pt
-            // below its accessibility frame on iPhone and could not be tapped.)
+            // One row: the layer switch gives way, the Key button keeps its size.
             HStack(spacing: 8) {
                 layerPicker.frame(maxWidth: 220)
                 Spacer(minLength: 8)
