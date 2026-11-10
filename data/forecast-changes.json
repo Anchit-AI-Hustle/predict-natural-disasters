@@ -67012,29 +67012,143 @@
         "reliefweb",
         "eonet"
       ]
+    },
+    {
+      "at": "2026-11-10T23:19:13.641Z",
+      "sinceHours": 5.51,
+      "active": 58,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-6919edc7e119bce46062e3c64c5e3fd608b5c01f-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Maricopa, Arizona and 1 nearby area, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-10T15:00:00.000Z",
+          "targetEnd": "2026-11-13T15:00:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-c62cc1f4aad03bdbbd99d67988f1b716c55af394-004-2",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Cape Halkett to Flaxman Island out to 15 nautical miles, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-10T12:46:00.000Z",
+          "targetEnd": "2026-11-13T12:46:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-d42764c572d5df8b3ae4c07fd1308e13a2f725b2-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Lassen Volcanic National Park and 3 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T19:14:00.000Z",
+          "targetEnd": "2026-11-12T19:14:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [
+        {
+          "id": "OUT-gdacs-TC-1001347",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Cempaka - 5-day forecast",
+          "country": "Japan",
+          "alert": "Watch",
+          "rank": 3,
+          "targetStart": "2026-11-10T18:00:00.000Z",
+          "targetEnd": "2026-11-15T18:00:00.000Z",
+          "provider": "gdacs",
+          "from": "Watch",
+          "to": "Watch"
+        }
+      ],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-nhc-cp042026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Storm Pena - 5-day forecast",
+          "country": "Pena (central Pacific system 4)",
+          "alert": "Watch",
+          "rank": 2,
+          "targetStart": "2026-11-10T21:00:00.000Z",
+          "targetEnd": "2026-11-15T21:00:00.000Z",
+          "provider": "nhc",
+          "fromEnd": "2026-11-15T15:00:00.000Z",
+          "toEnd": "2026-11-15T21:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001347",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Typhoon Cempaka - 5-day forecast",
+          "country": "Japan",
+          "alert": "Watch",
+          "rank": 3,
+          "targetStart": "2026-11-10T18:00:00.000Z",
+          "targetEnd": "2026-11-15T18:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-15T12:00:00.000Z",
+          "toEnd": "2026-11-15T18:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-2b64473de0e67dce88dc2adc2f011b5b5962485c-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in waters from Baffin Bay to Port Aransas from 20 to 60 nautical miles and 1 nearby area, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-10T17:43:00.000Z",
+          "targetEnd": "2026-11-12T17:43:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-e2674399585ab2aaaa4688004ee3b0c51e4287c3-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Val Verde, Texas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-10T15:49:00.000Z",
+          "targetEnd": "2026-11-13T15:49:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-d36456b55cc591c6c2fbbfab1a447d64fd8e1aaa-001-1",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Western US Arctic Offshore, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-10T12:46:00.000Z",
+          "targetEnd": "2026-11-13T12:46:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-0-2b64473de0e67dce88dc2adc2f011b5b5962485c-001-1": {
-      "id": "OUT-0-2b64473de0e67dce88dc2adc2f011b5b5962485c-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in waters from Baffin Bay to Port Aransas from 20 to 60 nautical miles and 1 nearby area, United States - 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-10T17:43:00.000Z",
-      "targetEnd": "2026-11-12T17:43:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-e2674399585ab2aaaa4688004ee3b0c51e4287c3-001-1": {
-      "id": "OUT-0-e2674399585ab2aaaa4688004ee3b0c51e4287c3-001-1",
+    "OUT-0-6919edc7e119bce46062e3c64c5e3fd608b5c01f-001-1": {
+      "id": "OUT-0-6919edc7e119bce46062e3c64c5e3fd608b5c01f-001-1",
       "type": "Flood",
-      "title": "Flood risk in Val Verde, Texas, United States - 3-day forecast",
+      "title": "Flood risk in Maricopa, Arizona and 1 nearby area, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-10T15:49:00.000Z",
-      "targetEnd": "2026-11-13T15:49:00.000Z",
+      "targetStart": "2026-11-10T15:00:00.000Z",
+      "targetEnd": "2026-11-13T15:00:00.000Z",
       "provider": "nws"
     },
     "OUT-aftershock-usgs-us7000txb8": {
@@ -67048,10 +67162,10 @@
       "targetEnd": "2026-11-17T14:54:17.647Z",
       "provider": "usgs"
     },
-    "OUT-0-d36456b55cc591c6c2fbbfab1a447d64fd8e1aaa-001-1": {
-      "id": "OUT-0-d36456b55cc591c6c2fbbfab1a447d64fd8e1aaa-001-1",
+    "OUT-0-c62cc1f4aad03bdbbd99d67988f1b716c55af394-004-2": {
+      "id": "OUT-0-c62cc1f4aad03bdbbd99d67988f1b716c55af394-004-2",
       "type": "Heavy Freezing Spray Warning",
-      "title": "Heavy Freezing Spray Warning risk in Western US Arctic Offshore, United States - 3-day forecast",
+      "title": "Heavy Freezing Spray Warning risk in Cape Halkett to Flaxman Island out to 15 nautical miles, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
@@ -67187,19 +67301,30 @@
       "country": "Pena (central Pacific system 4)",
       "alert": "Watch",
       "rank": 2,
-      "targetStart": "2026-11-10T15:00:00.000Z",
-      "targetEnd": "2026-11-15T15:00:00.000Z",
+      "targetStart": "2026-11-10T21:00:00.000Z",
+      "targetEnd": "2026-11-15T21:00:00.000Z",
       "provider": "nhc"
+    },
+    "OUT-0-d42764c572d5df8b3ae4c07fd1308e13a2f725b2-001-1": {
+      "id": "OUT-0-d42764c572d5df8b3ae4c07fd1308e13a2f725b2-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Lassen Volcanic National Park and 3 nearby areas, United States - 2-day forecast",
+      "country": "United States",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-10T19:14:00.000Z",
+      "targetEnd": "2026-11-12T19:14:00.000Z",
+      "provider": "nws"
     },
     "OUT-gdacs-TC-1001347": {
       "id": "OUT-gdacs-TC-1001347",
       "type": "Tropical Cyclone",
-      "title": "Storm risk from Tropical Cyclone Cempaka - 5-day forecast",
+      "title": "Storm risk from Typhoon Cempaka - 5-day forecast",
       "country": "Japan",
       "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T12:00:00.000Z",
-      "targetEnd": "2026-11-15T12:00:00.000Z",
+      "rank": 3,
+      "targetStart": "2026-11-10T18:00:00.000Z",
+      "targetEnd": "2026-11-15T18:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104277": {
@@ -67654,10 +67779,10 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-10T17:48:52.735Z",
+  "updatedAt": "2026-11-10T23:19:13.641Z",
   "observedCadenceHours": {
-    "runs": 172,
-    "median": 4.98,
+    "runs": 173,
+    "median": 5,
     "min": 1.54,
     "max": 189.21
   }
