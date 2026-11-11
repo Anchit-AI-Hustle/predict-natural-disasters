@@ -1,55 +1,55 @@
 {
  "note": "How each published model forecast turned out, from data/model-ledger.json, data/model-runs.json, data/climatology.json and data/model-measured.json by forecast-models.js gradeModelRecord (run by tools/run-models.js daily, reproducible with tools/rebuild-model-grades.js). Correct if its weather line was crossed on at least one day of its window, a false alarm if not, pending until every day of the window has a settled NASA POWER measurement (one at least 14 days old when fetched). Verdicts and misses are both recomputed on every run from settled days only. A miss is a day the line was crossed at a place a published run was watching, with no forecast for it. \"events\" merges forecasts at one place for one hazard whose windows overlap or touch; \"days\" scores every watched place-day, as the backtest does.",
- "generatedAt": "2026-11-10T12:58:08.285Z",
+ "generatedAt": "2026-11-11T12:08:59.178Z",
  "settleDays": 14,
- "measuredThrough": "2026-10-27",
+ "measuredThrough": "2026-10-28",
  "counts": {
-  "issued": 440,
-  "correct": 64,
-  "falseAlarms": 78,
-  "pending": 298,
-  "missedDays": 40,
-  "expectedByChance": 22.1
+  "issued": 457,
+  "correct": 69,
+  "falseAlarms": 92,
+  "pending": 296,
+  "missedDays": 46,
+  "expectedByChance": 24.9
  },
  "events": {
-  "total": 238,
-  "correct": 27,
-  "falseAlarms": 51,
-  "pending": 160
+  "total": 246,
+  "correct": 28,
+  "falseAlarms": 59,
+  "pending": 159
  },
  "days": {
   "heat": {
-   "days": 1240,
-   "hits": 73,
-   "falseAlarms": 83,
-   "misses": 18,
-   "correctNegatives": 1066,
-   "baseRate": 0.0734,
-   "pod": 0.8022,
-   "far": 0.5321,
-   "frequencyBias": 1.7143
+   "days": 1334,
+   "hits": 76,
+   "falseAlarms": 91,
+   "misses": 20,
+   "correctNegatives": 1147,
+   "baseRate": 0.072,
+   "pod": 0.7917,
+   "far": 0.5449,
+   "frequencyBias": 1.7396
   },
   "rain": {
-   "days": 1240,
-   "hits": 30,
-   "falseAlarms": 86,
-   "misses": 20,
-   "correctNegatives": 1104,
-   "baseRate": 0.0403,
-   "pod": 0.6,
-   "far": 0.7414,
-   "frequencyBias": 2.32
+   "days": 1334,
+   "hits": 31,
+   "falseAlarms": 103,
+   "misses": 22,
+   "correctNegatives": 1178,
+   "baseRate": 0.0397,
+   "pod": 0.5849,
+   "far": 0.7687,
+   "frequencyBias": 2.5283
   },
   "fire": {
-   "days": 1240,
+   "days": 1334,
    "hits": 4,
-   "falseAlarms": 14,
-   "misses": 2,
-   "correctNegatives": 1220,
-   "baseRate": 0.0048,
-   "pod": 0.6667,
-   "far": 0.7778,
-   "frequencyBias": 3
+   "falseAlarms": 16,
+   "misses": 4,
+   "correctNegatives": 1310,
+   "baseRate": 0.006,
+   "pod": 0.5,
+   "far": 0.8,
+   "frequencyBias": 2.5
   }
  },
  "outlooks": [
@@ -70,7 +70,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-15",
@@ -103,7 +103,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-19",
@@ -142,7 +142,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-17",
@@ -181,7 +181,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-18",
@@ -226,7 +226,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-20",
@@ -267,7 +267,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-15",
@@ -334,7 +334,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-17",
@@ -385,7 +385,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-15",
@@ -418,7 +418,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-16",
@@ -451,7 +451,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-15",
@@ -500,7 +500,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-17",
@@ -574,7 +574,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-20",
@@ -607,7 +607,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-20",
@@ -640,7 +640,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-15",
@@ -677,7 +677,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-19",
@@ -730,7 +730,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-15",
@@ -793,7 +793,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-18",
@@ -829,7 +829,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-19",
@@ -865,7 +865,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-20",
@@ -902,7 +902,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-19",
@@ -958,7 +958,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-16",
@@ -997,7 +997,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-21",
@@ -1034,7 +1034,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-16",
@@ -1079,7 +1079,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-15",
@@ -1118,7 +1118,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.014,
+   "chance": 0.018,
    "measured": [
     {
      "day": "2026-10-17",
@@ -1157,7 +1157,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-16",
@@ -1193,7 +1193,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-18",
@@ -1290,7 +1290,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-15",
@@ -1353,7 +1353,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-15",
@@ -1432,7 +1432,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-18",
@@ -1483,7 +1483,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-18",
@@ -1546,7 +1546,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-18",
@@ -1588,7 +1588,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-19",
@@ -1627,7 +1627,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-23",
@@ -1660,7 +1660,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-22",
@@ -1693,7 +1693,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-21",
@@ -1742,7 +1742,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-18",
@@ -1850,7 +1850,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-22",
@@ -1886,7 +1886,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-22",
@@ -1923,7 +1923,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-21",
@@ -1970,7 +1970,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-20",
@@ -2003,7 +2003,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-22",
@@ -2050,7 +2050,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-18",
@@ -2116,7 +2116,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-22",
@@ -2183,7 +2183,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-23",
@@ -2266,7 +2266,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-18",
@@ -2329,7 +2329,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-24",
@@ -2367,7 +2367,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-19",
@@ -2418,7 +2418,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-19",
@@ -2485,7 +2485,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.219,
+   "chance": 0.216,
    "measured": [
     {
      "day": "2026-10-21",
@@ -2554,7 +2554,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-20",
@@ -2616,7 +2616,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-21",
@@ -2649,7 +2649,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-23",
@@ -2682,7 +2682,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-25",
@@ -2722,7 +2722,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-20",
@@ -2802,7 +2802,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-22",
@@ -2837,7 +2837,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-24",
@@ -2884,7 +2884,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-21",
@@ -2925,7 +2925,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-19",
@@ -3049,7 +3049,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.219,
+   "chance": 0.216,
    "measured": [
     {
      "day": "2026-10-20",
@@ -3118,7 +3118,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-24",
@@ -3158,7 +3158,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-19",
@@ -3224,7 +3224,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-25",
@@ -3264,7 +3264,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-21",
@@ -3300,7 +3300,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-25",
@@ -3340,7 +3340,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-20",
@@ -3403,7 +3403,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-22",
@@ -3438,7 +3438,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-20",
@@ -3474,7 +3474,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-23",
@@ -3515,7 +3515,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-20",
@@ -3607,7 +3607,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-24",
@@ -3667,7 +3667,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-20",
@@ -3739,7 +3739,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.28,
+   "chance": 0.277,
    "measured": [
     {
      "day": "2026-10-20",
@@ -3853,7 +3853,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -3889,7 +3889,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-26",
@@ -3922,7 +3922,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -3955,7 +3955,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -3991,7 +3991,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -4032,7 +4032,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4098,7 +4098,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4139,7 +4139,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-23",
@@ -4190,7 +4190,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4241,7 +4241,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.014,
+   "chance": 0.018,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4288,7 +4288,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4355,7 +4355,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-23",
@@ -4394,7 +4394,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-23",
@@ -4479,7 +4479,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4531,7 +4531,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-21",
@@ -4594,14 +4594,14 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 8.79,
      "line": 51.83,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 12.8,
      "threeDayLine": 120.02
     },
     {
@@ -4618,8 +4618,16 @@
    "id": "model-heat-chittagong-bd-2026-10-22",
    "hazard": "heat",
    "placeId": "chittagong-bd",
-   "verdict": "pending",
-   "crossed": [],
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-22",
+    "2026-10-23",
+    "2026-10-24",
+    "2026-10-25",
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28"
+   ],
    "place": "Chittagong, Bangladesh",
    "recordedAt": "2026-10-21T09:37:25.623Z",
    "issuedAt": "2026-10-21T09:37:25.623Z",
@@ -4631,7 +4639,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-22",
@@ -4671,9 +4679,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 31.3,
-     "crossed": null
+     "crossed": true
     }
    ]
   },
@@ -4697,7 +4705,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-22",
@@ -4717,7 +4725,7 @@
    "id": "model-heat-kathmandu-np-2026-10-27",
    "hazard": "heat",
    "placeId": "kathmandu-np",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Kathmandu, Bagmati Province, Nepal",
    "recordedAt": "2026-10-21T09:37:25.623Z",
@@ -4730,7 +4738,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-27",
@@ -4740,9 +4748,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 22.98,
      "line": 24.8,
-     "crossed": null
+     "crossed": false
     }
    ]
   },
@@ -4750,7 +4758,7 @@
    "id": "model-heat-karachi-pk-2026-10-24",
    "hazard": "heat",
    "placeId": "karachi-pk",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Karachi, Sindh, Pakistan",
    "recordedAt": "2026-10-21T09:37:25.623Z",
@@ -4763,7 +4771,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-24",
@@ -4791,9 +4799,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 35.35,
      "line": 35.2,
-     "crossed": null
+     "crossed": false
     }
    ]
   },
@@ -4814,7 +4822,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-22",
@@ -4940,7 +4948,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-25",
@@ -4968,10 +4976,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 1.11,
      "line": 11.38,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 2.2,
      "threeDayLine": 29.35
     },
     {
@@ -4988,8 +4996,16 @@
    "id": "model-heat-niamey-ne-2026-10-22",
    "hazard": "heat",
    "placeId": "niamey-ne",
-   "verdict": "pending",
-   "crossed": [],
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-22",
+    "2026-10-23",
+    "2026-10-24",
+    "2026-10-25",
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28"
+   ],
    "place": "Niamey, Niger",
    "recordedAt": "2026-10-21T09:37:25.623Z",
    "issuedAt": "2026-10-21T09:37:25.623Z",
@@ -5001,7 +5017,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-22",
@@ -5041,9 +5057,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     }
    ]
   },
@@ -5064,7 +5080,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-27",
@@ -5076,10 +5092,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 4.84,
      "line": 24.33,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 26.2,
      "threeDayLine": 56.17
     },
     {
@@ -5113,7 +5129,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-22",
@@ -5139,7 +5155,7 @@
    "id": "model-heat-antananarivo-mg-2026-10-27",
    "hazard": "heat",
    "placeId": "antananarivo-mg",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Antananarivo, Analamanga Region, Madagascar",
    "recordedAt": "2026-10-21T09:37:25.623Z",
@@ -5152,7 +5168,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-27",
@@ -5162,9 +5178,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 27.74,
      "line": 27.3,
-     "crossed": null
+     "crossed": false
     }
    ]
   },
@@ -5172,7 +5188,7 @@
    "id": "model-rain-antananarivo-mg-2026-10-28",
    "hazard": "rain",
    "placeId": "antananarivo-mg",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Antananarivo, Analamanga Region, Madagascar",
    "recordedAt": "2026-10-21T09:37:25.623Z",
@@ -5189,10 +5205,10 @@
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 7.21,
      "line": 23.24,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 12.6,
      "threeDayLine": 46.7
     }
    ]
@@ -5216,7 +5232,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-24",
@@ -5350,7 +5366,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-25",
@@ -5382,8 +5398,16 @@
    "id": "model-heat-lima-pe-2026-10-22",
    "hazard": "heat",
    "placeId": "lima-pe",
-   "verdict": "pending",
-   "crossed": [],
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-22",
+    "2026-10-23",
+    "2026-10-24",
+    "2026-10-25",
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28"
+   ],
    "place": "Lima, Lima Province, Peru",
    "recordedAt": "2026-10-21T09:37:25.623Z",
    "issuedAt": "2026-10-21T09:37:25.623Z",
@@ -5395,7 +5419,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-22",
@@ -5435,9 +5459,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     }
    ]
   },
@@ -5458,7 +5482,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-22",
@@ -5503,7 +5527,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-29",
@@ -5540,7 +5564,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-27",
@@ -5552,10 +5576,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 83.95,
      "line": 53.23,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": true,
+     "threeDay": 86.3,
      "threeDayLine": 145.6
     },
     {
@@ -5593,7 +5617,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-29",
@@ -5630,7 +5654,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-23",
@@ -5664,9 +5688,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 31.3,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -5809,7 +5833,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-26",
@@ -5875,7 +5899,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-25",
@@ -5924,7 +5948,7 @@
    "id": "model-rain-osaka-jp-2026-10-25",
    "hazard": "rain",
    "placeId": "osaka-jp",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Osaka, Japan",
    "recordedAt": "2026-10-22T09:37:26.696Z",
@@ -5937,7 +5961,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-25",
@@ -5965,10 +5989,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 0.3,
      "line": 60.28,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 21.6,
      "threeDayLine": 153.46
     }
    ]
@@ -5990,14 +6014,14 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 0.89,
      "line": 34.18,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 10.9,
      "threeDayLine": 59.12
     },
     {
@@ -6039,7 +6063,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6078,7 +6102,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-26",
@@ -6098,10 +6122,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 1.11,
      "line": 11.38,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 2.2,
      "threeDayLine": 29.35
     },
     {
@@ -6139,7 +6163,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-26",
@@ -6176,7 +6200,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-24",
@@ -6209,7 +6233,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-27",
@@ -6219,9 +6243,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 29.45,
      "line": 30.8,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -6248,7 +6272,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6282,9 +6306,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -6343,7 +6367,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6378,7 +6402,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6418,7 +6442,7 @@
    "id": "model-rain-miami-us-2026-10-25",
    "hazard": "rain",
    "placeId": "miami-us",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Miami, Florida, United States",
    "recordedAt": "2026-10-22T09:37:26.696Z",
@@ -6431,7 +6455,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-25",
@@ -6459,10 +6483,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 8.06,
      "line": 38.39,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 37.7,
      "threeDayLine": 79.02
     }
    ]
@@ -6484,7 +6508,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-29",
@@ -6523,7 +6547,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6584,7 +6608,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-29",
@@ -6621,7 +6645,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6682,7 +6706,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6716,9 +6740,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -6745,7 +6769,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-23",
@@ -6811,7 +6835,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-29",
@@ -6873,14 +6897,14 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 0.01,
      "line": 28.51,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 0,
      "threeDayLine": 62.29
     },
     {
@@ -6913,8 +6937,12 @@
    "id": "model-heat-chittagong-bd-2026-10-26",
    "hazard": "heat",
    "placeId": "chittagong-bd",
-   "verdict": "pending",
-   "crossed": [],
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28"
+   ],
    "place": "Chittagong, Bangladesh",
    "recordedAt": "2026-10-23T09:33:44.413Z",
    "issuedAt": "2026-10-23T09:33:44.413Z",
@@ -6926,7 +6954,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-26",
@@ -6942,9 +6970,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 31.3,
-     "crossed": null
+     "crossed": true
     }
    ]
   },
@@ -6965,7 +6993,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -7027,7 +7055,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -7089,7 +7117,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-24",
@@ -7125,7 +7153,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-24",
@@ -7151,7 +7179,7 @@
    "id": "model-heat-mogadishu-so-2026-10-27",
    "hazard": "heat",
    "placeId": "mogadishu-so",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Mogadishu, Banaadir, Somalia",
    "recordedAt": "2026-10-23T09:33:44.413Z",
@@ -7164,7 +7192,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-27",
@@ -7174,9 +7202,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 29.63,
      "line": 29.4,
-     "crossed": null
+     "crossed": false
     }
    ]
   },
@@ -7197,7 +7225,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-24",
@@ -7225,9 +7253,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -7263,7 +7291,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-24",
@@ -7296,7 +7324,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-27",
@@ -7308,10 +7336,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 1.22,
      "line": 24.48,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 29.8,
      "threeDayLine": 53.44
     },
     {
@@ -7357,7 +7385,7 @@
    "id": "model-rain-kyiv-ua-2026-10-27",
    "hazard": "rain",
    "placeId": "kyiv-ua",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Kyiv, Kyiv City, Ukraine",
    "recordedAt": "2026-10-23T09:33:44.413Z",
@@ -7370,7 +7398,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-27",
@@ -7382,10 +7410,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 0.01,
      "line": 20.9,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 1,
      "threeDayLine": 39.59
     }
    ]
@@ -7407,7 +7435,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-29",
@@ -7440,7 +7468,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-30",
@@ -7477,7 +7505,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-29",
@@ -7501,7 +7529,7 @@
    "id": "model-rain-mexico-city-mx-2026-10-28",
    "hazard": "rain",
    "placeId": "mexico-city-mx",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Mexico City, Mexico",
    "recordedAt": "2026-10-23T09:33:44.413Z",
@@ -7518,10 +7546,10 @@
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 3.31,
      "line": 13.74,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 7,
      "threeDayLine": 33.28
     }
    ]
@@ -7543,14 +7571,14 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 3.79,
      "line": 22.59,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 15.9,
      "threeDayLine": 47.74
     },
     {
@@ -7617,7 +7645,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-30",
@@ -7654,7 +7682,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-30",
@@ -7691,7 +7719,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-24",
@@ -7719,9 +7747,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -7783,13 +7811,13 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 32,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -7828,7 +7856,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-29",
@@ -7881,7 +7909,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-30",
@@ -7926,7 +7954,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-30",
@@ -7971,7 +7999,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.367,
+   "chance": 0.361,
    "measured": [
     {
      "day": "2026-10-25",
@@ -7993,9 +8021,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 31.3,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -8028,7 +8056,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-31",
@@ -8065,7 +8093,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-25",
@@ -8093,10 +8121,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 6.4,
      "line": 21.23,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 19,
      "threeDayLine": 50.45
     },
     {
@@ -8126,7 +8154,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-31",
@@ -8163,7 +8191,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-29",
@@ -8208,7 +8236,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-29",
@@ -8241,7 +8269,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-25",
@@ -8263,9 +8291,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -8304,7 +8332,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-31",
@@ -8341,7 +8369,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-10-31",
@@ -8394,7 +8422,7 @@
    "id": "model-rain-rio-de-janeiro-br-2026-10-25",
    "hazard": "rain",
    "placeId": "rio-de-janeiro-br",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Rio de Janeiro, Brazil",
    "recordedAt": "2026-10-24T09:06:26.712Z",
@@ -8407,7 +8435,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.152,
+   "chance": 0.15,
    "measured": [
     {
      "day": "2026-10-25",
@@ -8435,10 +8463,10 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 0.13,
      "line": 34.11,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 5.3,
      "threeDayLine": 66.92
     }
    ]
@@ -8460,7 +8488,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-25",
@@ -8482,9 +8510,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -8610,7 +8638,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-27",
@@ -8620,9 +8648,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 30.04,
      "line": 30.7,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -8636,7 +8664,7 @@
    "id": "model-heat-karachi-pk-2026-10-27",
    "hazard": "heat",
    "placeId": "karachi-pk",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Karachi, Sindh, Pakistan",
    "recordedAt": "2026-10-25T09:23:59.561Z",
@@ -8649,7 +8677,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-27",
@@ -8659,9 +8687,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 35.35,
      "line": 35.2,
-     "crossed": null
+     "crossed": false
     }
    ]
   },
@@ -8682,13 +8710,13 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 36.21,
      "line": 36.1,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -8750,7 +8778,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-31",
@@ -8798,7 +8826,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-26",
@@ -8860,7 +8888,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-26",
@@ -8876,9 +8904,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -8952,7 +8980,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-01",
@@ -8989,7 +9017,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9026,7 +9054,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-31",
@@ -9059,7 +9087,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-31",
@@ -9092,7 +9120,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-26",
@@ -9108,9 +9136,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -9184,7 +9212,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-27",
@@ -9194,9 +9222,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 31.3,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -9234,7 +9262,7 @@
    "id": "model-rain-bangkok-th-2026-10-28",
    "hazard": "rain",
    "placeId": "bangkok-th",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Bangkok, Thailand",
    "recordedAt": "2026-10-26T10:38:13.729Z",
@@ -9251,10 +9279,10 @@
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 3.74,
      "line": 32.87,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 16.8,
      "threeDayLine": 74.11
     }
    ]
@@ -9276,7 +9304,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9321,7 +9349,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9358,7 +9386,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-31",
@@ -9403,14 +9431,14 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 1.11,
      "line": 11.38,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 2.2,
      "threeDayLine": 29.35
     },
     {
@@ -9464,7 +9492,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9497,7 +9525,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-27",
@@ -9507,9 +9535,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -9560,7 +9588,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9634,7 +9662,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-29",
@@ -9708,7 +9736,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9753,7 +9781,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-01",
@@ -9785,7 +9813,7 @@
    "id": "model-rain-havana-cu-2026-10-28",
    "hazard": "rain",
    "placeId": "havana-cu",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Havana, Cuba",
    "recordedAt": "2026-10-26T10:38:13.729Z",
@@ -9802,10 +9830,10 @@
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 2.12,
      "line": 30.29,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 11.4,
      "threeDayLine": 60.12
     }
    ]
@@ -9914,7 +9942,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-10-29",
@@ -9959,7 +9987,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-27",
@@ -9969,9 +9997,9 @@
     },
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -10038,8 +10066,10 @@
    "id": "model-rain-bhubaneswar-in-2026-10-28",
    "hazard": "rain",
    "placeId": "bhubaneswar-in",
-   "verdict": "pending",
-   "crossed": [],
+   "verdict": "correct",
+   "crossed": [
+    "2026-10-28"
+   ],
    "place": "Bhubaneswar, Odisha, India",
    "recordedAt": "2026-10-27T10:02:08.250Z",
    "issuedAt": "2026-10-27T10:02:08.250Z",
@@ -10055,10 +10085,10 @@
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 83.95,
      "line": 53.23,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": true,
+     "threeDay": 86.3,
      "threeDayLine": 145.6
     }
    ]
@@ -10080,13 +10110,13 @@
     4
    ],
    "alert": "High",
-   "chance": 0.019,
+   "chance": 0.024,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 44.1,
      "line": 48.97,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -10125,13 +10155,13 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 32.13,
      "line": 31.3,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -10275,13 +10305,13 @@
     4
    ],
    "alert": "High",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 29.63,
      "line": 29.4,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -10320,13 +10350,13 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 39.39,
      "line": 38.8,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -10383,13 +10413,13 @@
     2
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 60.5,
      "line": 57.99,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -10416,13 +10446,13 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 29.45,
      "line": 30.8,
-     "crossed": null
+     "crossed": false
     },
     {
      "day": "2026-10-29",
@@ -10455,7 +10485,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-02",
@@ -10517,7 +10547,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-29",
@@ -10550,7 +10580,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-01",
@@ -10624,7 +10654,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-30",
@@ -10662,7 +10692,7 @@
    "id": "model-rain-bogot-co-2026-10-28",
    "hazard": "rain",
    "placeId": "bogota-co",
-   "verdict": "pending",
+   "verdict": "false alarm",
    "crossed": [],
    "place": "Bogotá, Bogota D.C., Colombia",
    "recordedAt": "2026-10-27T10:02:08.250Z",
@@ -10679,10 +10709,10 @@
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 11.03,
      "line": 30.87,
-     "crossed": null,
-     "threeDay": null,
+     "crossed": false,
+     "threeDay": 16,
      "threeDayLine": 65.1
     }
    ]
@@ -10704,13 +10734,13 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-28",
-     "value": null,
+     "value": 25.34,
      "line": 23.9,
-     "crossed": null
+     "crossed": true
     },
     {
      "day": "2026-10-29",
@@ -10796,7 +10826,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-29",
@@ -10888,7 +10918,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.014,
+   "chance": 0.018,
    "measured": [
     {
      "day": "2026-10-29",
@@ -10927,7 +10957,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.367,
+   "chance": 0.361,
    "measured": [
     {
      "day": "2026-10-29",
@@ -11013,7 +11043,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-30",
@@ -11046,7 +11076,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-10-29",
@@ -11079,7 +11109,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-29",
@@ -11142,7 +11172,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-29",
@@ -11175,7 +11205,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-03",
@@ -11208,7 +11238,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-02",
@@ -11241,7 +11271,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-01",
@@ -11274,7 +11304,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-10-30",
@@ -11335,7 +11365,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-03",
@@ -11380,7 +11410,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-03",
@@ -11442,7 +11472,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-29",
@@ -11505,7 +11535,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-30",
@@ -11568,7 +11598,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-10-30",
@@ -11601,7 +11631,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-10-30",
@@ -11652,7 +11682,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-11-01",
@@ -11697,7 +11727,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-05",
@@ -11763,7 +11793,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-01",
@@ -11796,7 +11826,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-02",
@@ -11835,7 +11865,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-03",
@@ -11874,7 +11904,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-30",
@@ -11937,7 +11967,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-05",
@@ -11974,7 +12004,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-01",
@@ -12019,7 +12049,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-30",
@@ -12082,7 +12112,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-31",
@@ -12145,7 +12175,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-10-31",
@@ -12184,7 +12214,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-03",
@@ -12217,7 +12247,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-31",
@@ -12280,7 +12310,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-03",
@@ -12342,7 +12372,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-05",
@@ -12375,7 +12405,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-05",
@@ -12412,7 +12442,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-10-31",
@@ -12504,7 +12534,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-01",
@@ -12567,7 +12597,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-01",
@@ -12600,7 +12630,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-01",
@@ -12720,7 +12750,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-05",
@@ -12753,7 +12783,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-01",
@@ -12816,7 +12846,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-05",
@@ -12849,7 +12879,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-02",
@@ -12888,7 +12918,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-06",
@@ -12933,7 +12963,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-04",
@@ -12978,7 +13008,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-02",
@@ -13017,7 +13047,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-01",
@@ -13080,7 +13110,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-04",
@@ -13125,7 +13155,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-07",
@@ -13158,7 +13188,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-02",
@@ -13191,7 +13221,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-02",
@@ -13254,7 +13284,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-02",
@@ -13287,7 +13317,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.014,
+   "chance": 0.018,
    "measured": [
     {
      "day": "2026-11-05",
@@ -13326,7 +13356,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-08",
@@ -13421,7 +13451,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-04",
@@ -13487,7 +13517,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-06",
@@ -13532,7 +13562,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-02",
@@ -13595,7 +13625,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-07",
@@ -13628,7 +13658,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.014,
+   "chance": 0.018,
    "measured": [
     {
      "day": "2026-11-06",
@@ -13667,7 +13697,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-04",
@@ -13700,7 +13730,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-05",
@@ -13739,7 +13769,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-02",
@@ -13802,7 +13832,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -13835,7 +13865,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-03",
@@ -13898,7 +13928,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -13931,7 +13961,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-06",
@@ -13970,7 +14000,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -14003,7 +14033,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-04",
@@ -14036,7 +14066,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-07",
@@ -14069,7 +14099,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -14102,7 +14132,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-03",
@@ -14165,7 +14195,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-08",
@@ -14198,7 +14228,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-09",
@@ -14235,7 +14265,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-03",
@@ -14268,7 +14298,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-03",
@@ -14301,7 +14331,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-03",
@@ -14369,7 +14399,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-03",
@@ -14432,7 +14462,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-04",
@@ -14465,7 +14495,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-07",
@@ -14527,7 +14557,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-06",
@@ -14560,7 +14590,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-07",
@@ -14655,7 +14685,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-09",
@@ -14700,7 +14730,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.014,
+   "chance": 0.018,
    "measured": [
     {
      "day": "2026-11-08",
@@ -14739,7 +14769,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-07",
@@ -14772,7 +14802,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-09",
@@ -14805,7 +14835,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-04",
@@ -14868,7 +14898,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-04",
@@ -14913,7 +14943,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-10",
@@ -14950,7 +14980,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-04",
@@ -14989,7 +15019,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-04",
@@ -15052,7 +15082,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -15085,7 +15115,7 @@
     6
    ],
    "alert": "Moderate",
-   "chance": 0.186,
+   "chance": 0.183,
    "measured": [
     {
      "day": "2026-11-06",
@@ -15146,7 +15176,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-05",
@@ -15208,7 +15238,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-11",
@@ -15245,7 +15275,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-05",
@@ -15337,7 +15367,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-10",
@@ -15440,7 +15470,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-05",
@@ -15503,7 +15533,7 @@
     4
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -15565,7 +15595,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-06",
@@ -15598,7 +15628,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-11",
@@ -15689,7 +15719,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-06",
@@ -15722,7 +15752,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-06",
@@ -15785,7 +15815,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-10",
@@ -15859,7 +15889,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.019,
+   "chance": 0.024,
    "measured": [
     {
      "day": "2026-11-09",
@@ -15904,7 +15934,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-06",
@@ -16083,7 +16113,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-13",
@@ -16120,7 +16150,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-08",
@@ -16153,7 +16183,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-07",
@@ -16245,7 +16275,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-07",
@@ -16308,7 +16338,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-13",
@@ -16341,7 +16371,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-08",
@@ -16380,7 +16410,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-14",
@@ -16446,7 +16476,7 @@
     6
    ],
    "alert": "High",
-   "chance": 0.367,
+   "chance": 0.361,
    "measured": [
     {
      "day": "2026-11-08",
@@ -16503,7 +16533,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-08",
@@ -16571,7 +16601,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-13",
@@ -16604,7 +16634,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.01,
+   "chance": 0.012,
    "measured": [
     {
      "day": "2026-11-13",
@@ -16637,7 +16667,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-13",
@@ -16682,7 +16712,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-08",
@@ -16745,7 +16775,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-14",
@@ -16790,7 +16820,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-09",
@@ -16823,7 +16853,7 @@
     5
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-11-09",
@@ -16932,7 +16962,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.019,
+   "chance": 0.024,
    "measured": [
     {
      "day": "2026-11-12",
@@ -16977,7 +17007,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-15",
@@ -17014,7 +17044,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.414,
+   "chance": 0.407,
    "measured": [
     {
      "day": "2026-11-09",
@@ -17077,7 +17107,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-14",
@@ -17180,7 +17210,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-15",
@@ -17225,7 +17255,7 @@
     2
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-10",
@@ -17287,7 +17317,7 @@
     4
    ],
    "alert": "High",
-   "chance": 0.263,
+   "chance": 0.258,
    "measured": [
     {
      "day": "2026-11-10",
@@ -17332,7 +17362,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-14",
@@ -17377,7 +17407,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-16",
@@ -17414,7 +17444,7 @@
     5
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-13",
@@ -17476,7 +17506,7 @@
     3
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-11",
@@ -17509,7 +17539,7 @@
     2
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-10",
@@ -17542,7 +17572,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-14",
@@ -17581,7 +17611,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-16",
@@ -17618,7 +17648,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-16",
@@ -17651,7 +17681,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-16",
@@ -17684,7 +17714,7 @@
     7
    ],
    "alert": "Moderate",
-   "chance": 0.204,
+   "chance": 0.201,
    "measured": [
     {
      "day": "2026-11-15",
@@ -17839,7 +17869,7 @@
     8
    ],
    "alert": "Moderate",
-   "chance": 0.116,
+   "chance": 0.114,
    "measured": [
     {
      "day": "2026-11-16",
@@ -17884,7 +17914,7 @@
     3
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-12",
@@ -17917,7 +17947,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.141,
+   "chance": 0.139,
    "measured": [
     {
      "day": "2026-11-16",
@@ -18037,7 +18067,7 @@
     8
    ],
    "alert": "High",
-   "chance": 0.079,
+   "chance": 0.078,
    "measured": [
     {
      "day": "2026-11-17",
@@ -18074,7 +18104,7 @@
     7
    ],
    "alert": "High",
-   "chance": 0.317,
+   "chance": 0.312,
    "measured": [
     {
      "day": "2026-11-13",
@@ -18104,6 +18134,657 @@
      "day": "2026-11-17",
      "value": null,
      "line": 24.1,
+     "crossed": null
+    }
+   ]
+  },
+  {
+   "id": "model-heat-kolkata-in-2026-11-15",
+   "hazard": "heat",
+   "placeId": "kolkata-in",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Kolkata, West Bengal, India",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-15T00:00:00Z",
+   "targetEnd": "2026-11-17T23:59:59Z",
+   "windowDays": 3,
+   "leadDays": [
+    4,
+    6
+   ],
+   "alert": "High",
+   "chance": 0.201,
+   "measured": [
+    {
+     "day": "2026-11-15",
+     "value": null,
+     "line": 29.4,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-16",
+     "value": null,
+     "line": 29.3,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 29.2,
+     "crossed": null
+    }
+   ]
+  },
+  {
+   "id": "model-rain-bangkok-th-2026-11-14",
+   "hazard": "rain",
+   "placeId": "bangkok-th",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Bangkok, Thailand",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-14T00:00:00Z",
+   "targetEnd": "2026-11-14T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    3,
+    3
+   ],
+   "alert": "High",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-14",
+     "value": null,
+     "line": 15.8,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 35.59
+    }
+   ]
+  },
+  {
+   "id": "model-rain-hong-kong-hk-2026-11-13",
+   "hazard": "rain",
+   "placeId": "hong-kong-hk",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Hong Kong, undefined",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-13T00:00:00Z",
+   "targetEnd": "2026-11-17T23:59:59Z",
+   "windowDays": 5,
+   "leadDays": [
+    2,
+    6
+   ],
+   "alert": "Moderate",
+   "chance": 0.183,
+   "measured": [
+    {
+     "day": "2026-11-13",
+     "value": null,
+     "line": 22.94,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 53.45
+    },
+    {
+     "day": "2026-11-14",
+     "value": null,
+     "line": 22.94,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 53.45
+    },
+    {
+     "day": "2026-11-15",
+     "value": null,
+     "line": 22.94,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 53.45
+    },
+    {
+     "day": "2026-11-16",
+     "value": null,
+     "line": 22.94,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 53.45
+    },
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 22.94,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 53.45
+    }
+   ]
+  },
+  {
+   "id": "model-rain-nairobi-ke-2026-11-13",
+   "hazard": "rain",
+   "placeId": "nairobi-ke",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Nairobi, Nairobi County, Kenya",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-13T00:00:00Z",
+   "targetEnd": "2026-11-13T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    2,
+    2
+   ],
+   "alert": "Moderate",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-13",
+     "value": null,
+     "line": 15.65,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 34.58
+    }
+   ]
+  },
+  {
+   "id": "model-heat-niamey-ne-2026-11-12",
+   "hazard": "heat",
+   "placeId": "niamey-ne",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Niamey, Niger",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-12T00:00:00Z",
+   "targetEnd": "2026-11-13T23:59:59Z",
+   "windowDays": 2,
+   "leadDays": [
+    1,
+    2
+   ],
+   "alert": "High",
+   "chance": 0.139,
+   "measured": [
+    {
+     "day": "2026-11-12",
+     "value": null,
+     "line": 38.2,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-13",
+     "value": null,
+     "line": 38.2,
+     "crossed": null
+    }
+   ]
+  },
+  {
+   "id": "model-rain-rome-it-2026-11-16",
+   "hazard": "rain",
+   "placeId": "rome-it",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Rome, Lazio, Italy",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-16T00:00:00Z",
+   "targetEnd": "2026-11-18T23:59:59Z",
+   "windowDays": 3,
+   "leadDays": [
+    5,
+    7
+   ],
+   "alert": "Moderate",
+   "chance": 0.114,
+   "measured": [
+    {
+     "day": "2026-11-16",
+     "value": null,
+     "line": 30.64,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 55.78
+    },
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 30.64,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 55.78
+    },
+    {
+     "day": "2026-11-18",
+     "value": null,
+     "line": 30.64,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 55.78
+    }
+   ]
+  },
+  {
+   "id": "model-rain-paris-fr-2026-11-17",
+   "hazard": "rain",
+   "placeId": "paris-fr",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Paris, Île-de-France Region, France",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-17T00:00:00Z",
+   "targetEnd": "2026-11-17T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    6,
+    6
+   ],
+   "alert": "Moderate",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 15.2,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 26.34
+    }
+   ]
+  },
+  {
+   "id": "model-rain-madrid-es-2026-11-16",
+   "hazard": "rain",
+   "placeId": "madrid-es",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Madrid, Spain",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-16T00:00:00Z",
+   "targetEnd": "2026-11-16T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    5,
+    5
+   ],
+   "alert": "Moderate",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-16",
+     "value": null,
+     "line": 18.1,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 33.48
+    }
+   ]
+  },
+  {
+   "id": "model-rain-madrid-es-2026-11-18",
+   "hazard": "rain",
+   "placeId": "madrid-es",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Madrid, Spain",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-18T00:00:00Z",
+   "targetEnd": "2026-11-18T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    7,
+    7
+   ],
+   "alert": "Moderate",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-18",
+     "value": null,
+     "line": 18.1,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 33.48
+    }
+   ]
+  },
+  {
+   "id": "model-rain-lisbon-pt-2026-11-17",
+   "hazard": "rain",
+   "placeId": "lisbon-pt",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Lisbon, Lisbon District, Portugal",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-17T00:00:00Z",
+   "targetEnd": "2026-11-19T23:59:59Z",
+   "windowDays": 3,
+   "leadDays": [
+    6,
+    8
+   ],
+   "alert": "Moderate",
+   "chance": 0.114,
+   "measured": [
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 27.63,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 52.17
+    },
+    {
+     "day": "2026-11-18",
+     "value": null,
+     "line": 27.63,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 52.17
+    },
+    {
+     "day": "2026-11-19",
+     "value": null,
+     "line": 27.63,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 52.17
+    }
+   ]
+  },
+  {
+   "id": "model-rain-los-angeles-us-2026-11-17",
+   "hazard": "rain",
+   "placeId": "los-angeles-us",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Los Angeles, California, United States",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-17T00:00:00Z",
+   "targetEnd": "2026-11-17T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    6,
+    6
+   ],
+   "alert": "Moderate",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 24.08,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 47.17
+    }
+   ]
+  },
+  {
+   "id": "model-rain-las-vegas-us-2026-11-17",
+   "hazard": "rain",
+   "placeId": "las-vegas-us",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Las Vegas, Nevada, United States",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-17T00:00:00Z",
+   "targetEnd": "2026-11-19T23:59:59Z",
+   "windowDays": 3,
+   "leadDays": [
+    6,
+    8
+   ],
+   "alert": "Moderate",
+   "chance": 0.114,
+   "measured": [
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 14.22,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 20
+    },
+    {
+     "day": "2026-11-18",
+     "value": null,
+     "line": 14.22,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 20
+    },
+    {
+     "day": "2026-11-19",
+     "value": null,
+     "line": 14.22,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 20
+    }
+   ]
+  },
+  {
+   "id": "model-rain-phoenix-us-2026-11-17",
+   "hazard": "rain",
+   "placeId": "phoenix-us",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Phoenix, Arizona, United States",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-17T00:00:00Z",
+   "targetEnd": "2026-11-17T23:59:59Z",
+   "windowDays": 1,
+   "leadDays": [
+    6,
+    6
+   ],
+   "alert": "High",
+   "chance": 0.04,
+   "measured": [
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 12.16,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 26.99
+    }
+   ]
+  },
+  {
+   "id": "model-rain-miami-us-2026-11-17",
+   "hazard": "rain",
+   "placeId": "miami-us",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Miami, Florida, United States",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-17T00:00:00Z",
+   "targetEnd": "2026-11-19T23:59:59Z",
+   "windowDays": 3,
+   "leadDays": [
+    6,
+    8
+   ],
+   "alert": "High",
+   "chance": 0.114,
+   "measured": [
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 25.67,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 71.5
+    },
+    {
+     "day": "2026-11-18",
+     "value": null,
+     "line": 25.67,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 71.5
+    },
+    {
+     "day": "2026-11-19",
+     "value": null,
+     "line": 25.67,
+     "crossed": null,
+     "threeDay": null,
+     "threeDayLine": 71.5
+    }
+   ]
+  },
+  {
+   "id": "model-heat-guatemala-city-gt-2026-11-12",
+   "hazard": "heat",
+   "placeId": "guatemala-city-gt",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Guatemala City, Guatemala, Guatemala",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-12T00:00:00Z",
+   "targetEnd": "2026-11-14T23:59:59Z",
+   "windowDays": 3,
+   "leadDays": [
+    1,
+    3
+   ],
+   "alert": "Moderate",
+   "chance": 0.201,
+   "measured": [
+    {
+     "day": "2026-11-12",
+     "value": null,
+     "line": 27.6,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-13",
+     "value": null,
+     "line": 27.6,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-14",
+     "value": null,
+     "line": 27.6,
+     "crossed": null
+    }
+   ]
+  },
+  {
+   "id": "model-heat-lima-pe-2026-11-12",
+   "hazard": "heat",
+   "placeId": "lima-pe",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Lima, Lima Province, Peru",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-12T00:00:00Z",
+   "targetEnd": "2026-11-18T23:59:59Z",
+   "windowDays": 7,
+   "leadDays": [
+    1,
+    7
+   ],
+   "alert": "High",
+   "chance": 0.407,
+   "measured": [
+    {
+     "day": "2026-11-12",
+     "value": null,
+     "line": 24.1,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-13",
+     "value": null,
+     "line": 24.1,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-14",
+     "value": null,
+     "line": 24.1,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-15",
+     "value": null,
+     "line": 24.1,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-16",
+     "value": null,
+     "line": 24.1,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-17",
+     "value": null,
+     "line": 24.1,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-18",
+     "value": null,
+     "line": 24.2,
+     "crossed": null
+    }
+   ]
+  },
+  {
+   "id": "model-heat-buenos-aires-ar-2026-11-13",
+   "hazard": "heat",
+   "placeId": "buenos-aires-ar",
+   "verdict": "pending",
+   "crossed": [],
+   "place": "Buenos Aires, Buenos Aires F.D., Argentina",
+   "recordedAt": "2026-11-11T12:08:59.178Z",
+   "issuedAt": "2026-11-11T12:08:59.178Z",
+   "targetStart": "2026-11-13T00:00:00Z",
+   "targetEnd": "2026-11-14T23:59:59Z",
+   "windowDays": 2,
+   "leadDays": [
+    2,
+    3
+   ],
+   "alert": "Moderate",
+   "chance": 0.139,
+   "measured": [
+    {
+     "day": "2026-11-13",
+     "value": null,
+     "line": 28.2,
+     "crossed": null
+    },
+    {
+     "day": "2026-11-14",
+     "value": null,
+     "line": 28.4,
      "crossed": null
     }
    ]
@@ -18301,6 +18982,11 @@
    "day": "2026-10-27"
   },
   {
+   "placeId": "khartoum-sd",
+   "hazard": "fire",
+   "day": "2026-10-27"
+  },
+  {
    "placeId": "lagos-ng",
    "hazard": "heat",
    "day": "2026-10-27"
@@ -18309,6 +18995,31 @@
    "placeId": "recife-br",
    "hazard": "heat",
    "day": "2026-10-27"
+  },
+  {
+   "placeId": "colombo-lk",
+   "hazard": "rain",
+   "day": "2026-10-28"
+  },
+  {
+   "placeId": "dhaka-bd",
+   "hazard": "heat",
+   "day": "2026-10-28"
+  },
+  {
+   "placeId": "khartoum-sd",
+   "hazard": "fire",
+   "day": "2026-10-28"
+  },
+  {
+   "placeId": "lagos-ng",
+   "hazard": "heat",
+   "day": "2026-10-28"
+  },
+  {
+   "placeId": "quito-ec",
+   "hazard": "rain",
+   "day": "2026-10-28"
   }
  ],
  "eventList": [
@@ -18356,9 +19067,10 @@
    "placeId": "kolkata-in",
    "hazard": "heat",
    "ids": [
+    "model-heat-kolkata-in-2026-11-15",
     "model-heat-kolkata-in-2026-11-16"
    ],
-   "from": "2026-11-16",
+   "from": "2026-11-15",
    "to": "2026-11-17",
    "verdict": "pending"
   },
@@ -18382,7 +19094,7 @@
    ],
    "from": "2026-10-24",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "karachi-pk",
@@ -18768,7 +19480,8 @@
     "model-heat-niamey-ne-2026-11-07",
     "model-heat-niamey-ne-2026-11-08",
     "model-heat-niamey-ne-2026-11-09",
-    "model-heat-niamey-ne-2026-11-10"
+    "model-heat-niamey-ne-2026-11-10",
+    "model-heat-niamey-ne-2026-11-12"
    ],
    "from": "2026-10-15",
    "to": "2026-11-13",
@@ -18886,7 +19599,7 @@
    ],
    "from": "2026-10-27",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "antananarivo-mg",
@@ -18958,6 +19671,16 @@
    ],
    "from": "2026-11-01",
    "to": "2026-11-02",
+   "verdict": "pending"
+  },
+  {
+   "placeId": "las-vegas-us",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-las-vegas-us-2026-11-17"
+   ],
+   "from": "2026-11-17",
+   "to": "2026-11-19",
    "verdict": "pending"
   },
   {
@@ -19125,6 +19848,16 @@
    "verdict": "pending"
   },
   {
+   "placeId": "miami-us",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-miami-us-2026-11-17"
+   ],
+   "from": "2026-11-17",
+   "to": "2026-11-19",
+   "verdict": "pending"
+  },
+  {
    "placeId": "havana-cu",
    "hazard": "rain",
    "ids": [
@@ -19142,7 +19875,7 @@
    ],
    "from": "2026-10-28",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "lima-pe",
@@ -19173,11 +19906,12 @@
     "model-heat-lima-pe-2026-11-08",
     "model-heat-lima-pe-2026-11-09",
     "model-heat-lima-pe-2026-11-10",
+    "model-heat-lima-pe-2026-11-12",
     "model-heat-lima-pe-2026-11-13",
     "model-heat-lima-pe-2026-11-14"
    ],
    "from": "2026-10-15",
-   "to": "2026-11-17",
+   "to": "2026-11-18",
    "verdict": "correct"
   },
   {
@@ -19458,6 +20192,16 @@
    "verdict": "pending"
   },
   {
+   "placeId": "los-angeles-us",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-los-angeles-us-2026-11-17"
+   ],
+   "from": "2026-11-17",
+   "to": "2026-11-17",
+   "verdict": "pending"
+  },
+  {
    "placeId": "colombo-lk",
    "hazard": "rain",
    "ids": [
@@ -19599,7 +20343,7 @@
    ],
    "from": "2026-10-28",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "antananarivo-mg",
@@ -19723,7 +20467,7 @@
    ],
    "from": "2026-10-26",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "nairobi-ke",
@@ -19764,7 +20508,7 @@
    ],
    "from": "2026-10-25",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "addis-ababa-et",
@@ -19792,10 +20536,11 @@
    "placeId": "nairobi-ke",
    "hazard": "rain",
    "ids": [
-    "model-rain-nairobi-ke-2026-11-12"
+    "model-rain-nairobi-ke-2026-11-12",
+    "model-rain-nairobi-ke-2026-11-13"
    ],
    "from": "2026-11-12",
-   "to": "2026-11-12",
+   "to": "2026-11-13",
    "verdict": "pending"
   },
   {
@@ -19823,7 +20568,8 @@
    "placeId": "paris-fr",
    "hazard": "rain",
    "ids": [
-    "model-rain-paris-fr-2026-11-16"
+    "model-rain-paris-fr-2026-11-16",
+    "model-rain-paris-fr-2026-11-17"
    ],
    "from": "2026-11-16",
    "to": "2026-11-17",
@@ -19945,7 +20691,7 @@
    ],
    "from": "2026-10-27",
    "to": "2026-10-30",
-   "verdict": "pending"
+   "verdict": "correct"
   },
   {
    "placeId": "bhubaneswar-in",
@@ -20167,7 +20913,7 @@
    ],
    "from": "2026-10-27",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "toronto-ca",
@@ -20222,7 +20968,7 @@
    ],
    "from": "2026-10-28",
    "to": "2026-10-28",
-   "verdict": "pending"
+   "verdict": "false alarm"
   },
   {
    "placeId": "bangkok-th",
@@ -20244,6 +20990,16 @@
    ],
    "from": "2026-11-07",
    "to": "2026-11-08",
+   "verdict": "pending"
+  },
+  {
+   "placeId": "bangkok-th",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-bangkok-th-2026-11-14"
+   ],
+   "from": "2026-11-14",
+   "to": "2026-11-14",
    "verdict": "pending"
   },
   {
@@ -20410,10 +21166,11 @@
    "placeId": "phoenix-us",
    "hazard": "rain",
    "ids": [
-    "model-rain-phoenix-us-2026-11-15"
+    "model-rain-phoenix-us-2026-11-15",
+    "model-rain-phoenix-us-2026-11-17"
    ],
    "from": "2026-11-15",
-   "to": "2026-11-16",
+   "to": "2026-11-17",
    "verdict": "pending"
   },
   {
@@ -20551,10 +21308,11 @@
    "placeId": "guatemala-city-gt",
    "hazard": "heat",
    "ids": [
-    "model-heat-guatemala-city-gt-2026-11-11"
+    "model-heat-guatemala-city-gt-2026-11-11",
+    "model-heat-guatemala-city-gt-2026-11-12"
    ],
    "from": "2026-11-11",
-   "to": "2026-11-12",
+   "to": "2026-11-14",
    "verdict": "pending"
   },
   {
@@ -20722,6 +21480,26 @@
    "verdict": "pending"
   },
   {
+   "placeId": "madrid-es",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-madrid-es-2026-11-16"
+   ],
+   "from": "2026-11-16",
+   "to": "2026-11-16",
+   "verdict": "pending"
+  },
+  {
+   "placeId": "madrid-es",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-madrid-es-2026-11-18"
+   ],
+   "from": "2026-11-18",
+   "to": "2026-11-18",
+   "verdict": "pending"
+  },
+  {
    "placeId": "chittagong-bd",
    "hazard": "rain",
    "ids": [
@@ -20858,20 +21636,22 @@
    "placeId": "hong-kong-hk",
    "hazard": "rain",
    "ids": [
+    "model-rain-hong-kong-hk-2026-11-13",
     "model-rain-hong-kong-hk-2026-11-16"
    ],
-   "from": "2026-11-16",
-   "to": "2026-11-16",
+   "from": "2026-11-13",
+   "to": "2026-11-17",
    "verdict": "pending"
   },
   {
    "placeId": "lisbon-pt",
    "hazard": "rain",
    "ids": [
-    "model-rain-lisbon-pt-2026-11-16"
+    "model-rain-lisbon-pt-2026-11-16",
+    "model-rain-lisbon-pt-2026-11-17"
    ],
    "from": "2026-11-16",
-   "to": "2026-11-16",
+   "to": "2026-11-19",
    "verdict": "pending"
   },
   {
@@ -20892,6 +21672,26 @@
    ],
    "from": "2026-11-17",
    "to": "2026-11-18",
+   "verdict": "pending"
+  },
+  {
+   "placeId": "rome-it",
+   "hazard": "rain",
+   "ids": [
+    "model-rain-rome-it-2026-11-16"
+   ],
+   "from": "2026-11-16",
+   "to": "2026-11-18",
+   "verdict": "pending"
+  },
+  {
+   "placeId": "buenos-aires-ar",
+   "hazard": "heat",
+   "ids": [
+    "model-heat-buenos-aires-ar-2026-11-13"
+   ],
+   "from": "2026-11-13",
+   "to": "2026-11-14",
    "verdict": "pending"
   }
  ]
