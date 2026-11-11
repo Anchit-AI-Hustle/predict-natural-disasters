@@ -97,6 +97,13 @@ final class PNDUITests: XCTestCase {
         let button = el(app, "tab-" + tab)
         waitFor(button)
         button.tap()
+        // A tap that lands while the previous tab is still building its first
+        // screen can be dropped (a run on main stayed on Forecasts after
+        // "My places" was tapped). Tap again only if the tab did not open.
+        let opened = app.navigationBars[title].firstMatch
+        if !opened.waitForExistence(timeout: 4) && !app.staticTexts[title].firstMatch.exists {
+            button.tap()
+        }
     }
 
     /// The site's five tabs, in its order (features.md section 0.1).
