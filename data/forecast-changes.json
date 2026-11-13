@@ -70137,29 +70137,317 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-11-13T07:55:48.588Z",
+      "sinceHours": 7.57,
+      "active": 39,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-c11060965b7fe93fc24aaf9ccb3884b2396c86a1-001-3",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Marion and 38 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-13T07:44:00.000Z",
+          "targetEnd": "2026-11-18T07:44:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-c55c2266867be022ddb802789d3d45a1d481b396-008-1",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Point Franklin to Cape Halkett from 15 to 75 nautical miles, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-13T00:48:00.000Z",
+          "targetEnd": "2026-11-16T00:48:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-FL-1104220",
+          "type": "Flood",
+          "title": "Flood risk in Italy - 3-day forecast",
+          "country": "Italy",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-13T01:00:00.000Z",
+          "targetEnd": "2026-11-16T01:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-15T23:07:21.000Z",
+          "toEnd": "2026-11-16T01:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027737",
+          "type": "Drought",
+          "title": "Drought risk in New Zealand - 30-day forecast",
+          "country": "New Zealand",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-11T00:00:00.000Z",
+          "targetEnd": "2026-12-11T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-12-12T08:29:41.000Z",
+          "toEnd": "2026-12-11T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-7a11febafb5c0e6c7b68dc84ffd5562d7508ed5c-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in coastal waters from Provincetown MA to Chatham MA to Nantucket MA out 20 nautical miles and 3 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-13T00:12:00.000Z",
+          "targetEnd": "2026-11-15T00:12:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-d6147a4229e5d996c681dbf52bdc54a02495ab9e-001-2",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in coastal waters from Pt. St. George to Cape Mendocino CA out 10 nm, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T22:55:00.000Z",
+          "targetEnd": "2026-11-14T22:55:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-e551052e39bdf7255693559f067f965836dc7347-001-2",
+          "type": "Flood",
+          "title": "Flood risk in San Luis Obispo County Beaches and 1 nearby area, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T19:49:00.000Z",
+          "targetEnd": "2026-11-15T19:49:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027450",
+          "type": "Drought",
+          "title": "Drought risk in Burundi, Democratic Republic of Congo and 12 other countries - 30-day forecast",
+          "country": "Burundi, Democratic Republic of Congo, Central African Republic, Eritrea, Ethiopia, Kenya, Niger, Nigeria, Rwanda, Sudan, South Sudan, Chad, Tanzania, Uganda",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T08:29:24.000Z",
+          "targetEnd": "2026-12-12T08:29:24.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027449",
+          "type": "Drought",
+          "title": "Drought risk in Belize, Costa Rica and 9 other countries - 30-day forecast",
+          "country": "Belize, Costa Rica, Cuba, Dominican Republic, Guatemala, Honduras, Haiti, Mexico, Nicaragua, El Salvador, United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T08:29:09.000Z",
+          "targetEnd": "2026-12-12T08:29:09.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1023877",
+          "type": "Drought",
+          "title": "Drought risk in Aruba, Brazil and 7 other countries - 30-day forecast",
+          "country": "Aruba, , Brazil, Colombia, Costa Rica, , French Guiana, Guyana, Panama, Suriname, Venezuela",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T08:28:56.000Z",
+          "targetEnd": "2026-12-12T08:28:56.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018332",
+          "type": "Drought",
+          "title": "Drought risk in Andorra, Albania and 27 other countries - 30-day forecast",
+          "country": "Andorra, Albania, Austria, Bosnia & Herzegovina, Belgium, Bulgaria, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Poland, Romania, Serbia, Sweden, Slovenia, Slovakia, Ukraine, ",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T08:28:10.000Z",
+          "targetEnd": "2026-12-12T08:28:10.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-0-0e744ed7e5aa2a15674903632cabfd9f6b7de464-001-4",
+          "type": "Storm Watch",
+          "title": "Storm Watch risk in waters from Cape Shoalwater WA to Cape Falcon OR from 10 to 60 nm, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T21:18:00.000Z",
+          "targetEnd": "2026-11-14T21:18:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-34195007e91c1cd7072ecb699e41e70e470b81f6-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Person and 13 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T18:13:00.000Z",
+          "targetEnd": "2026-11-17T18:13:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018546",
+          "type": "Drought",
+          "title": "Drought risk in United States - 30-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:29:48.000Z",
+          "targetEnd": "2026-12-12T08:29:48.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027575",
+          "type": "Drought",
+          "title": "Drought risk in India - 30-day forecast",
+          "country": "India",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:29:34.000Z",
+          "targetEnd": "2026-12-12T08:29:34.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027491",
+          "type": "Drought",
+          "title": "Drought risk in China, Kazakhstan and 2 other countries - 30-day forecast",
+          "country": "China, Kazakhstan, Mongolia, Russia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:29:30.000Z",
+          "targetEnd": "2026-12-12T08:29:30.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027462",
+          "type": "Drought",
+          "title": "Drought risk in Bangladesh, Bhutan and 6 other countries - 30-day forecast",
+          "country": "Bangladesh, Bhutan, China, India, Laos, Myanmar, Nepal, Vietnam",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:29:18.000Z",
+          "targetEnd": "2026-12-12T08:29:18.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1015915",
+          "type": "Drought",
+          "title": "Drought risk in Brazil - 30-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:29:00.000Z",
+          "targetEnd": "2026-12-12T08:29:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018545",
+          "type": "Drought",
+          "title": "Drought risk in Brunei, Indonesia and 4 other countries - 30-day forecast",
+          "country": "Brunei, Indonesia, Cambodia, Malaysia, Papua New Guinea, Philippines",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:28:44.000Z",
+          "targetEnd": "2026-12-12T08:28:44.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018344",
+          "type": "Drought",
+          "title": "Drought risk in Angola, Democratic Republic of Congo and 4 other countries - 30-day forecast",
+          "country": "Angola, Democratic Republic of Congo, Republic of Congo, Cameroon, Gabon, Equatorial Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:28:38.000Z",
+          "targetEnd": "2026-12-12T08:28:38.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018431",
+          "type": "Drought",
+          "title": "Drought risk in Madagascar - 30-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T08:28:30.000Z",
+          "targetEnd": "2026-12-12T08:28:30.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-gdacs-FL-1104277",
+          "type": "Flood",
+          "title": "Flood risk in Argentina - 3-day forecast",
+          "country": "Argentina",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T01:00:00.000Z",
+          "targetEnd": "2026-11-13T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104271",
+          "type": "Flood",
+          "title": "Flood risk in Vietnam - 3-day forecast",
+          "country": "Vietnam",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T01:00:00.000Z",
+          "targetEnd": "2026-11-13T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104239",
+          "type": "Flood",
+          "title": "Flood risk in Malaysia - 3-day forecast",
+          "country": "Malaysia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T01:00:00.000Z",
+          "targetEnd": "2026-11-13T01:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-0-7a11febafb5c0e6c7b68dc84ffd5562d7508ed5c-001-1": {
-      "id": "OUT-0-7a11febafb5c0e6c7b68dc84ffd5562d7508ed5c-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in coastal waters from Provincetown MA to Chatham MA to Nantucket MA out 20 nautical miles and 3 nearby areas, United States - 2-day forecast",
+    "OUT-0-c11060965b7fe93fc24aaf9ccb3884b2396c86a1-001-3": {
+      "id": "OUT-0-c11060965b7fe93fc24aaf9ccb3884b2396c86a1-001-3",
+      "type": "Extreme Cold",
+      "title": "Extreme Cold risk in Marion and 38 nearby areas, United States - 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-13T00:12:00.000Z",
-      "targetEnd": "2026-11-15T00:12:00.000Z",
+      "targetStart": "2026-11-13T07:44:00.000Z",
+      "targetEnd": "2026-11-18T07:44:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-d6147a4229e5d996c681dbf52bdc54a02495ab9e-001-2": {
-      "id": "OUT-0-d6147a4229e5d996c681dbf52bdc54a02495ab9e-001-2",
-      "type": "Storm Warning",
-      "title": "Storm Warning risk in coastal waters from Pt. St. George to Cape Mendocino CA out 10 nm, United States - 2-day forecast",
+    "OUT-0-c55c2266867be022ddb802789d3d45a1d481b396-008-1": {
+      "id": "OUT-0-c55c2266867be022ddb802789d3d45a1d481b396-008-1",
+      "type": "Heavy Freezing Spray Warning",
+      "title": "Heavy Freezing Spray Warning risk in Point Franklin to Cape Halkett from 15 to 75 nautical miles, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-12T22:55:00.000Z",
-      "targetEnd": "2026-11-14T22:55:00.000Z",
+      "targetStart": "2026-11-13T00:48:00.000Z",
+      "targetEnd": "2026-11-16T00:48:00.000Z",
       "provider": "nws"
     },
     "OUT-aftershock-usgs-us7000txwp": {
@@ -70172,61 +70460,6 @@
       "targetStart": "2026-11-12T22:04:06.729Z",
       "targetEnd": "2026-11-19T22:04:06.729Z",
       "provider": "usgs"
-    },
-    "OUT-0-e551052e39bdf7255693559f067f965836dc7347-001-2": {
-      "id": "OUT-0-e551052e39bdf7255693559f067f965836dc7347-001-2",
-      "type": "Flood",
-      "title": "Flood risk in San Luis Obispo County Beaches and 1 nearby area, United States - 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T19:49:00.000Z",
-      "targetEnd": "2026-11-15T19:49:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-gdacs-DR-1027450": {
-      "id": "OUT-gdacs-DR-1027450",
-      "type": "Drought",
-      "title": "Drought risk in Burundi, Democratic Republic of Congo and 12 other countries - 30-day forecast",
-      "country": "Burundi, Democratic Republic of Congo, Central African Republic, Eritrea, Ethiopia, Kenya, Niger, Nigeria, Rwanda, Sudan, South Sudan, Chad, Tanzania, Uganda",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T08:29:24.000Z",
-      "targetEnd": "2026-12-12T08:29:24.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1027449": {
-      "id": "OUT-gdacs-DR-1027449",
-      "type": "Drought",
-      "title": "Drought risk in Belize, Costa Rica and 9 other countries - 30-day forecast",
-      "country": "Belize, Costa Rica, Cuba, Dominican Republic, Guatemala, Honduras, Haiti, Mexico, Nicaragua, El Salvador, United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T08:29:09.000Z",
-      "targetEnd": "2026-12-12T08:29:09.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1023877": {
-      "id": "OUT-gdacs-DR-1023877",
-      "type": "Drought",
-      "title": "Drought risk in Aruba, Brazil and 7 other countries - 30-day forecast",
-      "country": "Aruba, , Brazil, Colombia, Costa Rica, , French Guiana, Guyana, Panama, Suriname, Venezuela",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T08:28:56.000Z",
-      "targetEnd": "2026-12-12T08:28:56.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1018332": {
-      "id": "OUT-gdacs-DR-1018332",
-      "type": "Drought",
-      "title": "Drought risk in Andorra, Albania and 27 other countries - 30-day forecast",
-      "country": "Andorra, Albania, Austria, Bosnia & Herzegovina, Belgium, Bulgaria, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Poland, Romania, Serbia, Sweden, Slovenia, Slovakia, Ukraine, ",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T08:28:10.000Z",
-      "targetEnd": "2026-12-12T08:28:10.000Z",
-      "provider": "gdacs"
     },
     "OUT-aftershock-usgs-us7000txb8": {
       "id": "OUT-aftershock-usgs-us7000txb8",
@@ -70323,31 +70556,9 @@
       "country": "Italy",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-11-12T23:07:21.000Z",
-      "targetEnd": "2026-11-15T23:07:21.000Z",
+      "targetStart": "2026-11-13T01:00:00.000Z",
+      "targetEnd": "2026-11-16T01:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-0-0e744ed7e5aa2a15674903632cabfd9f6b7de464-001-4": {
-      "id": "OUT-0-0e744ed7e5aa2a15674903632cabfd9f6b7de464-001-4",
-      "type": "Storm Watch",
-      "title": "Storm Watch risk in waters from Cape Shoalwater WA to Cape Falcon OR from 10 to 60 nm, United States - 2-day forecast",
-      "country": "United States",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T21:18:00.000Z",
-      "targetEnd": "2026-11-14T21:18:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-34195007e91c1cd7072ecb699e41e70e470b81f6-001-1": {
-      "id": "OUT-0-34195007e91c1cd7072ecb699e41e70e470b81f6-001-1",
-      "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Person and 13 nearby areas, United States - 5-day forecast",
-      "country": "United States",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T18:13:00.000Z",
-      "targetEnd": "2026-11-17T18:13:00.000Z",
-      "provider": "nws"
     },
     "OUT-gdacs-TC-1001348": {
       "id": "OUT-gdacs-TC-1001348",
@@ -70358,105 +70569,6 @@
       "rank": 2,
       "targetStart": "2026-11-12T15:00:00.000Z",
       "targetEnd": "2026-11-17T15:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1018546": {
-      "id": "OUT-gdacs-DR-1018546",
-      "type": "Drought",
-      "title": "Drought risk in United States - 30-day forecast",
-      "country": "United States",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:29:48.000Z",
-      "targetEnd": "2026-12-12T08:29:48.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1027737": {
-      "id": "OUT-gdacs-DR-1027737",
-      "type": "Drought",
-      "title": "Drought risk in New Zealand - 30-day forecast",
-      "country": "New Zealand",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:29:41.000Z",
-      "targetEnd": "2026-12-12T08:29:41.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1027575": {
-      "id": "OUT-gdacs-DR-1027575",
-      "type": "Drought",
-      "title": "Drought risk in India - 30-day forecast",
-      "country": "India",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:29:34.000Z",
-      "targetEnd": "2026-12-12T08:29:34.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1027491": {
-      "id": "OUT-gdacs-DR-1027491",
-      "type": "Drought",
-      "title": "Drought risk in China, Kazakhstan and 2 other countries - 30-day forecast",
-      "country": "China, Kazakhstan, Mongolia, Russia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:29:30.000Z",
-      "targetEnd": "2026-12-12T08:29:30.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1027462": {
-      "id": "OUT-gdacs-DR-1027462",
-      "type": "Drought",
-      "title": "Drought risk in Bangladesh, Bhutan and 6 other countries - 30-day forecast",
-      "country": "Bangladesh, Bhutan, China, India, Laos, Myanmar, Nepal, Vietnam",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:29:18.000Z",
-      "targetEnd": "2026-12-12T08:29:18.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1015915": {
-      "id": "OUT-gdacs-DR-1015915",
-      "type": "Drought",
-      "title": "Drought risk in Brazil - 30-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:29:00.000Z",
-      "targetEnd": "2026-12-12T08:29:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1018545": {
-      "id": "OUT-gdacs-DR-1018545",
-      "type": "Drought",
-      "title": "Drought risk in Brunei, Indonesia and 4 other countries - 30-day forecast",
-      "country": "Brunei, Indonesia, Cambodia, Malaysia, Papua New Guinea, Philippines",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:28:44.000Z",
-      "targetEnd": "2026-12-12T08:28:44.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1018344": {
-      "id": "OUT-gdacs-DR-1018344",
-      "type": "Drought",
-      "title": "Drought risk in Angola, Democratic Republic of Congo and 4 other countries - 30-day forecast",
-      "country": "Angola, Democratic Republic of Congo, Republic of Congo, Cameroon, Gabon, Equatorial Guinea",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:28:38.000Z",
-      "targetEnd": "2026-12-12T08:28:38.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-DR-1018431": {
-      "id": "OUT-gdacs-DR-1018431",
-      "type": "Drought",
-      "title": "Drought risk in Madagascar - 30-day forecast",
-      "country": "Madagascar",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T08:28:30.000Z",
-      "targetEnd": "2026-12-12T08:28:30.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104280": {
@@ -70512,6 +70624,17 @@
       "rank": 1,
       "targetStart": "2026-11-11T01:00:00.000Z",
       "targetEnd": "2026-11-14T01:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-DR-1027737": {
+      "id": "OUT-gdacs-DR-1027737",
+      "type": "Drought",
+      "title": "Drought risk in New Zealand - 30-day forecast",
+      "country": "New Zealand",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-11T00:00:00.000Z",
+      "targetEnd": "2026-12-11T00:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-WF-1033768": {
@@ -70733,45 +70856,12 @@
       "targetStart": "2026-11-11T00:00:00.000Z",
       "targetEnd": "2026-11-14T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104277": {
-      "id": "OUT-gdacs-FL-1104277",
-      "type": "Flood",
-      "title": "Flood risk in Argentina - 3-day forecast",
-      "country": "Argentina",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T01:00:00.000Z",
-      "targetEnd": "2026-11-13T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104271": {
-      "id": "OUT-gdacs-FL-1104271",
-      "type": "Flood",
-      "title": "Flood risk in Vietnam - 3-day forecast",
-      "country": "Vietnam",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T01:00:00.000Z",
-      "targetEnd": "2026-11-13T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104239": {
-      "id": "OUT-gdacs-FL-1104239",
-      "type": "Flood",
-      "title": "Flood risk in Malaysia - 3-day forecast",
-      "country": "Malaysia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T01:00:00.000Z",
-      "targetEnd": "2026-11-13T01:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-13T00:21:41.295Z",
+  "updatedAt": "2026-11-13T07:55:48.588Z",
   "observedCadenceHours": {
-    "runs": 180,
-    "median": 5.05,
+    "runs": 181,
+    "median": 5.09,
     "min": 1.54,
     "max": 189.21
   }
