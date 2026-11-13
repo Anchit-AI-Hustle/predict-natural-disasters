@@ -69884,51 +69884,304 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-11-13T00:21:41.295Z",
+      "sinceHours": 5.45,
+      "active": 57,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-7a11febafb5c0e6c7b68dc84ffd5562d7508ed5c-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in coastal waters from Provincetown MA to Chatham MA to Nantucket MA out 20 nautical miles and 3 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-13T00:12:00.000Z",
+          "targetEnd": "2026-11-15T00:12:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-d6147a4229e5d996c681dbf52bdc54a02495ab9e-001-2",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in coastal waters from Pt. St. George to Cape Mendocino CA out 10 nm, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T22:55:00.000Z",
+          "targetEnd": "2026-11-14T22:55:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us7000txwp",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk 148 km NW of Kavieng, Papua New Guinea - 7-day forecast",
+          "country": "Papua New Guinea",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T22:04:06.729Z",
+          "targetEnd": "2026-11-19T22:04:06.729Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-0-e551052e39bdf7255693559f067f965836dc7347-001-2",
+          "type": "Flood",
+          "title": "Flood risk in San Luis Obispo County Beaches and 1 nearby area, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T19:49:00.000Z",
+          "targetEnd": "2026-11-15T19:49:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-0e744ed7e5aa2a15674903632cabfd9f6b7de464-001-4",
+          "type": "Storm Watch",
+          "title": "Storm Watch risk in waters from Cape Shoalwater WA to Cape Falcon OR from 10 to 60 nm, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T21:18:00.000Z",
+          "targetEnd": "2026-11-14T21:18:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-34195007e91c1cd7072ecb699e41e70e470b81f6-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Person and 13 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T18:13:00.000Z",
+          "targetEnd": "2026-11-17T18:13:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001348",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Storm Pena - 5-day forecast",
+          "country": "Tropical Cyclone PENA-26",
+          "alert": "Watch",
+          "rank": 2,
+          "targetStart": "2026-11-12T15:00:00.000Z",
+          "targetEnd": "2026-11-17T15:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-FL-1104220",
+          "type": "Flood",
+          "title": "Flood risk in Italy - 3-day forecast",
+          "country": "Italy",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T23:07:21.000Z",
+          "targetEnd": "2026-11-15T23:07:21.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-15T12:14:36.000Z",
+          "toEnd": "2026-11-15T23:07:21.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-673c69e85aa135e3a8c98486a4e776390405e919-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Sandy Hook NJ to Fire Island Inlet NY out 20 nautical miles, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T18:43:00.000Z",
+          "targetEnd": "2026-11-14T18:43:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-6e8d009201f4aa3d387dd03535cd53f853405d89-001-2",
+          "type": "Flood",
+          "title": "Flood risk in San Juan County, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T18:37:00.000Z",
+          "targetEnd": "2026-11-15T18:37:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-5e009bb0d6cfac945bc2559b637657642fa09988-001-1",
+          "type": "Tornado",
+          "title": "Tornado risk in New Castle, Delaware and 19 nearby areas, United States - 24-hour forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T17:50:00.000Z",
+          "targetEnd": "2026-11-13T17:50:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-f37d0b99d3a7e70d196ef14932916a11ed4f0e3f-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Benton and 14 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-12T17:29:00.000Z",
+          "targetEnd": "2026-11-17T17:29:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-nhc-cp042026",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Potential Tropical Cyclone Pena - 5-day forecast",
+          "country": "Pena (central Pacific system 4)",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-12T15:00:00.000Z",
+          "targetEnd": "2026-11-17T15:00:00.000Z",
+          "provider": "nhc"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-gdacs-WF-1033702",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Ethiopia and Sudan - 3-day forecast",
+          "country": "Ethiopia, Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033706",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Senegal and Mali - 3-day forecast",
+          "country": "Senegal, Mali",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033635",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
+          "country": "Nigeria, Cameroon",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033715",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
+          "country": "Benin, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033608",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Suriname and Brazil - 3-day forecast",
+          "country": "Suriname, Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033719",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033627",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil - 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033609",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia - 3-day forecast",
+          "country": "Bolivia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-10T00:00:00.000Z",
+          "targetEnd": "2026-11-13T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-0-673c69e85aa135e3a8c98486a4e776390405e919-001-1": {
-      "id": "OUT-0-673c69e85aa135e3a8c98486a4e776390405e919-001-1",
+    "OUT-0-7a11febafb5c0e6c7b68dc84ffd5562d7508ed5c-001-1": {
+      "id": "OUT-0-7a11febafb5c0e6c7b68dc84ffd5562d7508ed5c-001-1",
       "type": "Severe Storm",
-      "title": "Severe Storm risk in Sandy Hook NJ to Fire Island Inlet NY out 20 nautical miles, United States - 2-day forecast",
+      "title": "Severe Storm risk in coastal waters from Provincetown MA to Chatham MA to Nantucket MA out 20 nautical miles and 3 nearby areas, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-12T18:43:00.000Z",
-      "targetEnd": "2026-11-14T18:43:00.000Z",
+      "targetStart": "2026-11-13T00:12:00.000Z",
+      "targetEnd": "2026-11-15T00:12:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-6e8d009201f4aa3d387dd03535cd53f853405d89-001-2": {
-      "id": "OUT-0-6e8d009201f4aa3d387dd03535cd53f853405d89-001-2",
+    "OUT-0-d6147a4229e5d996c681dbf52bdc54a02495ab9e-001-2": {
+      "id": "OUT-0-d6147a4229e5d996c681dbf52bdc54a02495ab9e-001-2",
+      "type": "Storm Warning",
+      "title": "Storm Warning risk in coastal waters from Pt. St. George to Cape Mendocino CA out 10 nm, United States - 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-12T22:55:00.000Z",
+      "targetEnd": "2026-11-14T22:55:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-aftershock-usgs-us7000txwp": {
+      "id": "OUT-aftershock-usgs-us7000txwp",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk 148 km NW of Kavieng, Papua New Guinea - 7-day forecast",
+      "country": "Papua New Guinea",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-12T22:04:06.729Z",
+      "targetEnd": "2026-11-19T22:04:06.729Z",
+      "provider": "usgs"
+    },
+    "OUT-0-e551052e39bdf7255693559f067f965836dc7347-001-2": {
+      "id": "OUT-0-e551052e39bdf7255693559f067f965836dc7347-001-2",
       "type": "Flood",
-      "title": "Flood risk in San Juan County, United States - 3-day forecast",
+      "title": "Flood risk in San Luis Obispo County Beaches and 1 nearby area, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-12T18:37:00.000Z",
-      "targetEnd": "2026-11-15T18:37:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-5e009bb0d6cfac945bc2559b637657642fa09988-001-1": {
-      "id": "OUT-0-5e009bb0d6cfac945bc2559b637657642fa09988-001-1",
-      "type": "Tornado",
-      "title": "Tornado risk in New Castle, Delaware and 19 nearby areas, United States - 24-hour forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T17:50:00.000Z",
-      "targetEnd": "2026-11-13T17:50:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-f37d0b99d3a7e70d196ef14932916a11ed4f0e3f-001-1": {
-      "id": "OUT-0-f37d0b99d3a7e70d196ef14932916a11ed4f0e3f-001-1",
-      "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Benton and 14 nearby areas, United States - 5-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-12T17:29:00.000Z",
-      "targetEnd": "2026-11-17T17:29:00.000Z",
+      "targetStart": "2026-11-12T19:49:00.000Z",
+      "targetEnd": "2026-11-15T19:49:00.000Z",
       "provider": "nws"
     },
     "OUT-gdacs-DR-1027450": {
@@ -70063,17 +70316,6 @@
       "targetEnd": "2026-11-13T10:39:27.869Z",
       "provider": "usgs"
     },
-    "OUT-nhc-cp042026": {
-      "id": "OUT-nhc-cp042026",
-      "type": "Tropical Cyclone",
-      "title": "Storm risk from Potential Tropical Cyclone Pena - 5-day forecast",
-      "country": "Pena (central Pacific system 4)",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-12T15:00:00.000Z",
-      "targetEnd": "2026-11-17T15:00:00.000Z",
-      "provider": "nhc"
-    },
     "OUT-gdacs-FL-1104220": {
       "id": "OUT-gdacs-FL-1104220",
       "type": "Flood",
@@ -70081,8 +70323,41 @@
       "country": "Italy",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-11-12T12:14:36.000Z",
-      "targetEnd": "2026-11-15T12:14:36.000Z",
+      "targetStart": "2026-11-12T23:07:21.000Z",
+      "targetEnd": "2026-11-15T23:07:21.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-0-0e744ed7e5aa2a15674903632cabfd9f6b7de464-001-4": {
+      "id": "OUT-0-0e744ed7e5aa2a15674903632cabfd9f6b7de464-001-4",
+      "type": "Storm Watch",
+      "title": "Storm Watch risk in waters from Cape Shoalwater WA to Cape Falcon OR from 10 to 60 nm, United States - 2-day forecast",
+      "country": "United States",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-12T21:18:00.000Z",
+      "targetEnd": "2026-11-14T21:18:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-34195007e91c1cd7072ecb699e41e70e470b81f6-001-1": {
+      "id": "OUT-0-34195007e91c1cd7072ecb699e41e70e470b81f6-001-1",
+      "type": "Extreme Cold",
+      "title": "Extreme Cold risk in Person and 13 nearby areas, United States - 5-day forecast",
+      "country": "United States",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-12T18:13:00.000Z",
+      "targetEnd": "2026-11-17T18:13:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-gdacs-TC-1001348": {
+      "id": "OUT-gdacs-TC-1001348",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Tropical Storm Pena - 5-day forecast",
+      "country": "Tropical Cyclone PENA-26",
+      "alert": "Watch",
+      "rank": 2,
+      "targetStart": "2026-11-12T15:00:00.000Z",
+      "targetEnd": "2026-11-17T15:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-DR-1018546": {
@@ -70491,99 +70766,11 @@
       "targetStart": "2026-11-10T01:00:00.000Z",
       "targetEnd": "2026-11-13T01:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033702": {
-      "id": "OUT-gdacs-WF-1033702",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Ethiopia and Sudan - 3-day forecast",
-      "country": "Ethiopia, Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033706": {
-      "id": "OUT-gdacs-WF-1033706",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Senegal and Mali - 3-day forecast",
-      "country": "Senegal, Mali",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033635": {
-      "id": "OUT-gdacs-WF-1033635",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
-      "country": "Nigeria, Cameroon",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033715": {
-      "id": "OUT-gdacs-WF-1033715",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
-      "country": "Benin, Burkina Faso",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033608": {
-      "id": "OUT-gdacs-WF-1033608",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Suriname and Brazil - 3-day forecast",
-      "country": "Suriname, Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033719": {
-      "id": "OUT-gdacs-WF-1033719",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria - 3-day forecast",
-      "country": "Nigeria",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033627": {
-      "id": "OUT-gdacs-WF-1033627",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Brazil - 3-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033609": {
-      "id": "OUT-gdacs-WF-1033609",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Bolivia - 3-day forecast",
-      "country": "Bolivia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-10T00:00:00.000Z",
-      "targetEnd": "2026-11-13T00:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-12T18:54:35.055Z",
+  "updatedAt": "2026-11-13T00:21:41.295Z",
   "observedCadenceHours": {
-    "runs": 179,
+    "runs": 180,
     "median": 5.05,
     "min": 1.54,
     "max": 189.21
