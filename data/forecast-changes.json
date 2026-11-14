@@ -72749,18 +72749,127 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-11-14T21:28:45.024Z",
+      "sinceHours": 4.38,
+      "active": 43,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-f3de3ec9923a43c3838185ed8d654938f4829183-001-2",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Dougherty and 4 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-14T17:49:00.000Z",
+          "targetEnd": "2026-11-19T17:49:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033852",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
+          "country": "South Sudan, Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-14T00:00:00.000Z",
+          "targetEnd": "2026-11-17T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033851",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-14T00:00:00.000Z",
+          "targetEnd": "2026-11-17T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-WF-1033754",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mozambique - 3-day forecast",
+          "country": "Mozambique",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-14T00:00:00.000Z",
+          "targetEnd": "2026-11-17T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-16T00:00:00.000Z",
+          "toEnd": "2026-11-17T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-492b9d9741e2b3e5bd4af069f40ff3a9701b7a74-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Choctaw and 8 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-14T15:28:00.000Z",
+          "targetEnd": "2026-11-19T15:28:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-668cd7488a4539f456e1b69b48e6d856050aba11-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in South Central Oregon Coast and 1 nearby area, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-14T09:15:00.000Z",
+          "targetEnd": "2026-11-16T09:15:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-ca099f89c43a528e10692e9d85d49fadb78de47e-001-3",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in coastal waters from Cape Shoalwater WA to Cape Falcon OR out 10 nm and 2 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-14T09:01:00.000Z",
+          "targetEnd": "2026-11-16T09:01:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033848",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
+          "country": "South Sudan, Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-14T00:00:00.000Z",
+          "targetEnd": "2026-11-17T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-0-492b9d9741e2b3e5bd4af069f40ff3a9701b7a74-001-1": {
-      "id": "OUT-0-492b9d9741e2b3e5bd4af069f40ff3a9701b7a74-001-1",
+    "OUT-0-f3de3ec9923a43c3838185ed8d654938f4829183-001-2": {
+      "id": "OUT-0-f3de3ec9923a43c3838185ed8d654938f4829183-001-2",
       "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Choctaw and 8 nearby areas, United States - 5-day forecast",
+      "title": "Extreme Cold risk in Dougherty and 4 nearby areas, United States - 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-14T15:28:00.000Z",
-      "targetEnd": "2026-11-19T15:28:00.000Z",
+      "targetStart": "2026-11-14T17:49:00.000Z",
+      "targetEnd": "2026-11-19T17:49:00.000Z",
       "provider": "nws"
     },
     "OUT-0-38b69b2e88ed65084337e8f41afe12fd971a407a-001-1": {
@@ -72784,28 +72893,6 @@
       "targetStart": "2026-11-14T09:26:13.073Z",
       "targetEnd": "2026-11-21T09:26:13.073Z",
       "provider": "gdacs"
-    },
-    "OUT-0-668cd7488a4539f456e1b69b48e6d856050aba11-001-1": {
-      "id": "OUT-0-668cd7488a4539f456e1b69b48e6d856050aba11-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in South Central Oregon Coast and 1 nearby area, United States - 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-14T09:15:00.000Z",
-      "targetEnd": "2026-11-16T09:15:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-ca099f89c43a528e10692e9d85d49fadb78de47e-001-3": {
-      "id": "OUT-0-ca099f89c43a528e10692e9d85d49fadb78de47e-001-3",
-      "type": "Storm Warning",
-      "title": "Storm Warning risk in coastal waters from Cape Shoalwater WA to Cape Falcon OR out 10 nm and 2 nearby areas, United States - 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-14T09:01:00.000Z",
-      "targetEnd": "2026-11-16T09:01:00.000Z",
-      "provider": "nws"
     },
     "OUT-usgs-volcano-311120": {
       "id": "OUT-usgs-volcano-311120",
@@ -72906,6 +72993,28 @@
       "targetEnd": "2026-11-17T01:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-WF-1033852": {
+      "id": "OUT-gdacs-WF-1033852",
+      "type": "Wildfire",
+      "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
+      "country": "South Sudan, Sudan",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-14T00:00:00.000Z",
+      "targetEnd": "2026-11-17T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1033851": {
+      "id": "OUT-gdacs-WF-1033851",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Nigeria - 3-day forecast",
+      "country": "Nigeria",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-14T00:00:00.000Z",
+      "targetEnd": "2026-11-17T00:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-WF-1033850": {
       "id": "OUT-gdacs-WF-1033850",
       "type": "Wildfire",
@@ -72922,17 +73031,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Sudan and South Sudan - 3-day forecast",
       "country": "Sudan, South Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-14T00:00:00.000Z",
-      "targetEnd": "2026-11-17T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033848": {
-      "id": "OUT-gdacs-WF-1033848",
-      "type": "Wildfire",
-      "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
-      "country": "South Sudan, Sudan",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-14T00:00:00.000Z",
@@ -73071,6 +73169,17 @@
       "targetEnd": "2026-11-17T00:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-WF-1033754": {
+      "id": "OUT-gdacs-WF-1033754",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Mozambique - 3-day forecast",
+      "country": "Mozambique",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-14T00:00:00.000Z",
+      "targetEnd": "2026-11-17T00:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-WF-1033697": {
       "id": "OUT-gdacs-WF-1033697",
       "type": "Wildfire",
@@ -73131,17 +73240,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Senegal and Mali - 3-day forecast",
       "country": "Senegal, Mali",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-13T00:00:00.000Z",
-      "targetEnd": "2026-11-16T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033754": {
-      "id": "OUT-gdacs-WF-1033754",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Mozambique - 3-day forecast",
-      "country": "Mozambique",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-13T00:00:00.000Z",
@@ -73237,9 +73335,9 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-14T17:05:54.761Z",
+  "updatedAt": "2026-11-14T21:28:45.024Z",
   "observedCadenceHours": {
-    "runs": 186,
+    "runs": 187,
     "median": 5.1,
     "min": 1.54,
     "max": 189.21
