@@ -34309,5 +34309,829 @@
     "day": "2026-11-13"
    }
   }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-chennai-in-2026-11-18",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Chennai, 18 Nov to 22 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "India",
+  "admin1": "Tamil Nadu",
+  "region": "Chennai, Tamil Nadu, India",
+  "lat": 13.0878,
+  "lon": 80.2785,
+  "alert": "High",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-18T00:00:00Z",
+  "targetEnd": "2026-11-22T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 1 to 5 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 45% of the days it flagged crossed the line (11% of days did anyway) and it flagged 59% of the days that crossed; at 5 days ahead, 41% of the days it flagged crossed the line (11% of days did anyway) and it flagged 54% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 5 days in a row, and its 99th on at least one. That line is moved down 0.1 °C for the cooling this place's record shows since its middle year. 18 Nov: 31.3 °C against this place's 1-in-20-day level of 30.2 °C. 19 Nov: 30.9 °C against this place's 1-in-20-day level of 30.1 °C. 20 Nov: 32.1 °C against this place's 1-in-20-day level of 30.1 °C. 21 Nov: 31.8 °C against this place's 1-in-20-day level of 30 °C. 22 Nov: 30.9 °C against this place's 1-in-20-day level of 29.9 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Chennai, Tamil Nadu, India, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Chennai on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-18",
+     "value": 31.3,
+     "p95": 30.2,
+     "p99": 31.5,
+     "shift": -0.07
+    },
+    {
+     "day": "2026-11-19",
+     "value": 30.9,
+     "p95": 30.1,
+     "p99": 31.4,
+     "shift": -0.07
+    },
+    {
+     "day": "2026-11-20",
+     "value": 32.1,
+     "p95": 30.1,
+     "p99": 31.3,
+     "shift": -0.07
+    },
+    {
+     "day": "2026-11-21",
+     "value": 31.8,
+     "p95": 30,
+     "p99": 31.2,
+     "shift": -0.07
+    },
+    {
+     "day": "2026-11-22",
+     "value": 30.9,
+     "p95": 29.9,
+     "p99": 31.1,
+     "shift": -0.07
+    }
+   ],
+   "peak": 32.1,
+   "severe": true,
+   "placeId": "chennai-in",
+   "geonameId": 1264527,
+   "bias": {
+    "tmax": 0.13,
+    "dew": -0.09,
+    "rainRatio": 1.28,
+    "windRatio": 1.18,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0,
+    "value": 0.56,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-rain-patna-in-2026-11-21",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually heavy rain",
+  "title": "Unusually heavy rain forecast for Patna, 21 Nov",
+  "hazardLabel": "Unusually heavy rain",
+  "country": "India",
+  "admin1": "Bihar",
+  "region": "Patna, Bihar, India",
+  "lat": 25.5941,
+  "lon": 85.1356,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-21T00:00:00Z",
+  "targetEnd": "2026-11-21T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers day 4 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 30% of the days it flagged crossed the line (2% of days did anyway) and it flagged 28% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.39 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 60% of the same month in 1996-2025 when last measured (14 Nov). 21 Nov: 10.4 mm (10.4 mm over three days) against this place's 1-in-100-day level of 3.18 mm in a day and 10.52 mm over three days.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Patna, Bihar, India, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the rainfall NASA POWER measured for the grid cell around Patna on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "rain",
+   "days": [
+    {
+     "day": "2026-11-21",
+     "value": 10.4,
+     "threeDay": 10.4,
+     "p99": 3.18,
+     "p99x3": 10.52
+    }
+   ],
+   "peak": 10.4,
+   "severe": false,
+   "placeId": "patna-in",
+   "geonameId": 1260086,
+   "bias": {
+    "tmax": 0.72,
+    "dew": 0.05,
+    "rainRatio": 1.39,
+    "windRatio": 1.27,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0.6,
+    "value": 0.56,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-rain-dhaka-bd-2026-11-19",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually heavy rain",
+  "title": "Unusually heavy rain forecast for Dhaka, 19 Nov to 21 Nov",
+  "hazardLabel": "Unusually heavy rain",
+  "country": "Bangladesh",
+  "admin1": "Dhaka Division",
+  "region": "Dhaka, Dhaka Division, Bangladesh",
+  "lat": 23.7104,
+  "lon": 90.4074,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-19T00:00:00Z",
+  "targetEnd": "2026-11-21T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 2 to 4 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 30% of the days it flagged crossed the line (2% of days did anyway) and it flagged 28% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 1.70 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (14 Nov). 19 Nov: 94 mm (94 mm over three days) against this place's 1-in-100-day level of 37.6 mm in a day and 102.94 mm over three days. 20 Nov: 45.7 mm (139.7 mm over three days) against this place's 1-in-100-day level of 37.6 mm in a day and 102.94 mm over three days. 21 Nov: 24.6 mm (164.3 mm over three days) against this place's 1-in-100-day level of 37.6 mm in a day and 102.94 mm over three days.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Dhaka, Dhaka Division, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the rainfall NASA POWER measured for the grid cell around Dhaka on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "rain",
+   "days": [
+    {
+     "day": "2026-11-19",
+     "value": 94,
+     "threeDay": 94,
+     "p99": 37.6,
+     "p99x3": 102.94
+    },
+    {
+     "day": "2026-11-20",
+     "value": 45.7,
+     "threeDay": 139.7,
+     "p99": 37.6,
+     "p99x3": 102.94
+    },
+    {
+     "day": "2026-11-21",
+     "value": 24.6,
+     "threeDay": 164.3,
+     "p99": 37.6,
+     "p99x3": 102.94
+    }
+   ],
+   "peak": 94,
+   "severe": false,
+   "placeId": "dhaka-bd",
+   "geonameId": 1185241,
+   "bias": {
+    "tmax": 0.45,
+    "dew": 0.07,
+    "rainRatio": 1.7,
+    "windRatio": 1.16,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0,
+    "value": 0.45,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-rain-chittagong-bd-2026-11-20",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually heavy rain",
+  "title": "Unusually heavy rain forecast for Chittagong, 20 Nov to 22 Nov",
+  "hazardLabel": "Unusually heavy rain",
+  "country": "Bangladesh",
+  "admin1": "Chittagong",
+  "region": "Chittagong, Bangladesh",
+  "lat": 22.3384,
+  "lon": 91.8317,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-20T00:00:00Z",
+  "targetEnd": "2026-11-22T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 3 to 5 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 30% of the days it flagged crossed the line (2% of days did anyway) and it flagged 28% of the days that crossed; at 5 days ahead, 23% of the days it flagged crossed the line (2% of days did anyway) and it flagged 18% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 0% of the same month in 1996-2025 when last measured (14 Nov). 20 Nov: 144.8 mm (202 mm over three days) against this place's 1-in-100-day level of 43.34 mm in a day and 119.06 mm over three days. 21 Nov: 7.2 mm (172.8 mm over three days) against this place's 1-in-100-day level of 43.34 mm in a day and 119.06 mm over three days. 22 Nov: 4 mm (156 mm over three days) against this place's 1-in-100-day level of 43.34 mm in a day and 119.06 mm over three days.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Chittagong, Bangladesh, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the rainfall NASA POWER measured for the grid cell around Chittagong on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "rain",
+   "days": [
+    {
+     "day": "2026-11-20",
+     "value": 144.8,
+     "threeDay": 202,
+     "p99": 43.34,
+     "p99x3": 119.06
+    },
+    {
+     "day": "2026-11-21",
+     "value": 7.2,
+     "threeDay": 172.8,
+     "p99": 43.34,
+     "p99x3": 119.06
+    },
+    {
+     "day": "2026-11-22",
+     "value": 4,
+     "threeDay": 156,
+     "p99": 43.34,
+     "p99x3": 119.06
+    }
+   ],
+   "peak": 144.8,
+   "severe": false,
+   "placeId": "chittagong-bd",
+   "geonameId": 1205733,
+   "bias": {
+    "tmax": 0.84,
+    "dew": 0.26,
+    "rainRatio": 2,
+    "windRatio": 1.28,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0,
+    "value": 0.55,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-tehran-ir-2026-11-23",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Tehran, 23 Nov to 24 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "Iran",
+  "admin1": "Tehran",
+  "region": "Tehran, Iran",
+  "lat": 35.6944,
+  "lon": 51.4215,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-23T00:00:00Z",
+  "targetEnd": "2026-11-24T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 6 to 7 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 5 days ahead, 41% of the days it flagged crossed the line (11% of days did anyway) and it flagged 54% of the days that crossed. Days beyond 5 ahead were not tested. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.4 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.2 °C for the warming this place's record shows since its middle year. 23 Nov: 22.7 °C against this place's 1-in-20-day level of 21.4 °C. 24 Nov: 22.4 °C against this place's 1-in-20-day level of 21.2 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Tehran, Iran, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Tehran on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-23",
+     "value": 22.7,
+     "p95": 21.4,
+     "p99": 23.5,
+     "shift": 0.22
+    },
+    {
+     "day": "2026-11-24",
+     "value": 22.4,
+     "p95": 21.2,
+     "p99": 23.3,
+     "shift": 0.22
+    }
+   ],
+   "peak": 22.7,
+   "severe": false,
+   "placeId": "tehran-ir",
+   "geonameId": 112931,
+   "bias": {
+    "tmax": -0.38,
+    "dew": 3.88,
+    "rainRatio": 0.53,
+    "windRatio": 1.44,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0,
+    "value": 0.3,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-addis-ababa-et-2026-11-19",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Addis Ababa, 19 Nov to 20 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "Ethiopia",
+  "admin1": "Addis Ababa",
+  "region": "Addis Ababa, Ethiopia",
+  "lat": 9.025,
+  "lon": 38.7469,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-19T00:00:00Z",
+  "targetEnd": "2026-11-20T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 2 to 3 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 45% of the days it flagged crossed the line (11% of days did anyway) and it flagged 59% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -2.5 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.1 °C for the warming this place's record shows since its middle year. 19 Nov: 26.2 °C against this place's 1-in-20-day level of 25.4 °C. 20 Nov: 25.4 °C against this place's 1-in-20-day level of 25.4 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Addis Ababa, Ethiopia, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Addis Ababa on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-19",
+     "value": 26.2,
+     "p95": 25.4,
+     "p99": 26.6,
+     "shift": 0.14
+    },
+    {
+     "day": "2026-11-20",
+     "value": 25.4,
+     "p95": 25.4,
+     "p99": 26.5,
+     "shift": 0.14
+    }
+   ],
+   "peak": 26.2,
+   "severe": false,
+   "placeId": "addis-ababa-et",
+   "geonameId": 344979,
+   "bias": {
+    "tmax": -2.46,
+    "dew": 0.09,
+    "rainRatio": 0.99,
+    "windRatio": 1.43,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0,
+    "value": 0.41,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-khartoum-sd-2026-11-23",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Khartoum, 23 Nov to 24 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "Sudan",
+  "admin1": "Khartoum State",
+  "region": "Khartoum, Khartoum State, Sudan",
+  "lat": 15.5518,
+  "lon": 32.5324,
+  "alert": "High",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-23T00:00:00Z",
+  "targetEnd": "2026-11-24T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 6 to 7 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 5 days ahead, 41% of the days it flagged crossed the line (11% of days did anyway) and it flagged 54% of the days that crossed. Days beyond 5 ahead were not tested. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -1.5 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row, and its 99th on at least one. That line is moved down 0.4 °C for the cooling this place's record shows since its middle year. 23 Nov: 38 °C against this place's 1-in-20-day level of 37.6 °C. 24 Nov: 38.3 °C against this place's 1-in-20-day level of 37.5 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Khartoum, Khartoum State, Sudan, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Khartoum on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-23",
+     "value": 38,
+     "p95": 37.6,
+     "p99": 38.3,
+     "shift": -0.4
+    },
+    {
+     "day": "2026-11-24",
+     "value": 38.3,
+     "p95": 37.5,
+     "p99": 38.2,
+     "shift": -0.4
+    }
+   ],
+   "peak": 38.3,
+   "severe": true,
+   "placeId": "khartoum-sd",
+   "geonameId": 379252,
+   "bias": {
+    "tmax": -1.45,
+    "dew": 2.78,
+    "rainRatio": 1,
+    "windRatio": 1.81,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0.1,
+    "value": 0.11,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-rain-rome-it-2026-11-22",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually heavy rain",
+  "title": "Unusually heavy rain forecast for Rome, 22 Nov",
+  "hazardLabel": "Unusually heavy rain",
+  "country": "Italy",
+  "admin1": "Lazio",
+  "region": "Rome, Lazio, Italy",
+  "lat": 41.8919,
+  "lon": 12.5113,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-22T00:00:00Z",
+  "targetEnd": "2026-11-22T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers day 5 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 5 days ahead, 23% of the days it flagged crossed the line (2% of days did anyway) and it flagged 18% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast rain, scaled by 2.00 to match the 30-year record, reaches this place's 99th percentile for the month. The topsoil was wetter than 30% of the same month in 1996-2025 when last measured (14 Nov). 22 Nov: 46.8 mm (47.4 mm over three days) against this place's 1-in-100-day level of 30.64 mm in a day and 55.78 mm over three days.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Rome, Lazio, Italy, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the rainfall NASA POWER measured for the grid cell around Rome on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "rain",
+   "days": [
+    {
+     "day": "2026-11-22",
+     "value": 46.8,
+     "threeDay": 47.4,
+     "p99": 30.64,
+     "p99x3": 55.78
+    }
+   ],
+   "peak": 46.8,
+   "severe": false,
+   "placeId": "rome-it",
+   "geonameId": 3169070,
+   "bias": {
+    "tmax": 0.93,
+    "dew": 0.18,
+    "rainRatio": 2,
+    "windRatio": 1.71,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0.3,
+    "value": 0.57,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-athens-gr-2026-11-19",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Athens, 19 Nov to 20 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "Greece",
+  "admin1": "Attica",
+  "region": "Athens, Attica, Greece",
+  "lat": 37.9838,
+  "lon": 23.7278,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-19T00:00:00Z",
+  "targetEnd": "2026-11-20T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 2 to 3 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 45% of the days it flagged crossed the line (11% of days did anyway) and it flagged 59% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by -0.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.9 °C for the warming this place's record shows since its middle year. 19 Nov: 23.7 °C against this place's 1-in-20-day level of 23.1 °C. 20 Nov: 23 °C against this place's 1-in-20-day level of 22.9 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Athens, Attica, Greece, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Athens on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-19",
+     "value": 23.7,
+     "p95": 23.1,
+     "p99": 24.6,
+     "shift": 0.89
+    },
+    {
+     "day": "2026-11-20",
+     "value": 23,
+     "p95": 22.9,
+     "p99": 24.4,
+     "shift": 0.89
+    }
+   ],
+   "peak": 23.7,
+   "severe": false,
+   "placeId": "athens-gr",
+   "geonameId": 264371,
+   "bias": {
+    "tmax": -0.21,
+    "dew": -0.58,
+    "rainRatio": 0.63,
+    "windRatio": 1.99,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0.3,
+    "value": 0.43,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-antananarivo-mg-2026-11-18",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Antananarivo, 18 Nov to 19 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "Madagascar",
+  "admin1": "Analamanga Region",
+  "region": "Antananarivo, Analamanga Region, Madagascar",
+  "lat": -18.9137,
+  "lon": 47.5361,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-18T00:00:00Z",
+  "targetEnd": "2026-11-19T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 1 to 2 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 45% of the days it flagged crossed the line (11% of days did anyway) and it flagged 59% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.0 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.6 °C for the warming this place's record shows since its middle year. 18 Nov: 27.6 °C against this place's 1-in-20-day level of 27.6 °C. 19 Nov: 28.2 °C against this place's 1-in-20-day level of 27.6 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Antananarivo, Analamanga Region, Madagascar, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Antananarivo on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-18",
+     "value": 27.6,
+     "p95": 27.6,
+     "p99": 28.5,
+     "shift": 0.57
+    },
+    {
+     "day": "2026-11-19",
+     "value": 28.2,
+     "p95": 27.6,
+     "p99": 28.5,
+     "shift": 0.57
+    }
+   ],
+   "peak": 28.2,
+   "severe": false,
+   "placeId": "antananarivo-mg",
+   "geonameId": 1070940,
+   "bias": {
+    "tmax": 0.97,
+    "dew": 0.33,
+    "rainRatio": 1.23,
+    "windRatio": 0.99,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0,
+    "value": 0.63,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-miami-us-2026-11-21",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Miami, 21 Nov to 22 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "United States",
+  "admin1": "Florida",
+  "region": "Miami, Florida, United States",
+  "lat": 25.7743,
+  "lon": -80.1937,
+  "alert": "Moderate",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-21T00:00:00Z",
+  "targetEnd": "2026-11-22T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 4 to 5 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 5 days ahead, 41% of the days it flagged crossed the line (11% of days did anyway) and it flagged 54% of the days that crossed. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 0.1 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 2 days in a row. That line is moved up 0.6 °C for the warming this place's record shows since its middle year. 21 Nov: 28.7 °C against this place's 1-in-20-day level of 28.2 °C. 22 Nov: 28.5 °C against this place's 1-in-20-day level of 28.2 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Miami, Florida, United States, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Miami on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-21",
+     "value": 28.7,
+     "p95": 28.2,
+     "p99": 28.8,
+     "shift": 0.61
+    },
+    {
+     "day": "2026-11-22",
+     "value": 28.5,
+     "p95": 28.2,
+     "p99": 28.8,
+     "shift": 0.61
+    }
+   ],
+   "peak": 28.7,
+   "severe": false,
+   "placeId": "miami-us",
+   "geonameId": 4164138,
+   "bias": {
+    "tmax": 0.06,
+    "dew": -1.1,
+    "rainRatio": 0.5,
+    "windRatio": 1.39,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0.9,
+    "value": 0.75,
+    "day": "2026-11-14"
+   }
+  }
+ },
+ {
+  "recordedAt": "2026-11-17T13:49:30.656Z",
+  "id": "model-heat-lima-pe-2026-11-18",
+  "source": "Predict Natural Disasters · forecast model",
+  "sourceType": "forecast",
+  "type": "Unusually hot days",
+  "title": "Unusually hot days forecast for Lima, 18 Nov to 24 Nov",
+  "hazardLabel": "Unusually hot days",
+  "country": "Peru",
+  "admin1": "Lima Province",
+  "region": "Lima, Lima Province, Peru",
+  "lat": -12.0432,
+  "lon": -77.0282,
+  "alert": "High",
+  "issuedAt": "2026-11-17T13:49:30.656Z",
+  "updated": "2026-11-17T13:49:30.656Z",
+  "targetStart": "2026-11-18T00:00:00Z",
+  "targetEnd": "2026-11-24T23:59:59Z",
+  "issuedAtBasis": "Timestamp of the numerical weather prediction model run, issued before the target window.",
+  "forecast": true,
+  "forecastKind": "model-advance",
+  "forecastScope": "regional",
+  "precision": "regional",
+  "confidence": "This forecast covers days 1 to 7 ahead. The method was tested only on forecasts made 3 and 5 days ahead, on days from 17 Jul 2026 to 17 Oct 2026: at 3 days ahead, 45% of the days it flagged crossed the line (11% of days did anyway) and it flagged 59% of the days that crossed; at 5 days ahead, 41% of the days it flagged crossed the line (11% of days did anyway) and it flagged 54% of the days that crossed. Days beyond 5 ahead were not tested. Those are day-by-day rates; this forecast is graded on its whole window.",
+  "details": "Our own forecast, made before the period it covers. Forecast daily highs, corrected by 1.2 °C for the difference between the forecast service and the 30-year record, reach this place's 95th percentile for the time of year on 7 days in a row, and its 99th on at least one. That line is moved up 0.4 °C for the warming this place's record shows since its middle year. 18 Nov: 27 °C against this place's 1-in-20-day level of 24.2 °C. 19 Nov: 25.8 °C against this place's 1-in-20-day level of 24.2 °C. 20 Nov: 26 °C against this place's 1-in-20-day level of 24.2 °C. 21 Nov: 25.8 °C against this place's 1-in-20-day level of 24.2 °C. 22 Nov: 26.3 °C against this place's 1-in-20-day level of 24.2 °C. 23 Nov: 25.5 °C against this place's 1-in-20-day level of 24.3 °C. 24 Nov: 25.4 °C against this place's 1-in-20-day level of 24.3 °C.",
+  "evidence": "Open-Meteo forecast issued for 2026-11-17, compared with NASA POWER daily records for Lima, Lima Province, Peru, 1996-2025. Bias measured over 21 shared days.",
+  "verificationRule": "Checked against the daily maximum temperature NASA POWER measured for the grid cell around Lima on these days, once each measurement has settled (14 days): correct if the line was crossed on at least one day of the window, a false alarm if it was not. It is not checked against reported disasters.",
+  "sourceUrl": "/accuracy",
+  "model": {
+   "hazard": "heat",
+   "days": [
+    {
+     "day": "2026-11-18",
+     "value": 27,
+     "p95": 24.2,
+     "p99": 24.9,
+     "shift": 0.38
+    },
+    {
+     "day": "2026-11-19",
+     "value": 25.8,
+     "p95": 24.2,
+     "p99": 24.9,
+     "shift": 0.38
+    },
+    {
+     "day": "2026-11-20",
+     "value": 26,
+     "p95": 24.2,
+     "p99": 24.9,
+     "shift": 0.38
+    },
+    {
+     "day": "2026-11-21",
+     "value": 25.8,
+     "p95": 24.2,
+     "p99": 24.9,
+     "shift": 0.38
+    },
+    {
+     "day": "2026-11-22",
+     "value": 26.3,
+     "p95": 24.2,
+     "p99": 24.9,
+     "shift": 0.38
+    },
+    {
+     "day": "2026-11-23",
+     "value": 25.5,
+     "p95": 24.3,
+     "p99": 25,
+     "shift": 0.38
+    },
+    {
+     "day": "2026-11-24",
+     "value": 25.4,
+     "p95": 24.3,
+     "p99": 25,
+     "shift": 0.38
+    }
+   ],
+   "peak": 27,
+   "severe": true,
+   "placeId": "lima-pe",
+   "geonameId": 3936456,
+   "bias": {
+    "tmax": 1.18,
+    "dew": 4.21,
+    "rainRatio": 1.39,
+    "windRatio": 0.81,
+    "overlapDays": 21
+   },
+   "soil": {
+    "percentile": 0.9,
+    "value": 0.26,
+    "day": "2026-11-14"
+   }
+  }
  }
 ]
