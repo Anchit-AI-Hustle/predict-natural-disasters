@@ -1,7 +1,7 @@
 {
  "note": "The figures /accuracy opens with, from tools/build-accuracy-summary.js over data/model-verdicts.json, data/outlook-ledger.json, data/verification-ledger.json, data/observed-disasters.json and data/scan-ledger.json. One verdict per forecast. Rebuilt whenever either ledger changes.",
- "generatedAt": "2026-11-23T15:20:56.183Z",
- "recordUpdated": "2026-11-23T09:02:10.502Z",
+ "generatedAt": "2026-11-23T21:21:36.605Z",
+ "recordUpdated": "2026-11-23T21:21:36.605Z",
  "verificationVersion": "verify-1.4.0",
  "model": {
   "issued": 601,
@@ -85,26 +85,26 @@
   "missed": 0
  },
  "restated": {
-  "forecasts": 1800,
-  "open": 59,
+  "forecasts": 1813,
+  "open": 69,
   "awaiting": 0,
-  "ungradeable": 1731,
+  "ungradeable": 1734,
   "checked": 10,
   "correct": 2,
   "partlyCorrect": 2,
   "wrong": 6,
   "notPrediction": 0,
   "missed": 0,
-  "versions": 4676
+  "versions": 4699
  },
  "aftershock": {
   "forecasts": 114,
-  "open": 12,
+  "open": 11,
   "awaiting": 0,
   "ungradeable": 54,
-  "checked": 48,
+  "checked": 49,
   "correct": 30,
-  "partlyCorrect": 17,
+  "partlyCorrect": 18,
   "wrong": 1,
   "notPrediction": 0,
   "missed": 0,
@@ -122,8 +122,8 @@
   "notPrediction": 0,
   "missed": 0
  },
- "outlookForecasts": 1915,
- "outlookVersions": 4813,
+ "outlookForecasts": 1928,
+ "outlookVersions": 4836,
  "disasters": {
   "total": 66,
   "forecastInAdvance": 0,
@@ -141,7 +141,7 @@
    "A forecast is graded once every day of its window has a settled NASA POWER measurement (one at least 14 days old when fetched, because recent days are revised). 238 forecasts are still waiting; measurements have settled up to 9 Nov 2026.",
    "By chance alone, with the same windows, about 57.5 of the 363 graded forecasts would have come true.",
    "101 days crossed a model’s line at a place it was watching, with no forecast for it.",
-   "Our other 1,915 forecasts (4,813 recorded versions) were not made in advance. 1,800 restate an alert an agency had already issued and are not a test of our skill: 10 could be checked, 2 correct, 2 partly correct and 6 wrong, counted on new damage or impact reported inside the window. 114 are aftershock forecasts after an earthquake. 1 is a test case written after its period began.",
+   "Our other 1,928 forecasts (4,836 recorded versions) were not made in advance. 1,813 restate an alert an agency had already issued and are not a test of our skill: 10 could be checked, 2 correct, 2 partly correct and 6 wrong, counted on new damage or impact reported inside the window. 114 are aftershock forecasts after an earthquake. 1 is a test case written after its period began.",
    "66 significant disasters are on record. We forecast none of them in advance."
   ]
  }
