@@ -2,178 +2,6 @@
   "schemaVersion": 1,
   "runs": [
     {
-      "at": "2026-09-25T01:17:05.058Z",
-      "sinceHours": 3.13,
-      "active": 29,
-      "baseline": false,
-      "added": [
-        {
-          "id": "OUT-nws-v2-3-13-6-1548172-1790290879831",
-          "type": "Local Area Emergency",
-          "title": "3-day Local Area Emergency risk outlook — United States",
-          "country": "United States",
-          "alert": "High",
-          "rank": 3,
-          "targetStart": "2026-09-24T23:01:20.000Z",
-          "targetEnd": "2026-09-27T23:01:20.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-c8014f461e6fa091693826e13712a11146d25ce9-001-1",
-          "type": "Flood",
-          "title": "3-day Flood risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T01:12:00.000Z",
-          "targetEnd": "2026-09-28T01:12:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-4076f625693e8853125da63722026443b979b59e-024-1",
-          "type": "Storm Warning",
-          "title": "2-day Storm Warning risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T23:09:00.000Z",
-          "targetEnd": "2026-09-26T23:09:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-c3126c4ccaa67bc07dfa47e9cdbf46d65f9328cf-024-2",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T21:19:00.000Z",
-          "targetEnd": "2026-09-29T21:19:00.000Z",
-          "provider": "nws"
-        }
-      ],
-      "raised": [],
-      "lowered": [],
-      "windowMoved": [
-        {
-          "id": "OUT-nhc-ep152026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
-          "country": "Nolo (central Pacific system 2)",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T00:00:00.000Z",
-          "targetEnd": "2026-09-30T00:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-09-29T21:00:00.000Z",
-          "toEnd": "2026-09-30T00:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24786",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Tropical Storm Nolo",
-          "country": "Tropical Storm Nolo",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-24T18:00:00.000Z",
-          "targetEnd": "2026-09-26T18:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-26T06:00:00.000Z",
-          "toEnd": "2026-09-26T18:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24787",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Tropical Storm Surigae",
-          "country": "Tropical Storm Surigae",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-24T18:00:00.000Z",
-          "targetEnd": "2026-09-26T18:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-26T12:00:00.000Z",
-          "toEnd": "2026-09-26T18:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24721",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Hurricane Polo",
-          "country": "Hurricane Polo",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-24T18:00:00.000Z",
-          "targetEnd": "2026-09-26T18:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-26T12:00:00.000Z",
-          "toEnd": "2026-09-26T18:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24720",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Hurricane Odalys",
-          "country": "Hurricane Odalys",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-24T18:00:00.000Z",
-          "targetEnd": "2026-09-26T18:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-26T12:00:00.000Z",
-          "toEnd": "2026-09-26T18:00:00.000Z"
-        }
-      ],
-      "gone": [
-        {
-          "id": "OUT-0-2b9ebb62b58337616dd3aa9b0d9262009138bdd9-001-1",
-          "type": "Flood",
-          "title": "3-day Flood risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T21:58:00.000Z",
-          "targetEnd": "2026-09-27T21:58:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-16c0da5abaf69bca5cd0f6f1e73e576ce81a790e-003-1",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T21:29:00.000Z",
-          "targetEnd": "2026-09-29T21:29:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-c62ff457d5759464818206290eeeccadba148f9b-003-2",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T19:08:00.000Z",
-          "targetEnd": "2026-09-26T19:08:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-2c6451ceb95c336c033551dbf68e512182a36a11-002-2",
-          "type": "Storm Warning",
-          "title": "2-day Storm Warning risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T18:58:00.000Z",
-          "targetEnd": "2026-09-26T18:58:00.000Z",
-          "provider": "nws"
-        }
-      ],
-      "expired": [],
-      "unavailable": [],
-      "sourcesDown": [
-        "reliefweb"
-      ]
-    },
-    {
       "at": "2026-09-25T07:24:37.812Z",
       "sinceHours": 6.13,
       "active": 29,
@@ -81350,6 +81178,462 @@
         "reliefweb",
         "eonet"
       ]
+    },
+    {
+      "at": "2026-11-24T17:42:05.049Z",
+      "sinceHours": 11.7,
+      "active": 61,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-76f101cb39f2da0c5b18691e8421ba73a0e284b8-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Val Verde, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T17:19:00.000Z",
+          "targetEnd": "2026-11-29T17:19:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-3e7965afb477e48c0fa1b32c6c8a1813a3ce5974-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Shemya and Attu Islands, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T13:28:00.000Z",
+          "targetEnd": "2026-11-26T13:28:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-bb07fd3a5fd9a51b8fd0a26dec306eb2b5071bcc-007-1",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Cape Beaufort to Point Franklin from 15 to 85 nautical miles, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T12:45:00.000Z",
+          "targetEnd": "2026-11-27T12:45:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-108beff6ce50c00e28fed56e17f12bdd804caa63-029-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T11:52:00.000Z",
+          "targetEnd": "2026-11-26T11:52:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1579008",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Mauritius - Reunion Region - 7-day forecast",
+          "country": "Mauritius - Reunion Region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T11:06:14.036Z",
+          "targetEnd": "2026-12-01T11:06:14.036Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-0-83259b68b5f2c4db99793037725ab148756226ac-001-3",
+          "type": "Storm Watch",
+          "title": "Storm Watch risk in Chesapeake Bay from Drum Point MD to Smith Point VA and 1 nearby area, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T13:46:00.000Z",
+          "targetEnd": "2026-11-26T13:46:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-TC-1001352",
+          "type": "Tropical Cyclone",
+          "title": "Storm risk from Tropical Cyclone 03-20262027-27 - 5-day forecast",
+          "country": "Tropical Cyclone 03-20262027-27",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T06:00:00.000Z",
+          "targetEnd": "2026-11-29T06:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104298",
+          "type": "Flood",
+          "title": "Flood risk in Portugal - 3-day forecast",
+          "country": "Portugal",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T01:00:00.000Z",
+          "targetEnd": "2026-11-27T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034029",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia - 3-day forecast",
+          "country": "Bolivia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034031",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Australia - 3-day forecast",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034035",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar - 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034019",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
+          "country": "Benin, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034053",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia and Brazil - 3-day forecast",
+          "country": "Bolivia, Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034055",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Sudan and South Sudan - 3-day forecast",
+          "country": "Sudan, South Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034049",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Burkina Faso - 3-day forecast",
+          "country": "Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034052",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
+          "country": "Nigeria, Cameroon",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033856",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [
+        {
+          "id": "OUT-gdacs-FL-1104253",
+          "type": "Flood",
+          "title": "Flood risk in Indonesia - 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T12:15:02.000Z",
+          "targetEnd": "2026-11-27T12:15:02.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T23:06:20.000Z",
+          "toEnd": "2026-11-27T12:15:02.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034024",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Togo, Burkina Faso and Benin - 3-day forecast",
+          "country": "Togo, Burkina Faso, Benin",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034025",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan - 3-day forecast",
+          "country": "South Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034026",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil - 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034017",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Ghana and Burkina Faso - 3-day forecast",
+          "country": "Ghana, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034040",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan and Central African Republic - 3-day forecast",
+          "country": "South Sudan, Central African Republic",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034045",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Benin - 3-day forecast",
+          "country": "Benin",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033959",
+          "type": "Wildfire",
+          "title": "Wildfire risk in India - 3-day forecast",
+          "country": "India",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033996",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
+          "country": "South Sudan, Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs",
+          "fromEnd": "2026-11-26T00:00:00.000Z",
+          "toEnd": "2026-11-27T00:00:00.000Z"
+        }
+      ],
+      "gone": [
+        {
+          "id": "OUT-0-6cd1e5754fe625801aca61e07d6cf04364d2af45-002-3",
+          "type": "Flood",
+          "title": "Flood risk in Coastal Nassau and 4 nearby areas, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T05:48:00.000Z",
+          "targetEnd": "2026-11-27T05:48:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-7bf2474f65b2d3ba17b8e92759bd81b5f81a0dfd-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Grayson and 2 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T05:28:00.000Z",
+          "targetEnd": "2026-11-29T05:28:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-da6aa84001c3aace6eb49030a5bf7a1bb885cd73-008-1",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Point Franklin to Cape Halkett from 15 to 75 nautical miles, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T00:48:00.000Z",
+          "targetEnd": "2026-11-27T00:48:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-58702d41f8998b991722cc145b9c6c27669680db-029-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-23T23:05:00.000Z",
+          "targetEnd": "2026-11-25T23:05:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-0fb4bd6a790a04bff802932d5f5399403473c236-007-1",
+          "type": "Storm Watch",
+          "title": "Storm Watch risk in Ocean Waters from Marthas Vineyard to Nantucket from 25 to 60 nautical miles and 1 nearby area, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T05:54:00.000Z",
+          "targetEnd": "2026-11-26T05:54:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034046",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Australia - 3-day forecast",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034044",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar - 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034027",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia - 3-day forecast",
+          "country": "Bolivia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034014",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
+          "country": "Benin, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034015",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033877",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Sudan and South Sudan - 3-day forecast",
+          "country": "Sudan, South Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034018",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
+          "country": "Nigeria, Cameroon",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-22T00:00:00.000Z",
+          "targetEnd": "2026-11-25T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "expired": [],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb",
+        "eonet"
+      ]
     }
   ],
   "snapshot": {
@@ -81386,49 +81670,60 @@
       "targetEnd": "2026-11-28T00:09:21.810Z",
       "provider": "usgs"
     },
-    "OUT-0-6cd1e5754fe625801aca61e07d6cf04364d2af45-002-3": {
-      "id": "OUT-0-6cd1e5754fe625801aca61e07d6cf04364d2af45-002-3",
-      "type": "Flood",
-      "title": "Flood risk in Coastal Nassau and 4 nearby areas, United States - 3-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-24T05:48:00.000Z",
-      "targetEnd": "2026-11-27T05:48:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-7bf2474f65b2d3ba17b8e92759bd81b5f81a0dfd-001-1": {
-      "id": "OUT-0-7bf2474f65b2d3ba17b8e92759bd81b5f81a0dfd-001-1",
+    "OUT-0-76f101cb39f2da0c5b18691e8421ba73a0e284b8-001-1": {
+      "id": "OUT-0-76f101cb39f2da0c5b18691e8421ba73a0e284b8-001-1",
       "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Grayson and 2 nearby areas, United States - 5-day forecast",
+      "title": "Extreme Cold risk in Val Verde, United States - 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-24T05:28:00.000Z",
-      "targetEnd": "2026-11-29T05:28:00.000Z",
+      "targetStart": "2026-11-24T17:19:00.000Z",
+      "targetEnd": "2026-11-29T17:19:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-da6aa84001c3aace6eb49030a5bf7a1bb885cd73-008-1": {
-      "id": "OUT-0-da6aa84001c3aace6eb49030a5bf7a1bb885cd73-008-1",
+    "OUT-0-3e7965afb477e48c0fa1b32c6c8a1813a3ce5974-001-1": {
+      "id": "OUT-0-3e7965afb477e48c0fa1b32c6c8a1813a3ce5974-001-1",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in Shemya and Attu Islands, United States - 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-24T13:28:00.000Z",
+      "targetEnd": "2026-11-26T13:28:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-bb07fd3a5fd9a51b8fd0a26dec306eb2b5071bcc-007-1": {
+      "id": "OUT-0-bb07fd3a5fd9a51b8fd0a26dec306eb2b5071bcc-007-1",
       "type": "Heavy Freezing Spray Warning",
-      "title": "Heavy Freezing Spray Warning risk in Point Franklin to Cape Halkett from 15 to 75 nautical miles, United States - 3-day forecast",
+      "title": "Heavy Freezing Spray Warning risk in Cape Beaufort to Point Franklin from 15 to 85 nautical miles, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-24T00:48:00.000Z",
-      "targetEnd": "2026-11-27T00:48:00.000Z",
+      "targetStart": "2026-11-24T12:45:00.000Z",
+      "targetEnd": "2026-11-27T12:45:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-58702d41f8998b991722cc145b9c6c27669680db-029-1": {
-      "id": "OUT-0-58702d41f8998b991722cc145b9c6c27669680db-029-1",
+    "OUT-0-108beff6ce50c00e28fed56e17f12bdd804caa63-029-1": {
+      "id": "OUT-0-108beff6ce50c00e28fed56e17f12bdd804caa63-029-1",
       "type": "Storm Warning",
       "title": "Storm Warning risk in Kiska to Attu Pacific Side, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-23T23:05:00.000Z",
-      "targetEnd": "2026-11-25T23:05:00.000Z",
+      "targetStart": "2026-11-24T11:52:00.000Z",
+      "targetEnd": "2026-11-26T11:52:00.000Z",
       "provider": "nws"
+    },
+    "OUT-aftershock-gdacs-EQ-1579008": {
+      "id": "OUT-aftershock-gdacs-EQ-1579008",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Mauritius - Reunion Region - 7-day forecast",
+      "country": "Mauritius - Reunion Region",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-24T11:06:14.036Z",
+      "targetEnd": "2026-12-01T11:06:14.036Z",
+      "provider": "gdacs"
     },
     "OUT-aftershock-gdacs-EQ-1578842": {
       "id": "OUT-aftershock-gdacs-EQ-1578842",
@@ -81573,16 +81868,49 @@
       "targetEnd": "2026-11-25T02:22:56.671Z",
       "provider": "usgs"
     },
-    "OUT-0-0fb4bd6a790a04bff802932d5f5399403473c236-007-1": {
-      "id": "OUT-0-0fb4bd6a790a04bff802932d5f5399403473c236-007-1",
+    "OUT-0-83259b68b5f2c4db99793037725ab148756226ac-001-3": {
+      "id": "OUT-0-83259b68b5f2c4db99793037725ab148756226ac-001-3",
       "type": "Storm Watch",
-      "title": "Storm Watch risk in Ocean Waters from Marthas Vineyard to Nantucket from 25 to 60 nautical miles and 1 nearby area, United States - 2-day forecast",
+      "title": "Storm Watch risk in Chesapeake Bay from Drum Point MD to Smith Point VA and 1 nearby area, United States - 2-day forecast",
       "country": "United States",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-11-24T05:54:00.000Z",
-      "targetEnd": "2026-11-26T05:54:00.000Z",
+      "targetStart": "2026-11-24T13:46:00.000Z",
+      "targetEnd": "2026-11-26T13:46:00.000Z",
       "provider": "nws"
+    },
+    "OUT-gdacs-FL-1104253": {
+      "id": "OUT-gdacs-FL-1104253",
+      "type": "Flood",
+      "title": "Flood risk in Indonesia - 3-day forecast",
+      "country": "Indonesia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T12:15:02.000Z",
+      "targetEnd": "2026-11-27T12:15:02.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-TC-1001352": {
+      "id": "OUT-gdacs-TC-1001352",
+      "type": "Tropical Cyclone",
+      "title": "Storm risk from Tropical Cyclone 03-20262027-27 - 5-day forecast",
+      "country": "Tropical Cyclone 03-20262027-27",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T06:00:00.000Z",
+      "targetEnd": "2026-11-29T06:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-FL-1104298": {
+      "id": "OUT-gdacs-FL-1104298",
+      "type": "Flood",
+      "title": "Flood risk in Portugal - 3-day forecast",
+      "country": "Portugal",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T01:00:00.000Z",
+      "targetEnd": "2026-11-27T01:00:00.000Z",
+      "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104295": {
       "id": "OUT-gdacs-FL-1104295",
@@ -81606,11 +81934,176 @@
       "targetEnd": "2026-11-27T01:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1034046": {
-      "id": "OUT-gdacs-WF-1034046",
+    "OUT-gdacs-WF-1034029": {
+      "id": "OUT-gdacs-WF-1034029",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Bolivia - 3-day forecast",
+      "country": "Bolivia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034031": {
+      "id": "OUT-gdacs-WF-1034031",
       "type": "Wildfire",
       "title": "Wildfire risk in Australia - 3-day forecast",
       "country": "Australia",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034035": {
+      "id": "OUT-gdacs-WF-1034035",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Madagascar - 3-day forecast",
+      "country": "Madagascar",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034024": {
+      "id": "OUT-gdacs-WF-1034024",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Togo, Burkina Faso and Benin - 3-day forecast",
+      "country": "Togo, Burkina Faso, Benin",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034025": {
+      "id": "OUT-gdacs-WF-1034025",
+      "type": "Wildfire",
+      "title": "Wildfire risk in South Sudan - 3-day forecast",
+      "country": "South Sudan",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034026": {
+      "id": "OUT-gdacs-WF-1034026",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Brazil - 3-day forecast",
+      "country": "Brazil",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034017": {
+      "id": "OUT-gdacs-WF-1034017",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Ghana and Burkina Faso - 3-day forecast",
+      "country": "Ghana, Burkina Faso",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034019": {
+      "id": "OUT-gdacs-WF-1034019",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
+      "country": "Benin, Burkina Faso",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034053": {
+      "id": "OUT-gdacs-WF-1034053",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Bolivia and Brazil - 3-day forecast",
+      "country": "Bolivia, Brazil",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034055": {
+      "id": "OUT-gdacs-WF-1034055",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Sudan and South Sudan - 3-day forecast",
+      "country": "Sudan, South Sudan",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034049": {
+      "id": "OUT-gdacs-WF-1034049",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Burkina Faso - 3-day forecast",
+      "country": "Burkina Faso",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034052": {
+      "id": "OUT-gdacs-WF-1034052",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
+      "country": "Nigeria, Cameroon",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034040": {
+      "id": "OUT-gdacs-WF-1034040",
+      "type": "Wildfire",
+      "title": "Wildfire risk in South Sudan and Central African Republic - 3-day forecast",
+      "country": "South Sudan, Central African Republic",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1034045": {
+      "id": "OUT-gdacs-WF-1034045",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Benin - 3-day forecast",
+      "country": "Benin",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1033856": {
+      "id": "OUT-gdacs-WF-1033856",
+      "type": "Wildfire",
+      "title": "Wildfire risk in Nigeria - 3-day forecast",
+      "country": "Nigeria",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
+      "provider": "gdacs"
+    },
+    "OUT-gdacs-WF-1033959": {
+      "id": "OUT-gdacs-WF-1033959",
+      "type": "Wildfire",
+      "title": "Wildfire risk in India - 3-day forecast",
+      "country": "India",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-24T00:00:00.000Z",
@@ -81628,103 +82121,15 @@
       "targetEnd": "2026-11-27T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-FL-1104253": {
-      "id": "OUT-gdacs-FL-1104253",
-      "type": "Flood",
-      "title": "Flood risk in Indonesia - 3-day forecast",
-      "country": "Indonesia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T23:06:20.000Z",
-      "targetEnd": "2026-11-26T23:06:20.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034024": {
-      "id": "OUT-gdacs-WF-1034024",
+    "OUT-gdacs-WF-1033996": {
+      "id": "OUT-gdacs-WF-1033996",
       "type": "Wildfire",
-      "title": "Wildfire risk in Togo, Burkina Faso and Benin - 3-day forecast",
-      "country": "Togo, Burkina Faso, Benin",
+      "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
+      "country": "South Sudan, Sudan",
       "alert": "Watch",
       "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034025": {
-      "id": "OUT-gdacs-WF-1034025",
-      "type": "Wildfire",
-      "title": "Wildfire risk in South Sudan - 3-day forecast",
-      "country": "South Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034026": {
-      "id": "OUT-gdacs-WF-1034026",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Brazil - 3-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034040": {
-      "id": "OUT-gdacs-WF-1034040",
-      "type": "Wildfire",
-      "title": "Wildfire risk in South Sudan and Central African Republic - 3-day forecast",
-      "country": "South Sudan, Central African Republic",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034041": {
-      "id": "OUT-gdacs-WF-1034041",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Central African Republic - 3-day forecast",
-      "country": "Central African Republic",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034044": {
-      "id": "OUT-gdacs-WF-1034044",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Madagascar - 3-day forecast",
-      "country": "Madagascar",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034045": {
-      "id": "OUT-gdacs-WF-1034045",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Benin - 3-day forecast",
-      "country": "Benin",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034027": {
-      "id": "OUT-gdacs-WF-1034027",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Bolivia - 3-day forecast",
-      "country": "Bolivia",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
+      "targetStart": "2026-11-24T00:00:00.000Z",
+      "targetEnd": "2026-11-27T00:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-WF-1034000": {
@@ -81738,55 +82143,11 @@
       "targetEnd": "2026-11-26T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-WF-1034014": {
-      "id": "OUT-gdacs-WF-1034014",
+    "OUT-gdacs-WF-1034041": {
+      "id": "OUT-gdacs-WF-1034041",
       "type": "Wildfire",
-      "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
-      "country": "Benin, Burkina Faso",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034015": {
-      "id": "OUT-gdacs-WF-1034015",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria - 3-day forecast",
-      "country": "Nigeria",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034017": {
-      "id": "OUT-gdacs-WF-1034017",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Ghana and Burkina Faso - 3-day forecast",
-      "country": "Ghana, Burkina Faso",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033996": {
-      "id": "OUT-gdacs-WF-1033996",
-      "type": "Wildfire",
-      "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
-      "country": "South Sudan, Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033959": {
-      "id": "OUT-gdacs-WF-1033959",
-      "type": "Wildfire",
-      "title": "Wildfire risk in India - 3-day forecast",
-      "country": "India",
+      "title": "Wildfire risk in Central African Republic - 3-day forecast",
+      "country": "Central African Republic",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-23T00:00:00.000Z",
@@ -81820,17 +82181,6 @@
       "type": "Wildfire",
       "title": "Wildfire risk in Sudan - 3-day forecast",
       "country": "Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033877": {
-      "id": "OUT-gdacs-WF-1033877",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Sudan and South Sudan - 3-day forecast",
-      "country": "Sudan, South Sudan",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-23T00:00:00.000Z",
@@ -81957,23 +82307,12 @@
       "targetStart": "2026-11-22T00:00:00.000Z",
       "targetEnd": "2026-11-25T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034018": {
-      "id": "OUT-gdacs-WF-1034018",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
-      "country": "Nigeria, Cameroon",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-22T00:00:00.000Z",
-      "targetEnd": "2026-11-25T00:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-24T06:00:21.311Z",
+  "updatedAt": "2026-11-24T17:42:05.049Z",
   "observedCadenceHours": {
     "runs": 201,
-    "median": 5.45,
+    "median": 5.5,
     "min": 2.06,
     "max": 189.21
   }
