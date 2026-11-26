@@ -2,268 +2,6 @@
   "schemaVersion": 1,
   "runs": [
     {
-      "at": "2026-09-25T22:06:47.913Z",
-      "sinceHours": 3.74,
-      "active": 30,
-      "baseline": false,
-      "added": [
-        {
-          "id": "OUT-aftershock-usgs-us6000txpi",
-          "type": "Earthquake aftershock sequence",
-          "title": "Aftershock-sequence outlook — 80 km ENE of Tadine, New Caledonia",
-          "country": "New Caledonia",
-          "alert": "High",
-          "rank": 3,
-          "targetStart": "2026-09-25T21:23:03.309Z",
-          "targetEnd": "2026-10-02T21:23:03.309Z",
-          "provider": "usgs"
-        },
-        {
-          "id": "OUT-0-00801f23f55207510fc80edb410b80710513e6a0-001-1",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T22:00:00.000Z",
-          "targetEnd": "2026-09-27T22:00:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-b01896fa0b8b528ecbad5e0669dc563ccb3f1b76-001-1",
-          "type": "Flood",
-          "title": "3-day Flood risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T21:49:00.000Z",
-          "targetEnd": "2026-09-28T21:49:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-usgs-volcano-311120",
-          "type": "Volcano",
-          "title": "7-day Volcano risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T20:04:31.000Z",
-          "targetEnd": "2026-10-02T20:04:31.000Z",
-          "provider": "usgs_volcano"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001321",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — United States",
-          "country": "United States",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "gdacs"
-        }
-      ],
-      "raised": [],
-      "lowered": [
-        {
-          "id": "OUT-gdacs-TC-1001325",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Mexico",
-          "country": "Mexico",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "gdacs",
-          "from": "Moderate",
-          "to": "Watch"
-        }
-      ],
-      "windowMoved": [
-        {
-          "id": "OUT-nhc-ep162026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
-          "country": "Odalys (eastern Pacific system 1)",
-          "alert": "High",
-          "rank": 3,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-ep172026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Polo (eastern Pacific system 2)",
-          "country": "Polo (eastern Pacific system 2)",
-          "alert": "High",
-          "rank": 3,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-ep152026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
-          "country": "Nolo (central Pacific system 2)",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-09-30T18:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-al062026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Fay (Atlantic system 1)",
-          "country": "Fay (Atlantic system 1)",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-al072026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Gonzalo (Atlantic system 2)",
-          "country": "Gonzalo (Atlantic system 2)",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-09-30T18:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001328",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Cape Verde",
-          "country": "Cape Verde",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001325",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Mexico",
-          "country": "Mexico",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001323",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Tropical Cyclone FAY-26",
-          "country": "Tropical Cyclone FAY-26",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001324",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Tropical Cyclone ODALYS-26",
-          "country": "Tropical Cyclone ODALYS-26",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T21:00:00.000Z",
-          "targetEnd": "2026-09-30T21:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-09-30T15:00:00.000Z",
-          "toEnd": "2026-09-30T21:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001327",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Japan",
-          "country": "Japan",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T18:00:00.000Z",
-          "targetEnd": "2026-09-30T18:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-09-30T12:00:00.000Z",
-          "toEnd": "2026-09-30T18:00:00.000Z"
-        }
-      ],
-      "gone": [
-        {
-          "id": "OUT-0-d35fba3050853044b1a1c70f5418b2df8eff98f9-001-1",
-          "type": "Flood",
-          "title": "3-day Flood risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T17:53:00.000Z",
-          "targetEnd": "2026-09-28T17:53:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-0-7609e508be43f40c95d1bb8167398f9ce15d6d86-003-1",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-25T13:40:00.000Z",
-          "targetEnd": "2026-09-30T13:40:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-usgs-volcano-332010",
-          "type": "Volcano",
-          "title": "7-day Volcano risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-24T18:43:24.000Z",
-          "targetEnd": "2026-10-01T18:43:24.000Z",
-          "provider": "usgs_volcano"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032394",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Papua New Guinea",
-          "country": "Papua New Guinea",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-25T00:00:00.000Z",
-          "targetEnd": "2026-09-28T00:00:00.000Z",
-          "provider": "gdacs"
-        }
-      ],
-      "expired": [],
-      "unavailable": [],
-      "sourcesDown": [
-        "reliefweb"
-      ]
-    },
-    {
       "at": "2026-09-26T01:19:18.329Z",
       "sinceHours": 3.21,
       "active": 30,
@@ -81613,6 +81351,147 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-11-26T05:01:42.933Z",
+      "sinceHours": 6.52,
+      "active": 51,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-0-14a72e1be054e679e3b4d6de0efa1e56ed4dab5f-001-2",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Maries and 2 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T04:34:00.000Z",
+          "targetEnd": "2026-11-28T04:34:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-b6c8783875c037d40339bdd760ce0b05f0302728-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Lee, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T04:15:00.000Z",
+          "targetEnd": "2026-12-01T04:15:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-0ea93d88aa1df3227e54679716e6cec2c0d263a2-002-1",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Chesapeake Bay north of Pooles Island MD and 11 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T01:09:00.000Z",
+          "targetEnd": "2026-11-28T01:09:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-a9f49479faf5ae2f38e580f72051d8ced8eeb59b-007-1",
+          "type": "Heavy Freezing Spray Warning",
+          "title": "Heavy Freezing Spray Warning risk in Wales to Cape Espenberg out to 15 nautical miles, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T00:49:00.000Z",
+          "targetEnd": "2026-11-29T00:49:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [],
+      "gone": [
+        {
+          "id": "OUT-0-1a3490828d200d27196dedeb0c5302168441e652-002-2",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Dauphin, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-25T21:17:00.000Z",
+          "targetEnd": "2026-11-27T21:17:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-ce47563942f848380beaa73b5fa1d85b650be1a5-007-2",
+          "type": "Storm Warning",
+          "title": "Storm Warning risk in Rappahannock River from Urbanna to Windmill Point and 2 nearby areas, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-25T20:24:00.000Z",
+          "targetEnd": "2026-11-27T20:24:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-gdacs-FL-1104216",
+          "type": "Flood",
+          "title": "Flood risk in Brazil - 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T01:00:00.000Z",
+          "targetEnd": "2026-11-26T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033961",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Ethiopia and Sudan - 3-day forecast",
+          "country": "Ethiopia, Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033867",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Sudan - 3-day forecast",
+          "country": "Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033923",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Togo, Benin and Burkina Faso - 3-day forecast",
+          "country": "Togo, Benin, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034041",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Central African Republic - 3-day forecast",
+          "country": "Central African Republic",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-23T00:00:00.000Z",
+          "targetEnd": "2026-11-26T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [],
+      "sourcesDown": [
+        "reliefweb",
+        "eonet"
+      ]
     }
   ],
   "snapshot": {
@@ -81649,26 +81528,48 @@
       "targetEnd": "2026-11-28T00:09:21.810Z",
       "provider": "usgs"
     },
-    "OUT-0-1a3490828d200d27196dedeb0c5302168441e652-002-2": {
-      "id": "OUT-0-1a3490828d200d27196dedeb0c5302168441e652-002-2",
+    "OUT-0-14a72e1be054e679e3b4d6de0efa1e56ed4dab5f-001-2": {
+      "id": "OUT-0-14a72e1be054e679e3b4d6de0efa1e56ed4dab5f-001-2",
       "type": "Severe Storm",
-      "title": "Severe Storm risk in Dauphin, United States - 2-day forecast",
+      "title": "Severe Storm risk in Maries and 2 nearby areas, United States - 2-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-25T21:17:00.000Z",
-      "targetEnd": "2026-11-27T21:17:00.000Z",
+      "targetStart": "2026-11-26T04:34:00.000Z",
+      "targetEnd": "2026-11-28T04:34:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-ce47563942f848380beaa73b5fa1d85b650be1a5-007-2": {
-      "id": "OUT-0-ce47563942f848380beaa73b5fa1d85b650be1a5-007-2",
-      "type": "Storm Warning",
-      "title": "Storm Warning risk in Rappahannock River from Urbanna to Windmill Point and 2 nearby areas, United States - 2-day forecast",
+    "OUT-0-b6c8783875c037d40339bdd760ce0b05f0302728-001-1": {
+      "id": "OUT-0-b6c8783875c037d40339bdd760ce0b05f0302728-001-1",
+      "type": "Extreme Cold",
+      "title": "Extreme Cold risk in Lee, United States - 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-25T20:24:00.000Z",
-      "targetEnd": "2026-11-27T20:24:00.000Z",
+      "targetStart": "2026-11-26T04:15:00.000Z",
+      "targetEnd": "2026-12-01T04:15:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-0ea93d88aa1df3227e54679716e6cec2c0d263a2-002-1": {
+      "id": "OUT-0-0ea93d88aa1df3227e54679716e6cec2c0d263a2-002-1",
+      "type": "Storm Warning",
+      "title": "Storm Warning risk in Chesapeake Bay north of Pooles Island MD and 11 nearby areas, United States - 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-26T01:09:00.000Z",
+      "targetEnd": "2026-11-28T01:09:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-0-a9f49479faf5ae2f38e580f72051d8ced8eeb59b-007-1": {
+      "id": "OUT-0-a9f49479faf5ae2f38e580f72051d8ced8eeb59b-007-1",
+      "type": "Heavy Freezing Spray Warning",
+      "title": "Heavy Freezing Spray Warning risk in Wales to Cape Espenberg out to 15 nautical miles, United States - 3-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-26T00:49:00.000Z",
+      "targetEnd": "2026-11-29T00:49:00.000Z",
       "provider": "nws"
     },
     "OUT-aftershock-gdacs-EQ-1579132": {
@@ -81968,6 +81869,17 @@
       "targetEnd": "2026-11-28T00:00:00.000Z",
       "provider": "gdacs"
     },
+    "OUT-gdacs-FL-1104298": {
+      "id": "OUT-gdacs-FL-1104298",
+      "type": "Flood",
+      "title": "Flood risk in Portugal - 3-day forecast",
+      "country": "Portugal",
+      "alert": "Watch",
+      "rank": 1,
+      "targetStart": "2026-11-24T01:00:00.000Z",
+      "targetEnd": "2026-11-27T01:00:00.000Z",
+      "provider": "gdacs"
+    },
     "OUT-gdacs-FL-1104295": {
       "id": "OUT-gdacs-FL-1104295",
       "type": "Flood",
@@ -81995,17 +81907,6 @@
       "type": "Flood",
       "title": "Flood risk in Uganda - 3-day forecast",
       "country": "Uganda",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-24T01:00:00.000Z",
-      "targetEnd": "2026-11-27T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104298": {
-      "id": "OUT-gdacs-FL-1104298",
-      "type": "Flood",
-      "title": "Flood risk in Portugal - 3-day forecast",
-      "country": "Portugal",
       "alert": "Watch",
       "rank": 1,
       "targetStart": "2026-11-24T01:00:00.000Z",
@@ -82054,17 +81955,6 @@
       "rank": 1,
       "targetStart": "2026-11-24T00:00:00.000Z",
       "targetEnd": "2026-11-27T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104216": {
-      "id": "OUT-gdacs-FL-1104216",
-      "type": "Flood",
-      "title": "Flood risk in Brazil - 3-day forecast",
-      "country": "Brazil",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T01:00:00.000Z",
-      "targetEnd": "2026-11-26T01:00:00.000Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-DR-1018546": {
@@ -82165,53 +82055,9 @@
       "targetStart": "2026-11-23T00:00:00.000Z",
       "targetEnd": "2026-12-23T00:00:00.000Z",
       "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033961": {
-      "id": "OUT-gdacs-WF-1033961",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Ethiopia and Sudan - 3-day forecast",
-      "country": "Ethiopia, Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033867": {
-      "id": "OUT-gdacs-WF-1033867",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Sudan - 3-day forecast",
-      "country": "Sudan",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033923": {
-      "id": "OUT-gdacs-WF-1033923",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Togo, Benin and Burkina Faso - 3-day forecast",
-      "country": "Togo, Benin, Burkina Faso",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034041": {
-      "id": "OUT-gdacs-WF-1034041",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Central African Republic - 3-day forecast",
-      "country": "Central African Republic",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-23T00:00:00.000Z",
-      "targetEnd": "2026-11-26T00:00:00.000Z",
-      "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-25T22:30:26.282Z",
+  "updatedAt": "2026-11-26T05:01:42.933Z",
   "observedCadenceHours": {
     "runs": 201,
     "median": 5.51,
