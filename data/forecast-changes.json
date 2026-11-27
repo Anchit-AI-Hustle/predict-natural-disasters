@@ -2,322 +2,6 @@
   "schemaVersion": 1,
   "runs": [
     {
-      "at": "2026-09-26T12:50:26.339Z",
-      "sinceHours": 5.51,
-      "active": 30,
-      "baseline": false,
-      "added": [
-        {
-          "id": "OUT-0-9c07debd80e61e5b5a862c184fd0b467cc21a188-006-1",
-          "type": "Storm Warning",
-          "title": "2-day Storm Warning risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-26T08:30:00.000Z",
-          "targetEnd": "2026-09-28T08:30:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032409",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Australia",
-          "country": "Australia",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T00:00:00.000Z",
-          "targetEnd": "2026-09-29T00:00:00.000Z",
-          "provider": "gdacs"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032405",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Brazil",
-          "country": "Brazil",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T00:00:00.000Z",
-          "targetEnd": "2026-09-29T00:00:00.000Z",
-          "provider": "gdacs"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032411",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Papua New Guinea",
-          "country": "Papua New Guinea",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T00:00:00.000Z",
-          "targetEnd": "2026-09-29T00:00:00.000Z",
-          "provider": "gdacs"
-        }
-      ],
-      "raised": [],
-      "lowered": [
-        {
-          "id": "OUT-gdacs-TC-1001325",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Mexico",
-          "country": "Mexico",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "gdacs",
-          "from": "Moderate",
-          "to": "Watch"
-        }
-      ],
-      "windowMoved": [
-        {
-          "id": "OUT-nhc-ep172026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Polo (eastern Pacific system 2)",
-          "country": "Polo (eastern Pacific system 2)",
-          "alert": "High",
-          "rank": 3,
-          "targetStart": "2026-09-26T12:00:00.000Z",
-          "targetEnd": "2026-10-01T12:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-10-01T06:00:00.000Z",
-          "toEnd": "2026-10-01T12:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-ep162026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Odalys (eastern Pacific system 1)",
-          "country": "Odalys (eastern Pacific system 1)",
-          "alert": "High",
-          "rank": 3,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-ep152026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Nolo (central Pacific system 2)",
-          "country": "Nolo (central Pacific system 2)",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-26T12:00:00.000Z",
-          "targetEnd": "2026-10-01T12:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-10-01T06:00:00.000Z",
-          "toEnd": "2026-10-01T12:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-al062026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Fay (Atlantic system 1)",
-          "country": "Fay (Atlantic system 1)",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-nhc-al072026",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Gonzalo (Atlantic system 2)",
-          "country": "Gonzalo (Atlantic system 2)",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "nhc",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001328",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Cape Verde",
-          "country": "Cape Verde",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001325",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Mexico",
-          "country": "Mexico",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001323",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Tropical Cyclone FAY-26",
-          "country": "Tropical Cyclone FAY-26",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001324",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Tropical Cyclone ODALYS-26",
-          "country": "Tropical Cyclone ODALYS-26",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001321",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — United States",
-          "country": "United States",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T09:00:00.000Z",
-          "targetEnd": "2026-10-01T09:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-10-01T03:00:00.000Z",
-          "toEnd": "2026-10-01T09:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24786",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Hurricane Nolo",
-          "country": "Hurricane Nolo",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T06:00:00.000Z",
-          "targetEnd": "2026-09-28T06:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-28T00:00:00.000Z",
-          "toEnd": "2026-09-28T06:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24787",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Typhoon Surigae",
-          "country": "Typhoon Surigae",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T06:00:00.000Z",
-          "targetEnd": "2026-09-28T06:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-28T00:00:00.000Z",
-          "toEnd": "2026-09-28T06:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24721",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Hurricane Polo",
-          "country": "Hurricane Polo",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T06:00:00.000Z",
-          "targetEnd": "2026-09-28T06:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-28T00:00:00.000Z",
-          "toEnd": "2026-09-28T06:00:00.000Z"
-        },
-        {
-          "id": "OUT-eonet-EONET_24720",
-          "type": "Severe Storm",
-          "title": "2-day Severe Storm risk outlook — Hurricane Odalys",
-          "country": "Hurricane Odalys",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T06:00:00.000Z",
-          "targetEnd": "2026-09-28T06:00:00.000Z",
-          "provider": "eonet",
-          "fromEnd": "2026-09-28T00:00:00.000Z",
-          "toEnd": "2026-09-28T06:00:00.000Z"
-        },
-        {
-          "id": "OUT-gdacs-TC-1001327",
-          "type": "Tropical Cyclone",
-          "title": "5-day Tropical Cyclone risk outlook — Japan",
-          "country": "Japan",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T06:00:00.000Z",
-          "targetEnd": "2026-10-01T06:00:00.000Z",
-          "provider": "gdacs",
-          "fromEnd": "2026-10-01T00:00:00.000Z",
-          "toEnd": "2026-10-01T06:00:00.000Z"
-        }
-      ],
-      "gone": [
-        {
-          "id": "OUT-0-1a540ac2258c1f6d6d17304a970d926bfb0ceabf-001-2",
-          "type": "Storm Warning",
-          "title": "2-day Storm Warning risk outlook — United States",
-          "country": "United States",
-          "alert": "Moderate",
-          "rank": 2,
-          "targetStart": "2026-09-26T06:57:00.000Z",
-          "targetEnd": "2026-09-28T06:57:00.000Z",
-          "provider": "nws"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032394",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Papua New Guinea",
-          "country": "Papua New Guinea",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T00:00:00.000Z",
-          "targetEnd": "2026-09-29T00:00:00.000Z",
-          "provider": "gdacs"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032291",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Brazil",
-          "country": "Brazil",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T00:00:00.000Z",
-          "targetEnd": "2026-09-29T00:00:00.000Z",
-          "provider": "gdacs"
-        },
-        {
-          "id": "OUT-gdacs-WF-1032347",
-          "type": "Wildfire",
-          "title": "3-day Wildfire risk outlook — Zimbabwe",
-          "country": "Zimbabwe",
-          "alert": "Watch",
-          "rank": 1,
-          "targetStart": "2026-09-26T00:00:00.000Z",
-          "targetEnd": "2026-09-29T00:00:00.000Z",
-          "provider": "gdacs"
-        }
-      ],
-      "expired": [],
-      "unavailable": [],
-      "sourcesDown": [
-        "reliefweb"
-      ]
-    },
-    {
       "at": "2026-09-26T16:58:07.215Z",
       "sinceHours": 4.13,
       "active": 31,
@@ -81802,19 +81486,700 @@
       "sourcesDown": [
         "reliefweb"
       ]
+    },
+    {
+      "at": "2026-11-27T08:28:34.094Z",
+      "sinceHours": 8.62,
+      "active": 56,
+      "baseline": false,
+      "added": [
+        {
+          "id": "OUT-aftershock-usgs-us6000ucvm",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Vanuatu region - 7-day forecast",
+          "country": "Vanuatu region",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-11-23T02:40:58.052Z",
+          "targetEnd": "2026-11-30T02:40:58.052Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-0-e153920fc71bb9f0ebb9204e4a66c2defdd9728d-001-1",
+          "type": "Flood",
+          "title": "Flood risk in Washington, Ohio, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-27T07:55:00.000Z",
+          "targetEnd": "2026-11-30T07:55:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-735a486c307094abcd735299a5721d7624065bd1-001-1",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Washington and 5 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-27T05:59:00.000Z",
+          "targetEnd": "2026-12-02T05:59:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-08e874364c61a320d772afb6a80bca56fcaf87df-001-2",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in West Jackson and West Grand Counties Above 9000 Feet, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-27T05:05:00.000Z",
+          "targetEnd": "2026-11-29T05:05:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000udq5",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Revilla Gigedo Islands region - 7-day forecast",
+          "country": "Revilla Gigedo Islands region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T15:26:44.294Z",
+          "targetEnd": "2026-12-03T15:26:44.294Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000udd1",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Balleny Islands region - 7-day forecast",
+          "country": "Balleny Islands region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-25T01:38:45.672Z",
+          "targetEnd": "2026-12-02T01:38:45.672Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000ud6h",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Mauritius - Reunion region - 7-day forecast",
+          "country": "Mauritius - Reunion region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T11:06:14.036Z",
+          "targetEnd": "2026-12-01T11:06:14.036Z",
+          "provider": "usgs"
+        },
+        {
+          "id": "OUT-aftershock-usgs-us6000ucxi",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near west of Macquarie Island - 7-day forecast",
+          "country": "west of Macquarie Island",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-23T08:01:26.457Z",
+          "targetEnd": "2026-11-30T08:01:26.457Z",
+          "provider": "usgs"
+        }
+      ],
+      "raised": [],
+      "lowered": [],
+      "windowMoved": [],
+      "gone": [
+        {
+          "id": "OUT-0-98866329a0fd435d6c8305daefcab75fa79538c8-001-1",
+          "type": "Flood",
+          "title": "Flood risk in St. Marys, Maryland, United States - 3-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T22:37:00.000Z",
+          "targetEnd": "2026-11-29T22:37:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-c0d0ef3343e1cd8c4eb4661c72ebda9558a2eae9-001-1",
+          "type": "Severe Storm",
+          "title": "Severe Storm risk in Snowy Range, United States - 2-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T19:30:00.000Z",
+          "targetEnd": "2026-11-28T19:30:00.000Z",
+          "provider": "nws"
+        },
+        {
+          "id": "OUT-0-fc29ee6a2bb746b235fda4bfecea8294c93546a1-001-2",
+          "type": "Extreme Cold",
+          "title": "Extreme Cold risk in Perry and 3 nearby areas, United States - 5-day forecast",
+          "country": "United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T17:38:00.000Z",
+          "targetEnd": "2026-12-01T17:38:00.000Z",
+          "provider": "nws"
+        }
+      ],
+      "expired": [
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1578280",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Southeast of Loyalty Islands - 7-day forecast",
+          "country": "Southeast Of Loyalty Islands",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-20T00:49:14.102Z",
+          "targetEnd": "2026-11-27T00:49:14.102Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104298",
+          "type": "Flood",
+          "title": "Flood risk in Portugal - 3-day forecast",
+          "country": "Portugal",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T01:00:00.000Z",
+          "targetEnd": "2026-11-27T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104295",
+          "type": "Flood",
+          "title": "Flood risk in Ireland - 3-day forecast",
+          "country": "Ireland",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T01:00:00.000Z",
+          "targetEnd": "2026-11-27T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104299",
+          "type": "Flood",
+          "title": "Flood risk in Uganda - 3-day forecast",
+          "country": "Uganda",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T01:00:00.000Z",
+          "targetEnd": "2026-11-27T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033886",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria - 3-day forecast",
+          "country": "Nigeria",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034000",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Chad - 3-day forecast",
+          "country": "Chad",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-11-27T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "unavailable": [
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1578798",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Vanuatu Islands region - 7-day forecast",
+          "country": "Vanuatu Islands Region",
+          "alert": "High",
+          "rank": 3,
+          "targetStart": "2026-11-23T02:40:58.052Z",
+          "targetEnd": "2026-11-30T02:40:58.052Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1579445",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Revilla Gigedo Islands region - 7-day forecast",
+          "country": "Revilla Gigedo Islands Region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-26T15:26:44.294Z",
+          "targetEnd": "2026-12-03T15:26:44.294Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1579132",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Balleny Islands region - 7-day forecast",
+          "country": "Balleny Islands Region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-25T01:38:45.672Z",
+          "targetEnd": "2026-12-02T01:38:45.672Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1579008",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near Mauritius - Reunion Region - 7-day forecast",
+          "country": "Mauritius - Reunion Region",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T11:06:14.036Z",
+          "targetEnd": "2026-12-01T11:06:14.036Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1023877",
+          "type": "Drought",
+          "title": "Drought risk in Aruba, Brazil and 7 other countries - 30-day forecast",
+          "country": "Aruba, , Brazil, Colombia, Costa Rica, , French Guiana, Guyana, Panama, Suriname, Venezuela",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018332",
+          "type": "Drought",
+          "title": "Drought risk in Albania, Austria and 24 other countries - 30-day forecast",
+          "country": "Albania, Austria, Bosnia & Herzegovina, Belgium, Bulgaria, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Montenegro, Poland, Romania, Serbia, Sweden, Slovenia, Slovakia, Ukraine, ",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027449",
+          "type": "Drought",
+          "title": "Drought risk in Belize, Costa Rica and 8 other countries - 30-day forecast",
+          "country": "Belize, Costa Rica, Cuba, Dominican Republic, Guatemala, Honduras, Mexico, Nicaragua, El Salvador, United States",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027450",
+          "type": "Drought",
+          "title": "Drought risk in Burundi, Democratic Republic of Congo and 11 other countries - 30-day forecast",
+          "country": "Burundi, Democratic Republic of Congo, Central African Republic, Cameroon, Eritrea, Ethiopia, Kenya, Rwanda, Sudan, South Sudan, Chad, Tanzania, Uganda",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-aftershock-gdacs-EQ-1578842",
+          "type": "Earthquake aftershock sequence",
+          "title": "Aftershock risk near West of Macquarie Island - 7-day forecast",
+          "country": "West Of Macquarie Island",
+          "alert": "Moderate",
+          "rank": 2,
+          "targetStart": "2026-11-23T08:01:26.457Z",
+          "targetEnd": "2026-11-30T08:01:26.457Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104220",
+          "type": "Flood",
+          "title": "Flood risk in Italy - 3-day forecast",
+          "country": "Italy",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T12:54:43.000Z",
+          "targetEnd": "2026-11-29T12:54:43.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104270",
+          "type": "Flood",
+          "title": "Flood risk in France - 3-day forecast",
+          "country": "France",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T01:00:00.000Z",
+          "targetEnd": "2026-11-29T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033786",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Australia - 3-day forecast",
+          "country": "Australia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034022",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Brazil - 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034036",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Madagascar - 3-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033959",
+          "type": "Wildfire",
+          "title": "Wildfire risk in India - 3-day forecast",
+          "country": "India",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034019",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Benin and Burkina Faso - 3-day forecast",
+          "country": "Benin, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034017",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Ghana and Burkina Faso - 3-day forecast",
+          "country": "Ghana, Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034103",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan - 3-day forecast",
+          "country": "South Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033877",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Sudan and South Sudan - 3-day forecast",
+          "country": "Sudan, South Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034102",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan and Sudan - 3-day forecast",
+          "country": "South Sudan, Sudan",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033997",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Sudan and Central African Republic - 3-day forecast",
+          "country": "South Sudan, Central African Republic",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034045",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Benin - 3-day forecast",
+          "country": "Benin",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034052",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Nigeria and Cameroon - 3-day forecast",
+          "country": "Nigeria, Cameroon",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034085",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia and Brazil - 3-day forecast",
+          "country": "Bolivia, Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1033985",
+          "type": "Wildfire",
+          "title": "Wildfire risk in South Africa - 3-day forecast",
+          "country": "South Africa",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034024",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Togo, Burkina Faso and Benin - 3-day forecast",
+          "country": "Togo, Burkina Faso, Benin",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034049",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Burkina Faso - 3-day forecast",
+          "country": "Burkina Faso",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034096",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mali - 3-day forecast",
+          "country": "Mali",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034100",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Central African Republic - 3-day forecast",
+          "country": "Central African Republic",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-26T00:00:00.000Z",
+          "targetEnd": "2026-11-29T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104297",
+          "type": "Flood",
+          "title": "Flood risk in Thailand - 3-day forecast",
+          "country": "Thailand",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-25T01:00:00.000Z",
+          "targetEnd": "2026-11-28T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104216",
+          "type": "Flood",
+          "title": "Flood risk in Brazil - 3-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-25T01:00:00.000Z",
+          "targetEnd": "2026-11-28T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-FL-1104253",
+          "type": "Flood",
+          "title": "Flood risk in Indonesia - 3-day forecast",
+          "country": "Indonesia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-25T01:00:00.000Z",
+          "targetEnd": "2026-11-28T01:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034073",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Mozambique - 3-day forecast",
+          "country": "Mozambique",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-25T00:00:00.000Z",
+          "targetEnd": "2026-11-28T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-WF-1034029",
+          "type": "Wildfire",
+          "title": "Wildfire risk in Bolivia - 3-day forecast",
+          "country": "Bolivia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-25T00:00:00.000Z",
+          "targetEnd": "2026-11-28T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018546",
+          "type": "Drought",
+          "title": "Drought risk in United States - 30-day forecast",
+          "country": "United States",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018431",
+          "type": "Drought",
+          "title": "Drought risk in Madagascar - 30-day forecast",
+          "country": "Madagascar",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018344",
+          "type": "Drought",
+          "title": "Drought risk in Angola, Democratic Republic of Congo and 4 other countries - 30-day forecast",
+          "country": "Angola, Democratic Republic of Congo, Republic of Congo, Cameroon, Gabon, Equatorial Guinea",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1018545",
+          "type": "Drought",
+          "title": "Drought risk in Brunei, Indonesia and 7 other countries - 30-day forecast",
+          "country": "Brunei, Indonesia, Cambodia, Laos, Malaysia, Papua New Guinea, Philippines, Singapore, Vietnam",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027462",
+          "type": "Drought",
+          "title": "Drought risk in Bangladesh, Bhutan and 6 other countries - 30-day forecast",
+          "country": "Bangladesh, Bhutan, China, India, Laos, Myanmar, Nepal, Vietnam",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027491",
+          "type": "Drought",
+          "title": "Drought risk in China, Kazakhstan and Mongolia - 30-day forecast",
+          "country": "China, Kazakhstan, Mongolia",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027575",
+          "type": "Drought",
+          "title": "Drought risk in India - 30-day forecast",
+          "country": "India",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1027737",
+          "type": "Drought",
+          "title": "Drought risk in New Zealand - 30-day forecast",
+          "country": "New Zealand",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        },
+        {
+          "id": "OUT-gdacs-DR-1015915",
+          "type": "Drought",
+          "title": "Drought risk in Brazil - 30-day forecast",
+          "country": "Brazil",
+          "alert": "Watch",
+          "rank": 1,
+          "targetStart": "2026-11-24T00:00:00.000Z",
+          "targetEnd": "2026-12-24T00:00:00.000Z",
+          "provider": "gdacs"
+        }
+      ],
+      "sourcesDown": [
+        "reliefweb",
+        "gdacs"
+      ]
     }
   ],
   "snapshot": {
-    "OUT-aftershock-gdacs-EQ-1578798": {
-      "id": "OUT-aftershock-gdacs-EQ-1578798",
+    "OUT-aftershock-usgs-us6000ucvm": {
+      "id": "OUT-aftershock-usgs-us6000ucvm",
       "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk near Vanuatu Islands region - 7-day forecast",
-      "country": "Vanuatu Islands Region",
+      "title": "Aftershock risk near Vanuatu region - 7-day forecast",
+      "country": "Vanuatu region",
       "alert": "High",
       "rank": 3,
       "targetStart": "2026-11-23T02:40:58.052Z",
       "targetEnd": "2026-11-30T02:40:58.052Z",
-      "provider": "gdacs"
+      "provider": "usgs"
     },
     "OUT-aftershock-usgs-us6000ucij": {
       "id": "OUT-aftershock-usgs-us6000ucij",
@@ -81838,49 +82203,49 @@
       "targetEnd": "2026-11-28T00:09:21.810Z",
       "provider": "usgs"
     },
-    "OUT-0-98866329a0fd435d6c8305daefcab75fa79538c8-001-1": {
-      "id": "OUT-0-98866329a0fd435d6c8305daefcab75fa79538c8-001-1",
+    "OUT-0-e153920fc71bb9f0ebb9204e4a66c2defdd9728d-001-1": {
+      "id": "OUT-0-e153920fc71bb9f0ebb9204e4a66c2defdd9728d-001-1",
       "type": "Flood",
-      "title": "Flood risk in St. Marys, Maryland, United States - 3-day forecast",
+      "title": "Flood risk in Washington, Ohio, United States - 3-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-26T22:37:00.000Z",
-      "targetEnd": "2026-11-29T22:37:00.000Z",
+      "targetStart": "2026-11-27T07:55:00.000Z",
+      "targetEnd": "2026-11-30T07:55:00.000Z",
       "provider": "nws"
     },
-    "OUT-0-c0d0ef3343e1cd8c4eb4661c72ebda9558a2eae9-001-1": {
-      "id": "OUT-0-c0d0ef3343e1cd8c4eb4661c72ebda9558a2eae9-001-1",
-      "type": "Severe Storm",
-      "title": "Severe Storm risk in Snowy Range, United States - 2-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-26T19:30:00.000Z",
-      "targetEnd": "2026-11-28T19:30:00.000Z",
-      "provider": "nws"
-    },
-    "OUT-0-fc29ee6a2bb746b235fda4bfecea8294c93546a1-001-2": {
-      "id": "OUT-0-fc29ee6a2bb746b235fda4bfecea8294c93546a1-001-2",
+    "OUT-0-735a486c307094abcd735299a5721d7624065bd1-001-1": {
+      "id": "OUT-0-735a486c307094abcd735299a5721d7624065bd1-001-1",
       "type": "Extreme Cold",
-      "title": "Extreme Cold risk in Perry and 3 nearby areas, United States - 5-day forecast",
+      "title": "Extreme Cold risk in Washington and 5 nearby areas, United States - 5-day forecast",
       "country": "United States",
       "alert": "Moderate",
       "rank": 2,
-      "targetStart": "2026-11-26T17:38:00.000Z",
-      "targetEnd": "2026-12-01T17:38:00.000Z",
+      "targetStart": "2026-11-27T05:59:00.000Z",
+      "targetEnd": "2026-12-02T05:59:00.000Z",
       "provider": "nws"
     },
-    "OUT-aftershock-gdacs-EQ-1579445": {
-      "id": "OUT-aftershock-gdacs-EQ-1579445",
+    "OUT-0-08e874364c61a320d772afb6a80bca56fcaf87df-001-2": {
+      "id": "OUT-0-08e874364c61a320d772afb6a80bca56fcaf87df-001-2",
+      "type": "Severe Storm",
+      "title": "Severe Storm risk in West Jackson and West Grand Counties Above 9000 Feet, United States - 2-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-27T05:05:00.000Z",
+      "targetEnd": "2026-11-29T05:05:00.000Z",
+      "provider": "nws"
+    },
+    "OUT-aftershock-usgs-us6000udq5": {
+      "id": "OUT-aftershock-usgs-us6000udq5",
       "type": "Earthquake aftershock sequence",
       "title": "Aftershock risk near Revilla Gigedo Islands region - 7-day forecast",
-      "country": "Revilla Gigedo Islands Region",
+      "country": "Revilla Gigedo Islands region",
       "alert": "Moderate",
       "rank": 2,
       "targetStart": "2026-11-26T15:26:44.294Z",
       "targetEnd": "2026-12-03T15:26:44.294Z",
-      "provider": "gdacs"
+      "provider": "usgs"
     },
     "OUT-aftershock-usgs-us6000udm8": {
       "id": "OUT-aftershock-usgs-us6000udm8",
@@ -81892,6 +82257,83 @@
       "targetStart": "2026-11-26T09:08:40.640Z",
       "targetEnd": "2026-12-03T09:08:40.640Z",
       "provider": "usgs"
+    },
+    "OUT-aftershock-usgs-us6000udd1": {
+      "id": "OUT-aftershock-usgs-us6000udd1",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Balleny Islands region - 7-day forecast",
+      "country": "Balleny Islands region",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-25T01:38:45.672Z",
+      "targetEnd": "2026-12-02T01:38:45.672Z",
+      "provider": "usgs"
+    },
+    "OUT-aftershock-usgs-us6000ud6h": {
+      "id": "OUT-aftershock-usgs-us6000ud6h",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Mauritius - Reunion region - 7-day forecast",
+      "country": "Mauritius - Reunion region",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-24T11:06:14.036Z",
+      "targetEnd": "2026-12-01T11:06:14.036Z",
+      "provider": "usgs"
+    },
+    "OUT-aftershock-usgs-us6000ucxi": {
+      "id": "OUT-aftershock-usgs-us6000ucxi",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near west of Macquarie Island - 7-day forecast",
+      "country": "west of Macquarie Island",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-23T08:01:26.457Z",
+      "targetEnd": "2026-11-30T08:01:26.457Z",
+      "provider": "usgs"
+    },
+    "OUT-aftershock-usgs-us6000ucly": {
+      "id": "OUT-aftershock-usgs-us6000ucly",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk 238 km SW of Yanglong, China - 7-day forecast",
+      "country": "China",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-21T10:45:33.230Z",
+      "targetEnd": "2026-11-28T10:45:33.230Z",
+      "provider": "usgs"
+    },
+    "OUT-usgs-volcano-311120": {
+      "id": "OUT-usgs-volcano-311120",
+      "type": "Volcano",
+      "title": "Volcano risk in Alaska, United States - 7-day forecast",
+      "country": "United States",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-20T20:33:25.000Z",
+      "targetEnd": "2026-11-27T20:33:25.000Z",
+      "provider": "usgs_volcano"
+    },
+    "OUT-aftershock-gdacs-EQ-1578798": {
+      "id": "OUT-aftershock-gdacs-EQ-1578798",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Vanuatu Islands region - 7-day forecast",
+      "country": "Vanuatu Islands Region",
+      "alert": "High",
+      "rank": 3,
+      "targetStart": "2026-11-23T02:40:58.052Z",
+      "targetEnd": "2026-11-30T02:40:58.052Z",
+      "provider": "gdacs"
+    },
+    "OUT-aftershock-gdacs-EQ-1579445": {
+      "id": "OUT-aftershock-gdacs-EQ-1579445",
+      "type": "Earthquake aftershock sequence",
+      "title": "Aftershock risk near Revilla Gigedo Islands region - 7-day forecast",
+      "country": "Revilla Gigedo Islands Region",
+      "alert": "Moderate",
+      "rank": 2,
+      "targetStart": "2026-11-26T15:26:44.294Z",
+      "targetEnd": "2026-12-03T15:26:44.294Z",
+      "provider": "gdacs"
     },
     "OUT-aftershock-gdacs-EQ-1579132": {
       "id": "OUT-aftershock-gdacs-EQ-1579132",
@@ -81968,39 +82410,6 @@
       "rank": 2,
       "targetStart": "2026-11-23T08:01:26.457Z",
       "targetEnd": "2026-11-30T08:01:26.457Z",
-      "provider": "gdacs"
-    },
-    "OUT-aftershock-usgs-us6000ucly": {
-      "id": "OUT-aftershock-usgs-us6000ucly",
-      "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk 238 km SW of Yanglong, China - 7-day forecast",
-      "country": "China",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-21T10:45:33.230Z",
-      "targetEnd": "2026-11-28T10:45:33.230Z",
-      "provider": "usgs"
-    },
-    "OUT-usgs-volcano-311120": {
-      "id": "OUT-usgs-volcano-311120",
-      "type": "Volcano",
-      "title": "Volcano risk in Alaska, United States - 7-day forecast",
-      "country": "United States",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-20T20:33:25.000Z",
-      "targetEnd": "2026-11-27T20:33:25.000Z",
-      "provider": "usgs_volcano"
-    },
-    "OUT-aftershock-gdacs-EQ-1578280": {
-      "id": "OUT-aftershock-gdacs-EQ-1578280",
-      "type": "Earthquake aftershock sequence",
-      "title": "Aftershock risk near Southeast of Loyalty Islands - 7-day forecast",
-      "country": "Southeast Of Loyalty Islands",
-      "alert": "Moderate",
-      "rank": 2,
-      "targetStart": "2026-11-20T00:49:14.102Z",
-      "targetEnd": "2026-11-27T00:49:14.102Z",
       "provider": "gdacs"
     },
     "OUT-gdacs-FL-1104220": {
@@ -82278,61 +82687,6 @@
       "targetEnd": "2026-11-28T00:00:00.000Z",
       "provider": "gdacs"
     },
-    "OUT-gdacs-FL-1104298": {
-      "id": "OUT-gdacs-FL-1104298",
-      "type": "Flood",
-      "title": "Flood risk in Portugal - 3-day forecast",
-      "country": "Portugal",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-24T01:00:00.000Z",
-      "targetEnd": "2026-11-27T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104295": {
-      "id": "OUT-gdacs-FL-1104295",
-      "type": "Flood",
-      "title": "Flood risk in Ireland - 3-day forecast",
-      "country": "Ireland",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-24T01:00:00.000Z",
-      "targetEnd": "2026-11-27T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-FL-1104299": {
-      "id": "OUT-gdacs-FL-1104299",
-      "type": "Flood",
-      "title": "Flood risk in Uganda - 3-day forecast",
-      "country": "Uganda",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-24T01:00:00.000Z",
-      "targetEnd": "2026-11-27T01:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1033886": {
-      "id": "OUT-gdacs-WF-1033886",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Nigeria - 3-day forecast",
-      "country": "Nigeria",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-24T00:00:00.000Z",
-      "targetEnd": "2026-11-27T00:00:00.000Z",
-      "provider": "gdacs"
-    },
-    "OUT-gdacs-WF-1034000": {
-      "id": "OUT-gdacs-WF-1034000",
-      "type": "Wildfire",
-      "title": "Wildfire risk in Chad - 3-day forecast",
-      "country": "Chad",
-      "alert": "Watch",
-      "rank": 1,
-      "targetStart": "2026-11-24T00:00:00.000Z",
-      "targetEnd": "2026-11-27T00:00:00.000Z",
-      "provider": "gdacs"
-    },
     "OUT-gdacs-DR-1018546": {
       "id": "OUT-gdacs-DR-1018546",
       "type": "Drought",
@@ -82433,7 +82787,7 @@
       "provider": "gdacs"
     }
   },
-  "updatedAt": "2026-11-26T23:51:20.085Z",
+  "updatedAt": "2026-11-27T08:28:34.094Z",
   "observedCadenceHours": {
     "runs": 201,
     "median": 5.51,
